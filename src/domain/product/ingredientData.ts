@@ -208,6 +208,8 @@ export const INGREDIENTS: Ingredient[] = [
   { aliases: ["almendras", "almonds"], b: 'green', desc: "Ricas en vitamina E, magnesio, grasas monoinsaturadas y proteínas." },
   { aliases: ["nueces", "walnuts"], b: 'green', desc: "La fuente vegetal más rica en omega-3 ALA. Beneficiosas para el cerebro y corazón." },
   { aliases: ["castañas de cajú", "cashews"], b: 'green', desc: "Ricas en zinc, magnesio y cobre. Buena fuente de grasas monoinsaturadas." },
+  { aliases: ["avellanas", "hazelnuts", "hazelnut"], b: 'green', desc: "Fruto seco rico en vitamina E, grasas monoinsaturadas y magnesio." },
+  { aliases: ["pistachos", "pistachios"], b: 'green', desc: "Fruto seco rico en proteínas, fibra y antioxidantes. Buena fuente de potasio." },
   { aliases: ["semillas de chía", "chia seeds"], b: 'green', desc: "Excepcional fuente de omega-3 ALA, fibra soluble y calcio vegetal." },
   { aliases: ["semillas de lino", "flax seeds", "flaxseed", "linseed"], b: 'green', desc: "Ricas en omega-3 ALA y lignanos antioxidantes. Preferir molidas para mejor absorción." },
   { aliases: ["semillas de zapallo"], b: 'green', desc: "Ricas en zinc, magnesio y triptófano. Beneficiosas para próstata e inmunidad." },

@@ -86,15 +86,19 @@ describe('ftgEngine — regresión sobre productos reales', () => {
     const sevOf = (needle: string) =>
       ings.find((i) => i.name.toLowerCase().includes(needle))?.sev;
 
-    expect(sevOf('sugar')).toBe('orange');
-    expect(sevOf('palm oil')).toBe('orange');
-    expect(sevOf('cocoa')).toBe('green');
-    expect(sevOf('whey')).toBe('green');
-    expect(sevOf('vanilla')).toBe('green');
+    // Clasifica por su severidad real Y muestra el nombre canónico en español.
+    expect(sevOf('azúcar')).toBe('orange');
+    expect(sevOf('aceite de palma')).toBe('orange');
+    expect(sevOf('cacao')).toBe('green');
+    expect(sevOf('suero de leche')).toBe('green');
+    expect(sevOf('vainilla')).toBe('green');
 
-    // Ninguno debe quedar como "sin clasificación".
+    // Los nombres mostrados están en español, no en el inglés original de OFF.
+    const names = ings.map((i) => i.name.toLowerCase());
+    expect(names).not.toContain('sugar');
+    expect(names).not.toContain('palm oil');
+    // Ninguno de los clasificados quedó como "sin clasificación".
     const unclassified = ings.filter((i) => i.desc.includes('Sin clasificación'));
-    expect(unclassified.map((i) => i.name)).not.toContain('sugar');
-    expect(unclassified.map((i) => i.name)).not.toContain('palm oil');
+    expect(unclassified.map((i) => i.name.toLowerCase())).not.toContain('azúcar');
   });
 });

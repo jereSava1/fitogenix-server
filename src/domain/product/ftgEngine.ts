@@ -105,6 +105,14 @@ function capaASev(ing: Ingredient): Severity {
   return ing.a ?? ing.b;
 }
 
+// Nombre a mostrar: el primer alias es siempre el canónico en español
+// (los aliases en inglés se agregan después), capitalizado. Así un producto
+// de OFF con "PALM OIL" se muestra como "Aceite de palma".
+function canonicalName(ing: Ingredient): string {
+  const es = ing.aliases[0];
+  return es.charAt(0).toUpperCase() + es.slice(1);
+}
+
 // ── Analyze all ingredients from OFF data ──
 export function ftgAnalyzeIngredients(offProduct: ProductInput): AnalyzedIngredient[] {
   const list: AnalyzedIngredient[] = [];
@@ -127,7 +135,7 @@ export function ftgAnalyzeIngredients(offProduct: ProductInput): AnalyzedIngredi
     const ing = classifyIngredient(part);
     if (ing) {
       list.push({
-        name: part,
+        name: canonicalName(ing),
         detail: '',
         sev: ing.b,
         sevA: capaASev(ing),
