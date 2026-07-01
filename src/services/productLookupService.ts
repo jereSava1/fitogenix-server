@@ -6,6 +6,7 @@ import {
 } from '../domain/product/ftgEngine';
 import { aiLookupProduct, enrichWithAI } from './claudeService';
 import { getCachedProduct, setCachedProduct } from './cacheService';
+import { getFromRedis, setInRedis } from './redisService';
 import {
   OffServiceUnavailableError,
   completeResolvedMatch,
@@ -94,9 +95,23 @@ async function resolveWithImages(
   fetchData: () => Promise<RawOFFProduct | null>,
   originalQuery: string,
 ): Promise<FitogenixProduct | null> {
-  const cached = await getCachedProduct(code);
-  if (cached) return mapCacheToProduct(cached);
+  // Level 1 — Redis (fastest, in-memory cache)
+  const redisHit = await getFromRedis(code);
+  if (redisHit) return redisHit;
 
+  // Level 2 — Supabase (persistent cache)
+  const cached = await getCachedProduct(code);
+  if (cached) {
+    const product = mapCacheToProduct(cached);
+    // Populate Redis so next hit is faster; use shorter TTL if AI-sourced
+    const ttl = product.dataSource === 'ai' ? 259200 : 604800;
+    setInRedis(code, product, ttl).catch((err: unknown) =>
+      console.error('[productLookupService] setInRedis error:', err),
+    );
+    return product;
+  }
+
+  // Level 3 — OFF + Claude (cold path)
   const retailerPromise = fetchRetailerImage(code);
 
   let data = await fetchData();
@@ -117,7 +132,14 @@ async function resolveWithImages(
     if (searchImage) product.imageUrl = searchImage;
   }
 
-  setCachedProduct(product, code).catch(() => {});
+  // Persist to Supabase + Redis
+  setCachedProduct(product, code).catch((err: unknown) =>
+    console.error('[productLookupService] setCachedProduct error:', err),
+  );
+  const ttl = product.dataSource === 'ai' ? 259200 : 604800;
+  setInRedis(code, product, ttl).catch((err: unknown) =>
+    console.error('[productLookupService] setInRedis (cold) error:', err),
+  );
 
   return product;
 }
