@@ -396,10 +396,12 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
   const redCount = analyzed.filter((i) => i.sev === 'red').length;
   const score    = applyGatesToScore(rawScore, gates, redCount);
 
+  // Umbrales alineados con la spec de negocio Fitogenix:
+  // 85+ Excelente · 70-84 Bueno · 50-69 Moderado · <50 Malo.
   const tier: ScoreBreakdown['tier'] =
-    score >= 75 ? 'Excelente' :
-    score >= 50 ? 'Bueno'     :
-    score >= 25 ? 'Moderado'  : 'Malo';
+    score >= 85 ? 'Excelente' :
+    score >= 70 ? 'Bueno'     :
+    score >= 50 ? 'Moderado'  : 'Malo';
 
   const TIER_COLORS:   Record<string, string> = { Excelente: '#16a34a', Bueno: '#84cc16', Moderado: '#f97316', Malo: '#dc2626' };
   const TIER_MESSAGES: Record<string, string> = { Excelente: 'Lo recomendamos', Bueno: 'Buena opción', Moderado: 'Consúmelo con consciencia', Malo: 'No lo recomendamos' };
