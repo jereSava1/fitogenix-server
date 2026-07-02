@@ -33,6 +33,12 @@ export type FitogenixProduct = {
   alternatives: unknown[];
   dataSource: string;
   aiEnriched?: boolean;
+  // ── Presentación derivada del score (calculada server-side, única fuente
+  // de verdad). El cliente solo renderiza estos campos, no recalcula umbrales.
+  scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO'
+  scoreColor: string;   // color hex del tier
+  tagline: string;      // 'Lo recomendamos', etc.
+  fito: 'fito' | 'nofito' | 'none';
 };
 
 export type RawOFFProduct = {

@@ -4,6 +4,8 @@ import {
   ftgAnalyzeIngredients,
   ftgScoreWithBreakdown,
 } from '../domain/product/ftgEngine';
+import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
+import { resolveProductStatus } from '../domain/product/productService';
 import { aiLookupProduct, enrichWithAI } from './claudeService';
 import { getCachedProduct, setCachedProduct } from './cacheService';
 import { getFromRedis, setInRedis } from './redisService';
@@ -21,6 +23,20 @@ const EMPTY_NUTRITION = {
   fats: null, satFats: null, sodium: null, fiber: null,
   transFat: null, cholesterol: null,
 };
+
+// Presentación derivada del score — única fuente de verdad de los umbrales.
+// El cliente consume estos campos en vez de recalcularlos.
+function scorePresentation(score: number): Pick<
+  FitogenixProduct,
+  'scoreLabel' | 'scoreColor' | 'tagline' | 'fito'
+> {
+  const { label, color } = getScoreLabel(score);
+  const status = resolveProductStatus(score);
+  const fito =
+    status.label === 'Fitogénico' ? 'fito' :
+    status.label === 'No fitogénico' ? 'nofito' : 'none';
+  return { scoreLabel: label, scoreColor: color, tagline: getScoreTagline(score), fito };
+}
 
 function cleanName(raw: string | undefined, fallback: string): string {
   if (!raw) return fallback;
@@ -64,6 +80,7 @@ function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
     alternatives: [],
     dataSource: off._aiSource ? 'ai' : 'off',
     aiEnriched: off._aiEnriched,
+    ...scorePresentation(breakdown.score),
   };
 }
 
@@ -87,6 +104,7 @@ function mapCacheToProduct(cached: NonNullable<Awaited<ReturnType<typeof getCach
     breakdown: null,
     alternatives: cached.alternatives ?? [],
     dataSource: cached.dataSource ?? 'off',
+    ...scorePresentation(cached.score),
   };
 }
 
