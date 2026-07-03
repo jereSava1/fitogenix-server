@@ -20,6 +20,11 @@ import {
   type Sev,
 } from './ingredientData';
 
+// Versión del motor de scoring. Se persiste con cada fila cacheada.
+// Como recomputamos el score al leer (guardamos crudos), sirve para
+// métricas e invalidación selectiva, no para decidir si recomputar.
+export const ENGINE_VERSION = 'ftg-rubric-v1';
+
 // ── Types ──
 export type Severity = Sev;
 

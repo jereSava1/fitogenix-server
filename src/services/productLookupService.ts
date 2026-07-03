@@ -8,7 +8,12 @@ import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
 import { resolveProductStatus } from '../domain/product/productService';
 import { aiLookupProduct, enrichWithAI } from './claudeService';
 import { getCachedProduct, setCachedProduct } from './cacheService';
-import { getFromRedis, setInRedis } from './redisService';
+import {
+  getFromRedis,
+  getSearchBarcode,
+  setInRedis,
+  setSearchBarcode,
+} from './redisService';
 import {
   OffServiceUnavailableError,
   completeResolvedMatch,
@@ -18,11 +23,11 @@ import {
 import { fetchRetailerImage, fetchSearchImageUrl } from './imageService';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
-const EMPTY_NUTRITION = {
-  calories: null, protein: null, carbs: null, sugars: null,
-  fats: null, satFats: null, sodium: null, fiber: null,
-  transFat: null, cholesterol: null,
-};
+type LookupSource = 'redis' | 'supabase' | 'off' | 'ai';
+
+function logSource(code: string, source: LookupSource): void {
+  console.info(JSON.stringify({ event: 'product_lookup', barcode: code, source }));
+}
 
 // Presentación derivada del score — única fuente de verdad de los umbrales.
 // El cliente consume estos campos en vez de recalcularlos.
@@ -84,43 +89,44 @@ function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
   };
 }
 
-function mapCacheToProduct(cached: NonNullable<Awaited<ReturnType<typeof getCachedProduct>>>): FitogenixProduct {
-  return {
-    id: cached.id,
-    name: cached.name,
-    subtitle: null,
-    brand: cached.brand ?? '',
-    category: cached.category ?? 'Alimento',
-    categoryEmoji: '🍽️',
-    score: cached.score,
-    flagged: cached.score < 40,
-    emoji: '📦',
-    bgColor: '#f8faf7',
-    imageUrl: (cached.imageUrl as string | null) ?? null,
-    summary: null,
-    ingredients: (cached.ingredients as FitogenixProduct['ingredients']) ?? [],
-    nutrition: (cached.nutrition as FitogenixProduct['nutrition']) ?? EMPTY_NUTRITION,
-    subscores: { toxicidad: 0, nutricion: 0, procesamiento: 0, alineacion: 0 },
-    breakdown: null,
-    alternatives: cached.alternatives ?? [],
-    dataSource: cached.dataSource ?? 'off',
-    ...scorePresentation(cached.score),
-  };
-}
+// Deduplicación in-flight (singleflight): si varias requests piden el mismo
+// barcode a la vez, comparten una sola resolución en curso. Keyed por barcode.
+const inFlight = new Map<string, Promise<FitogenixProduct | null>>();
 
 async function resolveWithImages(
   code: string,
   fetchData: () => Promise<RawOFFProduct | null>,
   originalQuery: string,
 ): Promise<FitogenixProduct | null> {
+  const existing = inFlight.get(code);
+  if (existing) return existing;
+
+  const promise = doResolveWithImages(code, fetchData, originalQuery).finally(() => {
+    inFlight.delete(code);
+  });
+  inFlight.set(code, promise);
+  return promise;
+}
+
+async function doResolveWithImages(
+  code: string,
+  fetchData: () => Promise<RawOFFProduct | null>,
+  originalQuery: string,
+): Promise<FitogenixProduct | null> {
   // Level 1 — Redis (fastest, in-memory cache)
   const redisHit = await getFromRedis(code);
-  if (redisHit) return redisHit;
+  if (redisHit) {
+    logSource(code, 'redis');
+    return redisHit;
+  }
 
-  // Level 2 — Supabase (persistent cache)
+  // Level 2 — Supabase (persistent cache). Guardamos crudos → recomputamos con
+  // el MISMO mapOFFToProduct que un lookup fresco, así el cacheado es idéntico.
   const cached = await getCachedProduct(code);
   if (cached) {
-    const product = mapCacheToProduct(cached);
+    const product = mapOFFToProduct(cached.raw, code);
+    product.dataSource = cached.dataSource;
+    logSource(code, 'supabase');
     // Populate Redis so next hit is faster; use shorter TTL if AI-sourced
     const ttl = product.dataSource === 'ai' ? 259200 : 604800;
     setInRedis(code, product, ttl).catch((err: unknown) =>
@@ -142,6 +148,7 @@ async function resolveWithImages(
   }
 
   const product = mapOFFToProduct(data, code);
+  logSource(code, product.dataSource === 'ai' ? 'ai' : 'off');
 
   const retailerImage = await retailerPromise;
   if (!product.imageUrl && retailerImage) product.imageUrl = retailerImage;
@@ -150,8 +157,8 @@ async function resolveWithImages(
     if (searchImage) product.imageUrl = searchImage;
   }
 
-  // Persist to Supabase + Redis
-  setCachedProduct(product, code).catch((err: unknown) =>
+  // Persist to Supabase (crudos) + Redis
+  setCachedProduct(product, data, code).catch((err: unknown) =>
     console.error('[productLookupService] setCachedProduct error:', err),
   );
   const ttl = product.dataSource === 'ai' ? 259200 : 604800;
@@ -170,6 +177,19 @@ export async function lookupProduct(query: string): Promise<FitogenixProduct | n
     return resolveWithImages(
       trimmed,
       () => fetchProductByBarcode(trimmed),
+      trimmed,
+    );
+  }
+
+  // Fase 3 — cache texto→barcode. Si otra request ya resolvió esta misma query,
+  // saltamos el OFF search (~500ms) y vamos directo al barcode cacheado.
+  // getSearchBarcode normaliza internamente (lowercase+trim), así que le pasamos
+  // `trimmed` tal cual; no duplicamos la normalización acá.
+  const cachedBarcode = await getSearchBarcode(trimmed);
+  if (cachedBarcode) {
+    return resolveWithImages(
+      cachedBarcode,
+      () => fetchProductByBarcode(cachedBarcode),
       trimmed,
     );
   }
@@ -196,6 +216,12 @@ export async function lookupProduct(query: string): Promise<FitogenixProduct | n
     }
     return product;
   }
+
+  // Guardamos la asociación query→barcode para futuras búsquedas idénticas.
+  // Fire-and-forget: no bloquea el lookup; el error se loguea.
+  setSearchBarcode(trimmed, resolved.code).catch((err: unknown) =>
+    console.error('[productLookupService] setSearchBarcode error:', err),
+  );
 
   return resolveWithImages(
     resolved.code,

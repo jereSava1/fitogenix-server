@@ -14,6 +14,12 @@ import { config } from '../config';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';
+const SEARCH_KEY_PREFIX = 'ftg:search:';
+const SEARCH_TTL_SECONDS = 2592000; // 30 días
+
+function normalizeQuery(query: string): string {
+  return query.toLowerCase().trim();
+}
 
 // Lazily created — only when env vars are present.
 let _redis: Redis | null | undefined = undefined; // undefined = not yet checked
@@ -58,5 +64,34 @@ export async function setInRedis(
     await redis.set(REDIS_KEY_PREFIX + barcode, product, { ex: ttlSeconds });
   } catch (err) {
     console.error('[redisService] setInRedis error:', err);
+  }
+}
+
+// ── Cache texto→barcode (Fase 3) ──
+// Evita el OFF search (~500ms) cuando otro usuario ya resolvió la misma query.
+
+export async function getSearchBarcode(query: string): Promise<string | null> {
+  const redis = getRedis();
+  if (!redis) return null;
+
+  try {
+    const code = await redis.get<string>(SEARCH_KEY_PREFIX + normalizeQuery(query));
+    return code ?? null;
+  } catch (err) {
+    console.error('[redisService] getSearchBarcode error:', err);
+    return null;
+  }
+}
+
+export async function setSearchBarcode(query: string, barcode: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+
+  try {
+    await redis.set(SEARCH_KEY_PREFIX + normalizeQuery(query), barcode, {
+      ex: SEARCH_TTL_SECONDS,
+    });
+  } catch (err) {
+    console.error('[redisService] setSearchBarcode error:', err);
   }
 }
