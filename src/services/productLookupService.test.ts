@@ -27,6 +27,12 @@ vi.mock('./imageService', () => ({
   fetchRetailerImage: vi.fn(async () => null),
   fetchSearchImageUrl: vi.fn(async () => null),
 }));
+vi.mock('./openBeautyFactsApi', () => ({
+  fetchBeautyProductByBarcode: vi.fn(async () => null),
+}));
+vi.mock('./fallbackFoodApi', () => ({
+  fetchEdamamByBarcode: vi.fn(async () => null),
+}));
 
 type LookupModule = typeof import('./productLookupService');
 let lookupProduct: LookupModule['lookupProduct'];
@@ -34,6 +40,8 @@ let cacheService: typeof import('./cacheService');
 let redisService: typeof import('./redisService');
 let offService: typeof import('./offService');
 let claudeService: typeof import('./claudeService');
+let obfService: typeof import('./openBeautyFactsApi');
+let edamamService: typeof import('./fallbackFoodApi');
 
 const rawProduct: RawOFFProduct = {
   product_name: 'Galletitas',
@@ -53,6 +61,8 @@ beforeAll(async () => {
   redisService = await import('./redisService');
   offService = await import('./offService');
   claudeService = await import('./claudeService');
+  obfService = await import('./openBeautyFactsApi');
+  edamamService = await import('./fallbackFoodApi');
 });
 
 beforeEach(() => {
@@ -62,6 +72,10 @@ beforeEach(() => {
   vi.mocked(redisService.getSearchBarcode).mockResolvedValue(null);
   vi.mocked(cacheService.getCachedProduct).mockResolvedValue(null);
   vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+  vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
+  vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(null);
+  vi.mocked(edamamService.fetchEdamamByBarcode).mockResolvedValue(null);
+  vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(null);
   vi.mocked(claudeService.enrichWithAI).mockImplementation(async (off) => off);
 });
 
@@ -130,6 +144,95 @@ describe('lookupProduct — búsqueda por nombre sin match en OFF (solo IA)', ()
     expect(product?.dataSource).toBe('ai');
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
+  });
+});
+
+describe('lookupProduct — cascada de fuentes por barcode', () => {
+  const beautyRaw: RawOFFProduct = {
+    product_name: 'Crema Hidratante',
+    brands: 'Nivea',
+    ingredients_text: 'aqua, glycerin',
+    nutriments: {},
+  };
+  const edamamRaw: RawOFFProduct = {
+    product_name: 'Snack Edamam',
+    brands: 'EdaBrand',
+    nutriments: { sugars_100g: 5, proteins_100g: 10 },
+  };
+
+  it('(a) OFF falla pero OBF encuentra el producto', async () => {
+    vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
+    vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(beautyRaw);
+
+    const product = await lookupProduct('8410757001090');
+
+    expect(product?.name).toBe('Crema Hidratante');
+    expect(product?.dataSource).toBe('obf');
+    expect(obfService.fetchBeautyProductByBarcode).toHaveBeenCalledWith('8410757001090');
+    // No cayó a Edamam ni a Claude.
+    expect(edamamService.fetchEdamamByBarcode).not.toHaveBeenCalled();
+    expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
+    // Persistió el crudo bajo la clave = barcode.
+    expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(Object),
+      '8410757001090',
+      '8410757001090',
+    );
+  });
+
+  it('(b) OFF y OBF fallan pero Edamam encuentra el producto', async () => {
+    vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
+    vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(null);
+    vi.mocked(edamamService.fetchEdamamByBarcode).mockResolvedValue(edamamRaw);
+
+    const product = await lookupProduct('7622210449283');
+
+    expect(product?.name).toBe('Snack Edamam');
+    expect(product?.dataSource).toBe('edamam');
+    expect(offService.fetchProductByBarcode).toHaveBeenCalled();
+    expect(obfService.fetchBeautyProductByBarcode).toHaveBeenCalled();
+    expect(edamamService.fetchEdamamByBarcode).toHaveBeenCalledWith('7622210449283');
+    expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
+  });
+
+  it('(c) todas las fuentes gratis/pagas fallan y Claude resuelve', async () => {
+    vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
+    vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(null);
+    vi.mocked(edamamService.fetchEdamamByBarcode).mockResolvedValue(null);
+    vi.mocked(claudeService.aiLookupProduct).mockResolvedValue({
+      ...rawProduct,
+      _aiSource: true,
+    });
+
+    const product = await lookupProduct('9999999999999');
+
+    expect(product?.name).toBe('Galletitas');
+    expect(product?.dataSource).toBe('ai');
+    expect(offService.fetchProductByBarcode).toHaveBeenCalled();
+    expect(obfService.fetchBeautyProductByBarcode).toHaveBeenCalled();
+    expect(edamamService.fetchEdamamByBarcode).toHaveBeenCalled();
+    expect(claudeService.aiLookupProduct).toHaveBeenCalled();
+  });
+
+  it('si un nivel lanza, la cascada continúa (no crashea)', async () => {
+    vi.mocked(offService.fetchProductByBarcode).mockRejectedValue(new Error('boom'));
+    vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(beautyRaw);
+
+    const product = await lookupProduct('8410757001090');
+
+    expect(product?.name).toBe('Crema Hidratante');
+    expect(product?.dataSource).toBe('obf');
+  });
+
+  it('OBF y Edamam NO se consultan en búsquedas por nombre (sin barcode)', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(rawProduct);
+
+    await lookupProduct('alfajor artesanal');
+
+    expect(obfService.fetchBeautyProductByBarcode).not.toHaveBeenCalled();
+    expect(edamamService.fetchEdamamByBarcode).not.toHaveBeenCalled();
   });
 });
 

@@ -21,9 +21,11 @@ import {
   resolveQueryToCode,
 } from './offService';
 import { fetchRetailerImage, fetchSearchImageUrl } from './imageService';
+import { fetchBeautyProductByBarcode } from './openBeautyFactsApi';
+import { fetchEdamamByBarcode } from './fallbackFoodApi';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
-type LookupSource = 'redis' | 'supabase' | 'off' | 'ai';
+type LookupSource = 'redis' | 'supabase' | 'off' | 'obf' | 'edamam' | 'ai';
 
 function logSource(cacheKey: string, source: LookupSource): void {
   console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source }));
@@ -153,22 +155,60 @@ async function doResolveWithImages(
     return product;
   }
 
-  // Level 3 — OFF + Claude (cold path)
+  // Level 3 — cascada de fuentes crudas + Claude (cold path)
   // La imagen de retailer se busca por barcode; sin barcode (producto solo-IA)
   // no aplica.
   const retailerPromise = barcode ? fetchRetailerImage(barcode) : Promise.resolve(null);
 
-  let data = await fetchData();
+  // Cascada de datos crudos, cortando ni bien haya match. Solo el nivel OFF
+  // aplica sin barcode (búsqueda por nombre); OBF y Edamam son estrictamente
+  // por barcode. Cada nivel se envuelve en try/catch: si falla (timeout/500)
+  // logueamos y seguimos al siguiente, nunca crasheamos la cascada.
+  let data: RawOFFProduct | null = null;
+  let source: LookupSource = 'off';
+
+  // Nivel OFF (o search→completeResolvedMatch para el path por nombre).
+  try {
+    data = await fetchData();
+  } catch (err) {
+    console.error('[productLookupService] fallo nivel OFF:', err);
+  }
+
+  // Nivel OBF (Open Beauty Facts) — solo por barcode.
+  if (!data && barcode) {
+    try {
+      data = await fetchBeautyProductByBarcode(barcode);
+      if (data) source = 'obf';
+    } catch (err) {
+      console.error('[productLookupService] fallo nivel OBF:', err);
+    }
+  }
+
+  // Nivel Edamam — solo por barcode. Saltea internamente si faltan las keys.
+  if (!data && barcode) {
+    try {
+      data = await fetchEdamamByBarcode(barcode);
+      if (data) source = 'edamam';
+    } catch (err) {
+      console.error('[productLookupService] fallo nivel Edamam:', err);
+    }
+  }
+
   if (data) {
     data = await enrichWithAI(data);
   } else {
+    // Último recurso — Claude.
     const ai = await aiLookupProduct(originalQuery);
     if (!ai) return null;
     data = await enrichWithAI(ai);
+    source = 'ai';
   }
 
   const product = mapOFFToProduct(data, originalQuery);
-  logSource(cacheKey, product.dataSource === 'ai' ? 'ai' : 'off');
+  // mapOFFToProduct deriva dataSource del flag _aiSource; para OBF/Edamam es
+  // dato "real" (no IA), así que reflejamos la fuente de la cascada.
+  if (source === 'obf' || source === 'edamam') product.dataSource = source;
+  logSource(cacheKey, product.dataSource === 'ai' ? 'ai' : source);
 
   const retailerImage = await retailerPromise;
   if (!product.imageUrl && retailerImage) product.imageUrl = retailerImage;

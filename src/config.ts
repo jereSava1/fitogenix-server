@@ -15,4 +15,8 @@ export const config = {
   removeBgApiKey: optional('REMOVE_BG_API_KEY'),
   upstashRedisUrl: optional('UPSTASH_REDIS_REST_URL'),
   upstashRedisToken: optional('UPSTASH_REDIS_REST_TOKEN'),
+  // Edamam Food Database — fallback de datos de producto por UPC (nivel 3 de la
+  // cascada). Opcionales: si faltan, el wrapper saltea el nivel sin crashear.
+  edamamAppId: optional('EDAMAM_APP_ID'),
+  edamamAppKey: optional('EDAMAM_APP_KEY'),
 };
