@@ -32,18 +32,20 @@ function asStringArray(v: unknown): string[] | undefined {
 }
 
 /**
- * Lee un producto cacheado y reconstruye su RawOFFProduct crudo.
+ * Lee un producto cacheado por su clave unificada (`cache_key`) y reconstruye su
+ * RawOFFProduct crudo. La clave es el barcode para productos con código, o
+ * 'name:<nombre normalizado>' para los resueltos solo por IA.
  *
  * Filas viejas (pre-migración) que no tienen ingredients_text ni nutriments
  * se tratan como CACHE MISS (devuelve null) para forzar un recacheo con datos
  * crudos en el próximo lookup. Así degradamos con gracia sin servir productos
  * con breakdown/subscores incompletos.
  */
-export async function getCachedProduct(barcode: string): Promise<CachedRaw | null> {
+export async function getCachedProduct(cacheKey: string): Promise<CachedRaw | null> {
   const { data, error } = await admin()
     .from('products')
     .select('*')
-    .eq('barcode', barcode)
+    .eq('cache_key', cacheKey)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -82,9 +84,11 @@ export async function getCachedProduct(barcode: string): Promise<CachedRaw | nul
 export function buildCachePayload(
   product: FitogenixProduct,
   raw: RawOFFProduct,
-  barcode: string,
+  cacheKey: string,
+  barcode: string | null,
 ): Record<string, unknown> {
   return {
+    cache_key: cacheKey,
     barcode,
     // ── denormalizados para listados ──
     product_name: product.name,
@@ -109,17 +113,18 @@ export function buildCachePayload(
 export async function setCachedProduct(
   product: FitogenixProduct,
   raw: RawOFFProduct,
-  barcode: string,
+  cacheKey: string,
+  barcode: string | null,
 ): Promise<void> {
-  const payload = buildCachePayload(product, raw, barcode);
+  const payload = buildCachePayload(product, raw, cacheKey, barcode);
 
   // Nota: no usamos ignoreDuplicates para poder REFRESCAR datos crudos y score
   // (el score puede cambiar entre versiones del motor). Requiere el UNIQUE
-  // constraint sobre barcode. Si el constraint aún no está aplicado, el upsert
+  // constraint sobre cache_key. Si el constraint aún no está aplicado, el upsert
   // falla y lo logueamos — el lookup ya devolvió el producto igual.
   const { error } = await admin()
     .from('products')
-    .upsert(payload, { onConflict: 'barcode' });
+    .upsert(payload, { onConflict: 'cache_key' });
 
   if (error) {
     console.error('[cacheService] setCachedProduct upsert error:', error.message);

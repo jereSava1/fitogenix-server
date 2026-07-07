@@ -100,6 +100,39 @@ describe('lookupProduct — búsqueda por texto con search-cache hit', () => {
   });
 });
 
+describe('lookupProduct — búsqueda por nombre sin match en OFF (solo IA)', () => {
+  it('cachea el resultado con cache_key "name:<...>" y barcode null', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(rawProduct);
+
+    const product = await lookupProduct('Alfajór  Artesanal');
+
+    expect(product?.name).toBe('Galletitas');
+    // Se persistió bajo la clave de nombre normalizada (minúsculas, sin acento,
+    // espacios colapsados) y sin barcode.
+    expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(Object),
+      'name:alfajor artesanal',
+      null,
+    );
+  });
+
+  it('segunda búsqueda idéntica se sirve del cache sin llamar a la IA', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(cacheService.getCachedProduct).mockImplementation(async (key: string) =>
+      key === 'name:alfajor artesanal' ? { raw: rawProduct, dataSource: 'ai' } : null,
+    );
+
+    const product = await lookupProduct('Alfajór  Artesanal');
+
+    expect(product?.name).toBe('Galletitas');
+    expect(product?.dataSource).toBe('ai');
+    expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
+    expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
+  });
+});
+
 describe('lookupProduct — singleflight', () => {
   it('dos llamadas concurrentes al mismo barcode comparten una sola resolución', async () => {
     // Cache/redis miss → llega al fetchData. La fn de fetch debe invocarse 1 vez.

@@ -54,8 +54,9 @@ describe('buildCachePayload', () => {
       aiEnriched: true,
     } as unknown as FitogenixProduct;
 
-    const payload = cache.buildCachePayload(product, raw, '7790001');
+    const payload = cache.buildCachePayload(product, raw, '7790001', '7790001');
 
+    expect(payload.cache_key).toBe('7790001');
     expect(payload.barcode).toBe('7790001');
     expect(payload.ingredients_text).toBe('harina, azucar');
     expect(payload.nutriments).toEqual({ sugars_100g: 20 });
@@ -76,11 +77,29 @@ describe('buildCachePayload', () => {
       dataSource: 'off',
     } as unknown as FitogenixProduct;
 
-    const payload = cache.buildCachePayload(product, raw, '111');
+    const payload = cache.buildCachePayload(product, raw, '111', '111');
     expect(payload.ingredients_text).toBeNull();
     expect(payload.nutriments).toBeNull();
     expect(payload.nova_group).toBeNull();
     expect(payload.additives_tags).toBeNull();
+  });
+
+  it('producto solo-IA: cache_key con prefijo name y barcode null', () => {
+    const raw: RawOFFProduct = { product_name: 'Alfajor Artesanal', ingredients_text: 'dulce de leche' };
+    const product = {
+      name: 'Alfajor Artesanal',
+      brand: '',
+      category: '',
+      imageUrl: null,
+      score: 30,
+      dataSource: 'ai',
+      aiEnriched: true,
+    } as unknown as FitogenixProduct;
+
+    const payload = cache.buildCachePayload(product, raw, 'name:alfajor artesanal', null);
+    expect(payload.cache_key).toBe('name:alfajor artesanal');
+    expect(payload.barcode).toBeNull();
+    expect(payload.ai_enriched).toBe(true);
   });
 });
 
