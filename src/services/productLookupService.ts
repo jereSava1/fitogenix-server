@@ -73,7 +73,9 @@ function cleanName(raw: string | undefined, fallback: string): string {
     .replace(/^./, (c) => c.toUpperCase());
 }
 
-function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
+// Exportada para reutilizarla en savedProductsService (listado de guardados):
+// los productos guardados se recomputan con el MISMO mapeo que un lookup.
+export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
   const breakdown = ftgScoreWithBreakdown(off);
   const ingredients = ftgAnalyzeIngredients(off);
   const nutrition = extractNutrition(off.nutriments);
@@ -102,6 +104,8 @@ function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
     breakdown,
     alternatives: [],
     dataSource: off._aiSource ? 'ai' : 'off',
+    // Default para tipar; los resolutores la pisan con la clave real de cache.
+    cacheKey: query,
     aiEnriched: off._aiEnriched,
     ...scorePresentation(breakdown.score),
   };
@@ -139,6 +143,9 @@ async function doResolveWithImages(
   // Level 1 — Redis (fastest, in-memory cache)
   const redisHit = await getFromRedis(cacheKey);
   if (redisHit) {
+    // Las entradas nuevas ya traen cacheKey serializado; reasignar acá cubre
+    // también entradas viejas (pre-campo) sin costo.
+    redisHit.cacheKey = cacheKey;
     logSource(cacheKey, 'redis', redisHit.dataSource);
     return redisHit;
   }
@@ -149,6 +156,7 @@ async function doResolveWithImages(
   if (cached) {
     const product = mapOFFToProduct(cached.raw, originalQuery);
     product.dataSource = cached.dataSource;
+    product.cacheKey = cacheKey;
     logSource(cacheKey, 'supabase', product.dataSource);
     // Populate Redis so next hit is faster; use shorter TTL if AI-sourced
     const ttl = product.dataSource === 'ai' ? 259200 : 604800;
@@ -208,6 +216,7 @@ async function doResolveWithImages(
   }
 
   const product = mapOFFToProduct(data, originalQuery);
+  product.cacheKey = cacheKey;
   // mapOFFToProduct deriva dataSource del flag _aiSource; para OBF/Edamam es
   // dato "real" (no IA), así que reflejamos la fuente de la cascada.
   if (source === 'obf' || source === 'edamam') product.dataSource = source;

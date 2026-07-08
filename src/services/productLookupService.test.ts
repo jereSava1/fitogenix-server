@@ -91,6 +91,8 @@ describe('lookupProduct — barcode cacheado en Supabase', () => {
     expect(product).not.toBeNull();
     expect(product?.name).toBe('Galletitas');
     expect(product?.dataSource).toBe('off');
+    // La clave de cache viaja en el payload (la usa el cliente para guardar).
+    expect(product?.cacheKey).toBe('7790895000123');
     // No se tocó el cold path.
     expect(offService.fetchProductByBarcode).not.toHaveBeenCalled();
     expect(claudeService.enrichWithAI).not.toHaveBeenCalled();
@@ -142,6 +144,7 @@ describe('lookupProduct — búsqueda por nombre sin match en OFF (solo IA)', ()
 
     expect(product?.name).toBe('Galletitas');
     expect(product?.dataSource).toBe('ai');
+    expect(product?.cacheKey).toBe('name:alfajor artesanal');
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
   });
@@ -168,6 +171,8 @@ describe('lookupProduct — cascada de fuentes por barcode', () => {
 
     expect(product?.name).toBe('Crema Hidratante');
     expect(product?.dataSource).toBe('obf');
+    // Cold path también expone la clave de cache.
+    expect(product?.cacheKey).toBe('8410757001090');
     expect(obfService.fetchBeautyProductByBarcode).toHaveBeenCalledWith('8410757001090');
     // No cayó a Edamam ni a Claude.
     expect(edamamService.fetchEdamamByBarcode).not.toHaveBeenCalled();

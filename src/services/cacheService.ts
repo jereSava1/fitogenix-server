@@ -32,24 +32,17 @@ function asStringArray(v: unknown): string[] | undefined {
 }
 
 /**
- * Lee un producto cacheado por su clave unificada (`cache_key`) y reconstruye su
- * RawOFFProduct crudo. La clave es el barcode para productos con código, o
- * 'name:<nombre normalizado>' para los resueltos solo por IA.
+ * Reconstruye el RawOFFProduct crudo desde una fila de `products` (función PURA,
+ * sin I/O). Compartida entre getCachedProduct (hit de cache) y
+ * savedProductsService (listado de guardados con productos embebidos vía
+ * PostgREST) para que ambos apliquen EXACTAMENTE el mismo mapeo.
  *
  * Filas viejas (pre-migración) que no tienen ingredients_text ni nutriments
- * se tratan como CACHE MISS (devuelve null) para forzar un recacheo con datos
- * crudos en el próximo lookup. Así degradamos con gracia sin servir productos
- * con breakdown/subscores incompletos.
+ * devuelven null: se tratan como cache miss / se omiten de listados. Así
+ * degradamos con gracia sin servir productos con breakdown/subscores
+ * incompletos.
  */
-export async function getCachedProduct(cacheKey: string): Promise<CachedRaw | null> {
-  const { data, error } = await admin()
-    .from('products')
-    .select('*')
-    .eq('cache_key', cacheKey)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
+export function rowToCachedRaw(data: Record<string, unknown>): CachedRaw | null {
   const ingredientsText =
     typeof data.ingredients_text === 'string' ? data.ingredients_text : undefined;
   const nutriments = asStringRecord(data.nutriments);
@@ -71,6 +64,23 @@ export async function getCachedProduct(cacheKey: string): Promise<CachedRaw | nu
   };
 
   return { raw, dataSource: typeof data.data_source === 'string' ? data.data_source : 'off' };
+}
+
+/**
+ * Lee un producto cacheado por su clave unificada (`cache_key`) y reconstruye su
+ * RawOFFProduct crudo. La clave es el barcode para productos con código, o
+ * 'name:<nombre normalizado>' para los resueltos solo por IA.
+ */
+export async function getCachedProduct(cacheKey: string): Promise<CachedRaw | null> {
+  const { data, error } = await admin()
+    .from('products')
+    .select('*')
+    .eq('cache_key', cacheKey)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return rowToCachedRaw(data as Record<string, unknown>);
 }
 
 /**

@@ -103,6 +103,62 @@ describe('buildCachePayload', () => {
   });
 });
 
+describe('rowToCachedRaw', () => {
+  const fullRow: Record<string, unknown> = {
+    barcode: '7790001',
+    product_name: 'Galletitas',
+    brand: 'Marca',
+    category: 'Snacks',
+    image_url: 'http://img',
+    ingredients_text: 'harina, azucar',
+    nutriments: { sugars_100g: 20 },
+    nova_group: 4,
+    additives_tags: ['en:e330'],
+    data_source: 'off',
+    ai_enriched: true,
+  };
+
+  it('reconstruye el RawOFFProduct desde una fila completa', () => {
+    const result = cache.rowToCachedRaw(fullRow);
+    expect(result).not.toBeNull();
+    expect(result?.dataSource).toBe('off');
+    expect(result?.raw).toMatchObject({
+      product_name: 'Galletitas',
+      brands: 'Marca',
+      image_url: 'http://img',
+      ingredients_text: 'harina, azucar',
+      nutriments: { sugars_100g: 20 },
+      nova_group: 4,
+      additives_tags: ['en:e330'],
+      categories: 'Snacks',
+      _aiEnriched: true,
+      _aiSource: false,
+    });
+  });
+
+  it('fila sin ingredients_text NI nutriments → null', () => {
+    expect(
+      cache.rowToCachedRaw({ product_name: 'Galletitas', brand: 'Marca', data_source: 'off' }),
+    ).toBeNull();
+  });
+
+  it('data_source ausente → default "off"; "ai" marca _aiSource', () => {
+    const sinSource = cache.rowToCachedRaw({ ingredients_text: 'agua' });
+    expect(sinSource?.dataSource).toBe('off');
+    expect(sinSource?.raw._aiSource).toBe(false);
+
+    const conAI = cache.rowToCachedRaw({ ingredients_text: 'agua', data_source: 'ai' });
+    expect(conAI?.dataSource).toBe('ai');
+    expect(conAI?.raw._aiSource).toBe(true);
+  });
+
+  it('la extracción no cambió el comportamiento: getCachedProduct ≡ rowToCachedRaw', async () => {
+    mockRow = fullRow;
+    const viaGet = await cache.getCachedProduct('7790001');
+    expect(viaGet).toEqual(cache.rowToCachedRaw(fullRow));
+  });
+});
+
 describe('getCachedProduct', () => {
   it('reconstruye el RawOFFProduct desde los crudos', async () => {
     mockRow = {
