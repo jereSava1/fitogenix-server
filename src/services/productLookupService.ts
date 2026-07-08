@@ -27,8 +27,11 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 type LookupSource = 'redis' | 'supabase' | 'off' | 'obf' | 'edamam' | 'ai';
 
-function logSource(cacheKey: string, source: LookupSource): void {
-  console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source }));
+// `source` = nivel de la cascada que sirvió ESTA request (redis/supabase = cache).
+// `dataSource` = proveedor ORIGINAL del dato (off/obf/edamam/ai), preservado a
+// través del cache. Loguear ambos permite analítica de origen incluso en hits.
+function logSource(cacheKey: string, source: LookupSource, dataSource: string): void {
+  console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
 }
 
 // Clave de cache para búsquedas por nombre sin barcode (resueltas por IA).
@@ -136,7 +139,7 @@ async function doResolveWithImages(
   // Level 1 — Redis (fastest, in-memory cache)
   const redisHit = await getFromRedis(cacheKey);
   if (redisHit) {
-    logSource(cacheKey, 'redis');
+    logSource(cacheKey, 'redis', redisHit.dataSource);
     return redisHit;
   }
 
@@ -146,7 +149,7 @@ async function doResolveWithImages(
   if (cached) {
     const product = mapOFFToProduct(cached.raw, originalQuery);
     product.dataSource = cached.dataSource;
-    logSource(cacheKey, 'supabase');
+    logSource(cacheKey, 'supabase', product.dataSource);
     // Populate Redis so next hit is faster; use shorter TTL if AI-sourced
     const ttl = product.dataSource === 'ai' ? 259200 : 604800;
     setInRedis(cacheKey, product, ttl).catch((err: unknown) =>
@@ -208,7 +211,7 @@ async function doResolveWithImages(
   // mapOFFToProduct deriva dataSource del flag _aiSource; para OBF/Edamam es
   // dato "real" (no IA), así que reflejamos la fuente de la cascada.
   if (source === 'obf' || source === 'edamam') product.dataSource = source;
-  logSource(cacheKey, product.dataSource === 'ai' ? 'ai' : source);
+  logSource(cacheKey, product.dataSource === 'ai' ? 'ai' : source, product.dataSource);
 
   const retailerImage = await retailerPromise;
   if (!product.imageUrl && retailerImage) product.imageUrl = retailerImage;
