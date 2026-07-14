@@ -7,6 +7,7 @@ import { productLookupRoute } from './routes/products/lookup';
 import { productImageRoute } from './routes/products/image';
 import { deleteUserRoute } from './routes/users/deleteMe';
 import { savedProductsRoutes } from './routes/users/saved';
+import { scanHistoryRoutes } from './routes/users/history';
 
 const app = Fastify({ logger: true });
 
@@ -27,6 +28,7 @@ async function start() {
   await app.register(productImageRoute);
   await app.register(deleteUserRoute);
   await app.register(savedProductsRoutes);
+  await app.register(scanHistoryRoutes);
 
   app.get('/health', async () => ({ ok: true, ts: Date.now() }));
 

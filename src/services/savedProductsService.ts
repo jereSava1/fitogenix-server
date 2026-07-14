@@ -13,8 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
-import { rowToCachedRaw } from './cacheService';
-import { mapOFFToProduct } from './productLookupService';
+import { joinedRowToProduct } from './productRowMapper';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,19 +26,14 @@ const admin = (): ReturnType<typeof createClient<any>> => {
 
 export type SaveResult = 'ok' | 'not_found';
 
-function asRecord(v: unknown): Record<string, unknown> | null {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-    ? (v as Record<string, unknown>)
-    : null;
-}
-
 /**
  * Lista los guardados del usuario, más reciente primero, como
  * FitogenixProduct completos (score recomputado desde los crudos).
  *
- * Filas cuyo producto embebido no tiene crudos (rowToCachedRaw → null) se
- * OMITEN del listado: mejor una lista corta que productos con breakdown
- * incompleto. Errores de DB se propagan como Error (la ruta responde 500).
+ * Filas cuyo producto embebido no tiene crudos o falta (joinedRowToProduct →
+ * null) se OMITEN del listado: mejor una lista corta que productos con
+ * breakdown incompleto. Errores de DB se propagan como Error (la ruta
+ * responde 500).
  */
 export async function listSavedProducts(userId: string): Promise<FitogenixProduct[]> {
   const { data, error } = await admin()
@@ -55,24 +49,8 @@ export async function listSavedProducts(userId: string): Promise<FitogenixProduc
   const items: FitogenixProduct[] = [];
 
   for (const rowUnknown of rows) {
-    const row = asRecord(rowUnknown);
-    if (!row || typeof row.cache_key !== 'string') continue;
-
-    // PostgREST embebe la relación many-to-one como objeto; toleramos array
-    // (forma que usa para to-many) tomando el primer elemento.
-    const embedded = Array.isArray(row.products) ? row.products[0] : row.products;
-    const productRow = asRecord(embedded);
-    if (!productRow) continue;
-
-    const cached = rowToCachedRaw(productRow);
-    if (!cached) continue; // fila vieja sin crudos → se omite
-
-    // Mismo tratamiento que el hit de Supabase en productLookupService:
-    // recomputar con mapOFFToProduct y preservar dataSource/cacheKey.
-    const product = mapOFFToProduct(cached.raw, row.cache_key);
-    product.dataSource = cached.dataSource;
-    product.cacheKey = row.cache_key;
-    items.push(product);
+    const product = joinedRowToProduct(rowUnknown);
+    if (product) items.push(product);
   }
 
   return items;
