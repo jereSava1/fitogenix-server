@@ -4,12 +4,19 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 // ── Mock de Supabase ──
 // createClient devuelve un cliente cuyo .from(...).select(...).eq(...).maybeSingle()
 // resuelve a lo que dejemos en `mockRow`. maybeSingleImpl permite forzar errores.
+// La cadena .ilike(...).order(...).limit(...) (findCachedProductByName) resuelve
+// a `mockRows`.
 let mockRow: Record<string, unknown> | null = null;
 let mockError: unknown = null;
+let mockRows: Record<string, unknown>[] | null = null;
+let mockRowsError: unknown = null;
 
 const maybeSingle = vi.fn(async () => ({ data: mockRow, error: mockError }));
 const eq = vi.fn(() => ({ maybeSingle }));
-const select = vi.fn(() => ({ eq }));
+const limit = vi.fn(async () => ({ data: mockRows, error: mockRowsError }));
+const order = vi.fn(() => ({ limit }));
+const ilike = vi.fn(() => ({ order }));
+const select = vi.fn(() => ({ eq, ilike }));
 const from = vi.fn(() => ({ select }));
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -32,6 +39,9 @@ beforeAll(async () => {
 beforeEach(() => {
   mockRow = null;
   mockError = null;
+  mockRows = null;
+  mockRowsError = null;
+  ilike.mockClear();
 });
 
 describe('buildCachePayload', () => {
@@ -205,5 +215,104 @@ describe('getCachedProduct', () => {
   it('devuelve null cuando Supabase da error', async () => {
     mockError = { message: 'boom' };
     await expect(cache.getCachedProduct('7790001')).resolves.toBeNull();
+  });
+});
+
+describe('findCachedProductByName', () => {
+  // Fila base con crudos válidos; cada test la ajusta con overrides.
+  const makeRow = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+    cache_key: '57045399',
+    barcode: '57045399',
+    product_name: 'Coca-Cola',
+    brand: 'Coca-Cola',
+    ingredients_text: 'agua carbonatada, azucar',
+    nutriments: { sugars_100g: 10.6 },
+    data_source: 'off',
+    ...overrides,
+  });
+
+  it('match simple: devuelve el crudo con cacheKey y barcode de la fila', async () => {
+    mockRows = [makeRow()];
+
+    const result = await cache.findCachedProductByName('Coca Cola');
+
+    expect(result).not.toBeNull();
+    expect(result?.cacheKey).toBe('57045399');
+    expect(result?.barcode).toBe('57045399');
+    expect(result?.dataSource).toBe('off');
+    expect(result?.raw.product_name).toBe('Coca-Cola');
+    // El patrón intercala los tokens normalizados con %.
+    expect(ilike).toHaveBeenCalledWith('product_name', '%coca%cola%');
+  });
+
+  it('normaliza el query (acentos, mayúsculas, espacios) antes de armar el patrón', async () => {
+    mockRows = [makeRow()];
+
+    await cache.findCachedProductByName('  CÓCA   Cóla  ');
+
+    expect(ilike).toHaveBeenCalledWith('product_name', '%coca%cola%');
+  });
+
+  it('prefiere la fila con barcode (datos reales) sobre la fila name: de IA', async () => {
+    mockRows = [
+      // La fila IA viene primera (updated_at más reciente) pero pierde igual.
+      makeRow({ cache_key: 'name:coca cola', barcode: null, data_source: 'ai' }),
+      makeRow(),
+    ];
+
+    const result = await cache.findCachedProductByName('coca cola');
+
+    expect(result?.cacheKey).toBe('57045399');
+    expect(result?.barcode).toBe('57045399');
+    expect(result?.dataSource).toBe('off');
+  });
+
+  it('entre filas con barcode prefiere el nombre más corto (match más ajustado)', async () => {
+    mockRows = [
+      makeRow({ cache_key: '111', barcode: '111', product_name: 'Coca-Cola Zero Sin Azucar 2.25L' }),
+      makeRow({ cache_key: '222', barcode: '222', product_name: 'Coca-Cola' }),
+    ];
+
+    const result = await cache.findCachedProductByName('coca cola');
+
+    expect(result?.cacheKey).toBe('222');
+  });
+
+  it('query normalizado < 3 caracteres → null sin consultar', async () => {
+    mockRows = [makeRow()];
+
+    await expect(cache.findCachedProductByName('  a ')).resolves.toBeNull();
+    expect(ilike).not.toHaveBeenCalled();
+  });
+
+  it('escapa %, _ y \\ en los tokens del patrón', async () => {
+    mockRows = null;
+
+    await cache.findCachedProductByName('jugo 100% na_ranja');
+
+    expect(ilike).toHaveBeenCalledWith('product_name', '%jugo%100\\%%na\\_ranja%');
+  });
+
+  it('filas sin crudos se descartan como candidatas', async () => {
+    mockRows = [
+      // Fila vieja sin ingredients_text ni nutriments: no sirve aunque tenga barcode.
+      makeRow({ ingredients_text: null, nutriments: null }),
+      makeRow({ cache_key: 'name:coca cola', barcode: null, data_source: 'ai' }),
+    ];
+
+    const result = await cache.findCachedProductByName('coca cola');
+
+    expect(result?.cacheKey).toBe('name:coca cola');
+    expect(result?.barcode).toBeNull();
+    expect(result?.dataSource).toBe('ai');
+  });
+
+  it('sin candidatas válidas (o error de Supabase) → null', async () => {
+    mockRows = [makeRow({ ingredients_text: null, nutriments: null })];
+    await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
+
+    mockRows = null;
+    mockRowsError = { message: 'boom' };
+    await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
   });
 });

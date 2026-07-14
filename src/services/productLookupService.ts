@@ -7,7 +7,8 @@ import {
 import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
 import { resolveProductStatus } from '../domain/product/productService';
 import { aiLookupProduct, enrichWithAI } from './claudeService';
-import { getCachedProduct, setCachedProduct } from './cacheService';
+import { findCachedProductByName, getCachedProduct, setCachedProduct } from './cacheService';
+import { normalizeQuery } from './queryNormalization';
 import {
   getFromRedis,
   getSearchBarcode,
@@ -25,7 +26,7 @@ import { fetchBeautyProductByBarcode } from './openBeautyFactsApi';
 import { fetchEdamamByBarcode } from './fallbackFoodApi';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
-type LookupSource = 'redis' | 'supabase' | 'off' | 'obf' | 'edamam' | 'ai';
+type LookupSource = 'redis' | 'supabase' | 'catalog' | 'off' | 'obf' | 'edamam' | 'ai';
 
 // `source` = nivel de la cascada que sirvió ESTA request (redis/supabase = cache).
 // `dataSource` = proveedor ORIGINAL del dato (off/obf/edamam/ai), preservado a
@@ -35,16 +36,11 @@ function logSource(cacheKey: string, source: LookupSource, dataSource: string): 
 }
 
 // Clave de cache para búsquedas por nombre sin barcode (resueltas por IA).
-// Normaliza (minúsculas, sin acentos, espacios colapsados) para maximizar hits
-// entre búsquedas equivalentes, y prefija 'name:' para no colisionar con barcodes.
+// Normaliza (minúsculas, sin acentos, espacios colapsados — ver
+// queryNormalization) para maximizar hits entre búsquedas equivalentes, y
+// prefija 'name:' para no colisionar con barcodes.
 function nameKey(query: string): string {
-  const normalized = query
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // quita acentos
-    .replace(/\s+/g, ' ')
-    .trim();
-  return `name:${normalized}`;
+  return `name:${normalizeQuery(query)}`;
 }
 
 // Presentación derivada del score — única fuente de verdad de los umbrales.
@@ -280,6 +276,36 @@ export async function lookupProduct(query: string): Promise<FitogenixProduct | n
   }
 
   if (!resolved) {
+    // Antes de gastar IA, buscamos en NUESTRO catálogo (`products`) por nombre:
+    // si el producto ya está cacheado (típicamente por barcode, con datos
+    // reales), lo servimos de acá y evitamos duplicarlo como fila 'name:<...>'
+    // resuelta por IA con otro score. Envuelto en try/catch: si el catálogo
+    // falla, la cascada sigue a la IA — nunca crashea.
+    try {
+      const catalogHit = await findCachedProductByName(trimmed);
+      if (catalogHit) {
+        const product = mapOFFToProduct(catalogHit.raw, trimmed);
+        product.dataSource = catalogHit.dataSource;
+        product.cacheKey = catalogHit.cacheKey;
+        logSource(catalogHit.cacheKey, 'catalog', product.dataSource);
+        // Poblamos Redis bajo la clave de la fila para acelerar próximos hits.
+        const ttl = product.dataSource === 'ai' ? 259200 : 604800;
+        setInRedis(catalogHit.cacheKey, product, ttl).catch((err: unknown) =>
+          console.error('[productLookupService] setInRedis (catalog) error:', err),
+        );
+        // Si la fila tiene barcode, cacheamos query→barcode: la próxima búsqueda
+        // idéntica salta directo al barcode sin pasar por OFF search ni catálogo.
+        if (catalogHit.barcode) {
+          setSearchBarcode(trimmed, catalogHit.barcode).catch((err: unknown) =>
+            console.error('[productLookupService] setSearchBarcode (catalog) error:', err),
+          );
+        }
+        return product;
+      }
+    } catch (err) {
+      console.error('[productLookupService] fallo catálogo propio:', err);
+    }
+
     // Sin match en OFF → producto resuelto solo por IA. No tiene barcode, así que
     // se cachea bajo cache_key = 'name:<nombre normalizado>' (barcode null). En la
     // próxima búsqueda idéntica lo sirve getCachedProduct y NO se vuelve a pedir IA.

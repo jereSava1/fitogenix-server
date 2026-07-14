@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
 import { ENGINE_VERSION } from '../domain/product/ftgEngine';
 import { getScoreLabel, getSello } from '../domain/product/scoring';
+import { normalizeQuery } from './queryNormalization';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,6 +82,71 @@ export async function getCachedProduct(cacheKey: string): Promise<CachedRaw | nu
   if (error || !data) return null;
 
   return rowToCachedRaw(data as Record<string, unknown>);
+}
+
+// Escapa los metacaracteres de LIKE/ILIKE (`%`, `_`) y el propio backslash para
+// que un token del usuario se matchee literal dentro del patrón.
+function escapeLikeToken(token: string): string {
+  return token.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+/**
+ * Busca en NUESTRO catálogo (`products`) un producto ya cacheado cuyo nombre
+ * matchee el query de texto. Se usa como paso previo a la IA en la cascada de
+ * búsqueda por nombre: si OFF search falla pero el producto ya existe cacheado
+ * (típicamente por barcode, con datos reales), lo servimos de acá y evitamos
+ * crear un duplicado 'name:<...>' resuelto por IA con otro score.
+ *
+ * Selección entre múltiples matches: preferimos filas con barcode (datos
+ * reales) sobre filas solo-IA, y entre ellas la de nombre más corto (match más
+ * ajustado). Filas sin crudos (pre-migración) se descartan como candidatas.
+ */
+export async function findCachedProductByName(
+  query: string,
+): Promise<(CachedRaw & { cacheKey: string; barcode: string | null }) | null> {
+  const normalized = normalizeQuery(query);
+  // Guard: queries demasiado cortos matchearían medio catálogo ("a", "co").
+  if (normalized.length < 3) return null;
+
+  // Patrón %tok1%tok2%...% — los tokens deben aparecer en orden en el nombre.
+  const tokens = normalized.split(' ').filter((t) => t.length > 0);
+  const pattern = `%${tokens.map(escapeLikeToken).join('%')}%`;
+
+  const { data, error } = await admin()
+    .from('products')
+    .select('*')
+    .ilike('product_name', pattern)
+    .order('updated_at', { ascending: false })
+    .limit(5);
+
+  if (error || !data || data.length === 0) return null;
+
+  // Candidatas = filas con crudos reconstruibles; el resto son cache miss.
+  const candidates = (data as Record<string, unknown>[])
+    .map((row) => ({ row, cached: rowToCachedRaw(row) }))
+    .filter((c): c is { row: Record<string, unknown>; cached: CachedRaw } => c.cached !== null);
+  if (candidates.length === 0) return null;
+
+  // Orden de preferencia: barcode presente primero, después nombre más corto.
+  candidates.sort((a, b) => {
+    const aBarcode = typeof a.row.barcode === 'string' ? 1 : 0;
+    const bBarcode = typeof b.row.barcode === 'string' ? 1 : 0;
+    if (aBarcode !== bBarcode) return bBarcode - aBarcode;
+    const aLen = typeof a.row.product_name === 'string' ? a.row.product_name.length : Infinity;
+    const bLen = typeof b.row.product_name === 'string' ? b.row.product_name.length : Infinity;
+    return aLen - bLen;
+  });
+
+  const best = candidates[0];
+  const cacheKey = typeof best.row.cache_key === 'string' ? best.row.cache_key : null;
+  // Sin cache_key no podemos poblar Redis ni loguear la clave: descartamos.
+  if (!cacheKey) return null;
+
+  return {
+    ...best.cached,
+    cacheKey,
+    barcode: typeof best.row.barcode === 'string' ? best.row.barcode : null,
+  };
 }
 
 /**

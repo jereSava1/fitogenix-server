@@ -6,6 +6,7 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 vi.mock('./cacheService', () => ({
   getCachedProduct: vi.fn(),
   setCachedProduct: vi.fn(async () => undefined),
+  findCachedProductByName: vi.fn(async () => null),
 }));
 vi.mock('./redisService', () => ({
   getFromRedis: vi.fn(async () => null),
@@ -71,6 +72,7 @@ beforeEach(() => {
   vi.mocked(redisService.getFromRedis).mockResolvedValue(null);
   vi.mocked(redisService.getSearchBarcode).mockResolvedValue(null);
   vi.mocked(cacheService.getCachedProduct).mockResolvedValue(null);
+  vi.mocked(cacheService.findCachedProductByName).mockResolvedValue(null);
   vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
   vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
   vi.mocked(obfService.fetchBeautyProductByBarcode).mockResolvedValue(null);
@@ -147,6 +149,72 @@ describe('lookupProduct — búsqueda por nombre sin match en OFF (solo IA)', ()
     expect(product?.cacheKey).toBe('name:alfajor artesanal');
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
+  });
+});
+
+describe('lookupProduct — búsqueda por texto con hit en catálogo propio', () => {
+  it('OFF search falla pero el catálogo tiene el producto → se sirve sin IA', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue({
+      raw: rawProduct,
+      dataSource: 'off',
+      cacheKey: '57045399',
+      barcode: '57045399',
+    });
+
+    const product = await lookupProduct('galletitas marca');
+
+    expect(product?.name).toBe('Galletitas');
+    // cacheKey y dataSource vienen de la fila del catálogo, no de nameKey.
+    expect(product?.cacheKey).toBe('57045399');
+    expect(product?.dataSource).toBe('off');
+    // No se gastó IA ni se creó una fila 'name:<...>' duplicada.
+    expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
+    expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
+    // Se pobló Redis bajo la clave de la fila con TTL de dato real (7 días).
+    expect(redisService.setInRedis).toHaveBeenCalledWith('57045399', expect.any(Object), 604800);
+    // Y se cacheó query→barcode para saltar directo la próxima vez.
+    expect(redisService.setSearchBarcode).toHaveBeenCalledWith('galletitas marca', '57045399');
+  });
+
+  it('hit de catálogo sin barcode (fila name: de IA) no cachea query→barcode', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue({
+      raw: { ...rawProduct, _aiSource: true },
+      dataSource: 'ai',
+      cacheKey: 'name:galletitas marca',
+      barcode: null,
+    });
+
+    const product = await lookupProduct('galletitas marca');
+
+    expect(product?.cacheKey).toBe('name:galletitas marca');
+    expect(product?.dataSource).toBe('ai');
+    expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
+    expect(redisService.setSearchBarcode).not.toHaveBeenCalled();
+    // TTL corto (3 días) por ser dato de IA.
+    expect(redisService.setInRedis).toHaveBeenCalledWith(
+      'name:galletitas marca',
+      expect.any(Object),
+      259200,
+    );
+  });
+
+  it('si el catálogo falla, la cascada sigue a la IA (no crashea)', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(cacheService.findCachedProductByName).mockRejectedValue(new Error('boom'));
+    vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(rawProduct);
+
+    const product = await lookupProduct('alfajor artesanal');
+
+    expect(product?.name).toBe('Galletitas');
+    expect(claudeService.aiLookupProduct).toHaveBeenCalled();
+    expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(Object),
+      'name:alfajor artesanal',
+      null,
+    );
   });
 });
 
