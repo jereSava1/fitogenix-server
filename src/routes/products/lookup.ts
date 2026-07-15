@@ -27,14 +27,17 @@ export async function productLookupRoute(app: FastifyInstance) {
 
     // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no
     // espera nada de esto y ningún error acá la rompe (recordScan no lanza y
-    // el catch cubre cualquier imprevisto).
+    // el catch cubre cualquier imprevisto). Como el cold path AWAITEA el
+    // upsert al cache (migración 006), a esta altura la fila de `products` ya
+    // existe: el viejo race de FK entre recordScan y setCachedProduct no
+    // aplica más. productId puede venir vacío solo si ese upsert falló.
     const authHeader = request.headers.authorization ?? '';
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-    if (token && product.cacheKey) {
-      const cacheKey = product.cacheKey;
+    if (token && product.productId) {
+      const productId = product.productId;
       void (async () => {
         const userId = await resolveUserIdFromToken(token);
-        if (userId) await recordScan(userId, cacheKey);
+        if (userId) await recordScan(userId, productId);
       })().catch((err: unknown) => {
         app.log.error(err, 'Error al registrar escaneo en el historial');
       });

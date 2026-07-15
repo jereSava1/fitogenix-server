@@ -48,9 +48,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Fila de `products` completa (con crudos) tal como la embebe PostgREST.
+// Fila de `products` completa (con id y crudos) tal como la embebe PostgREST.
 const galletitasRow = {
-  cache_key: '7790001',
+  id: 'uuid-galletitas',
+  barcode: '7790001',
+  name_key: null,
   product_name: 'Galletitas',
   brand: 'Marca',
   category: 'Snacks',
@@ -64,7 +66,9 @@ const galletitasRow = {
 };
 
 const alfajorRow = {
-  cache_key: 'name:alfajor artesanal',
+  id: 'uuid-alfajor',
+  barcode: null,
+  name_key: 'alfajor artesanal',
   product_name: 'Alfajor Artesanal',
   brand: '',
   ingredients_text: 'dulce de leche, harina',
@@ -74,8 +78,8 @@ const alfajorRow = {
 };
 
 describe('recordScan', () => {
-  it('upsert con onConflict user_id,cache_key SIN ignoreDuplicates (re-escanear actualiza scanned_at)', async () => {
-    await expect(history.recordScan('user-1', '7790001')).resolves.toBeUndefined();
+  it('upsert con onConflict user_id,product_id SIN ignoreDuplicates (re-escanear actualiza scanned_at)', async () => {
+    await expect(history.recordScan('user-1', 'uuid-galletitas')).resolves.toBeUndefined();
 
     expect(from).toHaveBeenCalledWith('scan_history');
     // Igualdad exacta del objeto de opciones: si apareciera ignoreDuplicates,
@@ -83,10 +87,10 @@ describe('recordScan', () => {
     expect(upsert).toHaveBeenCalledWith(
       {
         user_id: 'user-1',
-        cache_key: '7790001',
+        product_id: 'uuid-galletitas',
         scanned_at: expect.any(String),
       },
-      { onConflict: 'user_id,cache_key' },
+      { onConflict: 'user_id,product_id' },
     );
 
     // scanned_at es un timestamp ISO válido.
@@ -98,11 +102,14 @@ describe('recordScan', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     upsertResult = { error: { message: 'boom' } };
 
-    await expect(history.recordScan('user-1', '7790001')).resolves.toBeUndefined();
+    await expect(history.recordScan('user-1', 'uuid-galletitas')).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalled();
   });
 
-  it('no lanza ante violación de FK (producto aún no cacheado, race del cold path)', async () => {
+  it('no lanza ante violación de FK (producto purgado del cache entre lookup y registro)', async () => {
+    // Nota: el viejo race "producto todavía no cacheado" ya no existe — el
+    // cold path AWAITEA setCachedProduct (migración 006) — pero la FK puede
+    // fallar igual si la fila se purga en el medio, y nunca debe romper nada.
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     upsertResult = {
       error: {
@@ -111,7 +118,7 @@ describe('recordScan', () => {
       },
     };
 
-    await expect(history.recordScan('user-1', 'name:nuevo')).resolves.toBeUndefined();
+    await expect(history.recordScan('user-1', 'uuid-purgado')).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalled();
   });
 });
@@ -134,12 +141,16 @@ describe('resolveUserIdFromToken', () => {
 });
 
 describe('listScanHistory', () => {
-  it('mapea las filas embebidas a FitogenixProduct con cacheKey y dataSource', async () => {
+  it('mapea las filas embebidas a FitogenixProduct con productId y dataSource', async () => {
     selectResult = {
       data: [
-        { cache_key: '7790001', scanned_at: '2026-07-14T12:00:00Z', products: galletitasRow },
         {
-          cache_key: 'name:alfajor artesanal',
+          product_id: 'uuid-galletitas',
+          scanned_at: '2026-07-14T12:00:00Z',
+          products: galletitasRow,
+        },
+        {
+          product_id: 'uuid-alfajor',
           scanned_at: '2026-07-13T12:00:00Z',
           products: alfajorRow,
         },
@@ -152,17 +163,17 @@ describe('listScanHistory', () => {
     expect(items).toHaveLength(2);
     // Preserva el orden del query (más reciente primero).
     expect(items[0].name).toBe('Galletitas');
-    expect(items[0].cacheKey).toBe('7790001');
+    expect(items[0].productId).toBe('uuid-galletitas');
     expect(items[0].dataSource).toBe('off');
     expect(typeof items[0].score).toBe('number');
     expect(items[0].scoreLabel).toBeTruthy();
     expect(items[1].name).toBe('Alfajor Artesanal');
-    expect(items[1].cacheKey).toBe('name:alfajor artesanal');
+    expect(items[1].productId).toBe('uuid-alfajor');
     expect(items[1].dataSource).toBe('ai');
 
     // Query correcto: embed de products + filtro por usuario + orden + límite.
     expect(from).toHaveBeenCalledWith('scan_history');
-    expect(select).toHaveBeenCalledWith('cache_key, scanned_at, products(*)');
+    expect(select).toHaveBeenCalledWith('product_id, scanned_at, products(*)');
     expect(selectEq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(order).toHaveBeenCalledWith('scanned_at', { ascending: false });
     expect(limitFn).toHaveBeenCalledWith(20);
@@ -177,14 +188,14 @@ describe('listScanHistory', () => {
   it('omite filas sin producto embebido y filas de products sin crudos', async () => {
     selectResult = {
       data: [
-        { cache_key: '7790001', scanned_at: 'x', products: galletitasRow },
+        { product_id: 'uuid-galletitas', scanned_at: 'x', products: galletitasRow },
         // Producto embebido null (p.ej. fila purgada entre el join y la lectura).
-        { cache_key: '999', scanned_at: 'x', products: null },
+        { product_id: 'uuid-999', scanned_at: 'x', products: null },
         // Fila vieja sin ingredients_text ni nutriments → rowToCachedRaw null.
         {
-          cache_key: '888',
+          product_id: 'uuid-888',
           scanned_at: 'x',
-          products: { cache_key: '888', product_name: 'Viejo', data_source: 'off' },
+          products: { id: 'uuid-888', product_name: 'Viejo', data_source: 'off' },
         },
       ],
       error: null,
@@ -193,12 +204,12 @@ describe('listScanHistory', () => {
     const items = await history.listScanHistory('user-1', 20);
 
     expect(items).toHaveLength(1);
-    expect(items[0].cacheKey).toBe('7790001');
+    expect(items[0].productId).toBe('uuid-galletitas');
   });
 
   it('tolera el embed como array (forma to-many de PostgREST)', async () => {
     selectResult = {
-      data: [{ cache_key: '7790001', scanned_at: 'x', products: [galletitasRow] }],
+      data: [{ product_id: 'uuid-galletitas', scanned_at: 'x', products: [galletitasRow] }],
       error: null,
     };
 

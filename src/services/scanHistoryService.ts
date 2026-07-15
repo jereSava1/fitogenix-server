@@ -1,10 +1,11 @@
 /**
  * Historial de escaneos por usuario.
  *
- * Persiste en la tabla `scan_history` (migración 005): cada escaneo
- * autenticado referencia la fila cacheada en `products` vía `cache_key`.
- * Re-escanear un producto NO agrega fila: el upsert actualiza scanned_at,
- * así la tabla queda acotada a productos distintos por usuario.
+ * Persiste en la tabla `scan_history` (migraciones 005 + 006): cada escaneo
+ * autenticado referencia la fila cacheada en `products` vía `product_id`
+ * (uuid, la identidad del producto). Re-escanear un producto NO agrega fila:
+ * el upsert actualiza scanned_at, así la tabla queda acotada a productos
+ * distintos por usuario.
  *
  * El registro se dispara fire-and-forget desde POST /products/lookup
  * (src/routes/products/lookup.ts): NUNCA debe demorar ni romper la respuesta
@@ -28,28 +29,30 @@ const admin = (): ReturnType<typeof createClient<any>> => {
 
 /**
  * Registra (o refresca) un escaneo del usuario. Upsert sobre
- * (user_id, cache_key): si ya existía la fila, ACTUALIZA scanned_at — por eso
+ * (user_id, product_id): si ya existía la fila, ACTUALIZA scanned_at — por eso
  * NO usa ignoreDuplicates, a diferencia del upsert de guardados.
  *
  * Nunca lanza: es un side-effect fire-and-forget del lookup. La violación de
- * FK (23503) puede pasar si el producto todavía no llegó al cache (race con
- * el setCachedProduct async del cold path); no es crítico — el próximo
- * escaneo lo registra — así que solo se loguea.
+ * FK (23503) hoy solo puede pasar si el producto se purgó del cache entre el
+ * lookup y este upsert (el cold path AWAITEA setCachedProduct desde la
+ * migración 006, así que el viejo race "producto todavía no cacheado" ya no
+ * existe); no es crítico — el próximo escaneo lo registra — así que solo se
+ * loguea.
  */
-export async function recordScan(userId: string, cacheKey: string): Promise<void> {
+export async function recordScan(userId: string, productId: string): Promise<void> {
   try {
     const { error } = await admin()
       .from('scan_history')
       .upsert(
-        { user_id: userId, cache_key: cacheKey, scanned_at: new Date().toISOString() },
-        { onConflict: 'user_id,cache_key' },
+        { user_id: userId, product_id: productId, scanned_at: new Date().toISOString() },
+        { onConflict: 'user_id,product_id' },
       );
 
     if (error) {
-      console.error(`scan_history upsert (${cacheKey}): ${error.message}`);
+      console.error(`scan_history upsert (${productId}): ${error.message}`);
     }
   } catch (err) {
-    console.error(`scan_history upsert (${cacheKey}):`, err);
+    console.error(`scan_history upsert (${productId}):`, err);
   }
 }
 
@@ -82,8 +85,8 @@ export async function listScanHistory(
 ): Promise<FitogenixProduct[]> {
   const { data, error } = await admin()
     .from('scan_history')
-    // Embed habilitado por la FK scan_history.cache_key → products.cache_key.
-    .select('cache_key, scanned_at, products(*)')
+    // Embed habilitado por la FK scan_history.product_id → products.id.
+    .select('product_id, scanned_at, products(*)')
     .eq('user_id', userId)
     .order('scanned_at', { ascending: false })
     .limit(limit);

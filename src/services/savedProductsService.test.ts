@@ -15,8 +15,8 @@ const order = vi.fn(async () => selectResult);
 const selectEq = vi.fn(() => ({ order }));
 const select = vi.fn(() => ({ eq: selectEq }));
 const upsert = vi.fn(async () => upsertResult);
-const deleteEqCacheKey = vi.fn(async () => deleteResult);
-const deleteEqUser = vi.fn(() => ({ eq: deleteEqCacheKey }));
+const deleteEqProductId = vi.fn(async () => deleteResult);
+const deleteEqUser = vi.fn(() => ({ eq: deleteEqProductId }));
 const deleteFn = vi.fn(() => ({ eq: deleteEqUser }));
 const from = vi.fn(() => ({ select, upsert, delete: deleteFn }));
 
@@ -42,9 +42,11 @@ beforeEach(() => {
   deleteResult = { error: null };
 });
 
-// Fila de `products` completa (con crudos) tal como la embebe PostgREST.
+// Fila de `products` completa (con id y crudos) tal como la embebe PostgREST.
 const galletitasRow = {
-  cache_key: '7790001',
+  id: 'uuid-galletitas',
+  barcode: '7790001',
+  name_key: null,
   product_name: 'Galletitas',
   brand: 'Marca',
   category: 'Snacks',
@@ -58,7 +60,9 @@ const galletitasRow = {
 };
 
 const alfajorRow = {
-  cache_key: 'name:alfajor artesanal',
+  id: 'uuid-alfajor',
+  barcode: null,
+  name_key: 'alfajor artesanal',
   product_name: 'Alfajor Artesanal',
   brand: '',
   ingredients_text: 'dulce de leche, harina',
@@ -68,12 +72,16 @@ const alfajorRow = {
 };
 
 describe('listSavedProducts', () => {
-  it('mapea las filas embebidas a FitogenixProduct con cacheKey y dataSource', async () => {
+  it('mapea las filas embebidas a FitogenixProduct con productId y dataSource', async () => {
     selectResult = {
       data: [
-        { cache_key: '7790001', created_at: '2026-07-08T12:00:00Z', products: galletitasRow },
         {
-          cache_key: 'name:alfajor artesanal',
+          product_id: 'uuid-galletitas',
+          created_at: '2026-07-08T12:00:00Z',
+          products: galletitasRow,
+        },
+        {
+          product_id: 'uuid-alfajor',
           created_at: '2026-07-07T12:00:00Z',
           products: alfajorRow,
         },
@@ -86,17 +94,17 @@ describe('listSavedProducts', () => {
     expect(items).toHaveLength(2);
     // Preserva el orden del query (más reciente primero).
     expect(items[0].name).toBe('Galletitas');
-    expect(items[0].cacheKey).toBe('7790001');
+    expect(items[0].productId).toBe('uuid-galletitas');
     expect(items[0].dataSource).toBe('off');
     expect(typeof items[0].score).toBe('number');
     expect(items[0].scoreLabel).toBeTruthy();
     expect(items[1].name).toBe('Alfajor Artesanal');
-    expect(items[1].cacheKey).toBe('name:alfajor artesanal');
+    expect(items[1].productId).toBe('uuid-alfajor');
     expect(items[1].dataSource).toBe('ai');
 
     // Query correcto: embed de products + filtro por usuario + orden descendente.
     expect(from).toHaveBeenCalledWith('saved_products');
-    expect(select).toHaveBeenCalledWith('cache_key, created_at, products(*)');
+    expect(select).toHaveBeenCalledWith('product_id, created_at, products(*)');
     expect(selectEq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
   });
@@ -104,14 +112,14 @@ describe('listSavedProducts', () => {
   it('omite filas sin producto embebido y filas de products sin crudos', async () => {
     selectResult = {
       data: [
-        { cache_key: '7790001', created_at: 'x', products: galletitasRow },
+        { product_id: 'uuid-galletitas', created_at: 'x', products: galletitasRow },
         // Producto embebido null (p.ej. fila purgada entre el join y la lectura).
-        { cache_key: '999', created_at: 'x', products: null },
+        { product_id: 'uuid-999', created_at: 'x', products: null },
         // Fila vieja sin ingredients_text ni nutriments → rowToCachedRaw null.
         {
-          cache_key: '888',
+          product_id: 'uuid-888',
           created_at: 'x',
-          products: { cache_key: '888', product_name: 'Viejo', data_source: 'off' },
+          products: { id: 'uuid-888', product_name: 'Viejo', data_source: 'off' },
         },
       ],
       error: null,
@@ -120,12 +128,12 @@ describe('listSavedProducts', () => {
     const items = await saved.listSavedProducts('user-1');
 
     expect(items).toHaveLength(1);
-    expect(items[0].cacheKey).toBe('7790001');
+    expect(items[0].productId).toBe('uuid-galletitas');
   });
 
   it('tolera el embed como array (forma to-many de PostgREST)', async () => {
     selectResult = {
-      data: [{ cache_key: '7790001', created_at: 'x', products: [galletitasRow] }],
+      data: [{ product_id: 'uuid-galletitas', created_at: 'x', products: [galletitasRow] }],
       error: null,
     };
 
@@ -146,13 +154,13 @@ describe('listSavedProducts', () => {
 });
 
 describe('saveProduct', () => {
-  it('upsert idempotente con onConflict user_id,cache_key → ok', async () => {
-    await expect(saved.saveProduct('user-1', '7790001')).resolves.toBe('ok');
+  it('upsert idempotente con onConflict user_id,product_id → ok', async () => {
+    await expect(saved.saveProduct('user-1', 'uuid-galletitas')).resolves.toBe('ok');
 
     expect(from).toHaveBeenCalledWith('saved_products');
     expect(upsert).toHaveBeenCalledWith(
-      { user_id: 'user-1', cache_key: '7790001' },
-      { onConflict: 'user_id,cache_key', ignoreDuplicates: true },
+      { user_id: 'user-1', product_id: 'uuid-galletitas' },
+      { onConflict: 'user_id,product_id', ignoreDuplicates: true },
     );
   });
 
@@ -164,35 +172,35 @@ describe('saveProduct', () => {
           'insert or update on table "saved_products" violates foreign key constraint',
       },
     };
-    await expect(saved.saveProduct('user-1', 'name:inexistente')).resolves.toBe('not_found');
+    await expect(saved.saveProduct('user-1', 'uuid-inexistente')).resolves.toBe('not_found');
   });
 
   it('detecta 23503 también cuando solo viene en el mensaje', async () => {
     upsertResult = { error: { message: 'foreign key violation (SQLSTATE 23503)' } };
-    await expect(saved.saveProduct('user-1', 'name:inexistente')).resolves.toBe('not_found');
+    await expect(saved.saveProduct('user-1', 'uuid-inexistente')).resolves.toBe('not_found');
   });
 
   it('otros errores de DB se propagan como Error', async () => {
     upsertResult = { error: { code: '42P01', message: 'relation does not exist' } };
-    await expect(saved.saveProduct('user-1', '7790001')).rejects.toThrow(
+    await expect(saved.saveProduct('user-1', 'uuid-galletitas')).rejects.toThrow(
       'relation does not exist',
     );
   });
 });
 
 describe('removeSavedProduct', () => {
-  it('borra por user_id + cache_key y es idempotente (sin error aunque no exista)', async () => {
+  it('borra por user_id + product_id y es idempotente (sin error aunque no exista)', async () => {
     await expect(
-      saved.removeSavedProduct('user-1', 'name:alfajor artesanal'),
+      saved.removeSavedProduct('user-1', 'uuid-alfajor'),
     ).resolves.toBeUndefined();
 
     expect(from).toHaveBeenCalledWith('saved_products');
     expect(deleteEqUser).toHaveBeenCalledWith('user_id', 'user-1');
-    expect(deleteEqCacheKey).toHaveBeenCalledWith('cache_key', 'name:alfajor artesanal');
+    expect(deleteEqProductId).toHaveBeenCalledWith('product_id', 'uuid-alfajor');
   });
 
   it('propaga errores de DB como Error', async () => {
     deleteResult = { error: { message: 'boom' } };
-    await expect(saved.removeSavedProduct('user-1', '7790001')).rejects.toThrow('boom');
+    await expect(saved.removeSavedProduct('user-1', 'uuid-galletitas')).rejects.toThrow('boom');
   });
 });

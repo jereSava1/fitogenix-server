@@ -1,11 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CachedRaw } from './cacheService';
+import type { CachedProductRow } from './cacheService';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 // ── Mocks de los módulos de servicios ──
 vi.mock('./cacheService', () => ({
-  getCachedProduct: vi.fn(),
-  setCachedProduct: vi.fn(async () => undefined),
+  getCachedProductByBarcode: vi.fn(async () => null),
+  getCachedProductByNameKey: vi.fn(async () => null),
+  // Awaiteado en el cold path: devuelve el id (uuid) de la fila upserteada.
+  setCachedProduct: vi.fn(async () => 'uuid-nuevo'),
   findCachedProductByName: vi.fn(async () => null),
 }));
 vi.mock('./redisService', () => ({
@@ -52,6 +54,16 @@ const rawProduct: RawOFFProduct = {
   nova_group: 4,
 };
 
+// Hit de cache/catálogo con la forma nueva (identidad + atributos de búsqueda).
+const cachedHit = (overrides: Partial<CachedProductRow> = {}): CachedProductRow => ({
+  raw: rawProduct,
+  dataSource: 'off',
+  productId: 'uuid-galletitas',
+  barcode: '7790895000123',
+  nameKey: null,
+  ...overrides,
+});
+
 beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -71,7 +83,9 @@ beforeEach(() => {
   // defaults tras clear
   vi.mocked(redisService.getFromRedis).mockResolvedValue(null);
   vi.mocked(redisService.getSearchBarcode).mockResolvedValue(null);
-  vi.mocked(cacheService.getCachedProduct).mockResolvedValue(null);
+  vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(null);
+  vi.mocked(cacheService.getCachedProductByNameKey).mockResolvedValue(null);
+  vi.mocked(cacheService.setCachedProduct).mockResolvedValue('uuid-nuevo');
   vi.mocked(cacheService.findCachedProductByName).mockResolvedValue(null);
   vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
   vi.mocked(offService.fetchProductByBarcode).mockResolvedValue(null);
@@ -83,18 +97,16 @@ beforeEach(() => {
 
 describe('lookupProduct — barcode cacheado en Supabase', () => {
   it('se sirve recomputado sin llamar a OFF ni Claude', async () => {
-    vi.mocked(cacheService.getCachedProduct).mockResolvedValue({
-      raw: rawProduct,
-      dataSource: 'off',
-    } satisfies CachedRaw);
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(cachedHit());
 
     const product = await lookupProduct('7790895000123');
 
     expect(product).not.toBeNull();
     expect(product?.name).toBe('Galletitas');
     expect(product?.dataSource).toBe('off');
-    // La clave de cache viaja en el payload (la usa el cliente para guardar).
-    expect(product?.cacheKey).toBe('7790895000123');
+    // La identidad viaja en el payload (la usa el cliente para guardar).
+    expect(product?.productId).toBe('uuid-galletitas');
+    expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
     // No se tocó el cold path.
     expect(offService.fetchProductByBarcode).not.toHaveBeenCalled();
     expect(claudeService.enrichWithAI).not.toHaveBeenCalled();
@@ -102,97 +114,153 @@ describe('lookupProduct — barcode cacheado en Supabase', () => {
   });
 });
 
+describe('lookupProduct — Redis', () => {
+  it('entrada con productId se sirve directo (hit)', async () => {
+    vi.mocked(redisService.getFromRedis).mockResolvedValue({
+      name: 'Galletitas',
+      dataSource: 'off',
+      productId: 'uuid-redis',
+    } as unknown as FitogenixProduct);
+
+    const product = await lookupProduct('7790895000123');
+
+    expect(product?.productId).toBe('uuid-redis');
+    // Ni Supabase ni cold path.
+    expect(cacheService.getCachedProductByBarcode).not.toHaveBeenCalled();
+    expect(offService.fetchProductByBarcode).not.toHaveBeenCalled();
+  });
+
+  it('entrada vieja SIN productId (pre-006) se trata como miss y la repobla Supabase', async () => {
+    vi.mocked(redisService.getFromRedis).mockResolvedValue({
+      name: 'Galletitas',
+      dataSource: 'off',
+      cacheKey: '7790895000123', // forma vieja
+    } as unknown as FitogenixProduct);
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(cachedHit());
+
+    const product = await lookupProduct('7790895000123');
+
+    expect(product?.productId).toBe('uuid-galletitas');
+    expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
+    // Se re-escribió Redis con el payload nuevo (que ya trae productId).
+    expect(redisService.setInRedis).toHaveBeenCalledWith(
+      '7790895000123',
+      expect.objectContaining({ productId: 'uuid-galletitas' }),
+      604800,
+    );
+  });
+});
+
 describe('lookupProduct — búsqueda por texto con search-cache hit', () => {
   it('salta resolveQueryToCode y va directo al barcode cacheado', async () => {
     vi.mocked(redisService.getSearchBarcode).mockResolvedValue('7790895000123');
-    vi.mocked(cacheService.getCachedProduct).mockResolvedValue({
-      raw: rawProduct,
-      dataSource: 'off',
-    } satisfies CachedRaw);
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(cachedHit());
 
     const product = await lookupProduct('galletitas marca');
 
     expect(product?.name).toBe('Galletitas');
+    expect(product?.productId).toBe('uuid-galletitas');
     expect(offService.resolveQueryToCode).not.toHaveBeenCalled();
-    expect(cacheService.getCachedProduct).toHaveBeenCalledWith('7790895000123');
+    expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
   });
 });
 
 describe('lookupProduct — búsqueda por nombre sin match en OFF (solo IA)', () => {
-  it('cachea el resultado con cache_key "name:<...>" y barcode null', async () => {
+  it('cachea con nameKey SIN prefijo, awaitea el upsert y expone el id devuelto', async () => {
     vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
     vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(rawProduct);
+    vi.mocked(cacheService.setCachedProduct).mockResolvedValue('uuid-alfajor');
 
     const product = await lookupProduct('Alfajór  Artesanal');
 
     expect(product?.name).toBe('Galletitas');
-    // Se persistió bajo la clave de nombre normalizada (minúsculas, sin acento,
-    // espacios colapsados) y sin barcode.
+    // A la DB va el query normalizado SIN el prefijo 'name:' (ese prefijo
+    // queda solo en las claves internas de Redis/in-flight/logs).
     expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
       expect.any(Object),
       expect.any(Object),
-      'name:alfajor artesanal',
-      null,
+      { nameKey: 'alfajor artesanal' },
     );
+    // El upsert awaiteado devuelve el id y viaja en el payload.
+    expect(product?.productId).toBe('uuid-alfajor');
   });
 
-  it('segunda búsqueda idéntica se sirve del cache sin llamar a la IA', async () => {
+  it('segunda búsqueda idéntica se sirve del cache por name_key sin llamar a la IA', async () => {
     vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
-    vi.mocked(cacheService.getCachedProduct).mockImplementation(async (key: string) =>
-      key === 'name:alfajor artesanal' ? { raw: rawProduct, dataSource: 'ai' } : null,
+    vi.mocked(cacheService.getCachedProductByNameKey).mockImplementation(async (key: string) =>
+      key === 'alfajor artesanal'
+        ? cachedHit({
+            dataSource: 'ai',
+            productId: 'uuid-alfajor',
+            barcode: null,
+            nameKey: 'alfajor artesanal',
+          })
+        : null,
     );
 
     const product = await lookupProduct('Alfajór  Artesanal');
 
     expect(product?.name).toBe('Galletitas');
     expect(product?.dataSource).toBe('ai');
-    expect(product?.cacheKey).toBe('name:alfajor artesanal');
+    expect(product?.productId).toBe('uuid-alfajor');
+    expect(cacheService.getCachedProductByNameKey).toHaveBeenCalledWith('alfajor artesanal');
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
+  });
+
+  it('si el upsert falla (null), el producto se sirve igual con productId vacío', async () => {
+    vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
+    vi.mocked(claudeService.aiLookupProduct).mockResolvedValue(rawProduct);
+    vi.mocked(cacheService.setCachedProduct).mockResolvedValue(null);
+
+    const product = await lookupProduct('alfajor artesanal');
+
+    expect(product?.name).toBe('Galletitas');
+    expect(product?.productId).toBe('');
   });
 });
 
 describe('lookupProduct — búsqueda por texto con hit en catálogo propio', () => {
   it('OFF search falla pero el catálogo tiene el producto → se sirve sin IA', async () => {
     vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
-    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue({
-      raw: rawProduct,
-      dataSource: 'off',
-      cacheKey: '57045399',
-      barcode: '57045399',
-    });
+    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue(
+      cachedHit({ productId: 'uuid-coca', barcode: '57045399' }),
+    );
 
     const product = await lookupProduct('galletitas marca');
 
     expect(product?.name).toBe('Galletitas');
-    // cacheKey y dataSource vienen de la fila del catálogo, no de nameKey.
-    expect(product?.cacheKey).toBe('57045399');
+    // productId y dataSource vienen de la fila del catálogo.
+    expect(product?.productId).toBe('uuid-coca');
     expect(product?.dataSource).toBe('off');
-    // No se gastó IA ni se creó una fila 'name:<...>' duplicada.
+    // No se gastó IA ni se creó una fila solo-IA duplicada.
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(cacheService.setCachedProduct).not.toHaveBeenCalled();
-    // Se pobló Redis bajo la clave de la fila con TTL de dato real (7 días).
+    // Redis se pobló bajo la clave interna de la fila (su barcode), TTL 7 días.
     expect(redisService.setInRedis).toHaveBeenCalledWith('57045399', expect.any(Object), 604800);
     // Y se cacheó query→barcode para saltar directo la próxima vez.
     expect(redisService.setSearchBarcode).toHaveBeenCalledWith('galletitas marca', '57045399');
   });
 
-  it('hit de catálogo sin barcode (fila name: de IA) no cachea query→barcode', async () => {
+  it('hit de catálogo sin barcode (fila solo-IA) no cachea query→barcode', async () => {
     vi.mocked(offService.resolveQueryToCode).mockResolvedValue(null);
-    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue({
-      raw: { ...rawProduct, _aiSource: true },
-      dataSource: 'ai',
-      cacheKey: 'name:galletitas marca',
-      barcode: null,
-    });
+    vi.mocked(cacheService.findCachedProductByName).mockResolvedValue(
+      cachedHit({
+        raw: { ...rawProduct, _aiSource: true },
+        dataSource: 'ai',
+        productId: 'uuid-name',
+        barcode: null,
+        nameKey: 'galletitas marca',
+      }),
+    );
 
     const product = await lookupProduct('galletitas marca');
 
-    expect(product?.cacheKey).toBe('name:galletitas marca');
+    expect(product?.productId).toBe('uuid-name');
     expect(product?.dataSource).toBe('ai');
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
     expect(redisService.setSearchBarcode).not.toHaveBeenCalled();
-    // TTL corto (3 días) por ser dato de IA.
+    // Clave interna 'name:<name_key>' y TTL corto (3 días) por ser dato de IA.
     expect(redisService.setInRedis).toHaveBeenCalledWith(
       'name:galletitas marca',
       expect.any(Object),
@@ -212,8 +280,7 @@ describe('lookupProduct — búsqueda por texto con hit en catálogo propio', ()
     expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
       expect.any(Object),
       expect.any(Object),
-      'name:alfajor artesanal',
-      null,
+      { nameKey: 'alfajor artesanal' },
     );
   });
 });
@@ -239,18 +306,17 @@ describe('lookupProduct — cascada de fuentes por barcode', () => {
 
     expect(product?.name).toBe('Crema Hidratante');
     expect(product?.dataSource).toBe('obf');
-    // Cold path también expone la clave de cache.
-    expect(product?.cacheKey).toBe('8410757001090');
+    // Cold path: el upsert awaiteado devuelve el id → payload.
+    expect(product?.productId).toBe('uuid-nuevo');
     expect(obfService.fetchBeautyProductByBarcode).toHaveBeenCalledWith('8410757001090');
     // No cayó a Edamam ni a Claude.
     expect(edamamService.fetchEdamamByBarcode).not.toHaveBeenCalled();
     expect(claudeService.aiLookupProduct).not.toHaveBeenCalled();
-    // Persistió el crudo bajo la clave = barcode.
+    // Persistió el crudo referenciado por su barcode.
     expect(cacheService.setCachedProduct).toHaveBeenCalledWith(
       expect.any(Object),
       expect.any(Object),
-      '8410757001090',
-      '8410757001090',
+      { barcode: '8410757001090' },
     );
   });
 

@@ -26,21 +26,23 @@ export async function savedProductsRoutes(app: FastifyInstance) {
     }
   });
 
-  // Guardar un producto por su cacheKey (viene en el payload del lookup).
-  // Idempotente: re-guardar algo ya guardado responde { ok: true } igual.
-  app.post<{ Body: { cacheKey: string } }>('/users/me/saved', {
+  // Guardar un producto por su productId (uuid de `products`, viene en el
+  // payload del lookup). Idempotente: re-guardar algo ya guardado responde
+  // { ok: true } igual. `format: 'uuid'` lo valida ajv (Fastify 5 trae
+  // ajv-formats vía @fastify/ajv-compiler).
+  app.post<{ Body: { productId: string } }>('/users/me/saved', {
     schema: {
       body: {
         type: 'object',
-        required: ['cacheKey'],
+        required: ['productId'],
         properties: {
-          cacheKey: { type: 'string', minLength: 1, maxLength: 200 },
+          productId: { type: 'string', format: 'uuid' },
         },
       },
     },
   }, async (request, reply) => {
     try {
-      const result = await saveProduct(request.userId, request.body.cacheKey);
+      const result = await saveProduct(request.userId, request.body.productId);
       if (result === 'not_found') {
         return reply.status(404).send({ error: 'Producto no encontrado en el catálogo' });
       }
@@ -51,13 +53,23 @@ export async function savedProductsRoutes(app: FastifyInstance) {
     }
   });
 
-  // Quitar un guardado. El param llega URL-encoded (las claves 'name:<...>'
-  // tienen espacios); Fastify lo decodea solo. Idempotente.
-  app.delete<{ Params: { cacheKey: string } }>(
-    '/users/me/saved/:cacheKey',
+  // Quitar un guardado por productId. Idempotente.
+  app.delete<{ Params: { productId: string } }>(
+    '/users/me/saved/:productId',
+    {
+      schema: {
+        params: {
+          type: 'object',
+          required: ['productId'],
+          properties: {
+            productId: { type: 'string', format: 'uuid' },
+          },
+        },
+      },
+    },
     async (request, reply) => {
       try {
-        await removeSavedProduct(request.userId, request.params.cacheKey);
+        await removeSavedProduct(request.userId, request.params.productId);
         return reply.send({ ok: true });
       } catch (err) {
         app.log.error(err, 'Error al quitar producto guardado');

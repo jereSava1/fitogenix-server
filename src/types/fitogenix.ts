@@ -33,10 +33,10 @@ export type FitogenixProduct = {
   alternatives: unknown[];
   dataSource: string;
   aiEnriched?: boolean;
-  // Clave unificada de cache (barcode o 'name:<nombre normalizado>'). Es el
-  // identificador estable que el cliente usa para guardar/quitar el producto
-  // en favoritos (POST/DELETE /users/me/saved).
-  cacheKey: string;
+  // Identidad del producto: uuid de la fila en `products` (migración 006).
+  // Es el identificador estable que el cliente usa para guardar/quitar el
+  // producto en favoritos (POST/DELETE /users/me/saved).
+  productId: string;
   // ── Presentación derivada del score (calculada server-side, única fuente
   // de verdad). El cliente solo renderiza estos campos, no recalcula umbrales.
   scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO'

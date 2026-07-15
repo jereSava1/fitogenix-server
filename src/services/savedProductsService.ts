@@ -1,11 +1,12 @@
 /**
  * Productos guardados por usuario (favoritos).
  *
- * Persiste en la tabla `saved_products` (migración 004): cada guardado
- * referencia la fila cacheada en `products` vía `cache_key`. El listado se
- * sirve con un embed de PostgREST (saved_products → products, habilitado por
- * la FK a products.cache_key) y cada producto se recomputa con el MISMO
- * pipeline que un hit de cache: rowToCachedRaw + mapOFFToProduct.
+ * Persiste en la tabla `saved_products` (migraciones 004 + 006): cada guardado
+ * referencia la fila cacheada en `products` vía `product_id` (uuid, la
+ * identidad del producto). El listado se sirve con un embed de PostgREST
+ * (saved_products → products, habilitado por la FK a products.id) y cada
+ * producto se recomputa con el MISMO pipeline que un hit de cache:
+ * rowToCachedRaw + mapOFFToProduct.
  *
  * Lógica extraída de las rutas (src/routes/users/saved.ts) para testearla
  * unitariamente sin levantar Fastify ni mockear el plugin de auth.
@@ -38,8 +39,8 @@ export type SaveResult = 'ok' | 'not_found';
 export async function listSavedProducts(userId: string): Promise<FitogenixProduct[]> {
   const { data, error } = await admin()
     .from('saved_products')
-    // Embed habilitado por la FK saved_products.cache_key → products.cache_key.
-    .select('cache_key, created_at, products(*)')
+    // Embed habilitado por la FK saved_products.product_id → products.id.
+    .select('product_id, created_at, products(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -59,15 +60,15 @@ export async function listSavedProducts(userId: string): Promise<FitogenixProduc
 /**
  * Guarda un producto para el usuario. Idempotente: si ya estaba guardado,
  * el upsert con ignoreDuplicates lo deja como está y devuelve 'ok'.
- * Devuelve 'not_found' si el cacheKey no existe en `products` (violación de
+ * Devuelve 'not_found' si el productId no existe en `products` (violación de
  * FK, código PostgreSQL 23503). Otros errores de DB se propagan como Error.
  */
-export async function saveProduct(userId: string, cacheKey: string): Promise<SaveResult> {
+export async function saveProduct(userId: string, productId: string): Promise<SaveResult> {
   const { error } = await admin()
     .from('saved_products')
     .upsert(
-      { user_id: userId, cache_key: cacheKey },
-      { onConflict: 'user_id,cache_key', ignoreDuplicates: true },
+      { user_id: userId, product_id: productId },
+      { onConflict: 'user_id,product_id', ignoreDuplicates: true },
     );
 
   if (error) {
@@ -83,12 +84,12 @@ export async function saveProduct(userId: string, cacheKey: string): Promise<Sav
  * Quita un producto de los guardados del usuario. Idempotente: borrar algo
  * que no estaba guardado no es error. Errores de DB se propagan como Error.
  */
-export async function removeSavedProduct(userId: string, cacheKey: string): Promise<void> {
+export async function removeSavedProduct(userId: string, productId: string): Promise<void> {
   const { error } = await admin()
     .from('saved_products')
     .delete()
     .eq('user_id', userId)
-    .eq('cache_key', cacheKey);
+    .eq('product_id', productId);
 
   if (error) throw new Error(`saved_products delete: ${error.message}`);
 }
