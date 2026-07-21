@@ -98,7 +98,6 @@ export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixPro
     emoji: '📦',
     bgColor: '#f8faf7',
     imageUrl: off.image_front_url ?? off.image_url ?? null,
-    summary: null,
     ingredients,
     nutrition,
     subscores: {
@@ -108,7 +107,6 @@ export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixPro
       alineacion: breakdown.components.alineacion.score,
     },
     breakdown,
-    alternatives: [],
     dataSource: off._aiSource ? 'ai' : 'off',
     // Default para tipar; los resolutores la pisan con el id real de la fila
     // en `products` (del hit de cache, del catálogo o del upsert awaiteado).

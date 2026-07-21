@@ -25,12 +25,10 @@ export type FitogenixProduct = {
   emoji: string;
   bgColor: string;
   imageUrl: string | null;
-  summary: string | null;
   ingredients: AnalyzedIngredient[];
   nutrition: NutritionFacts;
   subscores: Subscores;
   breakdown: ScoreBreakdown | null;
-  alternatives: unknown[];
   dataSource: string;
   aiEnriched?: boolean;
   // Identidad del producto: uuid de la fila en `products` (migración 006).
