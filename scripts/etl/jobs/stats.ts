@@ -6,27 +6,22 @@
 // etl:off / etl:vtex / etl:merge.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
+import { fetchStagingStatusRows } from '../lib/staging';
 
 async function main() {
   const client = admin();
 
-  const { data: staging, error: stagingErr } = await client
-    .from('products_staging')
-    .select('source, merge_status');
-
-  if (stagingErr) {
-    console.error('Error leyendo products_staging:', stagingErr.message);
-  } else {
-    const rows = staging as { source: string; merge_status: string }[];
-    const counts = new Map<string, number>();
-    for (const row of rows) {
-      const key = `${row.source} / ${row.merge_status}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    console.log('\n=== products_staging (fuente / estado -> filas) ===');
-    for (const [key, n] of [...counts.entries()].sort()) console.log(`  ${key}: ${n}`);
-    console.log(`  TOTAL: ${rows.length}`);
+  // Paginado (ver fetchStagingStatusRows): un `.select()` pelado se corta en
+  // 1000 filas sin error, y estos conteos quedaban clavados en ese techo.
+  const rows = await fetchStagingStatusRows();
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const key = `${row.source} / ${row.merge_status}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
+  console.log('\n=== products_staging (fuente / estado -> filas) ===');
+  for (const [key, n] of [...counts.entries()].sort()) console.log(`  ${key}: ${n}`);
+  console.log(`  TOTAL: ${rows.length}`);
 
   const { count: productsCount, error: productsErr } = await client
     .from('products')

@@ -13,6 +13,44 @@ export type StagingInsert = {
 
 const BATCH_SIZE = 500;
 
+// Tope de filas que PostgREST devuelve por request (`max-rows` de Supabase,
+// 1000 por default). NO es un error cuando se supera: la respuesta viene
+// truncada en silencio. Cualquier lectura que pueda tocar más de 1000 filas
+// tiene que paginar con `.range()` — ver paginateRows.
+const PAGE_SIZE = 1000;
+
+/**
+ * Recorre una query paginando con `.range()` hasta agotar las filas (o hasta
+ * que `onPage` diga basta), porque un `.select()` pelado se corta en PAGE_SIZE
+ * sin avisar.
+ *
+ * `buildQuery(from, to)` tiene que devolver la MISMA query en cada llamada,
+ * variando solo el rango, y con un `.order()` estable: sin orden explícito
+ * Postgres no garantiza el mismo orden entre requests, y la paginación podría
+ * repetir o saltear filas.
+ *
+ * `onPage` devuelve `false` para cortar antes de tiempo (ya juntamos lo que
+ * necesitábamos y no tiene sentido seguir trayendo páginas).
+ */
+async function paginateRows<T>(
+  label: string,
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+  onPage: (rows: T[]) => boolean,
+): Promise<void> {
+  let from = 0;
+  for (;;) {
+    const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1);
+    if (error || !data) {
+      console.error(`[staging] ${label} error:`, error?.message);
+      return;
+    }
+    const rows = data as T[];
+    if (!onPage(rows)) return;
+    if (rows.length < PAGE_SIZE) return;
+    from += PAGE_SIZE;
+  }
+}
+
 /** Inserta filas crudas en products_staging en lotes de BATCH_SIZE. */
 export async function insertStagingRows(rows: StagingInsert[]): Promise<number> {
   let inserted = 0;
@@ -50,22 +88,66 @@ function statusesFor(includeDiscarded: boolean): string[] {
   return includeDiscarded ? ['pending', 'discarded_incomplete'] : ['pending'];
 }
 
-/** Barcodes distintos con al menos una fila `pending` (o `discarded_incomplete`
- * si `includeDiscarded`), hasta `limit`. */
+/**
+ * Barcodes distintos con al menos una fila `pending` (o `discarded_incomplete`
+ * si `includeDiscarded`), hasta `limit`.
+ *
+ * Pagina de a PAGE_SIZE: como puede haber varias filas por barcode, para
+ * juntar `limit` barcodes distintos hay que leer bastante más que `limit`
+ * filas. Un `.limit(limit * 5)` no alcanza — PostgREST lo recorta a PAGE_SIZE
+ * igual, así que con `--merge-limit` > ~1000 el merge procesaba muchísimo
+ * menos de lo pedido, en silencio.
+ */
 export async function fetchPendingBarcodes(limit: number, includeDiscarded = false): Promise<string[]> {
-  const { data, error } = await admin()
-    .from('products_staging')
-    .select('barcode')
-    .in('merge_status', statusesFor(includeDiscarded))
-    .not('barcode', 'is', null)
-    .limit(limit * 5); // sobre-pedimos: puede haber varias filas por barcode
+  const unique = new Set<string>();
 
-  if (error || !data) {
-    console.error('[staging] fetchPendingBarcodes error:', error?.message);
-    return [];
-  }
-  const unique = [...new Set((data as { barcode: string }[]).map((r) => r.barcode))];
-  return unique.slice(0, limit);
+  await paginateRows<{ barcode: string }>(
+    'fetchPendingBarcodes',
+    (from, to) =>
+      admin()
+        .from('products_staging')
+        .select('barcode')
+        .in('merge_status', statusesFor(includeDiscarded))
+        .not('barcode', 'is', null)
+        .order('id')
+        .range(from, to),
+    (rows) => {
+      for (const r of rows) {
+        unique.add(r.barcode);
+        if (unique.size >= limit) return false; // ya tenemos los que pidieron
+      }
+      return true;
+    },
+  );
+
+  return [...unique];
+}
+
+export type StagingStatusRow = { source: string; merge_status: string };
+
+/**
+ * Todas las filas de staging reducidas a (fuente, estado) — para los conteos
+ * de `etl:stats`. Pagina, porque el `.select()` pelado que había antes hacía
+ * que stats reportara siempre un máximo de 1000 filas.
+ *
+ * Trae una fila por registro de staging: alcanza de sobra para el volumen de
+ * validación (decenas de miles), pero si staging llega a millones conviene
+ * moverlo a una vista con `group by` en Postgres en vez de contar en memoria.
+ */
+export async function fetchStagingStatusRows(): Promise<StagingStatusRow[]> {
+  const all: StagingStatusRow[] = [];
+
+  await paginateRows<StagingStatusRow>(
+    'fetchStagingStatusRows',
+    (from, to) =>
+      admin().from('products_staging').select('source, merge_status').order('id').range(from, to),
+    (rows) => {
+      all.push(...rows);
+      return true;
+    },
+  );
+
+  return all;
 }
 
 /** Filas `pending` (o `discarded_incomplete` si `includeDiscarded`) de un
