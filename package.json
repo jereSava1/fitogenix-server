@@ -8,7 +8,13 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "etl:off": "tsx scripts/etl/jobs/ingestOff.ts",
+    "etl:vtex": "tsx scripts/etl/jobs/ingestVtex.ts",
+    "etl:merge": "tsx scripts/etl/jobs/runMerge.ts",
+    "etl:stats": "tsx scripts/etl/jobs/stats.ts",
+    "etl:check-dupes": "tsx scripts/etl/jobs/checkDuplicates.ts",
+    "etl:all": "bash scripts/etl/run-all.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.0",
