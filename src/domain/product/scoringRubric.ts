@@ -31,12 +31,19 @@ const PLURAL_SUFFIXES = ['', 's', 'es'];
  * plural: "azúcar" tiene que seguir matcheando "azúcares".
  */
 export function matchesPhrase(haystack: string, phrase: string): boolean {
-  if (!phrase) return false;
+  return indexOfPhrase(haystack, phrase) >= 0;
+}
+
+/** Posición donde `phrase` aparece como palabra completa, o -1. Necesaria
+ *  además del booleano para poder detectar VARIAS sustancias dentro de un
+ *  mismo fragmento sin que se pisen entre sí. */
+export function indexOfPhrase(haystack: string, phrase: string): number {
+  if (!phrase) return -1;
 
   let from = 0;
   for (;;) {
     const i = haystack.indexOf(phrase, from);
-    if (i < 0) return false;
+    if (i < 0) return -1;
 
     const before = i > 0 ? haystack[i - 1] : '';
     if (!before || !WORDISH.test(before)) {
@@ -44,7 +51,7 @@ export function matchesPhrase(haystack: string, phrase: string): boolean {
       for (const suffix of PLURAL_SUFFIXES) {
         if (!rest.startsWith(suffix)) continue;
         const after = rest[suffix.length] ?? '';
-        if (!after || !WORDISH.test(after)) return true;
+        if (!after || !WORDISH.test(after)) return i;
       }
     }
     from = i + 1;
@@ -258,7 +265,7 @@ export const DRINK_CATEGORY_PATTERN = /bebida|gaseosa|refresco|jugo|zumo|juice|d
  * ausencia de clasificación específica no equivale a sin riesgo".
  */
 export const ADDITIVE_PATTERN =
-  /\be\s?\d{3,4}\b|emulsionante|emulsificante|estabilizante|estabilizador|conservante|conservador|colorante|potenciador de sabor|antiaglomerante|antioxidante sintético|humectante|espesante|acidulante|regulador de acidez/i;
+  /\be\s?\d{3,4}\b|emulsionante|emulsificante|estabilizante|estabilizador|conservante|conservador|colorante|potenciador de sabor|antiaglomerante|antioxidante sintético|humectante|espesante|acidulante|regulador de acidez|emulsifier|preservative|stabili[sz]er|colou?ring agent|thickener|anticaking|flavou?r enhancer|humectant/i;
 
 /**
  * §5 — Marcadores que identifican un producto NOVA 4 en el listado de
@@ -548,13 +555,42 @@ export function resolveLabelAbbreviation(name: string): AbbreviationMatch | null
  * regla de aditivo desconocido).
  */
 export function rubricImpact(name: string): ImpactMatch {
+  const all = rubricMatches(name);
+  if (all.length === 0) return null;
+  // El peor impacto manda: un fragmento como "AGUA CARBONATADA AZUCARES"
+  // (el OCR se comió la coma) contiene agua y azúcar, y lo que define al
+  // producto es el azúcar, no que el alias más largo haya sido otro.
+  const order: Impact[] = ['alto', 'medio', 'bajo', 'none'];
+  const worst = all.slice().sort((a, b) => order.indexOf(a.impact) - order.indexOf(b.impact))[0];
+  return { impact: worst.impact, positional: worst.positional };
+}
+
+export type RubricMatch = { term: string; impact: Impact; positional: boolean };
+
+/**
+ * TODAS las sustancias de la rúbrica presentes en el fragmento, sin
+ * superponerse (gana el alias más largo en cada tramo del texto).
+ *
+ * Existe porque un fragmento no siempre es un ingrediente: cuando el rotulado
+ * viene mal parseado, "AGUA CARBONATADA AZUCARES" es uno solo. Emitir una
+ * única entrada por fragmento hacía que se mostrara el nombre de una
+ * sustancia con el color de otra — al usuario le aparecía "Agua" en rojo.
+ */
+export function rubricMatches(name: string): RubricMatch[] {
   const n = name.toLowerCase().trim();
+  const found: RubricMatch[] = [];
+  const taken: [number, number][] = [];
+
   for (const entry of IMPACT_INDEX) {
-    if (matchesPhrase(n, entry.alias)) {
-      return { impact: entry.impact, positional: entry.positional };
-    }
+    const at = indexOfPhrase(n, entry.alias);
+    if (at < 0) continue;
+    const end = at + entry.alias.length;
+    if (taken.some(([s, e]) => at < e && s < end)) continue; // ya cubierto por uno más largo
+    taken.push([at, end]);
+    found.push({ term: entry.alias, impact: entry.impact, positional: entry.positional });
   }
-  return null;
+
+  return found;
 }
 
 /** ¿El ingrediente cae dentro de este perfil de alimento entero? */

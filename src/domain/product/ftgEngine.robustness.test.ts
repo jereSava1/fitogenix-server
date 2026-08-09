@@ -178,6 +178,56 @@ describe('lo desconocido no premia', () => {
   });
 });
 
+describe('el nombre mostrado y su color salen del mismo match', () => {
+  // Caso real (Sprite). El OCR se comió las comas y "AGUA CARBONATADA
+  // AZUCARES" quedó como un solo fragmento. Se emitía UNA entrada con el
+  // nombre de la primera sustancia y el color de la peor: al usuario le
+  // aparecía "Agua" pintada de ROJO. El puntaje estaba bien; lo que leía era
+  // falso, que en un producto sensible cuesta más caro que el número.
+  const SPRITE = 'NGE AGUA CARBONATADA AZUCARES: JUGO DE UMON, CONS BENZOATO BE SODIO';
+
+  it('separa las sustancias de un fragmento mal parseado', () => {
+    const ings = ftgAnalyzeIngredients({ ingredients_text: SPRITE });
+    const agua = ings.find((i) => i.name.toLowerCase() === 'agua');
+    const azucar = ings.find((i) => i.name.toLowerCase().startsWith('azuc'));
+
+    expect(agua?.sev).toBe('green');   // nunca más "Agua" en rojo
+    expect(azucar?.sev).toBe('red');
+  });
+
+  it('conserva el texto de la etiqueta cuando es más específico', () => {
+    const ings = ftgAnalyzeIngredients({
+      ingredients_text: 'Sangre vacuna, cuero de cerdo, cebolla, cebolla de verdeo, sal',
+    });
+    const nombres = ings.map((i) => i.name);
+    // "cuero de cerdo" ya no se muestra como "Cerdo".
+    expect(nombres).toContain('Cuero de cerdo');
+    // Y "cebolla de verdeo" no colapsa contra "Cebolla".
+    expect(nombres).toContain('Cebolla');
+    expect(nombres).toContain('Cebolla de verdeo');
+  });
+
+  it('sigue traduciendo al español lo que viene en inglés de OFF', () => {
+    const ings = ftgAnalyzeIngredients({ ingredients_text: 'sugar, palm oil, hazelnuts' });
+    const nombres = ings.map((i) => i.name.toLowerCase());
+    expect(nombres).toContain('azúcar');
+    expect(nombres).toContain('aceite de palma');
+    expect(nombres).not.toContain('palm oil');
+  });
+
+  it('no repite la sustancia y su clase: "lecithin as emulsifier" es uno solo', () => {
+    const ings = ftgAnalyzeIngredients({ ingredients_text: 'agua, lecithin as emulsifier' });
+    const nombres = ings.map((i) => i.name.toLowerCase());
+    expect(nombres).toContain('lecitina');
+    expect(nombres).not.toContain('emulsionante');
+  });
+
+  it('la clase genérica sola sí se muestra, con el default medio de §3.3', () => {
+    const ings = ftgAnalyzeIngredients({ ingredients_text: 'agua, emulsionante, sal' });
+    expect(ings.find((i) => i.name.toLowerCase() === 'emulsionante')?.sev).toBe('orange');
+  });
+});
+
 describe('jugo de fruta vs. fruta entera (§3.4)', () => {
   // Lo encontró la auditoría del catálogo real: "Jugo de naranja 100%
   // Exprimido" daba 96 (Excelente) con cobertura total, porque "naranja"

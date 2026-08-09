@@ -113,9 +113,11 @@ describe('ftgEngine — regresión sobre productos reales', () => {
     expect(sevOf('aceite de palma')).toBe('orange');
     expect(sevOf('cacao')).toBe('green');
     expect(sevOf('vainilla')).toBe('green');
-    // "lecithin as emulsifier" cae en el registro genérico de emulsionante
-    // → impacto medio (§3.2).
-    expect(sevOf('emulsionante')).toBe('orange');
+    // "lecithin as emulsifier" nombra la sustancia y su clase. Se muestra la
+    // sustancia concreta —lecitina, impacto medio (§3.2)— y no además la
+    // clase genérica, que sería el mismo ingrediente repetido.
+    expect(sevOf('lecitina')).toBe('orange');
+    expect(ings.map((i) => i.name.toLowerCase())).not.toContain('emulsionante');
 
     // Los nombres mostrados están en español, no en el inglés original de OFF.
     const names = ings.map((i) => i.name.toLowerCase());

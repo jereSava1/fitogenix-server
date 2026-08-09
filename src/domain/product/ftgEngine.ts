@@ -36,6 +36,8 @@ import {
   TIERS,
   matchWholeFoodProfile,
   matchesPhrase,
+  indexOfPhrase,
+  rubricMatches,
   resolveLabelAbbreviation,
   rubricImpact,
   type Impact,
@@ -329,6 +331,106 @@ function evaluateIngredients(
   return { items, sugarEscalated };
 }
 
+/**
+ * Sustancias reconocidas dentro de un fragmento, cada una con SU nombre y SU
+ * impacto. La clave del arreglo: los dos salen del mismo match, así que la
+ * etiqueta que lee el usuario y el color del punto no pueden discrepar.
+ */
+type Substance = { display: string; impact: Impact; ing: Ingredient | null; generic: boolean };
+
+/** Largo máximo del texto original que conviene mostrar tal cual. Por encima
+ *  se usa el nombre canónico: "Harina de trigo" se lee mejor que "Harina de
+ *  trigo O000 enriquecida por ley 25630 y otros veinte caracteres". */
+const MAX_VERBATIM_DISPLAY = 40;
+
+function titleCase(s: string): string {
+  const t = s.trim();
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+}
+
+function substancesIn(fragment: string): Substance[] {
+  const lower = fragment.toLowerCase();
+
+  // Candidatas de las DOS fuentes. La rúbrica sola no alcanza: no lista
+  // ingredientes benignos como el agua, así que en un fragmento mixto como
+  // "AGUA CARBONATADA AZUCARES" se quedaba solo con el azúcar y el agua
+  // desaparecía del listado. §7.2 pide describirlos a todos.
+  type Candidate = { start: number; end: number; term: string; ing: Ingredient | null; impact: Impact | null };
+  const candidates: Candidate[] = [];
+
+  for (const match of rubricMatches(fragment)) {
+    const at = indexOfPhrase(lower, match.term);
+    if (at < 0) continue;
+    candidates.push({ start: at, end: at + match.term.length, term: match.term, ing: null, impact: match.impact });
+  }
+  for (const { alias, ing } of INGREDIENT_INDEX) {
+    const at = indexOfPhrase(lower, alias);
+    if (at < 0) continue;
+    candidates.push({ start: at, end: at + alias.length, term: alias, ing, impact: null });
+  }
+
+  // El término más largo gana su tramo del texto; los que se le superponen
+  // quedan afuera (así "aceite de oliva" no compite con "aceite de oliva
+  // extra virgen" sobre las mismas palabras).
+  candidates.sort((a, b) => b.end - b.start - (a.end - a.start));
+
+  const taken: [number, number][] = [];
+  const out: Substance[] = [];
+  const seen = new Set<string>();
+
+  for (const c of candidates) {
+    if (taken.some(([s, e]) => c.start < e && s < c.end)) continue;
+    taken.push([c.start, c.end]);
+
+    const ing = c.ing ?? classifyIngredient(c.term);
+    const canonical = ing ? canonicalName(ing) : titleCase(c.term);
+
+    // Si el texto de la etiqueta es más específico que nuestro nombre
+    // canónico y está en el mismo idioma, se muestra el de la etiqueta:
+    // "cuero de cerdo" es más honesto que "Cerdo", y "cebolla de verdeo" no
+    // se confunde con la cebolla común. Para textos en inglés o demasiado
+    // largos gana el canónico. Solo aplica cuando la sustancia es lo único
+    // que hay en el fragmento — si hay varias, mostrar el fragmento entero
+    // en cada una sería repetirlo.
+    const soleSubstance = candidates.every((o) => o === c || (o.start >= c.start && o.end <= c.end));
+    const fragmentIsRicher =
+      soleSubstance &&
+      lower.includes(canonical.toLowerCase()) &&
+      fragment.trim().length > canonical.length &&
+      fragment.trim().length <= MAX_VERBATIM_DISPLAY;
+
+    const display = fragmentIsRicher ? titleCase(fragment) : canonical;
+    if (seen.has(display.toLowerCase())) continue;
+    seen.add(display.toLowerCase());
+
+    // Palabra de CLASE ("emulsionante", "conservante") sin número INS: es la
+    // categoría del aditivo, no el aditivo. Vale el default de §3.3 —medio—
+    // y no la severidad que ingredientData le dé al término genérico, que
+    // pintaba de amarillo lo que la rúbrica considera naranja.
+    const generic = ADDITIVE_PATTERN.test(c.term) && !/\d/.test(c.term);
+    const impact = c.impact ?? (generic ? 'medio' : SEV_TO_IMPACT[ing!.b]);
+
+    out.push({ display, impact, ing, generic });
+  }
+
+  // "lecithin as emulsifier" produce dos candidatas: la sustancia concreta y
+  // la clase a la que pertenece. Mostrar las dos es repetir el mismo
+  // ingrediente con dos etiquetas —y antes, con dos colores distintos—, así
+  // que la clase genérica cede ante la sustancia concreta.
+  const specific = out.filter((s) => !s.generic);
+  const shown = specific.length > 0 ? specific : out;
+
+  // Se emiten en el orden en que aparecen en la etiqueta, no por longitud.
+  return shown.sort(
+    (a, b) => lower.indexOf(a.display.toLowerCase()) - lower.indexOf(b.display.toLowerCase()),
+  );
+}
+
+function descForImpact(name: string, impact: Impact): string {
+  if (impact === 'none') return `${name}: sin objeciones desde la mirada Fitogenix.`;
+  return `${name}: se evalúa con impacto ${impact} sobre el puntaje.`;
+}
+
 /** Severidad mostrada en la UI, derivada del impacto de la rúbrica para que
  *  la explicación de §7.2 sea coherente con lo que efectivamente puntuó. */
 function sevFromImpact(impact: Impact): Severity {
@@ -362,20 +464,28 @@ export function ftgAnalyzeIngredients(offProduct: ProductInput): AnalyzedIngredi
       return;
     }
 
-    if (ing) {
-      list.push({
-        name: canonicalName(ing),
-        detail: '',
-        // La severidad la manda la rúbrica; la descripción sigue viniendo de
-        // ingredientData (es el texto que lee el usuario).
-        sev,
-        sevA: capaASev(ing),
-        amount: '',
-        desc: ing.desc,
-        flag: sev === 'red',
-      });
+    // Un fragmento puede contener VARIAS sustancias cuando el rotulado vino
+    // mal parseado ("AGUA CARBONATADA AZUCARES"). Se emite una entrada por
+    // cada una: antes salía una sola, con el nombre de la primera y el color
+    // de la peor, y al usuario le aparecía "Agua" pintada de rojo.
+    const substances = substancesIn(part);
+    if (substances.length > 0) {
+      for (const s of substances) {
+        if (list.length >= MAX_ANALYZED) return;
+        list.push({
+          name: s.display,
+          detail: '',
+          // Nombre y severidad salen SIEMPRE del mismo match.
+          sev: sevFromImpact(s.impact),
+          sevA: s.ing ? capaASev(s.ing) : sevFromImpact(s.impact),
+          amount: '',
+          desc: s.ing?.desc ?? descForImpact(s.display, s.impact),
+          flag: s.impact === 'alto',
+        });
+      }
       return;
     }
+    void ing;
 
     // Sin registro en ingredientData: igual entra al listado, con lo que la
     // rúbrica sepa decir de él (§3.3).
