@@ -1,4 +1,12 @@
 // Uso: npm run etl:vtex -- --domain www.carrefour.com.ar --source carrefour [--pages 5] [--pageSize 50]
+//      npm run etl:vtex -- --domain ... --source ... --categories [--all-categories]
+//
+// MODO CATEGORÍAS (--categories): el endpoint genérico corta en el ítem 2500
+// —VTEX responde "Parameter _from can't be greater than 2500"— así que sin
+// filtro no se puede pasar de ahí por más páginas que se pidan. Filtrando por
+// categoría, en cambio, CADA una tiene su propia ventana de 2500, y el árbol
+// de Carrefour tiene 449 hojas. Ese es el único camino para bajar el catálogo
+// completo de un retailer.
 //
 // Pagina la API pública de catálogo VTEX (catalog_system/pub/products/search,
 // sin auth) — confirmada en vivo contra Jumbo, Disco, Vea y Carrefour el
@@ -26,11 +34,68 @@ function parseArgs() {
     source: get('--source'),
     pages: Number(get('--pages', '5')),
     pageSize: Number(get('--pageSize', '50')),
+    categories: args.includes('--categories'),
+    allCategories: args.includes('--all-categories'),
   };
 }
 
-async function fetchPage(domain: string, from: number, to: number): Promise<unknown[]> {
-  const url = `https://${domain}/api/catalog_system/pub/products/search?_from=${from}&_to=${to}`;
+// Tope duro de la API: `_from` no puede pasar de 2500, en ninguna consulta.
+const VTEX_MAX_OFFSET = 2500;
+
+/**
+ * Categorías que valen la pena para Fitogenix. El árbol de un supermercado
+ * incluye electro, hogar, perfumería y limpieza; sin este filtro terminamos
+ * puntuando detergentes con un motor de alimentos (en el catálogo ya hay un
+ * "Ayudin" y un "V05"). Con --all-categories se baja todo igual.
+ */
+const RELEVANT_CATEGORY = /almac[eé]n|desayuno|merienda|bebida|l[aá]cteo|fresco|carne|pescado|frutas|verdura|panader|congelad|kiosco|golosina|snack|dietetic|diet[eé]tic|sin tacc|infusion|infusi[oó]n|aceite|conserva|pastas|galletit|cereal/i;
+
+type CategoryNode = { id: number; name: string; children?: CategoryNode[] };
+type Leaf = { name: string; path: string };
+
+/** Hojas del árbol de categorías, con su ruta completa (VTEX la exige). */
+function leavesOf(nodes: CategoryNode[], path: number[] = []): Leaf[] {
+  const out: Leaf[] = [];
+  for (const n of nodes) {
+    const p = [...path, n.id];
+    const children = n.children ?? [];
+    if (children.length > 0) out.push(...leavesOf(children, p));
+    else out.push({ name: n.name, path: p.join('/') });
+  }
+  return out;
+}
+
+async function fetchCategoryLeaves(domain: string, all: boolean): Promise<Leaf[]> {
+  const res = await fetch(`https://${domain}/api/catalog_system/pub/category/tree/4`, {
+    headers: { 'User-Agent': 'Fitogenix-ETL/0.1 (contacto: soporte@fitogenix.com)' },
+  });
+  if (!res.ok) {
+    console.error(`[ingestVtex] no pude leer el árbol de categorías: HTTP ${res.status}`);
+    return [];
+  }
+  const tree = (await res.json()) as CategoryNode[];
+  const leaves = leavesOf(tree);
+  if (all) return leaves;
+
+  // Se filtra por el nombre de la hoja O el de alguna de sus ancestras, que
+  // es donde suele estar la palabra ("Almacén > Arroz y legumbres > Arroz").
+  const byPath = new Map<string, string>();
+  const collect = (nodes: CategoryNode[], path: number[], names: string[]) => {
+    for (const n of nodes) {
+      const p = [...path, n.id];
+      const ns = [...names, n.name];
+      byPath.set(p.join('/'), ns.join(' > '));
+      collect(n.children ?? [], p, ns);
+    }
+  };
+  collect(tree, [], []);
+
+  return leaves.filter((l) => RELEVANT_CATEGORY.test(byPath.get(l.path) ?? l.name));
+}
+
+async function fetchPage(domain: string, from: number, to: number, categoryPath?: string): Promise<unknown[]> {
+  const fq = categoryPath ? `fq=C:/${categoryPath}/&` : '';
+  const url = `https://${domain}/api/catalog_system/pub/products/search?${fq}_from=${from}&_to=${to}`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'Fitogenix-ETL/0.1 (contacto: soporte@fitogenix.com)' },
   });
@@ -41,8 +106,43 @@ async function fetchPage(domain: string, from: number, to: number): Promise<unkn
   return (await res.json()) as unknown[];
 }
 
+/** Recorre un tramo del catálogo (todo, o una categoría) insertando en
+ *  staging. Devuelve cuántos SKUs adaptó. */
+async function ingestRange(
+  domain: string,
+  source: string,
+  runId: string,
+  pages: number,
+  pageSize: number,
+  category?: Leaf,
+): Promise<number> {
+  let adapted = 0;
+
+  for (let page = 0; page < pages; page++) {
+    const from = page * pageSize;
+    if (from > VTEX_MAX_OFFSET) break; // más allá la API responde 400
+    const products = await fetchPage(domain, from, from + pageSize - 1, category?.path);
+    if (products.length === 0) break; // fin del tramo
+
+    const batch: StagingInsert[] = [];
+    for (const prod of products) {
+      for (const r of adaptVtexProduct(prod as Parameters<typeof adaptVtexProduct>[0])) {
+        batch.push({ source, barcode: r.barcode, raw: r.raw, runId });
+        adapted++;
+      }
+    }
+    await insertStagingRows(batch);
+
+    // Rate limit conservador — nunca a la velocidad máxima que el servidor
+    // técnicamente tolera. Ver 06-agente-etl-data.md, sección scrapers.
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  return adapted;
+}
+
 async function main() {
-  const { domain, source, pages, pageSize } = parseArgs();
+  const { domain, source, pages, pageSize, categories, allCategories } = parseArgs();
   if (!domain || !source) {
     console.error(
       'Uso: npm run etl:vtex -- --domain <dominio, ej. www.carrefour.com.ar> --source <nombre-fuente, ej. carrefour> [--pages N] [--pageSize N]',
@@ -54,32 +154,23 @@ async function main() {
   console.log(`[ingestVtex] run_id=${runId} domain=${domain} source=${source} pages=${pages} pageSize=${pageSize}`);
 
   let adapted = 0;
-  for (let page = 0; page < pages; page++) {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
-    const products = await fetchPage(domain, from, to);
 
-    if (products.length === 0) {
-      console.log(`[ingestVtex] página ${page} vacía — corto acá (fin de catálogo o bloqueo)`);
-      break;
-    }
-
-    const batch: StagingInsert[] = [];
-    for (const p of products) {
-      const results = adaptVtexProduct(p as Parameters<typeof adaptVtexProduct>[0]);
-      for (const r of results) {
-        batch.push({ source, barcode: r.barcode, raw: r.raw, runId });
-        adapted++;
-      }
-    }
-    const inserted = await insertStagingRows(batch);
+  if (categories) {
+    const leaves = await fetchCategoryLeaves(domain, allCategories);
     console.log(
-      `[ingestVtex] página ${page}: ${products.length} productos VTEX -> ${batch.length} SKUs válidos, ${inserted} insertados`,
+      `[ingestVtex] ${leaves.length} categorías a recorrer` +
+        (allCategories ? ' (todas)' : ' (solo alimentos — usar --all-categories para bajar el resto)'),
     );
 
-    // Rate limit conservador — nunca a la velocidad máxima que el servidor
-    // técnicamente tolera. Ver 06-agente-etl-data.md, sección scrapers.
-    await new Promise((r) => setTimeout(r, 500));
+    let i = 0;
+    for (const leaf of leaves) {
+      i++;
+      const n = await ingestRange(domain, source, runId, pages, pageSize, leaf);
+      adapted += n;
+      console.log(`[ingestVtex] [${i}/${leaves.length}] ${leaf.name}: ${n} SKUs (acumulado ${adapted})`);
+    }
+  } else {
+    adapted = await ingestRange(domain, source, runId, pages, pageSize);
   }
 
   const losses = stagingLosses();
