@@ -52,6 +52,22 @@ async function paginateRows<T>(
 }
 
 /** Inserta filas crudas en products_staging en lotes de BATCH_SIZE. */
+/**
+ * Filas que NO llegaron a staging por lotes fallidos, acumuladas durante toda
+ * la corrida. Existe porque un fallo de lote solo se logueaba y se seguía de
+ * largo: una ingesta podía perder 500 filas de 3000 y el resumen final igual
+ * decía que había salido todo bien. Con los logs pasando por un pipe, la
+ * pérdida quedaba invisible.
+ */
+let droppedRows = 0;
+let failedBatches = 0;
+
+/** Cuántas filas se perdieron por errores de insert desde que arrancó el
+ *  proceso. Los jobs lo imprimen en su resumen final. */
+export function stagingLosses(): { rows: number; batches: number } {
+  return { rows: droppedRows, batches: failedBatches };
+}
+
 export async function insertStagingRows(rows: StagingInsert[]): Promise<number> {
   let inserted = 0;
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -68,7 +84,11 @@ export async function insertStagingRows(rows: StagingInsert[]): Promise<number> 
       .insert(batch, { count: 'exact' });
 
     if (error) {
-      console.error(`[staging] insert batch error (offset ${i}):`, error.message);
+      // Un lote fallido no aborta la ingesta —perder 500 filas es mejor que
+      // perder la corrida entera—, pero tiene que quedar contabilizado.
+      failedBatches++;
+      droppedRows += batch.length;
+      console.error(`[staging] insert batch error (offset ${i}, ${batch.length} filas perdidas):`, error.message);
       continue;
     }
     inserted += count ?? batch.length;

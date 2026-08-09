@@ -13,7 +13,7 @@
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { randomUUID } from 'node:crypto';
 import { adaptVtexProduct } from '../adapters/vtexAdapter';
-import { insertStagingRows, type StagingInsert } from '../lib/staging';
+import { insertStagingRows, stagingLosses, type StagingInsert } from '../lib/staging';
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -82,7 +82,14 @@ async function main() {
     await new Promise((r) => setTimeout(r, 500));
   }
 
+  const losses = stagingLosses();
   console.log(`[ingestVtex] listo. run_id=${runId} adaptados=${adapted}`);
+  if (losses.rows > 0) {
+    console.error(
+      `[ingestVtex] ATENCIÓN: ${losses.rows} filas se perdieron en ${losses.batches} lote(s) fallido(s). ` +
+        'Lo adaptado NO es lo que quedó en staging — volver a correr para recuperarlas.',
+    );
+  }
   console.log('[ingestVtex] siguiente paso: npm run etl:merge -- --limit 200   (validar subconjunto antes de escalar)');
 }
 

@@ -15,7 +15,7 @@ import { createInterface } from 'node:readline';
 import { createGunzip } from 'node:zlib';
 import { randomUUID } from 'node:crypto';
 import { adaptOffLine, SUPPORTED_COUNTRY_TAGS } from '../adapters/offAdapter';
-import { insertStagingRows, type StagingInsert } from '../lib/staging';
+import { insertStagingRows, stagingLosses, type StagingInsert } from '../lib/staging';
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -99,7 +99,14 @@ async function main() {
   }
   await flush();
 
+  const losses = stagingLosses();
   console.log(`[ingestOff] listo. run_id=${runId} escaneadas=${scanned} adaptadas=${adapted}`);
+  if (losses.rows > 0) {
+    console.error(
+      `[ingestOff] ATENCIÓN: ${losses.rows} filas se perdieron en ${losses.batches} lote(s) fallido(s). ` +
+        'Lo adaptado NO es lo que quedó en staging — volver a correr para recuperarlas.',
+    );
+  }
   console.log('[ingestOff] siguiente paso: npm run etl:merge -- --limit 200   (validar subconjunto antes de escalar)');
 }
 
