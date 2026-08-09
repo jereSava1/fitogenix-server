@@ -16,7 +16,8 @@
     "etl:check-dupes": "tsx scripts/etl/jobs/checkDuplicates.ts",
     "etl:all": "bash scripts/etl/run-all.sh",
     "audit:scores": "tsx scripts/audit-scores.ts",
-    "etl:enrich-cencosud": "tsx scripts/etl/jobs/enrichCencosud.ts"
+    "etl:enrich-cencosud": "tsx scripts/etl/jobs/enrichCencosud.ts",
+    "etl:off-images": "tsx scripts/etl/jobs/enrichOffImages.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.0",
