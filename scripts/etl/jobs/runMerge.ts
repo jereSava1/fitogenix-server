@@ -83,7 +83,7 @@ async function main() {
       if (trigger.length === 0) continue;
 
       const entries = allRows.map((r) => ({ source: r.source, raw: r.raw }));
-      let combined = mergeRawProducts(entries);
+      let combined = mergeRawProducts(entries, barcode);
       let wasEnriched = false;
 
       // Gate de DATOS vs. gate de SCORING (migración 010). Que no alcance para

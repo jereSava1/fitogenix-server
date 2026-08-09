@@ -29,6 +29,58 @@ function nonEmpty(v: unknown): boolean {
 }
 
 /**
+ * ¿El valor SIRVE para ese campo, o es relleno?
+ *
+ * "No vacío" no alcanza. OFF tiene prioridad 100, así que un
+ * `product_name: "00001017"` —técnicamente no vacío— le ganaba al nombre real
+ * que traía el retailer. De ahí salían los productos con el código de barras
+ * en el nombre y la marca vacía: el dato bueno estaba disponible y el merge
+ * elegía el malo.
+ */
+function isUsable(field: keyof RawOFFProduct, v: unknown, barcode?: string): boolean {
+  if (!nonEmpty(v)) return false;
+  const s = typeof v === 'string' ? v.trim() : '';
+
+  switch (field) {
+    case 'product_name':
+      // El código de barras no es un nombre, y una tira de dígitos tampoco.
+      if (barcode && s.toLowerCase() === barcode.trim().toLowerCase()) return false;
+      if (/^\d{6,}$/.test(s)) return false;
+      return s.length > 2;
+
+    case 'brands':
+      // El string "null" llega de verdad desde algunas fuentes.
+      return s.toLowerCase() !== 'null' && s.length >= 2;
+
+    case 'image_url':
+    case 'image_front_url':
+      return /^https?:\/\//i.test(s);
+
+    case 'ingredients_text':
+      // Mismo umbral que el gate de completitud: menos que esto no es una
+      // lista de ingredientes.
+      return s.length > 4;
+
+    default:
+      return true;
+  }
+}
+
+/**
+ * Prioridad de fuente POR CAMPO, cuando difiere de la global.
+ *
+ * La global (OFF primero) es correcta para ingredientes y nutrición: en OFF
+ * están curados. Para la IMAGEN es al revés — los retailers publican
+ * fotografía de producto sobre fondo blanco y OFF trae fotos de celular
+ * subidas por usuarios. Medido: los retailers traen imagen en el 100% de sus
+ * filas y OFF en el 0% de las del dump.
+ */
+const FIELD_PRIORITY: Partial<Record<keyof RawOFFProduct, Record<string, number>>> = {
+  image_url: { off: 40, obf: 40 },
+  image_front_url: { off: 40, obf: 40 },
+};
+
+/**
  * Mergea N RawOFFProduct del MISMO barcode, campo a campo, por prioridad de
  * fuente (Fase 3b). Ejemplo: si OFF no trae `image_url` pero el scraper de
  * Jumbo sí, el resultado final lleva la imagen de Jumbo aunque el resto del
@@ -39,12 +91,20 @@ function nonEmpty(v: unknown): boolean {
  * nutricionales de fuentes distintas — que pueden medir en bases distintas —
  * produciría una tabla internamente inconsistente, peor que no tener el dato.
  */
-export function mergeRawProducts(entries: StagingEntry[]): RawOFFProduct {
+export function mergeRawProducts(entries: StagingEntry[], barcode?: string): RawOFFProduct {
   const sorted = [...entries].sort((a, b) => priorityOf(b.source) - priorityOf(a.source));
 
   const pick = <K extends keyof RawOFFProduct>(field: K): RawOFFProduct[K] | undefined => {
-    for (const { raw } of sorted) {
-      if (nonEmpty(raw[field])) return raw[field];
+    const override = FIELD_PRIORITY[field];
+    const order = override
+      ? [...entries].sort(
+          (a, b) =>
+            (override[b.source] ?? priorityOf(b.source)) - (override[a.source] ?? priorityOf(a.source)),
+        )
+      : sorted;
+
+    for (const { raw } of order) {
+      if (isUsable(field, raw[field], barcode)) return raw[field];
     }
     return undefined;
   };
