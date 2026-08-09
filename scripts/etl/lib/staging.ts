@@ -99,11 +99,13 @@ export async function insertStagingRows(rows: StagingInsert[]): Promise<number> 
 export type PendingStagingRow = { id: string; source: string; raw: RawOFFProduct };
 
 // `discarded_incomplete` NO es un estado terminal — es un "soft fail"
-// reintentable. Una fila que se descartó porque le faltaba `ingredients_text`/
-// `nutriments` sigue siendo candidata a mergearse si una corrida posterior
-// trae `--enrich` (Claude puede completar lo que faltaba). Sin `--enrich` no
-// tiene sentido reintentarla (el resultado va a ser idéntico), así que el
-// caller lo controla explícitamente con `includeDiscarded`.
+// reintentable, y desde la migración 010 lo es SIEMPRE, no solo con --enrich.
+//
+// Antes, reintentar un descarte sin IA daba el mismo resultado: la fila no
+// pasaba el gate y se volvía a descartar. Ahora la falta de ingredientes ya
+// no descarta nada —el producto entra marcado `merged_incomplete`—, así que
+// esas filas históricas son productos recuperables sin gastar un token. El
+// caller lo pide con `includeDiscarded`.
 function statusesFor(includeDiscarded: boolean): string[] {
   return includeDiscarded ? ['pending', 'discarded_incomplete'] : ['pending'];
 }
@@ -141,6 +143,87 @@ export async function fetchPendingBarcodes(limit: number, includeDiscarded = fal
   );
 
   return [...unique];
+}
+
+export type StagingRowFull = {
+  id: string;
+  barcode: string;
+  source: string;
+  merge_status: string;
+  run_id: string;
+  raw: RawOFFProduct;
+};
+
+/**
+ * Todas las filas de staging de un LOTE de barcodes, en una sola consulta.
+ *
+ * El merge original pedía las filas de a un barcode por vez: cuatro round
+ * trips por producto. Con 70.000 barcodes pendientes eso son ~7 horas. Acá se
+ * traen de a 500 barcodes, lo que baja el mismo trabajo a minutos. La
+ * semántica no cambia: siguen viniendo TODAS las filas del barcode (cualquier
+ * estado), que es lo que evita que una fila ya mergeada quede huérfana.
+ */
+export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<string, StagingRowFull[]>> {
+  const byBarcode = new Map<string, StagingRowFull[]>();
+  if (barcodes.length === 0) return byBarcode;
+
+  const { data, error } = await admin()
+    .from('products_staging')
+    .select('id, barcode, source, merge_status, run_id, raw_payload')
+    .in('barcode', barcodes);
+
+  if (error || !data) {
+    console.error('[staging] fetchRowsForBarcodes error:', error?.message);
+    return byBarcode;
+  }
+
+  for (const row of data as (StagingRowFull & { raw_payload: RawOFFProduct })[]) {
+    const list = byBarcode.get(row.barcode) ?? [];
+    list.push({
+      id: row.id, barcode: row.barcode, source: row.source,
+      merge_status: row.merge_status, run_id: row.run_id, raw: row.raw_payload,
+    });
+    byBarcode.set(row.barcode, list);
+  }
+  return byBarcode;
+}
+
+/**
+ * Marca muchas filas de una, con estado y `merged_into` propios de cada una.
+ *
+ * PostgREST no tiene UPDATE masivo con valores distintos por fila, y hacer un
+ * UPDATE por producto era el cuello de botella real del merge: 427 round
+ * trips por lote, 88 segundos cada 500 barcodes. Un upsert por clave primaria
+ * hace lo mismo en una sola llamada, pero exige reenviar las columnas NOT NULL
+ * (source, raw_payload, run_id) — por eso `fetchRowsForBarcodes` las trae.
+ */
+export async function markStagingRowsBulk(
+  rows: {
+    row: StagingRowFull;
+    status: 'merged' | 'merged_incomplete' | 'enriched' | 'discarded_incomplete';
+    mergedInto?: string;
+  }[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  const now = new Date().toISOString();
+
+  const payload = rows.map(({ row, status, mergedInto }) => ({
+    id: row.id,
+    source: row.source,
+    barcode: row.barcode,
+    raw_payload: row.raw,
+    run_id: row.run_id,
+    merge_status: status,
+    merged_at: now,
+    merged_into: mergedInto ?? null,
+  }));
+
+  for (let i = 0; i < payload.length; i += BATCH_SIZE) {
+    const { error } = await admin()
+      .from('products_staging')
+      .upsert(payload.slice(i, i + BATCH_SIZE), { onConflict: 'id' });
+    if (error) console.error('[staging] markStagingRowsBulk error:', error.message);
+  }
 }
 
 export type StagingStatusRow = { source: string; merge_status: string };
