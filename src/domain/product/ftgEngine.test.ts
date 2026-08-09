@@ -54,7 +54,7 @@ function makeProduct(overrides: Partial<ProductInput>): ProductInput {
 // ── 2. Score >85 for all-green ingredients ──────────────────────────────────
 
 describe('score with only green ingredients', () => {
-  it('exceeds 85 for a product with whole-food green ingredients and good nutrition', () => {
+  it('llega a Excelente con ingredientes de alimento real y buena nutrición', () => {
     const product = makeProduct({
       ingredients_text: 'huevo, leche entera, mantequilla, cúrcuma, goma arábiga',
       nova_group: 1,
@@ -68,8 +68,11 @@ describe('score with only green ingredients', () => {
       },
     });
 
-    const { score } = ftgScoreWithBreakdown(product);
-    expect(score).toBeGreaterThan(85);
+    // Se afirma la BANDA, no un número: los umbrales de §1 y la calibración
+    // de §9 pueden moverse sin que este test pierda sentido. Lo que importa
+    // es que un producto de ingredientes reales no caiga del podio.
+    const { tier } = ftgScoreWithBreakdown(product);
+    expect(tier).toBe('Excelente');
   });
 });
 
@@ -98,10 +101,18 @@ describe('score with palm oil and sunflower oil', () => {
   });
 });
 
-// ── 4. Aspartame triggers Gate 3 → score ≤ 49 ──────────────────────────────
+// ── 4. Edulcorantes sintéticos: impacto medio, NO compuerta ────────────────
+//
+// CAMBIO DE COMPORTAMIENTO (v1 → v2). El motor v1 tenía un techo de 49 para
+// aspartamo y otro para carragenina. El spec §3.2 los clasifica como
+// "impacto medio" junto al resto de los edulcorantes sintéticos y no los
+// incluye en la lista de anulación de §4.1. Es una decisión de producto que
+// ABLANDA el sistema: una gaseosa light ya puede superar la banda Moderado.
+// Estos tests fijan la nueva conducta para que el cambio no vuelva por
+// accidente en ninguna de las dos direcciones.
 
-describe('Gate 3 — aspartame ceiling', () => {
-  it('caps score at 49 when aspartame is in ingredient text', () => {
+describe('edulcorantes sintéticos (§3.2)', () => {
+  it('el aspartamo penaliza pero no dispara compuerta', () => {
     const product = makeProduct({
       ingredients_text: 'agua carbonatada, aspartamo, ácido cítrico, saborizante artificial',
       nutriments: {
@@ -113,20 +124,121 @@ describe('Gate 3 — aspartame ceiling', () => {
     });
 
     const result = ftgScoreWithBreakdown(product);
-    expect(result.score).toBeLessThanOrEqual(49);
-    expect(result.gateTriggered).not.toBeNull();
-    expect(result.gateTriggered).toContain('aspartamo');
+    expect(result.gateTriggered).toBeNull();
+    expect(result.score).toBeLessThan(75); // penaliza: no llega a Excelente
   });
 
-  it('caps score at 49 when aspartame is in additive tags', () => {
+  it('lo mismo cuando llega por additives_tags en vez de por el texto', () => {
     const product = makeProduct({
       ingredients_text: 'agua, ácido cítrico',
       additives_tags: ['en:e951'],
     });
 
     const result = ftgScoreWithBreakdown(product);
+    expect(result.gateTriggered).toBeNull();
+  });
+
+  it('la carragenina tampoco es compuerta — impacto medio', () => {
+    const product = makeProduct({
+      ingredients_text: 'leche entera, carragenina',
+      additives_tags: ['en:e407'],
+    });
+
+    const result = ftgScoreWithBreakdown(product);
+    expect(result.gateTriggered).toBeNull();
+  });
+});
+
+// ── 4b. Compuertas de anulación nuevas (§4.1) ──────────────────────────────
+
+describe('compuertas de anulación de §4.1', () => {
+  it('dióxido de titanio (E171) anula → Malo', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({ ingredients_text: 'azúcar, dióxido de titanio, saborizante' }),
+    );
+    expect(result.score).toBeLessThanOrEqual(24);
+    expect(result.tier).toBe('Malo');
+    expect(result.gateTriggered).toContain('E171');
+  });
+
+  it('eritrosina (E127) anula, también por additives_tags', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({ ingredients_text: 'azúcar, agua', additives_tags: ['en:e127'] }),
+    );
+    expect(result.score).toBeLessThanOrEqual(24);
+    expect(result.gateTriggered).toContain('E127');
+  });
+
+  it('bromato de potasio (E924) anula', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({ ingredients_text: 'harina de trigo, bromato de potasio, sal' }),
+    );
+    expect(result.score).toBeLessThanOrEqual(24);
+    expect(result.gateTriggered).toContain('E924');
+  });
+
+  it('dos colorantes azoicos anulan; uno solo no', () => {
+    const dos = ftgScoreWithBreakdown(
+      makeProduct({ ingredients_text: 'azúcar, tartrazina, rojo allura' }),
+    );
+    expect(dos.score).toBeLessThanOrEqual(24);
+    expect(dos.gateTriggered).toContain('tartrazina');
+
+    const uno = ftgScoreWithBreakdown(
+      makeProduct({ ingredients_text: 'azúcar, harina de trigo, tartrazina, agua' }),
+    );
+    expect(uno.gateTriggered).toBeNull(); // impacto alto, no anulación
+  });
+
+  it('un solo colorante azoico SÍ anula en producto infantil', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({
+        ingredients_text: 'azúcar, harina de trigo, tartrazina, agua',
+        categories: 'Golosinas, Productos infantiles',
+      }),
+    );
+    expect(result.score).toBeLessThanOrEqual(24);
+    expect(result.gateTriggered).toContain('niños');
+  });
+});
+
+// ── 4c. Nitrito: la condición ahora es carne procesada, no NOVA 4 ──────────
+
+describe('nitrito/nitrato (§4.1 punto 2)', () => {
+  it('anula en fiambre sin ascorbato', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({
+        ingredients_text: 'carne de cerdo, sal, nitrito de sodio',
+        categories: 'Fiambres',
+        nova_group: 4,
+      }),
+    );
+    expect(result.score).toBeLessThanOrEqual(24);
+    expect(result.gateTriggered).toContain('carne procesada');
+  });
+
+  it('baja a techo 49 cuando hay ascorbato protector', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({
+        ingredients_text: 'carne de cerdo, sal, nitrito de sodio, ascorbato de sodio',
+        categories: 'Fiambres',
+        nova_group: 4,
+      }),
+    );
+    expect(result.score).toBeGreaterThan(24);
     expect(result.score).toBeLessThanOrEqual(49);
-    expect(result.gateTriggered).not.toBeNull();
+  });
+
+  it('NO anula un ultraprocesado NOVA 4 que no es cárnico (v1 sí lo hacía)', () => {
+    const result = ftgScoreWithBreakdown(
+      makeProduct({
+        ingredients_text: 'agua, azúcar, nitrato de potasio',
+        categories: 'Bebidas',
+        nova_group: 4,
+      }),
+    );
+    expect(result.score).toBeGreaterThan(24); // techo 49, no anulación
+    expect(result.score).toBeLessThanOrEqual(49);
   });
 });
 
@@ -159,13 +271,17 @@ describe('NOVA 4 with many additives', () => {
 // ── 6. ftgAnalyzeIngredients — known ingredient severities ──────────────────
 
 describe('ftgAnalyzeIngredients', () => {
-  it('marks aspartamo as red (Capa B)', () => {
+  // La severidad mostrada la manda la rúbrica (§3.2), para que el texto que
+  // lee el usuario en §7.2 coincida con lo que efectivamente puntuó. El
+  // aspartamo y el benzoato bajan de 'red' a 'orange' respecto de v1: el spec
+  // los pone en "impacto medio", no alto.
+  it('marca el aspartamo como orange — impacto medio en §3.2', () => {
     const product = makeProduct({ ingredients_text: 'aspartamo, agua, sal' });
     const analyzed = ftgAnalyzeIngredients(product);
     const aspartamo = analyzed.find((i) => i.name.toLowerCase().includes('aspartamo'));
     expect(aspartamo).toBeDefined();
-    expect(aspartamo!.sev).toBe('red');
-    expect(aspartamo!.flag).toBe(true);
+    expect(aspartamo!.sev).toBe('orange');
+    expect(aspartamo!.flag).toBe(false);
   });
 
   it('marks aceite de girasol as red (Capa B)', () => {
@@ -192,12 +308,31 @@ describe('ftgAnalyzeIngredients', () => {
     expect(palma!.sev).toBe('orange');
   });
 
-  it('marks benzoato de sodio as red', () => {
+  it('marca el benzoato de sodio como orange — conservante, impacto medio', () => {
     const product = makeProduct({ ingredients_text: 'agua, ácido cítrico, benzoato de sodio' });
     const analyzed = ftgAnalyzeIngredients(product);
     const ben = analyzed.find((i) => i.name.toLowerCase().includes('benzoato'));
     expect(ben).toBeDefined();
-    expect(ben!.sev).toBe('red');
+    expect(ben!.sev).toBe('orange');
+  });
+
+  it('el aceite de palma sigue en orange vía ingredientData (§3.2 no lo enumera)', () => {
+    const product = makeProduct({ ingredients_text: 'aceite de palma, harina de trigo, sal' });
+    const analyzed = ftgAnalyzeIngredients(product);
+    const palma = analyzed.find((i) => i.name.toLowerCase().includes('aceite de palma'));
+    expect(palma).toBeDefined();
+    expect(palma!.sev).toBe('orange');
+  });
+
+  // §3.3 — El agujero que tenía v1: un E-number desconocido se descartaba en
+  // silencio y no penalizaba nada.
+  it('un aditivo sin clasificar entra al listado con impacto medio', () => {
+    const product = makeProduct({ ingredients_text: 'agua, azúcar, E477, sal' });
+    const analyzed = ftgAnalyzeIngredients(product);
+    const desconocido = analyzed.find((i) => i.name.toLowerCase().includes('e477'));
+    expect(desconocido).toBeDefined();
+    expect(desconocido!.sev).toBe('orange');
+    expect(desconocido!.desc).toContain('no equivale a ausencia de riesgo');
   });
 
   it('marks stevia as yellow', () => {
@@ -214,11 +349,20 @@ describe('ftgAnalyzeIngredients', () => {
     expect(analyzed).toHaveLength(0);
   });
 
-  it('does not exceed 12 items', () => {
+  // §7.2 Bloque 1: "Para CADA ingrediente listado... No omitir ninguno."
+  // v1 truncaba a 12 y el usuario no veía el resto. El tope de 40 que queda
+  // es solo un cinturón contra parseos rotos de OFF.
+  it('no trunca a 12: describe todos los ingredientes del listado', () => {
     const many = Array.from({ length: 20 }, (_, i) => `ingrediente${i}`).join(', ');
     const product = makeProduct({ ingredients_text: many });
     const analyzed = ftgAnalyzeIngredients(product);
-    expect(analyzed.length).toBeLessThanOrEqual(12);
+    expect(analyzed).toHaveLength(20);
+  });
+
+  it('corta en 40 ante un listado patológico', () => {
+    const many = Array.from({ length: 90 }, (_, i) => `ingrediente${i}`).join(', ');
+    const analyzed = ftgAnalyzeIngredients(makeProduct({ ingredients_text: many }));
+    expect(analyzed).toHaveLength(40);
   });
 });
 

@@ -6,25 +6,31 @@ export type ScoreLabel = {
   color: string;
 };
 
-// Umbrales alineados con la spec Fitogenix:
-// 85+ Excelente · 70-84 Bueno · 50-69 Moderado · <50 Malo.
+// Umbrales de fitogenix_scoring_engine_v1.md §1:
+// 75-100 Excelente · 50-74 Bueno · 25-49 Moderado · 0-24 Malo.
+// Fuente única: TIERS en scoringRubric.ts — acá solo se adapta el formato que
+// espera la UI (label en mayúsculas). Antes estaban duplicados a mano con los
+// umbrales viejos (85/70/50), que es como se desincronizaron.
+import { TIERS } from './scoringRubric';
+
+function tierOf(score: number) {
+  return TIERS.find((t) => score >= t.min) ?? TIERS[TIERS.length - 1];
+}
+
 export function getScoreLabel(score: number): ScoreLabel {
-  if (score >= 85) return { label: 'EXCELENTE', color: '#16a34a' };
-  if (score >= 70) return { label: 'BUENO', color: '#84cc16' };
-  if (score >= 50) return { label: 'MODERADO', color: '#f97316' };
-  return { label: 'MALO', color: '#dc2626' };
+  const t = tierOf(score);
+  return { label: t.tier.toUpperCase(), color: t.color };
 }
 
 export function getScoreTagline(score: number): string {
-  if (score >= 85) return 'Lo recomendamos';
-  if (score >= 70) return 'Buena opción';
-  if (score >= 50) return 'Consumilo con consciencia';
-  return 'No lo recomendamos';
+  return tierOf(score).message;
 }
 
-// Fitogénico 70+ · No fitogénico <50 · sin sello en la zona Moderado (50-69).
+// El sello sigue las bandas de §1: Excelente lleva sello Fitogénico, Malo
+// lleva el contrario, y las dos bandas del medio (Bueno/Moderado) van sin
+// sello. Antes era 70+/<50, umbrales del sistema viejo.
 export function getSello(score: number): string | null {
-  if (score >= 70) return 'FITOGÉNICO';
-  if (score < 50) return 'NO FITOGÉNICO';
+  if (score >= 75) return 'FITOGÉNICO';
+  if (score < 25) return 'NO FITOGÉNICO';
   return null;
 }

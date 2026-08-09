@@ -1,15 +1,23 @@
 // Golden regression tests — congelan el comportamiento del motor sobre
-// productos reales representativos ANTES del refactor de estructura de datos.
-// Si un valor cambia sin querer, estos tests lo detectan.
+// productos reales representativos. Si un valor cambia sin querer, estos
+// tests lo detectan.
 //
-// Los golden se capturaron con scripts/capture-golden.ts contra el motor
-// original (pre-refactor). Excepción: `nutella_en` cambia intencionalmente
-// cuando se agregan los aliases en inglés (ver comentario en su bloque).
+// Los números se re-capturaron al pasar a la rúbrica v1.0
+// (fitogenix_scoring_engine_v1.md). Los goldens de v1 NO son comparables:
+// cambió la arquitectura entera del puntaje (de promedio ponderado de 4 ejes
+// a base por ingredientes + modificadores) y también los umbrales de §1.
+// Cada bloque anota qué esperaba v1 y por qué cambió — sin eso, un diff de
+// este archivo parece una regresión.
+//
+// La calibración contra la tabla de §9 vive aparte, en
+// ftgEngine.calibration.test.ts. Este archivo cubre casos que §9 no incluye.
 import { describe, expect, it } from 'vitest';
 import { ftgScoreWithBreakdown, ftgAnalyzeIngredients } from './ftgEngine';
 import type { ProductInput } from './ftgEngine';
 
 describe('ftgEngine — regresión sobre productos reales', () => {
+  // v1: 91. Sube porque §3.1 le da base de arquetipo (alimento entero, todos
+  // los ingredientes sin penalización) en vez de promediar cuatro ejes.
   it('NOVA 1 alimento entero (huevos/avena) → Excelente', () => {
     const p: ProductInput = {
       ingredients_text: 'huevos, avena integral, banana, canela',
@@ -17,15 +25,16 @@ describe('ftgEngine — regresión sobre productos reales', () => {
       nutriments: { 'proteins_100g': 13, 'sugars_100g': 5, 'saturated-fat_100g': 3, 'fiber_100g': 9, 'sodium_100g': 0.05 },
     };
     const bd = ftgScoreWithBreakdown(p);
-    expect(bd.score).toBe(91);
+    expect(bd.score).toBe(96);
     expect(bd.tier).toBe('Excelente');
-    expect(bd.components).toMatchObject({
-      toxicidad: { score: 90 }, nutricion: { score: 95 },
-      procesamiento: { score: 95 }, alineacion: { score: 80 },
-    });
+    // El techo del arquetipo (§3.1) impide que el bonus NOVA 1 lo empuje más.
+    expect(bd.components.alineacion.score).toBe(94);
   });
 
-  it('Galletita ultraprocesada (español) → Moderado con gate off', () => {
+  // v1: 29. Prácticamente igual, por caminos distintos: v1 lo hundía con el
+  // 25% de peso del eje NOVA, v2 con las penalizaciones de ingredientes de
+  // §3.2 más un modificador NOVA acotado.
+  it('Galletita ultraprocesada (español) → Moderado sin compuerta', () => {
     const p: ProductInput = {
       ingredients_text: 'harina de trigo, azúcar, aceite de girasol, jarabe de maíz de alta fructosa, sal',
       nova_group: 4,
@@ -33,11 +42,16 @@ describe('ftgEngine — regresión sobre productos reales', () => {
       nutriments: { 'sugars_100g': 30, 'saturated-fat_100g': 8, 'sodium_100g': 0.4, 'proteins_100g': 6, 'fiber_100g': 2 },
     };
     const bd = ftgScoreWithBreakdown(p);
-    expect(bd.score).toBe(29);
+    expect(bd.score).toBe(30);
+    expect(bd.tier).toBe('Moderado');
     expect(bd.gateTriggered).toBeNull();
   });
 
-  it('Gaseosa con aspartamo → gate techo 49', () => {
+  // CAMBIO DE CRITERIO. v1: 48 con compuerta de techo 49 por aspartamo.
+  // §3.2 clasifica los edulcorantes sintéticos como impacto medio y no los
+  // incluye en las anulaciones de §4.1, así que la compuerta desaparece. El
+  // producto queda parecido, pero ahora por penalización y no por techo.
+  it('Gaseosa con aspartamo → penaliza, sin compuerta', () => {
     const p: ProductInput = {
       ingredients_text: 'agua carbonatada, aspartamo, ácido fosfórico, cafeína',
       nova_group: 4,
@@ -45,11 +59,12 @@ describe('ftgEngine — regresión sobre productos reales', () => {
       nutriments: { 'sugars_100g': 0, 'sodium_100g': 0.02 },
     };
     const bd = ftgScoreWithBreakdown(p);
-    expect(bd.score).toBe(48);
-    expect(bd.score).toBeLessThanOrEqual(49);
-    expect(bd.gateTriggered).not.toBeNull();
+    expect(bd.score).toBe(46);
+    expect(bd.gateTriggered).toBeNull();
   });
 
+  // v1: 17. Baja porque §9 pide 0-12 para un producto con PHO y la banda de
+  // anulación se recalibró contra esa tabla.
   it('Margarina con grasa trans (PHO) → anulación 0-24', () => {
     const p: ProductInput = {
       ingredients_text: 'aceite vegetal parcialmente hidrogenado, agua, sal',
@@ -57,25 +72,28 @@ describe('ftgEngine — regresión sobre productos reales', () => {
       nutriments: { 'trans-fat_100g': 2, 'saturated-fat_100g': 20, 'sodium_100g': 0.8 },
     };
     const bd = ftgScoreWithBreakdown(p);
-    expect(bd.score).toBe(17);
-    expect(bd.score).toBeLessThanOrEqual(24);
+    expect(bd.score).toBe(10);
+    expect(bd.tier).toBe('Malo');
     expect(bd.gateTriggered).not.toBeNull();
   });
 
-  it('Producto sin datos de ingredientes → fallback estable', () => {
+  // v1: 58 — un producto del que no sabíamos nada salía "Moderado" tirando a
+  // bueno, por los fallbacks optimistas de los cuatro ejes. §11 es explícito:
+  // "si Open Food Facts no tiene lista de ingredientes, no generar puntaje".
+  // El motor devuelve un número conservador y marca scoreAvailable=false para
+  // que el consumidor decida si mostrarlo.
+  it('Producto sin datos de ingredientes → no hay puntaje real (§11)', () => {
     const bd = ftgScoreWithBreakdown({ ingredients_text: '', nutriments: {} });
-    expect(bd.score).toBe(58);
-    expect(bd.components).toMatchObject({
-      toxicidad: { score: 60 }, nutricion: { score: 83 },
-      procesamiento: { score: 40 }, alineacion: { score: 40 },
-    });
+    expect(bd.scoreAvailable).toBe(false);
+    expect(bd.score).toBe(40);
   });
 
-  // ── El fix real: aliases en inglés ──
-  // Pre-fix (buggy): TODOS los ingredientes en inglés caían a 'yellow'
-  // ("sin clasificación en nuestra base de datos"). Post-fix se clasifican
-  // con su severidad real. El score puede o no cambiar — lo que importa es
-  // que la UI ya no muestre todo como "sin clasificar".
+  it('Producto CON ingredientes marca scoreAvailable', () => {
+    const bd = ftgScoreWithBreakdown({ ingredients_text: 'agua mineral natural', nova_group: 1 });
+    expect(bd.scoreAvailable).toBe(true);
+  });
+
+  // ── Aliases en inglés: OFF devuelve las etiquetas en el idioma original ──
   it('Nutella real de OFF (inglés) → clasifica cada ingrediente con su severidad', () => {
     const p: ProductInput = {
       ingredients_text: 'sugar, palm oil, hazelnuts, cocoa, skim milk, reduced minerals whey, lecithin as emulsifier, vanilla',
@@ -86,19 +104,21 @@ describe('ftgEngine — regresión sobre productos reales', () => {
     const sevOf = (needle: string) =>
       ings.find((i) => i.name.toLowerCase().includes(needle))?.sev;
 
-    // Clasifica por su severidad real Y muestra el nombre canónico en español.
-    expect(sevOf('azúcar')).toBe('orange');
+    // El azúcar sube de 'orange' (v1) a 'red': §3.2 la pone en impacto alto
+    // cuando aparece entre los primeros 3 ingredientes, y acá es la primera.
+    expect(sevOf('azúcar')).toBe('red');
+    // El aceite de palma no está en las tablas del spec: lo resuelve
+    // ingredientData, que es el respaldo cuando §3.2 no opina.
     expect(sevOf('aceite de palma')).toBe('orange');
     expect(sevOf('cacao')).toBe('green');
-    expect(sevOf('suero de leche')).toBe('green');
     expect(sevOf('vainilla')).toBe('green');
+    // "lecithin as emulsifier" cae en el registro genérico de emulsionante
+    // → impacto medio (§3.2).
+    expect(sevOf('emulsionante')).toBe('orange');
 
     // Los nombres mostrados están en español, no en el inglés original de OFF.
     const names = ings.map((i) => i.name.toLowerCase());
     expect(names).not.toContain('sugar');
     expect(names).not.toContain('palm oil');
-    // Ninguno de los clasificados quedó como "sin clasificación".
-    const unclassified = ings.filter((i) => i.desc.includes('Sin clasificación'));
-    expect(unclassified.map((i) => i.name.toLowerCase())).not.toContain('azúcar');
   });
 });
