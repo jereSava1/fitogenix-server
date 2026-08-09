@@ -178,6 +178,41 @@ describe('lo desconocido no premia', () => {
   });
 });
 
+describe('jugo de fruta vs. fruta entera (§3.4)', () => {
+  // Lo encontró la auditoría del catálogo real: "Jugo de naranja 100%
+  // Exprimido" daba 96 (Excelente) con cobertura total, porque "naranja"
+  // matchea el arquetipo de fruta entera. §3.4 dice lo contrario — al perder
+  // la fibra y la matriz es azúcar libre para la OMS, penalización media.
+  // Decirle a alguien que el jugo equivale a la fruta es la confusión exacta
+  // que esa sección existe para evitar.
+  it('el jugo exprimido no puede puntuar como la fruta', () => {
+    const jugo = ftgScoreWithBreakdown({
+      ingredients_text: 'Jugo de naranja', categories: 'Bebidas', nova_group: 1,
+    });
+    const fruta = ftgScoreWithBreakdown({ ingredients_text: 'naranja', nova_group: 1 });
+
+    expect(jugo.tier).toBe('Bueno');
+    expect(fruta.tier).toBe('Excelente');
+    expect(fruta.score - jugo.score).toBeGreaterThan(30);
+  });
+
+  it('fruta en la góndola de bebidas es jugo, aunque el listado diga "Manzana"', () => {
+    const enBebidas = ftgScoreWithBreakdown({
+      ingredients_text: 'Manzana', categories: 'Bebidas', nova_group: 1,
+      nutriments: { 'sugars_100g': 9 },
+    });
+    expect(enBebidas.tier).toBe('Bueno');
+  });
+
+  it('la fruta de verdad sigue siendo Excelente', () => {
+    const fruta = ftgScoreWithBreakdown({
+      ingredients_text: 'Manzana', categories: 'Frutas frescas', nova_group: 1,
+      nutriments: { 'sugars_100g': 10 },
+    });
+    expect(fruta.tier).toBe('Excelente');
+  });
+});
+
 describe('cobertura y confianza', () => {
   it('reporta qué fracción de ingredientes entendió', () => {
     const todo = ftgScoreWithBreakdown({ ingredients_text: 'agua, sal, cacao' });

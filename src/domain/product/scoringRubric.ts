@@ -237,6 +237,22 @@ export const IMPACT_TABLE: ImpactEntry[] = [
 ];
 
 /**
+ * §3.4 — "Azúcar en jugo de fruta (aunque sea 100% natural, sin azúcar
+ * añadida) → penalización media: la OMS lo clasifica como azúcar libre al
+ * perder la fibra y la matriz."
+ *
+ * Es la regla de contexto más importante del spec y la más fácil de violar:
+ * un jugo declara "Jugo de naranja" o directamente "Manzana", matchea el
+ * arquetipo de fruta entera y se lleva 96 puntos. Decirle al usuario que un
+ * jugo exprimido equivale a comerse la fruta es exactamente la confusión que
+ * §3.4 existe para evitar.
+ */
+export const FRUIT_JUICE_PATTERN = /\bjugos?\b|\bzumos?\b|\bjuice\b|\bn[eé]ctar(?:es)?\b|\bexprimido\b/i;
+
+/** Góndola de bebidas: una "manzana" acá es jugo de manzana, no una manzana. */
+export const DRINK_CATEGORY_PATTERN = /bebida|gaseosa|refresco|jugo|zumo|juice|drink|beverage/i;
+
+/**
  * §3.3 — Patrón de aditivo industrial. Un ingrediente que matchea esto pero
  * no está en IMPACT_TABLE se penaliza como impacto MEDIO por defecto: "la
  * ausencia de clasificación específica no equivale a sin riesgo".

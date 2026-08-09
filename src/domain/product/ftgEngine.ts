@@ -26,6 +26,8 @@ import {
   ASCORBATE_TAGS,
   AZO_COLORANTS,
   CHILDREN_PRODUCT_PATTERN,
+  DRINK_CATEGORY_PATTERN,
+  FRUIT_JUICE_PATTERN,
   GENERIC_WHOLE_FOOD,
   NITRITE_PATTERN,
   NITRITE_TAGS,
@@ -273,6 +275,10 @@ export function evaluateIngredient(name: string, index: number): EvaluatedIngred
   // §3.3 — Número E o patrón de aditivo industrial sin clasificar → medio.
   // "La ausencia de clasificación específica no equivale a sin riesgo."
   if (ADDITIVE_PATTERN.test(name)) return { name, impact: 'medio', known: true };
+
+  // §3.4 — El jugo de fruta pierde la fibra y la matriz: azúcar libre para la
+  // OMS, penalización media aunque sea 100% exprimido.
+  if (FRUIT_JUICE_PATTERN.test(name)) return { name, impact: 'medio', known: true };
 
   const inDatabase = classifyIngredient(name);
   if (inDatabase) return { name, impact: SEV_TO_IMPACT[inDatabase.b], known: true };
@@ -606,7 +612,26 @@ function computeIngredientBase(
       ? parseFloat(String(nutriments['sugars_100g'] ?? nutriments['sugars'] ?? '')) || 0
       : undefined;
     const profile = matchWholeFoodProfile(names, categories, declaredSugars);
-    if (profile) return { base: profile.base, cap: profile.max, profile, evaluated, coverage, sugarEscalated };
+
+    // §3.4 — Fruta en la góndola de bebidas es jugo. Un producto cuyo listado
+    // dice solo "Manzana" pero cuya categoría es Bebidas no puede llevarse el
+    // arquetipo de fruta entera.
+    const isJuiceInDisguise =
+      profile?.id === 'fruta-verdura-huevo' && DRINK_CATEGORY_PATTERN.test(categories);
+
+    if (profile && !isJuiceInDisguise) {
+      return { base: profile.base, cap: profile.max, profile, evaluated, coverage, sugarEscalated };
+    }
+    if (isJuiceInDisguise) {
+      return {
+        base: DOMINANT_BAND.medio,
+        cap: null,
+        profile: null,
+        evaluated: [...evaluated, { name: 'Jugo de fruta', impact: 'medio', known: true }],
+        coverage,
+        sugarEscalated,
+      };
+    }
     // El mismo control cruzado que los arquetipos nombrados: un listado corto
     // y benigno desmentido por el panel no es un alimento entero.
     const sugarsContradict =

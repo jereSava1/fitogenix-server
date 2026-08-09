@@ -14,7 +14,8 @@
     "etl:merge": "tsx scripts/etl/jobs/runMerge.ts",
     "etl:stats": "tsx scripts/etl/jobs/stats.ts",
     "etl:check-dupes": "tsx scripts/etl/jobs/checkDuplicates.ts",
-    "etl:all": "bash scripts/etl/run-all.sh"
+    "etl:all": "bash scripts/etl/run-all.sh",
+    "audit:scores": "tsx scripts/audit-scores.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.0",
