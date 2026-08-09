@@ -13,6 +13,12 @@ const SOURCE_PRIORITY: Record<string, number> = {
   edamam: 80,
   synthetic: 10,
   ai: 10,
+  // La fila que YA está en `products`, tratada como una fuente más. Prioridad
+  // mínima: solo se usa para campos que ninguna otra fuente puede llenar.
+  // Sin esto el merge RESTA — reconstruye el producto solo desde staging y
+  // pisa con null lo que había llegado por otro camino (un escaneo en vivo,
+  // el enriquecimiento por EAN, una imagen traída de la API de OFF).
+  existing: 1,
 };
 const DEFAULT_SCRAPER_PRIORITY = 50;
 
