@@ -34,6 +34,8 @@ import {
   NOVA4_MARKERS,
   PROCESSED_MEAT_PATTERN,
   TIERS,
+  computeWarningSeals,
+  sealPenalty,
   matchWholeFoodProfile,
   matchesPhrase,
   indexOfPhrase,
@@ -41,6 +43,7 @@ import {
   resolveLabelAbbreviation,
   rubricImpact,
   type Impact,
+  type WarningSeal,
   type WholeFoodProfile,
 } from './scoringRubric';
 
@@ -123,6 +126,14 @@ export type ScoreBreakdown = {
    */
   coverage: number;
   confidence: 'alta' | 'media' | 'baja';
+  /**
+   * Octógonos de advertencia de la Ley 27.642, calculados sobre el panel
+   * nutricional (el retailer no los publica). Se exponen aparte del puntaje
+   * porque son un dato OFICIAL y verificable contra el envase real: el
+   * usuario puede mirar el paquete y confirmarlo, cosa que no puede hacer con
+   * nuestro número.
+   */
+  warnings: WarningSeal[];
   components: {
     toxicidad:     { score: number; verdict: string; detail: string };
     nutricion:     { score: number; verdict: string; detail: string };
@@ -808,63 +819,60 @@ function countNova4Markers(product: ProductInput, names: string[]): number {
 function nutritionModifier(
   product: ProductInput,
   isWholeFood: boolean,
-  sugarAlreadyCounted: boolean,
-): { delta: number; notes: string[] } {
+  hasAddedSugar: boolean,
+): { delta: number; notes: string[]; seals: WarningSeal[] } {
   const n = product.nutriments;
   const notes: string[] = [];
   // §11 — Sin panel nutricional, se omite el paso. No asumir ni favorable ni
-  // desfavorable.
-  if (!n || Object.keys(n).length === 0) return { delta: 0, notes };
+  // desfavorable. Un producto sin panel tampoco lleva sellos en la góndola.
+  if (!n || Object.keys(n).length === 0) return { delta: 0, notes, seals: [] };
 
-  const v = (k: string) => parseFloat(String(n[k + '_100g'] ?? n[k] ?? 0)) || 0;
-  const sodiumMg = v('sodium') * 1000;
-  const sugars = v('sugars');
-  const trans = v('trans-fat');
-  const isDrink = /bebida|drink|beverage|gaseosa|jugo|soda|refresco/i.test(product.categories || '');
-  const sugarLimit = isDrink ? 8 : 15;
+  const v = (k: string) => {
+    const raw = n[k + '_100g'] ?? n[k];
+    const num = parseFloat(String(raw));
+    return raw == null || Number.isNaN(num) ? null : num;
+  };
+  const trans = v('trans-fat') ?? 0;
+  const isLiquid = DRINK_CATEGORY_PATTERN.test(product.categories || '');
 
-  let delta = 0;
+  // ── Octógonos de la Ley 27.642 ──
+  // Reemplazan los umbrales de azúcar y sodio de §6 en vez de sumarse a
+  // ellos: son el mismo juicio ("este producto tiene de más") pero con el
+  // criterio oficial argentino en lugar de números redondos elegidos a mano.
+  // Aplicarlos encima sería cobrar dos veces lo mismo (§6, "No duplicar").
+  //
+  // La exención de la ley: los sellos son para productos con nutrientes
+  // críticos AÑADIDOS. La grasa de la leche, la carne o el queso es inherente
+  // al alimento, no algo que la industria le puso (§6, regla de contexto).
+  const seals = isWholeFood
+    ? []
+    : computeWarningSeals({
+        kcal100: v('energy-kcal'),
+        sugars100: v('sugars'),
+        satFat100: v('saturated-fat'),
+        totalFat100: v('fat'),
+        sodiumMg100: v('sodium') != null ? v('sodium')! * 1000 : null,
+        isLiquid,
+        hasAddedSugar,
+      });
+
+  let delta = -sealPenalty(seals);
+  if (seals.length > 0) notes.push(`Sellos de advertencia: ${seals.join(', ')}.`);
 
   // Grasa trans declarada en el panel. §6 no la menciona y §4.1 solo la ataca
   // por ingrediente ("aceite parcialmente hidrogenado" en el texto), lo que
-  // deja pasar cualquier producto que la declare sin nombrar el PHO: un
-  // producto con 4g/100g salía Moderado y sin compuerta. Dado que §4.1
-  // fundamenta la anulación en que no existe nivel de consumo seguro, no
-  // penalizarla cuando está declarada sería incoherente.
+  // deja pasar cualquier producto que la declare sin nombrar el PHO. Tampoco
+  // tiene octógono propio en la ley argentina.
   //
   // La excepción de §3.4/§4.1 se respeta: la grasa trans natural de lácteos y
-  // rumiantes no se penaliza, y por eso queda fuera para alimentos enteros y
-  // NOVA 1.
+  // rumiantes no se penaliza, y por eso queda fuera para alimentos enteros.
   if (!isWholeFood && product.nova_group !== 1 && trans > 0.2) {
     const severe = trans >= 2;
     delta -= severe ? 15 : 8;
     notes.push(`Grasa trans declarada (${trans}g/100g).`);
   }
 
-  if (sodiumMg > 900) {
-    delta -= 6;
-    notes.push(`Sodio muy alto (${Math.round(sodiumMg)}mg/100g).`);
-  } else if (sodiumMg > 600) {
-    delta -= 3;
-    notes.push(`Sodio alto (${Math.round(sodiumMg)}mg/100g).`);
-  }
-
-  // §6 + §3.4 — El azúcar natural de un alimento entero no se penaliza.
-  // §6 — "La penalización ya está en los ingredientes. No duplicar." Si el
-  // panel nutricional ya sirvió para escalar el azúcar del listado a impacto
-  // alto, cobrarla otra vez acá la contaría dos veces.
-  // La exención de azúcar natural (§3.4) se apoya en que el producto haya
-  // matcheado un arquetipo de alimento entero, no en `nova_group`: ese campo
-  // también es colaborativo, y bastaba un NOVA 1 mal cargado para que
-  // cualquier producto azucarado esquivara la penalización. La fruta real
-  // sigue exenta porque matchea su arquetipo.
-  if (!sugarAlreadyCounted && !isWholeFood && sugars > sugarLimit) {
-    const severe = sugars > sugarLimit * 1.5;
-    delta -= severe ? 6 : 3;
-    notes.push(`Azúcar alta para la categoría (${sugars}g/100g).`);
-  }
-
-  return { delta, notes };
+  return { delta, notes, seals };
 }
 
 function clamp(n: number, min = 0, max = 100): number {
@@ -971,7 +979,7 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
   const redCount   = analyzed.filter((i) => i.sev === 'red').length;
 
   // ── §2 PASO 2 — Base por ingredientes (motor principal) ──
-  const { base, cap, profile, coverage, sugarEscalated } = computeIngredientBase(
+  const { base, cap, profile, coverage, sugarEscalated, evaluated } = computeIngredientBase(
     names,
     offProduct.categories,
     addTags,
@@ -983,7 +991,22 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
   const novaDelta = novaModifier(offProduct.nova_group ?? null, base, markers);
 
   // ── §2 PASO 4 — Modificador de perfil nutricional ──
-  const { delta: nutDelta, notes: nutNotes } = nutritionModifier(offProduct, profile !== null, sugarEscalated);
+  // El sello de azúcar exige azúcar AÑADIDA. La detectamos en el listado: si
+  // la rúbrica marcó un ingrediente de azúcar (entrada posicional), lo que
+  // declara el panel es mayormente azúcar libre. Sin esto, la leche entera y
+  // la fruta se llevarían un "EXCESO EN AZÚCARES" que la ley no les pone.
+  const hasAddedSugar = names.some((nm) => rubricImpact(nm)?.positional === true);
+  // La ley exime a los alimentos SIN nutrientes críticos añadidos, no solo a
+  // los que matchean un arquetipo nuestro. La leche entera no matchea ningún
+  // perfil —no es yogur ni queso ni manteca— y se llevaba "EXCESO EN GRASAS
+  // SATURADAS" y "EXCESO EN GRASAS TOTALES", que en la góndola real no tiene.
+  // El criterio correcto es que ningún ingrediente aporte nada crítico.
+  const sinCriticosAgregados = evaluated.every((e) => e.impact === 'none');
+  const { delta: nutDelta, notes: nutNotes, seals } = nutritionModifier(
+    offProduct,
+    sinCriticosAgregados,
+    hasAddedSugar,
+  );
 
   // ── §2 PASO 5 — Puntaje final ──
   let score: number;
@@ -1056,6 +1079,7 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
     // baja el número que devolvemos es una estimación, no un veredicto, y el
     // consumidor tiene que poder distinguirlo.
     scoreAvailable: hasIngData && coverage >= MIN_COVERAGE_FOR_SCORE,
+    warnings: seals,
     coverage: Math.round(coverage * 100) / 100,
     confidence: coverage >= 0.8 ? 'alta' : coverage >= 0.5 ? 'media' : 'baja',
     components: {

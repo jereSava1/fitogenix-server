@@ -478,6 +478,88 @@ export const ASCORBATE_PATTERN =
   /ascorbato de sodio|eritorbato de sodio|ácido ascórbico|acido ascorbico|ascorbato|eritorbato|ascorbic acid|erythorbate|\be\s?3(?:00|01|15|16)\b/i;
 export const ASCORBATE_TAGS = ['en:e300', 'en:e301', 'en:e315', 'en:e316'];
 
+/* ── Octógonos de advertencia — Ley 27.642 / Decreto 151/2022 ──────────────
+ *
+ * Argentina adoptó el perfil de nutrientes de OPS: los sellos negros no son
+ * una opinión sino el resultado de aplicar umbrales fijos sobre la tabla
+ * nutricional. Por eso los CALCULAMOS en vez de leerlos — el campo `Sellos`
+ * de los retailers trae certificaciones positivas (Sin TACC, vegano), no
+ * advertencias, y así funciona también para los productos de OFF.
+ *
+ * Los umbrales de abajo son los de la etapa final de la ley. ANTES DE
+ * PUBLICITAR ESTO como "los sellos oficiales" conviene contrastarlos contra
+ * el texto del decreto: si alguno cambió, se corrige acá y nada más.
+ *
+ * Ojo con el azúcar: la ley habla de azúcares LIBRES y el panel declara
+ * azúcares TOTALES. No son lo mismo —la leche y la fruta tienen azúcares que
+ * no son libres— así que este sello se aplica solo cuando el listado de
+ * ingredientes delata azúcar añadida. Ver `computeWarningSeals`.
+ */
+export type WarningSeal =
+  | 'EXCESO EN AZÚCARES'
+  | 'EXCESO EN GRASAS SATURADAS'
+  | 'EXCESO EN GRASAS TOTALES'
+  | 'EXCESO EN SODIO'
+  | 'EXCESO EN CALORÍAS';
+
+/** Porcentaje de la energía total aportado por un macronutriente. */
+const KCAL_PER_G = { sugar: 4, fat: 9 } as const;
+
+export type SealInput = {
+  kcal100: number | null;
+  sugars100: number | null;
+  satFat100: number | null;
+  totalFat100: number | null;
+  sodiumMg100: number | null;
+  /** Líquidos tienen umbral de calorías distinto (70/100ml vs 275/100g). */
+  isLiquid: boolean;
+  /** El sello de azúcar exige azúcar AÑADIDA, no la propia del alimento. */
+  hasAddedSugar: boolean;
+};
+
+export function computeWarningSeals(input: SealInput): WarningSeal[] {
+  const seals: WarningSeal[] = [];
+  const { kcal100, sugars100, satFat100, totalFat100, sodiumMg100 } = input;
+
+  // Sin energía declarada no se pueden calcular los porcentajes. No se asume
+  // nada: un producto sin panel no lleva sellos, igual que en la góndola.
+  const hasEnergy = kcal100 != null && kcal100 > 0;
+
+  if (hasEnergy && sugars100 != null && input.hasAddedSugar) {
+    if ((sugars100 * KCAL_PER_G.sugar) / kcal100! >= 0.1) seals.push('EXCESO EN AZÚCARES');
+  }
+  if (hasEnergy && satFat100 != null) {
+    if ((satFat100 * KCAL_PER_G.fat) / kcal100! >= 0.1) seals.push('EXCESO EN GRASAS SATURADAS');
+  }
+  if (hasEnergy && totalFat100 != null) {
+    if ((totalFat100 * KCAL_PER_G.fat) / kcal100! >= 0.3) seals.push('EXCESO EN GRASAS TOTALES');
+  }
+  if (hasEnergy && sodiumMg100 != null) {
+    if (sodiumMg100 / kcal100! >= 1) seals.push('EXCESO EN SODIO');
+  }
+  if (kcal100 != null) {
+    if (kcal100 >= (input.isLiquid ? 70 : 275)) seals.push('EXCESO EN CALORÍAS');
+  }
+
+  return seals;
+}
+
+/**
+ * Cuánto resta cada sello. Con retornos decrecientes, por el mismo motivo que
+ * las penalizaciones de ingredientes: un producto con cinco sellos es peor
+ * que uno con dos, pero no dos veces y media peor — y sin esto, cualquier
+ * snack se hunde al piso y deja de distinguirse del resto de la banda baja.
+ */
+export const SEAL_PENALTY = { first: 7, decay: 0.6, max: 20 };
+
+export function sealPenalty(seals: WarningSeal[]): number {
+  let total = 0;
+  for (let i = 0; i < seals.length; i++) {
+    total += SEAL_PENALTY.first * Math.pow(SEAL_PENALTY.decay, i);
+  }
+  return Math.min(SEAL_PENALTY.max, Math.round(total));
+}
+
 /** §1 — Puntaje → categoría. */
 export const TIERS = [
   { min: 75, tier: 'Excelente' as const, color: '#16a34a', message: 'Lo recomendamos' },
