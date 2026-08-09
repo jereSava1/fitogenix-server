@@ -33,6 +33,8 @@ import {
   PROCESSED_MEAT_PATTERN,
   TIERS,
   matchWholeFoodProfile,
+  matchesPhrase,
+  resolveLabelAbbreviation,
   rubricImpact,
   type Impact,
   type WholeFoodProfile,
@@ -105,6 +107,18 @@ export type ScoreBreakdown = {
    *  romper el contrato de `products.score` (no nulable); el consumidor
    *  decide si mostrarlo. */
   scoreAvailable: boolean;
+  /**
+   * Fracción de ingredientes que el motor supo identificar (0-1), y su
+   * lectura en palabras.
+   *
+   * Un puntaje calculado sobre 2 ingredientes reconocidos de 12 no vale lo
+   * mismo que uno calculado sobre 12 de 12, pero hasta acá los dos se
+   * mostraban con idéntica autoridad. Exponer la cobertura permite que la UI
+   * module el mensaje —o no muestre puntaje— en vez de aparentar una
+   * precisión que no tenemos.
+   */
+  coverage: number;
+  confidence: 'alta' | 'media' | 'baja';
   components: {
     toxicidad:     { score: number; verdict: string; detail: string };
     nutricion:     { score: number; verdict: string; detail: string };
@@ -134,7 +148,9 @@ const INGREDIENT_INDEX: IndexEntry[] = INGREDIENTS
 function classifyIngredient(name: string): Ingredient | null {
   const n = name.toLowerCase().trim();
   for (const { alias, ing } of INGREDIENT_INDEX) {
-    if (n.includes(alias)) return ing; // primer match = longest → early exit
+    // matchesPhrase, no includes(): "sal" no puede matchear dentro de
+    // "salame" ni "ajo" dentro de "trabajo". Ver scoringRubric.matchesPhrase.
+    if (matchesPhrase(n, alias)) return ing; // primer match = longest → early exit
   }
   return null;
 }
@@ -157,6 +173,10 @@ function canonicalName(ing: Ingredient): string {
 // (parseos rotos de OFF con cientos de fragmentos), no una regla de producto.
 const MAX_ANALYZED = 40;
 
+/** Largo máximo de un fragmento de ingrediente. Por encima se recorta (no se
+ *  descarta): es una lista corrida sin separadores, no basura. */
+const MAX_FRAGMENT_LENGTH = 90;
+
 /**
  * Texto de ingredientes de OFF → nombres individuales, limpios. Extraído para
  * que el scoring pueda razonar sobre POSICIÓN (§3.2: el azúcar pesa distinto
@@ -165,15 +185,33 @@ const MAX_ANALYZED = 40;
 export function parseIngredientNames(ingredientsText?: string): string[] {
   const text = (ingredientsText || '')
     .replace(/<[^>]+>/g, '')
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\[[^\]]*\]/g, '')
-    .replace(/^.{0,60}?\bingr(?:edientes?)?\s*[:.]+\s*/i, '');
+    // Los paréntesis se APLANAN, no se borran. El rotulado argentino declara
+    // el aditivo concreto ahí adentro —"emulsionante (lecitina de soja)",
+    // "colorante (E150d)"— y la versión anterior lo eliminaba, quedándose
+    // solo con la categoría genérica y perdiendo el dato que importa.
+    .replace(/[()[\]]/g, ',')
+    // El preámbulo de marketing ("GALLETITAS DULCES CON SABOR A VAINILLA
+    // RELLENAS...") puede ser largo. Antes se buscaba "Ingredientes:" solo en
+    // los primeros 60 caracteres y, si no aparecía ahí, el encabezado entero
+    // quedaba pegado al primer ingrediente y lo volvía inservible.
+    .replace(/^[\s\S]{0,200}?\bingr(?:edientes?)?\s*[:.]+\s*/i, '');
 
   const seen = new Set<string>();
   const names: string[] = [];
-  for (const raw of text.split(/[,;]/)) {
-    const part = raw.replace(/\*|_|\d+\.?\d*\s*%/g, '').trim();
-    if (part.length <= 2 || part.length >= 80) continue;
+
+  // Separadores: comas, puntos y coma, saltos de línea, y puntos seguidos de
+  // espacio (no los decimales de "0.5 g", que quedan intactos).
+  for (const raw of text.split(/[,;\r\n]|\.(?=\s|$)/)) {
+    let part = raw.replace(/\*|_|\d+\.?\d*\s*%/g, '').trim();
+    if (part.length <= 2) continue;
+
+    // Un fragmento largo casi siempre es una lista corrida que no trajo
+    // separadores. Antes se DESCARTABA en silencio, y con él se iban los
+    // ingredientes reales del producto: unas galletitas quedaron reducidas a
+    // "sulfato ferroso" y puntuaron como alimento entero. Se recorta para el
+    // matching en vez de perderlo.
+    if (part.length > MAX_FRAGMENT_LENGTH) part = part.slice(0, MAX_FRAGMENT_LENGTH).trim();
+
     const key = part.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -188,35 +226,101 @@ const SEV_TO_IMPACT: Record<Sev, Impact> = {
 };
 
 /**
- * §3.2/§3.3 — Impacto de un ingrediente en la posición `index` del listado.
+ * Un ingrediente evaluado. `known` separa "lo reconocimos y es benigno" de
+ * "no tenemos idea de qué es" — dos cosas que antes colapsaban en `'none'`.
+ *
+ * Esa confusión era el defecto más grave del motor: lo desconocido sumaba al
+ * bonus por ingredientes reales y habilitaba el arquetipo de alimento entero,
+ * así que NO SABER empujaba el puntaje hacia arriba. Un producto con tres
+ * ingredientes inventados daba 80 (Excelente). §3.3 dice que un alimento
+ * reconocible fuera de las listas no se penaliza, que no es lo mismo que
+ * premiarlo.
+ */
+export type EvaluatedIngredient = {
+  name: string;
+  impact: Impact;
+  known: boolean;
+  /** Clase del aditivo si vino como abreviatura de rotulado (§8). */
+  abbreviationLabel?: string;
+};
+
+/**
+ * §3.2/§3.3/§8 — Impacto de un ingrediente en la posición `index`.
  *
  * Orden de precedencia:
- *  1. La rúbrica (§3.2/§8), que es la autoridad cuando tiene opinión.
- *  2. §3.3 — patrón de aditivo industrial sin clasificar → medio.
- *  3. ingredientData, nuestra base de 268 ingredientes. Las tablas del spec
- *     son deliberadamente parciales (§10 se propone llegar a 40-80
- *     ingredientes clasificados), así que sin este respaldo el aceite de
- *     palma —que el spec no enumera— quedaría sin penalización y en verde.
- *  4. Alimento reconocible que no está en ninguna lista → no penalizar.
+ *  1. La rúbrica (§3.2/§8): es la autoridad cuando tiene opinión.
+ *  2. §8 — abreviatura de rotulado argentino ("COL 150 d", "ACI 338").
+ *  3. §3.3 — patrón de aditivo industrial sin clasificar → medio.
+ *  4. ingredientData, nuestra base de 268 ingredientes. Las tablas del spec
+ *     son deliberadamente parciales (§10 se propone llegar a 40-80), así que
+ *     sin este respaldo el aceite de palma quedaría sin penalizar.
+ *  5. Desconocido: neutro, y marcado como tal.
  */
-export function impactOfIngredient(name: string, index: number): Impact {
+export function evaluateIngredient(name: string, index: number): EvaluatedIngredient {
   const match = rubricImpact(name);
   if (match) {
     // §3.2 — Azúcar añadida: impacto alto en los primeros 3 ingredientes,
     // medio después ("presente pero no dominante en la formulación").
-    if (match.positional) return index < 3 ? 'alto' : 'medio';
-    return match.impact;
+    const impact = match.positional ? (index < 3 ? 'alto' : 'medio') : match.impact;
+    return { name, impact, known: true };
   }
 
-  // §3.3 — Número E o nombre con patrón de aditivo industrial sin clasificar
-  // → impacto medio por defecto. "La ausencia de clasificación específica no
-  // equivale a sin riesgo." El motor v1 los descartaba en silencio.
-  if (ADDITIVE_PATTERN.test(name)) return 'medio';
+  const abbreviation = resolveLabelAbbreviation(name);
+  if (abbreviation) {
+    return { name, impact: abbreviation.impact, known: true, abbreviationLabel: abbreviation.label };
+  }
 
-  const known = classifyIngredient(name);
-  if (known) return SEV_TO_IMPACT[known.b];
+  // §3.3 — Número E o patrón de aditivo industrial sin clasificar → medio.
+  // "La ausencia de clasificación específica no equivale a sin riesgo."
+  if (ADDITIVE_PATTERN.test(name)) return { name, impact: 'medio', known: true };
 
-  return 'none';
+  const inDatabase = classifyIngredient(name);
+  if (inDatabase) return { name, impact: SEV_TO_IMPACT[inDatabase.b], known: true };
+
+  return { name, impact: 'none', known: false };
+}
+
+/** Atajo para los casos donde solo interesa el nivel de impacto. */
+export function impactOfIngredient(name: string, index: number): Impact {
+  return evaluateIngredient(name, index).impact;
+}
+
+/**
+ * §3.2 — La posición del azúcar decide si pesa alto o medio, pero contarla
+ * sobre fragmentos crudos es frágil: en la Coca-Cola de OFF, basura de OCR
+ * ("Bosas Trans", "Grasas Totales", "Planta Trelew") ocupaba las primeras
+ * tres posiciones y empujaba al azúcar al índice 4, degradándola a medio.
+ *
+ * La posición se cuenta entonces solo sobre ingredientes RECONOCIDOS, y el
+ * panel nutricional actúa de respaldo: si el azúcar declarada es alta, es
+ * dominante en la formulación aunque la lista diga otra cosa. Vale la peor
+ * de las dos lecturas.
+ */
+function evaluateIngredients(
+  names: string[],
+  nutriments?: Record<string, unknown>,
+): { items: EvaluatedIngredient[]; sugarEscalated: boolean } {
+  const items: EvaluatedIngredient[] = [];
+  let recognizedIndex = 0;
+
+  for (const name of names) {
+    const evaluated = evaluateIngredient(name, recognizedIndex);
+    if (evaluated.known) recognizedIndex++;
+    items.push(evaluated);
+  }
+
+  const sugars = parseFloat(String(nutriments?.['sugars_100g'] ?? nutriments?.['sugars'] ?? '')) || 0;
+  let sugarEscalated = false;
+  if (sugars > 15) {
+    for (const item of items) {
+      if (item.impact === 'medio' && rubricImpact(item.name)?.positional) {
+        item.impact = 'alto';
+        sugarEscalated = true;
+      }
+    }
+  }
+
+  return { items, sugarEscalated };
 }
 
 /** Severidad mostrada en la UI, derivada del impacto de la rúbrica para que
@@ -230,11 +334,27 @@ export function ftgAnalyzeIngredients(offProduct: ProductInput): AnalyzedIngredi
   const list: AnalyzedIngredient[] = [];
   const names = parseIngredientNames(offProduct.ingredients_text);
 
-  names.forEach((part, index) => {
+  const { items: evaluated } = evaluateIngredients(names, offProduct.nutriments);
+
+  evaluated.forEach(({ name: part, impact, known, abbreviationLabel }) => {
     if (list.length >= MAX_ANALYZED) return;
-    const impact = impactOfIngredient(part, index);
     const ing = classifyIngredient(part);
     const sev = sevFromImpact(impact);
+
+    // §8 — Abreviatura de rotulado: se muestra la clase resuelta ("Colorante
+    // E150", "Acidulante E338"), no el críptico "COL 150 d" de la etiqueta.
+    if (abbreviationLabel) {
+      list.push({
+        name: abbreviationLabel,
+        detail: 'Aditivo alimentario',
+        sev,
+        sevA: 'orange',
+        amount: 'trazas',
+        desc: `Declarado en la etiqueta como "${part}", la notación abreviada del rotulado argentino. Aditivo industrial: se evalúa con impacto ${impact}.`,
+        flag: sev === 'red',
+      });
+      return;
+    }
 
     if (ing) {
       list.push({
@@ -262,9 +382,10 @@ export function ftgAnalyzeIngredients(offProduct: ProductInput): AnalyzedIngredi
       amount: '',
       desc: isAdditive
         ? 'Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.'
-        : 'Sin clasificación en nuestra base de datos. Verificar origen.',
+        : 'No pudimos identificar este ingrediente. No suma ni resta al puntaje — no lo damos por bueno solo porque no lo conocemos.',
       flag: sev === 'red',
     });
+    void known;
   });
 
   const addTags = offProduct.additives_tags || [];
@@ -390,6 +511,13 @@ const COMPOSITE_BASE = 71;
  */
 const DOMINANT_BAND: Record<Impact, number> = { alto: 22, medio: 54, bajo: 68, none: COMPOSITE_BASE };
 
+/** Punto al que tiende el puntaje cuando no reconocemos los ingredientes:
+ *  ni bueno ni malo, que es literalmente lo que sabemos del producto. */
+const NEUTRAL_SCORE = 50;
+
+/** Debajo de esta cobertura el puntaje no se considera afirmable (§11). */
+const MIN_COVERAGE_FOR_SCORE = 0.5;
+
 /**
  * Penalización acumulada con retornos decrecientes: el segundo ingrediente
  * problemático agrega menos que el primero, el tercero menos que el segundo.
@@ -411,26 +539,80 @@ export type IngredientBase = {
   /** Techo del arquetipo de alimento entero, si aplicó (§3.1). */
   cap: number | null;
   profile: WholeFoodProfile | null;
-  impacts: Impact[];
+  evaluated: EvaluatedIngredient[];
+  /** Fracción de ingredientes que el motor supo identificar (0-1). */
+  coverage: number;
+  /** El azúcar ya se escaló a impacto alto por el panel nutricional, así que
+   *  §6 no debe volver a penalizarla ( "No duplicar"). */
+  sugarEscalated: boolean;
 };
 
-/** §3 — Puntaje base del producto a partir de su listado de ingredientes. */
-function computeIngredientBase(names: string[], categories = ''): IngredientBase {
-  if (names.length === 0) {
-    return { base: 40, cap: null, profile: null, impacts: [] };
+/**
+ * Aditivos declarados en `additives_tags` de OFF que no aparecieron en el
+ * texto. Es el dato MÁS confiable que tenemos: OFF ya lo normalizó a
+ * `en:e150d`, así que es inmune a la calidad del OCR del rotulado. Antes solo
+ * alimentaba la lista visible y el conteo NOVA — no entraba al puntaje, con
+ * lo cual un producto con el texto de ingredientes roto perdía sus aditivos.
+ */
+function additiveEntries(addTags: string[], fromText: EvaluatedIngredient[]): EvaluatedIngredient[] {
+  const entries: EvaluatedIngredient[] = [];
+
+  for (const tag of addTags) {
+    const code = tag.replace(/^en:/, '');
+    const already = fromText.some(
+      (t) => matchesPhrase(t.name.toLowerCase(), code) || (ADDITIVES[tag] && matchesPhrase(t.name.toLowerCase(), ADDITIVES[tag].name.toLowerCase())),
+    );
+    if (already) continue;
+
+    const byRubric = rubricImpact(code);
+    entries.push({
+      name: ADDITIVES[tag]?.name ?? code.toUpperCase(),
+      // Un aditivo declarado que no está en la rúbrica cae al default de
+      // §3.3: medio. Nunca a 'none' — que OFF lo liste ya prueba que es un
+      // aditivo industrial.
+      impact: byRubric ? byRubric.impact : 'medio',
+      known: true,
+    });
   }
 
-  const impacts = names.map((n, i) => impactOfIngredient(n, i));
-  const penalized = impacts.filter((i) => i !== 'none');
+  return entries;
+}
+
+/** §3 — Puntaje base del producto a partir de sus ingredientes y aditivos. */
+function computeIngredientBase(
+  names: string[],
+  categories = '',
+  addTags: string[] = [],
+  nutriments?: Record<string, unknown>,
+): IngredientBase {
+  const { items: fromText, sugarEscalated } = evaluateIngredients(names, nutriments);
+  const evaluated = [...fromText, ...additiveEntries(addTags, fromText)];
+
+  if (evaluated.length === 0) {
+    return { base: 40, cap: null, profile: null, evaluated, coverage: 0, sugarEscalated };
+  }
+
+  const coverage = evaluated.filter((e) => e.known).length / evaluated.length;
+  const penalized = evaluated.filter((e) => e.impact !== 'none');
+  const impacts = penalized.map((e) => e.impact);
+  const allKnown = evaluated.every((e) => e.known);
 
   // §3.1 — Ingrediente único o mínimo: puntaje base alto por defecto. Solo si
-  // NINGÚN ingrediente penaliza ("cualquier ingrediente adicional fuera de
-  // los descritos activa la evaluación de ingredientes").
-  if (penalized.length === 0) {
-    const profile = matchWholeFoodProfile(names, categories);
-    if (profile) return { base: profile.base, cap: profile.max, profile, impacts };
-    if (names.length <= GENERIC_WHOLE_FOOD.maxIngredients) {
-      return { base: GENERIC_WHOLE_FOOD.base, cap: GENERIC_WHOLE_FOOD.max, profile: null, impacts };
+  // ningún ingrediente penaliza Y los reconocimos a todos: no se le puede
+  // adjudicar el arquetipo de "alimento entero" a una lista que no
+  // entendimos.
+  if (penalized.length === 0 && allKnown) {
+    const declaredSugars = nutriments
+      ? parseFloat(String(nutriments['sugars_100g'] ?? nutriments['sugars'] ?? '')) || 0
+      : undefined;
+    const profile = matchWholeFoodProfile(names, categories, declaredSugars);
+    if (profile) return { base: profile.base, cap: profile.max, profile, evaluated, coverage, sugarEscalated };
+    // El mismo control cruzado que los arquetipos nombrados: un listado corto
+    // y benigno desmentido por el panel no es un alimento entero.
+    const sugarsContradict =
+      declaredSugars != null && declaredSugars > GENERIC_WHOLE_FOOD.maxSugars;
+    if (evaluated.length <= GENERIC_WHOLE_FOOD.maxIngredients && !sugarsContradict) {
+      return { base: GENERIC_WHOLE_FOOD.base, cap: GENERIC_WHOLE_FOOD.max, profile: null, evaluated, coverage, sugarEscalated };
     }
   }
 
@@ -438,23 +620,35 @@ function computeIngredientBase(names: string[], categories = ''): IngredientBase
   // ingredientes. La condición va sobre el TOTAL, no sobre la cantidad de
   // penalizados: un producto de cinco ingredientes con una sola goma arábiga
   // es un compuesto con un aditivo, no "un producto de goma arábiga".
-  if (penalized.length > 0 && names.length <= 2) {
-    const worst = penalized.includes('alto') ? 'alto' : penalized.includes('medio') ? 'medio' : 'bajo';
-    return { base: DOMINANT_BAND[worst], cap: null, profile: null, impacts };
+  if (penalized.length > 0 && evaluated.length <= 2) {
+    const worst = impacts.includes('alto') ? 'alto' : impacts.includes('medio') ? 'medio' : 'bajo';
+    return { base: DOMINANT_BAND[worst], cap: null, profile: null, evaluated, coverage, sugarEscalated };
   }
 
-  const penalty = accumulatePenalties(penalized.map((i) => IMPACT_WEIGHT[i]));
+  const penalty = accumulatePenalties(impacts.map((i) => IMPACT_WEIGHT[i]));
 
   // §3.1 — "Un producto comienza a construir su puntaje desde lo que ES."
-  // Los ingredientes reales suman, pero NO cuando hay un ingrediente de
-  // impacto alto: ese define al producto, y dos ingredientes reales no lo
-  // redimen. Sin esta condición, un yogur azucarado con almidón modificado
-  // se compensaba hasta salirse de la banda que le da §9.
-  const hasHighImpact = penalized.includes('alto');
-  const greenBonus = hasHighImpact ? 0 : Math.min(6, impacts.filter((i) => i === 'none').length * 2);
+  // Solo suman los ingredientes que RECONOCIMOS como benignos: premiar lo
+  // desconocido es exactamente el defecto que este cambio corrige. Y no suma
+  // nada si hay un ingrediente de impacto alto: ese define al producto, y dos
+  // ingredientes reales no lo redimen.
+  const hasHighImpact = impacts.includes('alto');
+  const recognizedBenign = evaluated.filter((e) => e.known && e.impact === 'none').length;
+  const greenBonus = hasHighImpact ? 0 : Math.min(6, recognizedBenign * 2);
 
-  const base = clamp(COMPOSITE_BASE - penalty + greenBonus);
-  return { base, cap: null, profile: null, impacts };
+  const raw = COMPOSITE_BASE - penalty + greenBonus;
+
+  // Regresión a neutro según cobertura. Un puntaje se construye a partir de
+  // lo que encontramos; si no reconocimos casi nada, no encontramos
+  // penalizaciones porque estábamos ciegos, no porque no las haya. Sostener
+  // la base compuesta en ese caso es afirmar algo que no verificamos: un
+  // producto con tres ingredientes ilegibles daba 63 ("Bueno").
+  //
+  // Con cobertura total el puntaje queda intacto; a medida que baja, tiende a
+  // 50 (ni bueno ni malo). Afecta las dos direcciones a propósito: la falta
+  // de datos tampoco puede usarse para condenar un producto.
+  const base = clamp(NEUTRAL_SCORE + (raw - NEUTRAL_SCORE) * coverage);
+  return { base, cap: null, profile: null, evaluated, coverage, sugarEscalated };
 }
 
 // ── PASO 3 — Modificador NOVA (§5) ──
@@ -476,7 +670,11 @@ function countNova4Markers(product: ProductInput, names: string[]): number {
 // Solo resta. §6 es explícito: un perfil limpio "se asume correcto por
 // defecto", sin modificador positivo. v1 daba bonus por proteína y fibra, lo
 // que dejaba productos ultraprocesados fortificados por encima de comida real.
-function nutritionModifier(product: ProductInput, isWholeFood: boolean): { delta: number; notes: string[] } {
+function nutritionModifier(
+  product: ProductInput,
+  isWholeFood: boolean,
+  sugarAlreadyCounted: boolean,
+): { delta: number; notes: string[] } {
   const n = product.nutriments;
   const notes: string[] = [];
   // §11 — Sin panel nutricional, se omite el paso. No asumir ni favorable ni
@@ -486,10 +684,27 @@ function nutritionModifier(product: ProductInput, isWholeFood: boolean): { delta
   const v = (k: string) => parseFloat(String(n[k + '_100g'] ?? n[k] ?? 0)) || 0;
   const sodiumMg = v('sodium') * 1000;
   const sugars = v('sugars');
+  const trans = v('trans-fat');
   const isDrink = /bebida|drink|beverage|gaseosa|jugo|soda|refresco/i.test(product.categories || '');
   const sugarLimit = isDrink ? 8 : 15;
 
   let delta = 0;
+
+  // Grasa trans declarada en el panel. §6 no la menciona y §4.1 solo la ataca
+  // por ingrediente ("aceite parcialmente hidrogenado" en el texto), lo que
+  // deja pasar cualquier producto que la declare sin nombrar el PHO: un
+  // producto con 4g/100g salía Moderado y sin compuerta. Dado que §4.1
+  // fundamenta la anulación en que no existe nivel de consumo seguro, no
+  // penalizarla cuando está declarada sería incoherente.
+  //
+  // La excepción de §3.4/§4.1 se respeta: la grasa trans natural de lácteos y
+  // rumiantes no se penaliza, y por eso queda fuera para alimentos enteros y
+  // NOVA 1.
+  if (!isWholeFood && product.nova_group !== 1 && trans > 0.2) {
+    const severe = trans >= 2;
+    delta -= severe ? 15 : 8;
+    notes.push(`Grasa trans declarada (${trans}g/100g).`);
+  }
 
   if (sodiumMg > 900) {
     delta -= 6;
@@ -500,7 +715,15 @@ function nutritionModifier(product: ProductInput, isWholeFood: boolean): { delta
   }
 
   // §6 + §3.4 — El azúcar natural de un alimento entero no se penaliza.
-  if (!isWholeFood && product.nova_group !== 1 && sugars > sugarLimit) {
+  // §6 — "La penalización ya está en los ingredientes. No duplicar." Si el
+  // panel nutricional ya sirvió para escalar el azúcar del listado a impacto
+  // alto, cobrarla otra vez acá la contaría dos veces.
+  // La exención de azúcar natural (§3.4) se apoya en que el producto haya
+  // matcheado un arquetipo de alimento entero, no en `nova_group`: ese campo
+  // también es colaborativo, y bastaba un NOVA 1 mal cargado para que
+  // cualquier producto azucarado esquivara la penalización. La fruta real
+  // sigue exenta porque matchea su arquetipo.
+  if (!sugarAlreadyCounted && !isWholeFood && sugars > sugarLimit) {
     const severe = sugars > sugarLimit * 1.5;
     delta -= severe ? 6 : 3;
     notes.push(`Azúcar alta para la categoría (${sugars}g/100g).`);
@@ -613,14 +836,19 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
   const redCount   = analyzed.filter((i) => i.sev === 'red').length;
 
   // ── §2 PASO 2 — Base por ingredientes (motor principal) ──
-  const { base, cap, profile } = computeIngredientBase(names, offProduct.categories);
+  const { base, cap, profile, coverage, sugarEscalated } = computeIngredientBase(
+    names,
+    offProduct.categories,
+    addTags,
+    offProduct.nutriments,
+  );
 
   // ── §2 PASO 3 — Modificador NOVA ──
   const markers  = countNova4Markers(offProduct, names);
   const novaDelta = novaModifier(offProduct.nova_group ?? null, base, markers);
 
   // ── §2 PASO 4 — Modificador de perfil nutricional ──
-  const { delta: nutDelta, notes: nutNotes } = nutritionModifier(offProduct, profile !== null);
+  const { delta: nutDelta, notes: nutNotes } = nutritionModifier(offProduct, profile !== null, sugarEscalated);
 
   // ── §2 PASO 5 — Puntaje final ──
   let score: number;
@@ -688,7 +916,13 @@ export function ftgScoreWithBreakdown(offProduct: ProductInput): ScoreBreakdown 
     tierColor:    tierDef.color,
     tierMessage:  tierDef.message,
     gateTriggered: gates.length > 0 ? gates[0].reason : null,
-    scoreAvailable: hasIngData,
+    // §11 — "Si no hay lista de ingredientes, no generar puntaje." Extendido
+    // al caso equivalente: tener la lista pero no entenderla. Con cobertura
+    // baja el número que devolvemos es una estimación, no un veredicto, y el
+    // consumidor tiene que poder distinguirlo.
+    scoreAvailable: hasIngData && coverage >= MIN_COVERAGE_FOR_SCORE,
+    coverage: Math.round(coverage * 100) / 100,
+    confidence: coverage >= 0.8 ? 'alta' : coverage >= 0.5 ? 'media' : 'baja',
     components: {
       toxicidad:     { score: toxicidadScore,     verdict: toxVerdict,   detail: toxDetail  },
       nutricion:     { score: nutricionScore,     verdict: nutVerdict,   detail: nutDetail  },

@@ -33,7 +33,8 @@ describe('ftgEngine — regresión sobre productos reales', () => {
 
   // v1: 29. Prácticamente igual, por caminos distintos: v1 lo hundía con el
   // 25% de peso del eje NOVA, v2 con las penalizaciones de ingredientes de
-  // §3.2 más un modificador NOVA acotado.
+  // §3.2 más un modificador NOVA acotado. El azúcar acá pesa alto por partida
+  // doble —posición y panel nutricional— pero se cobra una sola vez.
   it('Galletita ultraprocesada (español) → Moderado sin compuerta', () => {
     const p: ProductInput = {
       ingredients_text: 'harina de trigo, azúcar, aceite de girasol, jarabe de maíz de alta fructosa, sal',
@@ -42,7 +43,7 @@ describe('ftgEngine — regresión sobre productos reales', () => {
       nutriments: { 'sugars_100g': 30, 'saturated-fat_100g': 8, 'sodium_100g': 0.4, 'proteins_100g': 6, 'fiber_100g': 2 },
     };
     const bd = ftgScoreWithBreakdown(p);
-    expect(bd.score).toBe(30);
+    expect(bd.score).toBe(31);
     expect(bd.tier).toBe('Moderado');
     expect(bd.gateTriggered).toBeNull();
   });

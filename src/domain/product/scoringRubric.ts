@@ -14,6 +14,43 @@
 /** §3.2 — Escala de impacto de un ingrediente sobre el puntaje. */
 export type Impact = 'alto' | 'medio' | 'bajo' | 'none';
 
+const WORDISH = /[\p{L}\p{N}]/u;
+// Sufijos que aceptamos pegados al alias: plurales del español. Sin esto,
+// "azúcares" o "aceites vegetales" dejarían de matchear.
+const PLURAL_SUFFIXES = ['', 's', 'es'];
+
+/**
+ * ¿`phrase` aparece en `haystack` como palabra (o frase) completa?
+ *
+ * Reemplaza al `includes()` pelado que se usaba antes, que producía falsos
+ * negativos peligrosos: el alias "sal" (sin penalización) matcheaba dentro de
+ * "salame", "salchicha" y "salsa de soja", así que un embutido puntuaba como
+ * sal de mesa. Y "ajo" matcheaba dentro de "trabajo".
+ *
+ * Ambos extremos tienen que caer en un borde de palabra, con la salvedad del
+ * plural: "azúcar" tiene que seguir matcheando "azúcares".
+ */
+export function matchesPhrase(haystack: string, phrase: string): boolean {
+  if (!phrase) return false;
+
+  let from = 0;
+  for (;;) {
+    const i = haystack.indexOf(phrase, from);
+    if (i < 0) return false;
+
+    const before = i > 0 ? haystack[i - 1] : '';
+    if (!before || !WORDISH.test(before)) {
+      const rest = haystack.slice(i + phrase.length);
+      for (const suffix of PLURAL_SUFFIXES) {
+        if (!rest.startsWith(suffix)) continue;
+        const after = rest[suffix.length] ?? '';
+        if (!after || !WORDISH.test(after)) return true;
+      }
+    }
+    from = i + 1;
+  }
+}
+
 export type ImpactEntry = {
   aliases: string[];
   impact: Impact;
@@ -240,6 +277,15 @@ export type WholeFoodProfile = {
    * sal, cuajo, fermentos" — la palabra "queso" no aparece por ningún lado.
    */
   categoryPattern?: RegExp;
+  /**
+   * Azúcar máxima (g/100g) compatible con el arquetipo. El panel nutricional
+   * es un control cruzado contra listas de ingredientes incompletas: los
+   * datos de OFF son colaborativos, y una gaseosa cargada con un único
+   * ingrediente "Agua" recibiría el puntaje del agua mineral. Si el panel
+   * desmiente al listado, el arquetipo no aplica y el producto cae a la
+   * evaluación normal.
+   */
+  maxSugars?: number;
 };
 
 const SEASONING = ['sal', 'salt', 'agua', 'water'];
@@ -248,6 +294,7 @@ export const WHOLE_FOOD_PROFILES: WholeFoodProfile[] = [
   {
     id: 'agua',
     base: 97, max: 100,
+    maxSugars: 0.5,
     required: ['agua mineral', 'agua de manantial', 'agua'],
     allowed: ['minerales', 'sales minerales'],
   },
@@ -268,12 +315,14 @@ export const WHOLE_FOOD_PROFILES: WholeFoodProfile[] = [
   {
     id: 'aceite-oliva-virgen',
     base: 91, max: 95,
+    maxSugars: 1,
     required: ['aceite de oliva extra virgen', 'extra virgin olive oil'],
     allowed: [],
   },
   {
     id: 'carne-pescado-pollo',
     base: 89, max: 93,
+    maxSugars: 3,
     categoryPattern: /carne|pollo|pescado|pechuga|meat|chicken|fish/i,
     required: [
       'carne', 'carne vacuna', 'pollo', 'pechuga', 'pescado', 'merluza', 'salmón',
@@ -296,6 +345,7 @@ export const WHOLE_FOOD_PROFILES: WholeFoodProfile[] = [
   {
     id: 'yogur-natural',
     base: 86, max: 90,
+    maxSugars: 8,
     categoryPattern: /yogur|yoghurt|yogurt/i,
     required: ['yogur', 'yoghurt', 'yogurt'],
     allowed: ['leche', 'leche entera', 'fermentos lácticos', 'fermentos lacticos', 'fermentos', 'cultivos activos', 'cultivos lácticos', 'cultivos lacticos'],
@@ -316,6 +366,7 @@ export const WHOLE_FOOD_PROFILES: WholeFoodProfile[] = [
   {
     id: 'queso-simple',
     base: 82, max: 86,
+    maxSugars: 6,
     categoryPattern: /queso|cheese/i,
     required: ['queso'],
     allowed: [...SEASONING, 'leche', 'leche entera', 'fermentos lácticos', 'fermentos lacticos', 'fermentos', 'cuajo', 'rennet'],
@@ -327,7 +378,7 @@ export const WHOLE_FOOD_PROFILES: WholeFoodProfile[] = [
  * matchea ningún arquetipo de la tabla. Sigue siendo un alimento real: base
  * alta, pero por debajo de los arquetipos nombrados.
  */
-export const GENERIC_WHOLE_FOOD = { base: 88, max: 92, maxIngredients: 4 };
+export const GENERIC_WHOLE_FOOD = { base: 88, max: 92, maxIngredients: 4, maxSugars: 8 };
 
 /** §4.1 — Compuertas de anulación total: fuerzan la categoría Malo (0-24). */
 export type AnnulGate = {
@@ -426,14 +477,66 @@ const IMPACT_INDEX: ImpactIndexEntry[] = IMPACT_TABLE.flatMap((e) =>
 export type ImpactMatch = { impact: Impact; positional: boolean } | null;
 
 /**
+ * §8 — Abreviaturas de las etiquetas argentinas. El rotulado nacional declara
+ * la CLASE del aditivo abreviada más su número INS, no el nombre completo:
+ * "COL 150 d" es colorante caramelo, "ACI 338" ácido fosfórico, "ARO" aroma.
+ * El spec lista los nombres completos y no contempla esta notación, así que
+ * sin esta tabla todos estos aditivos caían como "alimento no reconocido".
+ *
+ * El número, cuando está, manda: "COL 102" es tartrazina (impacto alto) y no
+ * un colorante genérico. Si no se puede identificar, se aplica el default de
+ * §3.3 para aditivos sin clasificar: impacto medio.
+ */
+const LABEL_ABBREVIATIONS: { prefix: RegExp; label: string }[] = [
+  { prefix: /^col\b/i,  label: 'Colorante' },
+  { prefix: /^aro\b/i,  label: 'Aroma' },
+  { prefix: /^aci\b/i,  label: 'Acidulante' },
+  { prefix: /^cons\b/i, label: 'Conservante' },
+  { prefix: /^est\b/i,  label: 'Estabilizante' },
+  { prefix: /^edu\b/i,  label: 'Edulcorante' },
+  { prefix: /^ant\b/i,  label: 'Antioxidante' },
+  { prefix: /^emu\b/i,  label: 'Emulsionante' },
+  { prefix: /^esp\b/i,  label: 'Espesante' },
+  { prefix: /^hum\b/i,  label: 'Humectante' },
+  { prefix: /^ega\b/i,  label: 'Estabilizante de gases' },
+  { prefix: /^res\b/i,  label: 'Regulador de acidez' },
+];
+
+export type AbbreviationMatch = { label: string; impact: Impact };
+
+/**
+ * §8 — Resuelve "COL 150 d" / "ACI 338" / "ARO" a su clase y su impacto.
+ * Devuelve `null` si el fragmento no tiene forma de abreviatura de rotulado.
+ */
+export function resolveLabelAbbreviation(name: string): AbbreviationMatch | null {
+  const n = name.trim();
+  for (const { prefix, label } of LABEL_ABBREVIATIONS) {
+    if (!prefix.test(n)) continue;
+
+    // El número INS identifica el aditivo concreto: "COL 102" → E102.
+    const digits = n.match(/\d{3,4}/)?.[0];
+    if (digits) {
+      const byNumber = rubricImpact(`e${digits}`);
+      if (byNumber) return { label: `${label} E${digits}`, impact: byNumber.impact };
+      return { label: `${label} E${digits}`, impact: 'medio' };
+    }
+
+    return { label, impact: 'medio' };
+  }
+  return null;
+}
+
+/**
  * §3.2/§3.3 — Impacto de un ingrediente según la rúbrica. `null` si la
- * rúbrica no tiene opinión (el motor cae entonces a la base de ingredientes
- * o a la regla de aditivo desconocido).
+ * rúbrica no tiene opinión (el motor cae entonces a ingredientData o a la
+ * regla de aditivo desconocido).
  */
 export function rubricImpact(name: string): ImpactMatch {
   const n = name.toLowerCase().trim();
   for (const entry of IMPACT_INDEX) {
-    if (n.includes(entry.alias)) return { impact: entry.impact, positional: entry.positional };
+    if (matchesPhrase(n, entry.alias)) {
+      return { impact: entry.impact, positional: entry.positional };
+    }
   }
   return null;
 }
@@ -441,7 +544,7 @@ export function rubricImpact(name: string): ImpactMatch {
 /** ¿El ingrediente cae dentro de este perfil de alimento entero? */
 function matchesAny(name: string, patterns: string[]): boolean {
   const n = name.toLowerCase().trim();
-  return patterns.some((p) => n.includes(p.toLowerCase()));
+  return patterns.some((p) => matchesPhrase(n, p.toLowerCase()));
 }
 
 /**
@@ -452,6 +555,7 @@ function matchesAny(name: string, patterns: string[]): boolean {
 export function matchWholeFoodProfile(
   ingredientNames: string[],
   categories = '',
+  sugars?: number,
 ): WholeFoodProfile | null {
   if (ingredientNames.length === 0) return null;
 
@@ -462,7 +566,12 @@ export function matchWholeFoodProfile(
 
     const hasRequired = ingredientNames.some((n) => matchesAny(n, profile.required));
     const categorySaysSo = profile.categoryPattern?.test(categories) ?? false;
-    if (hasRequired || categorySaysSo) return profile;
+    if (!hasRequired && !categorySaysSo) continue;
+
+    // El panel desmiente al listado: no es el alimento que dice ser.
+    if (profile.maxSugars != null && sugars != null && sugars > profile.maxSugars) continue;
+
+    return profile;
   }
 
   return null;

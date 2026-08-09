@@ -7,7 +7,12 @@
 #
 # Uso:
 #   ./scripts/etl/run-all.sh [--countries argentina,chile,...] [--enrich] \
-#       [--off-file /tmp/off-products.jsonl.gz] [--off-limit 500] [--merge-limit 2000]
+#       [--off-file /tmp/off-products.jsonl.gz] [--off-limit 500] [--merge-limit 2000] \
+#       [--vtex-pages 3] [--vtex-page-size 50]
+#
+# Ojo con --vtex-pages: la API de VTEX corta la paginación alrededor del
+# item 2500, así que pages * pageSize por encima de eso devuelve páginas
+# vacías y el job corta solo (no es un error, pero tampoco trae nada más).
 #
 # Por default NO usa --enrich (no gasta tokens de Claude) — pasalo explícito
 # solo si ya confirmaste el volumen/costo (ver README, sección "Nunca").
@@ -23,6 +28,8 @@ COUNTRIES_FLAG=""
 OFF_FILE="/tmp/off-products.jsonl.gz"
 OFF_LIMIT=500
 MERGE_LIMIT=2000
+VTEX_PAGES=3
+VTEX_PAGE_SIZE=50
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +38,8 @@ while [[ $# -gt 0 ]]; do
     --off-file) OFF_FILE="$2"; shift 2 ;;
     --off-limit) OFF_LIMIT="$2"; shift 2 ;;
     --merge-limit) MERGE_LIMIT="$2"; shift 2 ;;
+    --vtex-pages) VTEX_PAGES="$2"; shift 2 ;;
+    --vtex-page-size) VTEX_PAGE_SIZE="$2"; shift 2 ;;
     *) echo "Argumento desconocido: $1" >&2; exit 1 ;;
   esac
 done
@@ -38,6 +47,7 @@ done
 echo "############################################"
 echo "# ETL Fitogenix — corrida completa"
 echo "# enrich=${ENRICH:-no} countries=${COUNTRIES_FLAG:-argentina (default)}"
+echo "# off-limit=$OFF_LIMIT vtex=${VTEX_PAGES}x${VTEX_PAGE_SIZE} merge-limit=$MERGE_LIMIT"
 echo "############################################"
 
 if [[ ! -f "$OFF_FILE" ]]; then
@@ -55,19 +65,19 @@ npm run etl:off -- --file "$OFF_FILE" --limit "$OFF_LIMIT" $COUNTRIES_FLAG
 
 echo ""
 echo "=== [2/6] Ingesta VTEX — Carrefour ==="
-npm run etl:vtex -- --domain www.carrefour.com.ar --source carrefour --pages 3 --pageSize 50
+npm run etl:vtex -- --domain www.carrefour.com.ar --source carrefour --pages "$VTEX_PAGES" --pageSize "$VTEX_PAGE_SIZE"
 
 echo ""
 echo "=== [3/6] Ingesta VTEX — Jumbo ==="
-npm run etl:vtex -- --domain www.jumbo.com.ar --source jumbo --pages 3 --pageSize 50
+npm run etl:vtex -- --domain www.jumbo.com.ar --source jumbo --pages "$VTEX_PAGES" --pageSize "$VTEX_PAGE_SIZE"
 
 echo ""
 echo "=== [4/6] Ingesta VTEX — Disco ==="
-npm run etl:vtex -- --domain www.disco.com.ar --source disco --pages 3 --pageSize 50
+npm run etl:vtex -- --domain www.disco.com.ar --source disco --pages "$VTEX_PAGES" --pageSize "$VTEX_PAGE_SIZE"
 
 echo ""
 echo "=== [5/6] Ingesta VTEX — Vea ==="
-npm run etl:vtex -- --domain www.vea.com.ar --source vea --pages 3 --pageSize 50
+npm run etl:vtex -- --domain www.vea.com.ar --source vea --pages "$VTEX_PAGES" --pageSize "$VTEX_PAGE_SIZE"
 
 echo ""
 echo "=== [6/6] Merge (enrich=${ENRICH:-no}) ==="
