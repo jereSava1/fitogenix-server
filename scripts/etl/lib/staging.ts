@@ -236,7 +236,9 @@ export async function fetchAllRowsForBarcode(barcode: string): Promise<PendingSt
 /** Marca el resultado del merge sobre las filas de staging que contribuyeron. */
 export async function markStagingRows(
   ids: string[],
-  status: 'merged' | 'enriched' | 'discarded_incomplete',
+  // 'merged_incomplete' (migración 010): llegó a `products` pero sin datos
+  // para puntuar. Distinto de 'discarded_incomplete', que era "no se escribió".
+  status: 'merged' | 'merged_incomplete' | 'enriched' | 'discarded_incomplete',
   opts: { mergedInto?: string; discardReason?: string } = {},
 ): Promise<void> {
   if (ids.length === 0) return;

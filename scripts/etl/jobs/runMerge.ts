@@ -64,20 +64,19 @@ async function main() {
     const ids = trigger.map((r) => r.id);
     let wasEnriched = false;
 
+    // Gate de DATOS vs. gate de SCORING (migración 010). Que no alcance para
+    // puntuar no significa que el producto no sirva: el nombre, la marca y la
+    // imagen son lo que le permite al usuario reconocer lo que escaneó, y sin
+    // ellos ese código cae a la cascada cara en vez de resolverse local.
+    // Entra igual, marcado como incompleto; el motor ya sabe declarar que no
+    // puede puntuar (scoreAvailable/coverage).
+    let incomplete = false;
     if (!isComplete(combined)) {
       if (enrich) {
         combined = await enrichWithAI(combined);
         wasEnriched = true;
       }
-      if (!isComplete(combined)) {
-        await markStagingRows(ids, 'discarded_incomplete', {
-          discardReason: enrich
-            ? 'sin ingredients_text ni nutriments tras merge + enrichWithAI'
-            : 'sin ingredients_text ni nutriments tras merge (no se corrió --enrich)',
-        });
-        discarded++;
-        continue;
-      }
+      incomplete = !isComplete(combined);
     }
 
     const product = mapOFFToProduct(combined, barcode);
@@ -102,8 +101,15 @@ async function main() {
     }
 
     const productId = (data as { id: string }).id;
-    await markStagingRows(ids, wasEnriched ? 'enriched' : 'merged', { mergedInto: productId });
+    const status = incomplete ? 'merged_incomplete' : wasEnriched ? 'enriched' : 'merged';
+    await markStagingRows(ids, status, {
+      mergedInto: productId,
+      discardReason: incomplete
+        ? 'sin ingredientes ni tabla nutricional: escrito igual, pendiente de enriquecimiento'
+        : undefined,
+    });
     merged++;
+    if (incomplete) discarded++; // se contabiliza aparte en el resumen
     if (wasEnriched) enrichedCount++;
 
     if (merged % 50 === 0) {
@@ -112,8 +118,13 @@ async function main() {
   }
 
   console.log(
-    `[runMerge] listo. mergeados=${merged} (enriquecidos=${enrichedCount}) descartados=${discarded}`,
+    `[runMerge] listo. escritos=${merged} · de esos, sin datos para puntuar=${discarded} · enriquecidos con IA=${enrichedCount}`,
   );
+  if (discarded > 0) {
+    console.log(
+      `[runMerge] ${discarded} productos entraron sin ingredientes. Siguiente paso: npm run etl:enrich-cencosud`,
+    );
+  }
   console.log('[runMerge] siguiente paso: npm run etl:stats   (ver qué quedó en products_staging y products)');
 }
 
