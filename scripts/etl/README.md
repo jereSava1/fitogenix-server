@@ -18,7 +18,8 @@ scripts/etl/
 │   ├── ingestVtex.ts      # API VTEX (Jumbo/Disco/Vea/Carrefour) → products_staging
 │   ├── runMerge.ts        # products_staging → merge + gate + upsert a products
 │   ├── stats.ts           # ¿qué trajimos hasta ahora?
-│   └── checkDuplicates.ts # ¿algún producto quedó guardado dos veces?
+│   ├── checkDuplicates.ts # ¿algún producto quedó guardado dos veces?
+│   └── auditDataQuality.ts # ¿algún producto tiene un campo corrupto/mal mapeado?
 └── run-all.sh      # orquesta TODO lo de arriba en una sola corrida (ver abajo)
 ```
 
@@ -97,6 +98,61 @@ barcode exacto repetido (no debería pasar nunca, hay UNIQUE constraint),
 mismo código en EAN-13/UPC-A, y mismo product_name+brand con barcode
 distinto (señal más débil, para revisar a mano). Correlo después de cada
 `etl:merge` grande.
+
+## Calidad de datos — campos corruptos/mal mapeados
+
+Distinto de "falta el dato" (eso lo cubre el gate de completitud): acá el
+dato ESTÁ, pero en el campo equivocado o con contenido que no es lo que dice
+ser. Dos casos conocidos:
+
+1. `ingredients_text` con texto de dirección/fábrica en vez de una lista de
+   ingredientes real — típico de carga comunitaria en OFF (alguien pega la
+   etiqueta completa, no solo los ingredientes).
+2. `brand` vacío con la marca embebida en `product_name` — típico de scrapes
+   de retailer sin ese campo tageado estructuralmente.
+
+`npm run etl:audit-quality` es el chequeo — **solo lectura, no corrige
+nada**. Heurísticas baratas y determinísticas (regex, sin gastar un token de
+IA): patrones de dirección/boilerplate legal para (1), diccionario de marcas
+conocidas (construido desde la propia tabla) contra `product_name` para (2),
+y rango físico plausible para nutrientes (atrapa errores de unidad, mg vs g).
+
+Reporta una muestra por categoría para revisar A MANO. `lib/qualityHeuristics.ts`
+filtra el diccionario de marcas conocidas exigiendo >=2 apariciones — la
+columna `brand` tiene sus propios datos corruptos (es justo lo que
+auditamos), así que un valor que aparece una sola vez puede ser basura (ej.
+un sabor cargado como marca por error) y contaminar el diccionario.
+
+### Corrección — `npm run etl:fix-quality`
+
+```bash
+# Dry run — propone correcciones, NO escribe nada (pero SÍ llama a Claude,
+# el costo en tokens es el mismo con o sin --apply):
+npm run etl:fix-quality -- --limit 200
+
+# Recién si el dry-run se ve bien, aplicar de verdad:
+npm run etl:fix-quality -- --limit 200 --apply
+```
+
+Requiere `migrations/010_manufacturer_info.sql` aplicada antes de correr con
+`--apply` (agrega una columna nueva, nullable, para no perder info de
+fabricante — ver abajo).
+
+Nunca reescribe un campo con un dato INVENTADO — Claude (`lib/qualityAI.ts`,
+Haiku, separado de `claudeService.ts` que es hot-path del scan en vivo) se
+usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
+
+- **brand vacío**: primero el diccionario determinístico (gratis). Si la
+  marca nunca apareció antes en la tabla (típico de un producto con un solo
+  SKU), recién ahí Claude la extrae DEL TEXTO del nombre — nunca la inventa,
+  devuelve null si no hay nada identificable con confianza.
+- **ingredients_text sospechoso**: Claude separa, del mismo texto, la
+  porción real de ingredientes de la de fabricante/dirección/RNE-RNPA. La
+  real queda en `ingredients_text`; la de fabricante se MUEVE a
+  `manufacturer_info` en vez de perderse. Si no hay nada rescatable,
+  `ingredients_text` se anula — la fila vuelve a pasar por el gate de
+  completitud + `runMerge.ts` que ya existe (se re-busca un dato real antes
+  de recurrir a `--enrich`), nunca queda con un valor inventado.
 
 ## Verificar sin correr nada (directo en el SQL Editor de Supabase)
 

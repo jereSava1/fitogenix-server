@@ -5,10 +5,10 @@
 // el paquete y verificarlos. Si nuestro cálculo no coincide con el envase, la
 // app pierde credibilidad de una forma que un puntaje discutible no provoca.
 import { describe, expect, it } from 'vitest';
-import { ftgScoreWithBreakdown, type ProductInput } from './ftgEngine';
-import { computeWarningSeals } from './scoringRubric';
+import { scoreProduct, type ProductInput } from './index';
+import { computeWarningSeals } from './index';
 
-const sellosDe = (p: ProductInput) => ftgScoreWithBreakdown(p).warnings;
+const sellosDe = (p: ProductInput) => scoreProduct(p).warnings;
 
 describe('productos que SÍ llevan sellos', () => {
   it('una gaseosa cola azucarada lleva exceso en azúcares', () => {

@@ -71,6 +71,21 @@ const alfajorRow = {
   ai_enriched: true,
 };
 
+// Producto que el motor v2.1 NO puntúa (§1 — fuera de alcance). Tiene crudos
+// válidos, así que la fila NO es un miss: se lista, pero sin puntaje.
+const cervezaRow = {
+  id: 'uuid-cerveza',
+  barcode: '7790003',
+  name_key: null,
+  product_name: 'Cerveza rubia',
+  brand: 'Marca',
+  category: 'Bebidas alcohólicas, Cervezas',
+  ingredients_text: 'agua, malta de cebada, lúpulo',
+  nutriments: { 'energy-kcal_100g': 43 },
+  data_source: 'off',
+  ai_enriched: false,
+};
+
 describe('listSavedProducts', () => {
   it('mapea las filas embebidas a FitogenixProduct con productId y dataSource', async () => {
     selectResult = {
@@ -150,6 +165,37 @@ describe('listSavedProducts', () => {
   it('propaga errores de DB como Error (la ruta responde 500)', async () => {
     selectResult = { data: null, error: { message: 'boom' } };
     await expect(saved.listSavedProducts('user-1')).rejects.toThrow('boom');
+  });
+});
+
+describe('listSavedProducts — productos sin puntaje', () => {
+  it('un guardado con score null se LISTA igual, con null y su motivo', async () => {
+    // Regresión de v2.1: estos productos no se omiten del listado ni se
+    // coercionan a 0. Se omiten solo las filas sin id o sin crudos
+    // (joinedRowToProduct → null), que es otro caso.
+    selectResult = {
+      data: [
+        { product_id: 'uuid-cerveza', created_at: '2026-08-15T12:00:00Z', products: cervezaRow },
+        { product_id: 'uuid-galletitas', created_at: '2026-08-14T12:00:00Z', products: galletitasRow },
+      ],
+      error: null,
+    };
+
+    const items = await saved.listSavedProducts('user-1');
+
+    expect(items).toHaveLength(2);
+    expect(items[0].name).toBe('Cerveza rubia');
+    expect(items[0].score).toBeNull();
+    expect(items[0].scoreAvailable).toBe(false);
+    expect(items[0].noScore?.code).toBeTruthy();
+    // La presentación viene igual resuelta del servidor: el cliente no tiene
+    // que decidir qué mostrar cuando no hay número.
+    expect(items[0].scoreLabel).toBe('SIN DATOS SUFICIENTES');
+    expect(items[0].fito).toBe('none');
+    // `flagged` no se prende sin puntaje: no sabemos si el producto es malo.
+    expect(items[0].flagged).toBe(false);
+    // El producto con puntaje del mismo listado no se ve afectado.
+    expect(typeof items[1].score).toBe('number');
   });
 });
 

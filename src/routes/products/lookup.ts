@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { lookupProduct } from '../../services/productLookupService';
 import { recordScan, resolveUserIdFromToken } from '../../services/scanHistoryService';
+import { lookupResponseSchema } from './lookupSchema';
 
 export async function productLookupRoute(app: FastifyInstance) {
   // Sin requireAuth a propósito: los anónimos también pueden buscar. Si la
@@ -15,6 +16,13 @@ export async function productLookupRoute(app: FastifyInstance) {
           query: { type: 'string', minLength: 1, maxLength: 200 },
         },
       },
+      // Contrato de respuesta EXPLÍCITO (ver lookupSchema.ts). Fastify lo usa
+      // para serializar con fast-json-stringify; la contracara es que todo
+      // campo no declarado se elimina de la respuesta, así que el schema está
+      // atado a `FitogenixProduct` en tiempo de compilación.
+      // La fuente de verdad del contrato es src/types/fitogenix.ts; el espejo
+      // del cliente vive en fitogenix-native/src/lib/contracts/.
+      response: lookupResponseSchema,
     },
   }, async (request, reply) => {
     const { query } = request.body;

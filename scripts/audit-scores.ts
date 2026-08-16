@@ -34,7 +34,7 @@ type Finding = {
   why: string;
   name: string;
   barcode: string;
-  score: number;
+  score: number | null;
   tier: string;
   coverage: number;
 };
@@ -48,6 +48,9 @@ function toInput(r: Row): ProductInput {
     categories: r.category ?? undefined,
   };
 }
+
+/** §9 — cola de curaduría: término no identificado → cuántas veces apareció. */
+export const CURATION_QUEUE = new Map<string, number>();
 
 const DRINK = /bebida|gaseosa|refresco|jugo|soda|drink|beverage/i;
 const PROCESSED_MEAT = /fiambre|salchich|jamón|jamon|mortadela|salame|chorizo|panceta|bacon|embutido/i;
@@ -78,26 +81,30 @@ function analyze(r: Row): Finding[] {
   }
 
   // Un ultraprocesado en la banda alta necesita justificarse.
-  if (r.nova_group === 4 && bd.score >= 75) {
+  // NOVA ya no entra al puntaje en v2.1, así que este contraste es una señal
+  // externa: si OFF lo clasificó 4 y nosotros lo pusimos Excelente, uno de los
+  // dos se equivocó y conviene mirarlo.
+  if (r.nova_group === 4 && (bd.score ?? 0) >= 75) {
     out.push({ ...base, rule: 'ultraprocesado-excelente',
       why: 'NOVA 4 puntuando como Excelente.' });
   }
 
   // Bebida azucarada que igual queda bien parada.
-  if (DRINK.test(haystack) && sugars > 5 && bd.score >= 50) {
+  if (DRINK.test(haystack) && sugars > 5 && (bd.score ?? 0) >= 50) {
     out.push({ ...base, rule: 'bebida-azucarada-buena',
       why: `Bebida con ${sugars}g de azúcar/100g y puntaje ${bd.score}.` });
   }
 
   // Carne procesada sin compuerta: puede estar bien (sin nitritos declarados)
   // o puede ser que no detectamos el curado.
-  if (PROCESSED_MEAT.test(haystack) && bd.score >= 50 && !bd.gateTriggered) {
+  if (PROCESSED_MEAT.test(haystack) && (bd.score ?? 0) >= 50 &&
+      bd.annulments.length === 0 && bd.ceiling == null) {
     out.push({ ...base, rule: 'carne-procesada-sin-gate',
-      why: 'Carne procesada en banda alta y sin compuerta de nitrito.' });
+      why: 'Carne procesada en banda alta, sin anulación ni techo por curado.' });
   }
 
   // El error opuesto, igual de dañino: castigar un alimento real.
-  if (r.nova_group === 1 && bd.score < 50) {
+  if (r.nova_group === 1 && bd.score != null && bd.score < 50) {
     out.push({ ...base, rule: 'alimento-real-castigado',
       why: 'NOVA 1 (alimento mínimamente procesado) por debajo de Bueno.' });
   }
@@ -105,9 +112,13 @@ function analyze(r: Row): Finding[] {
   // No es error del motor, es calidad de dato — pero define cuánto del
   // catálogo podemos mostrar con cara seria.
   if (!bd.scoreAvailable) {
-    out.push({ ...base, rule: 'sin-puntaje-afirmable',
-      why: `Cobertura ${Math.round(bd.coverage * 100)}%: el puntaje no es afirmable.` });
+    out.push({ ...base, rule: 'sin-puntaje',
+      why: `${bd.noScore?.code ?? 'sin datos'} — el motor no emite puntaje (§1).` });
   }
+
+  // §9 "Qué medir durante el testeo": todo NO IDENTIFICADO, con su frecuencia.
+  // Es la cola de curaduría, y es lo que hace crecer al sistema.
+  for (const term of bd.unidentified) CURATION_QUEUE.set(term, (CURATION_QUEUE.get(term) ?? 0) + 1);
 
   return out;
 }

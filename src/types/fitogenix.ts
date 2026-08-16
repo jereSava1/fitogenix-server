@@ -1,17 +1,11 @@
 import type {
   AnalyzedIngredient,
+  NoScoreCode,
   NutritionFacts,
   ScoreBreakdown,
 } from '../domain/product/ftgEngine';
 
-export type { AnalyzedIngredient, NutritionFacts, ScoreBreakdown };
-
-export type Subscores = {
-  toxicidad: number;
-  nutricion: number;
-  procesamiento: number;
-  alineacion: number;
-};
+export type { AnalyzedIngredient, NoScoreCode, NutritionFacts, ScoreBreakdown };
 
 export type FitogenixProduct = {
   id: string;
@@ -20,14 +14,26 @@ export type FitogenixProduct = {
   brand: string;
   category: string;
   categoryEmoji: string;
-  score: number;
+
+  /**
+   * `null` cuando §1 del motor dice que no se puntúa: fuera de alcance, sin
+   * datos suficientes, o lista que no se pudo identificar. Es un estado de
+   * primera clase, no un error — la app muestra el mensaje de `noScore` en vez
+   * del número. Nunca se rellena con un valor conservador: "la ausencia de
+   * datos nunca mejora un puntaje".
+   */
+  score: number | null;
+  scoreAvailable: boolean;
+  noScore: { code: NoScoreCode; message: string } | null;
+
   flagged: boolean;
   emoji: string;
   bgColor: string;
   imageUrl: string | null;
-  ingredients: AnalyzedIngredient[];
+  ingredients: readonly AnalyzedIngredient[];
   nutrition: NutritionFacts;
-  subscores: Subscores;
+  /** El desglose completo de §7: la cuenta paso por paso, el procesamiento, la
+   *  mirada Fitogenix, los sellos y la cola de curaduría. */
   breakdown: ScoreBreakdown | null;
   dataSource: string;
   aiEnriched?: boolean;
@@ -37,7 +43,7 @@ export type FitogenixProduct = {
   productId: string;
   // ── Presentación derivada del score (calculada server-side, única fuente
   // de verdad). El cliente solo renderiza estos campos, no recalcula umbrales.
-  scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO'
+  scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES'
   scoreColor: string;   // color hex del tier
   tagline: string;      // 'Lo recomendamos', etc.
   fito: 'fito' | 'nofito' | 'none';

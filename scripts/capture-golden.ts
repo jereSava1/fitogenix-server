@@ -47,7 +47,14 @@ for (const [name, product] of Object.entries(FIXTURES)) {
   const bd = ftgScoreWithBreakdown(product);
   const ings = ftgAnalyzeIngredients(product);
   console.log(`\n═══ ${name} ═══`);
-  console.log(`score=${bd.score} tier=${bd.tier} gate=${bd.gateTriggered ? 'SÍ' : 'no'}`);
-  console.log(`  tox=${bd.components.toxicidad.score} nut=${bd.components.nutricion.score} proc=${bd.components.procesamiento.score} alin=${bd.components.alineacion.score}`);
-  console.log(`  ings: ${ings.map((i) => `${i.name}[${i.sev}]`).join(', ')}`);
+  console.log(`score=${bd.score ?? 'sin puntaje'} tier=${bd.tier}${bd.noScore ? ` (${bd.noScore.code})` : ''}`);
+  // El desglose ES la salida: §7 regla 1 pide que el usuario pueda seguir la
+  // resta, así que el golden congela la cuenta y no solo el total.
+  for (const s of bd.steps) {
+    const delta = s.delta == null ? '   ·' : String(s.delta).padStart(4);
+    console.log(`  ${s.kind.padEnd(13)} ${delta}  →${String(s.running).padStart(4)}  ${s.label}`);
+  }
+  if (bd.annulments.length) console.log(`  anulaciones: ${bd.annulments.length}`);
+  if (bd.ceiling) console.log(`  techo: ${bd.ceiling.value}`);
+  console.log(`  ings: ${ings.map((i) => `${i.name}[${i.impact}]`).join(', ')}`);
 }

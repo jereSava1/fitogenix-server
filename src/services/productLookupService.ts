@@ -1,7 +1,6 @@
 import {
   extractCategory,
   extractNutrition,
-  ftgAnalyzeIngredients,
   ftgScoreWithBreakdown,
 } from '../domain/product/ftgEngine';
 import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
@@ -54,11 +53,19 @@ function nameKey(query: string): string {
 
 // Presentación derivada del score — única fuente de verdad de los umbrales.
 // El cliente consume estos campos en vez de recalcularlos.
-function scorePresentation(score: number): Pick<
+//
+// `score: null` es un estado de primera clase desde v2.1: §1 del documento
+// enumera los casos en que NO se emite puntaje, y "la ausencia de datos nunca
+// mejora un puntaje". Antes se devolvía un 40 conservador que el cliente no
+// podía distinguir de un 40 calculado.
+function scorePresentation(score: number | null): Pick<
   FitogenixProduct,
   'scoreLabel' | 'scoreColor' | 'tagline' | 'fito'
 > {
   const { label, color } = getScoreLabel(score);
+  if (score == null) {
+    return { scoreLabel: label, scoreColor: color, tagline: getScoreTagline(score), fito: 'none' };
+  }
   const status = resolveProductStatus(score);
   const fito =
     status.label === 'Fitogénico' ? 'fito' :
@@ -83,7 +90,11 @@ function cleanName(raw: string | undefined, fallback: string): string {
 // lookup.
 export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
   const breakdown = ftgScoreWithBreakdown(off);
-  const ingredients = ftgAnalyzeIngredients(off);
+  // Los ingredientes salen del MISMO breakdown, no de una segunda pasada: en
+  // v2.1 la posición de cada ingrediente y su resta son parte del cálculo, así
+  // que recalcularlos aparte podría dar una lista que no corresponde al
+  // puntaje que se está mostrando.
+  const ingredients = breakdown.ingredients;
   const nutrition = extractNutrition(off.nutriments);
 
   return {
@@ -94,18 +105,14 @@ export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixPro
     category: extractCategory(off.categories),
     categoryEmoji: '🍽️',
     score: breakdown.score,
-    flagged: breakdown.score < 40,
+    scoreAvailable: breakdown.scoreAvailable,
+    noScore: breakdown.noScore,
+    flagged: breakdown.score != null && breakdown.score < 40,
     emoji: '📦',
     bgColor: '#f8faf7',
     imageUrl: off.image_front_url ?? off.image_url ?? null,
     ingredients,
     nutrition,
-    subscores: {
-      toxicidad: breakdown.components.toxicidad.score,
-      nutricion: breakdown.components.nutricion.score,
-      procesamiento: breakdown.components.procesamiento.score,
-      alineacion: breakdown.components.alineacion.score,
-    },
     breakdown,
     dataSource: off._aiSource ? 'ai' : 'off',
     // Default para tipar; los resolutores la pisan con el id real de la fila

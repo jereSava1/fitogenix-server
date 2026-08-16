@@ -125,6 +125,20 @@ describe('buildCachePayload', () => {
     expect(payload.additives_tags).toBeNull();
   });
 
+  it('score null se persiste como null, con su label y sin sello', () => {
+    // v2.1: el motor no puntúa lo que cae en §1 (fuera de alcance, sin datos,
+    // lista no identificable). Ese null tiene que llegar a la DB COMO null —
+    // si se coercionara a 0, la fila quedaría indistinguible del peor producto
+    // del catálogo y los listados de guardados/historial mentirían.
+    const product = makeProduct({ score: null });
+
+    const payload = cache.buildCachePayload(product, rawGalletitas, { barcode: '222' });
+
+    expect(payload.score).toBeNull();
+    expect(payload.score_label).toBe('SIN DATOS SUFICIENTES');
+    expect(payload.sello).toBeNull();
+  });
+
   it('producto solo-IA: name_key SIN prefijo y sin columna barcode', () => {
     const raw: RawOFFProduct = {
       product_name: 'Alfajor Artesanal',
