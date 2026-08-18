@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
+    "prestart": "npm run build",
     "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
