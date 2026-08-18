@@ -29,8 +29,14 @@ export async function productLookupRoute(app: FastifyInstance) {
 
     const product = await lookupProduct(query.trim());
 
+    // Sin cascada externa (decisión de producto, 2026-08-18): `lookupProduct`
+    // solo mira Redis/Supabase. Un `null` acá significa "todavía no está en
+    // el catálogo", no "no se pudo resolver por ningún medio" — el mensaje
+    // lo refleja.
     if (!product) {
-      return reply.status(404).send({ error: 'Producto no encontrado' });
+      return reply.status(404).send({
+        error: 'Todavía no tenemos este producto en nuestro catálogo.',
+      });
     }
 
     // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no

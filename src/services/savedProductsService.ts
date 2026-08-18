@@ -6,7 +6,7 @@
  * identidad del producto). El listado se sirve con un embed de PostgREST
  * (saved_products → products, habilitado por la FK a products.id) y cada
  * producto se recomputa con el MISMO pipeline que un hit de cache:
- * rowToCachedRaw + mapOFFToProduct.
+ * rowToCachedRaw + mapRawToProduct.
  *
  * Lógica extraída de las rutas (src/routes/users/saved.ts) para testearla
  * unitariamente sin levantar Fastify ni mockear el plugin de auth.

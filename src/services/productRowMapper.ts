@@ -5,16 +5,16 @@
  * `product_id` (migración 006) y listan con un embed
  * (`<tabla>(product_id, ..., products(*))`). Este módulo concentra la
  * reconstrucción del producto para que ambos listados apliquen EXACTAMENTE el
- * mismo pipeline que un hit de cache: rowToCachedRaw + mapOFFToProduct +
+ * mismo pipeline que un hit de cache: rowToCachedRaw + mapRawToProduct +
  * preservar dataSource/productId.
  *
- * Vive aparte (y no en cacheService) porque necesita mapOFFToProduct de
+ * Vive aparte (y no en cacheService) porque necesita mapRawToProduct de
  * productLookupService, que a su vez importa cacheService: meterlo ahí
  * crearía un import circular.
  */
 
 import { rowToCachedRaw } from './cacheService';
-import { mapOFFToProduct } from './productLookupService';
+import { mapRawToProduct } from './productLookupService';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -45,8 +45,8 @@ export function joinedRowToProduct(rowUnknown: unknown): FitogenixProduct | null
   if (!cached) return null; // fila sin id o sin crudos → se omite
 
   // Mismo tratamiento que el hit de Supabase en productLookupService:
-  // recomputar con mapOFFToProduct y preservar dataSource/productId.
-  const product = mapOFFToProduct(cached.raw, cached.productId);
+  // recomputar con mapRawToProduct y preservar dataSource/productId.
+  const product = mapRawToProduct(cached.raw, cached.productId);
   product.dataSource = cached.dataSource;
   product.productId = cached.productId;
   return product;

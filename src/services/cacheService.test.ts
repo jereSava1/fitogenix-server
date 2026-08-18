@@ -5,14 +5,14 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 // createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
 // en las variables de resultado. Cadenas cubiertas:
 //   .select('*').eq().maybeSingle()                  → mockRow (getCachedProductBy*)
-//   .select('*').ilike().order().limit()             → mockRows (findCachedProductByName)
+//   .rpc('search_products_by_name', {...})           → mockRpcRows (findCachedProductByName)
 //   .select('id, product_name').is().ilike().limit() → upgradeRows (upgrade name→barcode)
 //   .upsert().select('id').single()                  → upsertResult (setCachedProduct)
 //   .update().eq().select('id').single()             → updateResult (upgrade update)
 let mockRow: Record<string, unknown> | null = null;
 let mockError: unknown = null;
-let mockRows: Record<string, unknown>[] | null = null;
-let mockRowsError: unknown = null;
+let mockRpcRows: Record<string, unknown>[] | null = null;
+let mockRpcError: unknown = null;
 let upgradeRows: Record<string, unknown>[] | null = [];
 let upgradeError: unknown = null;
 type SingleResult = { data: Record<string, unknown> | null; error: { message: string } | null };
@@ -21,13 +21,11 @@ let updateResult: SingleResult = { data: null, error: null };
 
 const maybeSingle = vi.fn(async () => ({ data: mockRow, error: mockError }));
 const eq = vi.fn(() => ({ maybeSingle }));
-const orderLimit = vi.fn(async () => ({ data: mockRows, error: mockRowsError }));
-const order = vi.fn(() => ({ limit: orderLimit }));
-const ilike = vi.fn(() => ({ order }));
 const isLimit = vi.fn(async () => ({ data: upgradeRows, error: upgradeError }));
 const isIlike = vi.fn(() => ({ limit: isLimit }));
 const isFn = vi.fn(() => ({ ilike: isIlike }));
-const select = vi.fn(() => ({ eq, ilike, is: isFn }));
+const select = vi.fn(() => ({ eq, is: isFn }));
+const rpc = vi.fn(async () => ({ data: mockRpcRows, error: mockRpcError }));
 const upsertSingle = vi.fn(async () => upsertResult);
 const upsertSelect = vi.fn(() => ({ single: upsertSingle }));
 const upsert = vi.fn(() => ({ select: upsertSelect }));
@@ -38,7 +36,7 @@ const update = vi.fn((_payload: Record<string, unknown>) => ({ eq: updateEq }));
 const from = vi.fn(() => ({ select, upsert, update }));
 
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({ from })),
+  createClient: vi.fn(() => ({ from, rpc })),
 }));
 
 type CacheModule = typeof import('./cacheService');
@@ -58,8 +56,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockRow = null;
   mockError = null;
-  mockRows = null;
-  mockRowsError = null;
+  mockRpcRows = null;
+  mockRpcError = null;
   upgradeRows = [];
   upgradeError = null;
   upsertResult = { data: null, error: null };
@@ -327,7 +325,7 @@ describe('findCachedProductByName', () => {
   });
 
   it('match simple: devuelve el crudo con productId y barcode de la fila', async () => {
-    mockRows = [makeRow()];
+    mockRpcRows = [makeRow()];
 
     const result = await cache.findCachedProductByName('Coca Cola');
 
@@ -336,23 +334,32 @@ describe('findCachedProductByName', () => {
     expect(result?.barcode).toBe('57045399');
     expect(result?.dataSource).toBe('off');
     expect(result?.raw.product_name).toBe('Coca-Cola');
-    // El patrón intercala los tokens normalizados con %.
-    expect(ilike).toHaveBeenCalledWith('product_name', '%coca%cola%');
+    // El ranking corre en el RPC (migración 014); acá solo verificamos que se
+    // invoque con el query normalizado.
+    expect(rpc).toHaveBeenCalledWith('search_products_by_name', {
+      search_query: 'coca cola',
+      match_limit: 5,
+    });
   });
 
-  it('normaliza el query (acentos, mayúsculas, espacios) antes de armar el patrón', async () => {
-    mockRows = [makeRow()];
+  it('normaliza el query (acentos, mayúsculas, espacios) antes de llamar al RPC', async () => {
+    mockRpcRows = [makeRow()];
 
     await cache.findCachedProductByName('  CÓCA   Cóla  ');
 
-    expect(ilike).toHaveBeenCalledWith('product_name', '%coca%cola%');
+    expect(rpc).toHaveBeenCalledWith('search_products_by_name', {
+      search_query: 'coca cola',
+      match_limit: 5,
+    });
   });
 
-  it('prefiere la fila con barcode (datos reales) sobre la fila solo-IA', async () => {
-    mockRows = [
-      // La fila IA viene primera (updated_at más reciente) pero pierde igual.
-      makeRow({ id: 'uuid-ai', barcode: null, name_key: 'coca cola', data_source: 'ai' }),
+  it('toma la primera fila reconstruible — el orden de relevancia lo resuelve el RPC', async () => {
+    // similarity()/barcode/longitud ya vienen resueltos por el ORDER BY del
+    // RPC (ver migración 014); acá solo confirmamos que se respeta ese orden
+    // en vez de re-ordenar del lado del cliente.
+    mockRpcRows = [
       makeRow(),
+      makeRow({ id: 'uuid-ai', barcode: null, name_key: 'coca cola', data_source: 'ai' }),
     ];
 
     const result = await cache.findCachedProductByName('coca cola');
@@ -362,38 +369,15 @@ describe('findCachedProductByName', () => {
     expect(result?.dataSource).toBe('off');
   });
 
-  it('entre filas con barcode prefiere el nombre más corto (match más ajustado)', async () => {
-    mockRows = [
-      makeRow({
-        id: 'uuid-zero',
-        barcode: '111',
-        product_name: 'Coca-Cola Zero Sin Azucar 2.25L',
-      }),
-      makeRow({ id: 'uuid-comun', barcode: '222', product_name: 'Coca-Cola' }),
-    ];
-
-    const result = await cache.findCachedProductByName('coca cola');
-
-    expect(result?.productId).toBe('uuid-comun');
-  });
-
   it('query normalizado < 3 caracteres → null sin consultar', async () => {
-    mockRows = [makeRow()];
+    mockRpcRows = [makeRow()];
 
     await expect(cache.findCachedProductByName('  a ')).resolves.toBeNull();
-    expect(ilike).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('escapa %, _ y \\ en los tokens del patrón', async () => {
-    mockRows = null;
-
-    await cache.findCachedProductByName('jugo 100% na_ranja');
-
-    expect(ilike).toHaveBeenCalledWith('product_name', '%jugo%100\\%%na\\_ranja%');
-  });
-
-  it('filas sin crudos se descartan como candidatas', async () => {
-    mockRows = [
+  it('filas sin crudos se descartan como candidatas, sigue con la próxima', async () => {
+    mockRpcRows = [
       // Fila vieja sin ingredients_text ni nutriments: no sirve aunque tenga barcode.
       makeRow({ ingredients_text: null, nutriments: null }),
       makeRow({ id: 'uuid-ai', barcode: null, name_key: 'coca cola', data_source: 'ai' }),
@@ -407,12 +391,12 @@ describe('findCachedProductByName', () => {
     expect(result?.dataSource).toBe('ai');
   });
 
-  it('sin candidatas válidas (o error de Supabase) → null', async () => {
-    mockRows = [makeRow({ ingredients_text: null, nutriments: null })];
+  it('sin candidatas válidas (o error del RPC) → null', async () => {
+    mockRpcRows = [makeRow({ ingredients_text: null, nutriments: null })];
     await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
 
-    mockRows = null;
-    mockRowsError = { message: 'boom' };
+    mockRpcRows = null;
+    mockRpcError = { message: 'boom' };
     await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
   });
 });

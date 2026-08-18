@@ -19,7 +19,7 @@
 import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 import { parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from '../adapters/vtexAdapter';
-import { mapOFFToProduct } from '../../../src/services/productLookupService';
+import { mapRawToProduct } from '../../../src/services/productLookupService';
 import { buildCachePayload } from '../../../src/services/cacheService';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 
@@ -169,7 +169,7 @@ async function main() {
       continue;
     }
 
-    const product = mapOFFToProduct(merged, p.barcode!);
+    const product = mapRawToProduct(merged, p.barcode!);
     const payload = buildCachePayload(product, merged, { barcode: p.barcode! });
     const { error } = await admin().from('products').upsert(payload, { onConflict: 'barcode' });
     if (error) {

@@ -7,7 +7,7 @@ import type { RawOFFProduct } from '../types/fitogenix';
 const OBF_BASE = 'https://world.openbeautyfacts.org';
 
 // Mismos campos que pedimos a OFF: así el objeto crudo entra sin fricción en
-// mapOFFToProduct (que ya aplica ftgEngine para el scoring uniforme).
+// mapRawToProduct (que ya aplica ftgEngine para el scoring uniforme).
 const OBF_FIELDS =
   'product_name,brands,image_url,image_front_url,ingredients_text,nutriments,nova_group,additives_tags,labels_tags,categories,quantity,serving_size';
 

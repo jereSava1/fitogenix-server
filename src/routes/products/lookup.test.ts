@@ -2,11 +2,13 @@
  * Contrato de POST /products/lookup.
  *
  * Lo que fija este archivo: el JSON Schema de respuesta (lookupSchema.ts) NO
- * recorta el payload. fast-json-stringify elimina en silencio toda propiedad
- * que el schema no declare, así que un campo nuevo en `FitogenixProduct` que
- * nadie agregó al schema desaparecería de la respuesta sin que falle nada.
- * Acá se compara la respuesta contra el producto ENTERO, con un breakdown real
- * salido del motor.
+ * recorta el payload MÁS de lo que se declaró a propósito. fast-json-stringify
+ * elimina en silencio toda propiedad que el schema no declare, así que un
+ * campo nuevo en `FitogenixProduct` que nadie agregó al schema desaparecería
+ * de la respuesta sin que falle nada. Acá se compara la respuesta contra el
+ * producto ENTERO — incluida la ausencia deliberada de `breakdown` (decisión
+ * de producto, 2026-08-18: el motor lo sigue calculando internamente, pero ya
+ * no cruza la red — ver la nota en lookupSchema.ts y types/fitogenix.ts).
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,9 +50,10 @@ beforeEach(() => {
 });
 
 /**
- * Producto armado con un breakdown REAL del motor v2.1 — no un objeto de
- * fantasía. Si el motor agrega un campo al breakdown y el schema no lo
- * declara, este test lo caza.
+ * Producto armado con un cálculo REAL del motor v2.1 — no un objeto de
+ * fantasía. `score`/`ingredients`/`scoreAvailable`/`noScore` salen del mismo
+ * `ftgScoreWithBreakdown`, aunque el `breakdown` en sí no se adjunte al
+ * producto (no es parte del contrato de `FitogenixProduct`).
  */
 function producto(raw: Parameters<typeof ftgScoreWithBreakdown>[0]): FitogenixProduct {
   const breakdown = ftgScoreWithBreakdown(raw);
@@ -70,7 +73,6 @@ function producto(raw: Parameters<typeof ftgScoreWithBreakdown>[0]): FitogenixPr
     imageUrl: 'https://example.com/p.jpg',
     ingredients: breakdown.ingredients,
     nutrition: extractNutrition(raw.nutriments),
-    breakdown,
     dataSource: 'off',
     aiEnriched: false,
     productId: '6f1e2c3d-0000-4000-8000-000000000001',
@@ -104,7 +106,7 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     await app.close();
   });
 
-  it('el desglose viaja con steps[] y sin los 4 ejes de v2', async () => {
+  it('breakdown no viaja en la respuesta (decisión de producto, 2026-08-18)', async () => {
     const esperado = producto({
       product_name: 'Galletitas rellenas',
       ingredients_text: 'harina de trigo, azúcar, aceite vegetal',
@@ -119,12 +121,9 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     });
 
     const body = res.json();
-    expect(Array.isArray(body.breakdown.steps)).toBe(true);
-    expect(body.breakdown.steps.length).toBeGreaterThan(0);
-    expect(body.breakdown.engineVersion).toBe('ftg-rubric-v2.1');
-    // La forma vieja no puede colarse ni aunque el producto la trajera.
+    // Ni la forma vieja de v2 ni la de v2.1: ninguna de las dos se manda.
     expect(body).not.toHaveProperty('subscores');
-    expect(body.breakdown).not.toHaveProperty('components');
+    expect(body).not.toHaveProperty('breakdown');
     await app.close();
   });
 
@@ -155,11 +154,10 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     await app.close();
   });
 
-  it('breakdown null también viaja como null', async () => {
+  it('nulos legítimos (subtitle, imageUrl) viajan como null, no se omiten', async () => {
     const base = producto({ ingredients_text: 'agua, sal' });
     vi.mocked(productLookupService.lookupProduct).mockResolvedValue({
       ...base,
-      breakdown: null,
       subtitle: null,
       imageUrl: null,
     });
@@ -172,7 +170,6 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     });
 
     const body = res.json();
-    expect(body.breakdown).toBeNull();
     expect(body.subtitle).toBeNull();
     expect(body.imageUrl).toBeNull();
     await app.close();
@@ -189,7 +186,9 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     });
 
     expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual({ error: 'Producto no encontrado' });
+    expect(res.json()).toEqual({
+      error: 'Todavía no tenemos este producto en nuestro catálogo.',
+    });
     await app.close();
   });
 });

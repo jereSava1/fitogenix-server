@@ -11,7 +11,7 @@
  * ── Invalidación por versión de motor ──
  *
  * A diferencia del cache de Supabase (que guarda los CRUDOS y recomputa con
- * mapOFFToProduct en cada lectura, así que nunca puede servir una forma vieja),
+ * mapRawToProduct en cada lectura, así que nunca puede servir una forma vieja),
  * acá guardamos el `FitogenixProduct` YA SERIALIZADO. Una entrada escrita por
  * `ftg-rubric-v2` trae `subscores`, `breakdown.components` y un `score`
  * numérico donde v2.1 devolvería `null`: servirla tal cual es romperle el

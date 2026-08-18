@@ -29,25 +29,33 @@
  *    interno) y un riesgo (un campo nuevo no declarado desaparece) — por eso
  *    los `satisfies`.
  *
- * ── Nota sobre `null` ──
- * `score`, `noScore`, `breakdown`, `subtitle`, `imageUrl`, `ceiling` y cada
- * campo de `nutrition` son legítimamente nulos. Se declaran como
- * `type: ['<tipo>', 'null']` — fast-json-stringify los emite como `null`, NO
- * los coerciona a 0 ni los omite. Un `score: null` significa "el motor decidió
- * no puntuar" (§1), no "puntaje cero".
+ * ── `breakdown` no viaja (2026-08-18) ──
+ * El motor lo sigue calculando (ver `ftgScoreWithBreakdown` en
+ * `domain/product/ftgEngine.ts`, usado internamente por ETL/auditoría), pero
+ * `FitogenixProduct` ya NO tiene un campo `breakdown`: es información nuestra
+ * (la cuenta paso por paso, base/ancla/técho/anulaciones) y no algo que un
+ * usuario B2C necesite ver. La UI ya cubre el "por qué" con la lista de
+ * ingredientes coloreada por severidad. Si algún día hace falta exponerlo
+ * (soporte, panel admin, tier Plus), se agrega un endpoint aparte en vez de
+ * inflar esta respuesta.
  *
- * Los `enum` de dominio (`impact`, `sev`, `tier`, `confidence`, `kind`,
- * `noScore.code`) se declaran como `string` a propósito: el tipo estricto ya
- * vive en TypeScript, y un enum en el serializador convertiría un valor nuevo
- * del motor en un 500 en producción en vez de en un error de compilación.
+ * ── Nota sobre `null` ──
+ * `score`, `noScore`, `subtitle`, `imageUrl` y cada campo de `nutrition` son
+ * legítimamente nulos. Se declaran como `type: ['<tipo>', 'null']` —
+ * fast-json-stringify los emite como `null`, NO los coerciona a 0 ni los
+ * omite. Un `score: null` significa "el motor decidió no puntuar" (§1), no
+ * "puntaje cero".
+ *
+ * Los `enum` de dominio (`impact`, `sev`, `noScore.code`) se declaran como
+ * `string` a propósito: el tipo estricto ya vive en TypeScript, y un enum en
+ * el serializador convertiría un valor nuevo del motor en un 500 en
+ * producción en vez de en un error de compilación.
  */
 
 import type { FitogenixProduct } from '../../types/fitogenix';
 import type {
   AnalyzedIngredient,
   NutritionFacts,
-  ScoreBreakdown,
-  ScoreStep,
 } from '../../domain/product/ftgEngine';
 
 /** Un nodo de JSON Schema. Suelto a propósito: acá el que tipa es el `satisfies`. */
@@ -88,57 +96,6 @@ const ingredientProperties = {
   detail: STRING,
 } satisfies Record<keyof AnalyzedIngredient, SchemaNode>;
 
-/**
- * §7 regla 1 — la cuenta paso por paso. Reemplaza a `breakdown.components`
- * (los 4 ejes de v2), que ya no existe. `delta` es null en los pasos que FIJAN
- * un valor en vez de sumarlo (base, ancla, techo, anulación).
- */
-const stepProperties = {
-  kind: STRING, // 'base' | 'ancla' | 'ingrediente' | 'procesamiento' | …
-  label: STRING,
-  delta: NULLABLE_NUMBER,
-  running: NUMBER,
-  detail: STRING,
-} satisfies Record<keyof ScoreStep, SchemaNode>;
-
-const breakdownProperties = {
-  engineVersion: STRING,
-  score: NULLABLE_NUMBER,
-  scoreAvailable: BOOLEAN,
-  noScore: {
-    type: ['object', 'null'],
-    properties: { code: STRING, message: STRING },
-  },
-  tier: STRING,
-  tierColor: STRING,
-  tierMessage: STRING,
-  steps: { type: 'array', items: { type: 'object', properties: stepProperties } },
-  ingredients: {
-    type: 'array',
-    items: { type: 'object', properties: ingredientProperties },
-  },
-  processing: {
-    type: 'object',
-    properties: { markers: STRING_ARRAY, modifier: NUMBER, text: STRING },
-  },
-  fitogenixView: STRING,
-  annulments: STRING_ARRAY,
-  ceiling: {
-    type: ['object', 'null'],
-    properties: { value: NUMBER, reason: STRING },
-  },
-  warnings: STRING_ARRAY, // octógonos de la Ley 27.642
-  allergenWarnings: STRING_ARRAY,
-  notices: STRING_ARRAY,
-  unidentified: STRING_ARRAY, // §9 — cola de curaduría
-  coverage: NUMBER,
-  confidence: STRING, // 'alta' | 'media' | 'baja'
-  disclaimer: {
-    type: 'object',
-    properties: { framing: STRING, footer: STRING },
-  },
-} satisfies Record<keyof ScoreBreakdown, SchemaNode>;
-
 const productProperties = {
   id: STRING,
   name: STRING,
@@ -165,7 +122,6 @@ const productProperties = {
     items: { type: 'object', properties: ingredientProperties },
   },
   nutrition: { type: 'object', properties: nutritionProperties },
-  breakdown: { type: ['object', 'null'], properties: breakdownProperties },
   dataSource: STRING, // off | obf | edamam | ai
   aiEnriched: BOOLEAN,
   productId: STRING, // uuid de products.id — con esto el cliente guarda/quita
@@ -178,7 +134,7 @@ const productProperties = {
 /**
  * `required` SOLO en el nivel superior, y sin `aiEnriched` (es opcional en el
  * tipo). fast-json-stringify LANZA si falta un campo requerido, así que la
- * lista es exactamente lo que `mapOFFToProduct` produce siempre: un payload al
+ * lista es exactamente lo que `mapRawToProduct` produce siempre: un payload al
  * que le falte algo de esto está roto y es mejor un 500 ruidoso que un
  * producto a medias que el cliente no sabe renderizar.
  *

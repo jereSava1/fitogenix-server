@@ -5,14 +5,7 @@ import {
 } from '../domain/product/ftgEngine';
 import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
 import { resolveProductStatus } from '../domain/product/productService';
-import { aiLookupProduct, enrichWithAI } from './claudeService';
-import {
-  findCachedProductByName,
-  getCachedProductByBarcode,
-  getCachedProductByNameKey,
-  setCachedProduct,
-} from './cacheService';
-import type { CacheKeyRef } from './cacheService';
+import { findCachedProductByName, getCachedProductByBarcode } from './cacheService';
 import { normalizeQuery } from './queryNormalization';
 import {
   getFromRedis,
@@ -20,33 +13,44 @@ import {
   setInRedis,
   setSearchBarcode,
 } from './redisService';
-import {
-  OffServiceUnavailableError,
-  completeResolvedMatch,
-  fetchProductByBarcode,
-  resolveQueryToCode,
-} from './offService';
-import { fetchRetailerImage, fetchSearchImageUrl } from './imageService';
-import { fetchBeautyProductByBarcode } from './openBeautyFactsApi';
-import { fetchEdamamByBarcode } from './fallbackFoodApi';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
-type LookupSource = 'redis' | 'supabase' | 'catalog' | 'off' | 'obf' | 'edamam' | 'ai';
+/**
+ * Búsqueda de productos — SOLO catálogo propio (decisión de producto,
+ * 2026-08-18, ver BITACORA_DECISIONES.md).
+ *
+ * Hasta acá había una cascada completa (OFF search → OFF por código → Open
+ * Beauty Facts → Edamam → Claude) para cuando el catálogo no tenía el
+ * producto. Con el catálogo ahora poblado por el ETL a un volumen mucho
+ * mayor, esa cascada dejó de ser necesaria como camino de resolución en vivo:
+ * agregaba varios round-trips de red secuenciales (era la causa principal de
+ * que una búsqueda "en frío" tardara segundos) y duplicaba trabajo que el ETL
+ * ya hace en batch, con curaduría y sin la presión de una request HTTP
+ * esperando la respuesta.
+ *
+ * El resultado: este archivo ahora es un camino de SOLO LECTURA contra
+ * Supabase (con Redis como capa caliente adelante). Si un producto no está en
+ * el catálogo, `lookupProduct` devuelve `null` — la ruta responde que
+ * todavía no lo tenemos, sin intentar resolverlo con proveedores externos. El
+ * catálogo crece por el ETL (`scripts/etl/`), no por el tráfico de búsqueda.
+ *
+ * offService/claudeService/openBeautyFactsApi/fallbackFoodApi/imageService
+ * NO se tocaron: el ETL los sigue usando para poblar el catálogo en batch.
+ */
 
-// `source` = nivel de la cascada que sirvió ESTA request (redis/supabase = cache).
-// `dataSource` = proveedor ORIGINAL del dato (off/obf/edamam/ai), preservado a
-// través del cache. Loguear ambos permite analítica de origen incluso en hits.
-// `cacheKey` acá es la clave INTERNA de proceso (barcode o 'name:<...>'), no la
-// identidad del producto (esa es products.id).
+type LookupSource = 'redis' | 'supabase' | 'catalog';
+
+// `source` = nivel que sirvió ESTA request (redis/supabase = barcode exacto;
+// catalog = búsqueda por nombre). `dataSource` = proveedor ORIGINAL del dato
+// (off/obf/edamam/ai), preservado desde que el ETL lo cargó — sigue siendo
+// útil para analítica de origen aunque ya no se resuelva en vivo.
 function logSource(cacheKey: string, source: LookupSource, dataSource: string): void {
   console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
 }
 
-// Clave INTERNA (Redis/in-flight/logs) para búsquedas por nombre sin barcode
-// (resueltas por IA). Normaliza (minúsculas, sin acentos, espacios colapsados —
-// ver queryNormalization) para maximizar hits entre búsquedas equivalentes, y
-// prefija 'name:' para no colisionar con barcodes. A la DB va SIN prefijo
-// (columna name_key).
+// Clave INTERNA (Redis/in-flight/logs) para búsquedas por nombre. Normaliza
+// (minúsculas, sin acentos, espacios colapsados) para maximizar hits entre
+// búsquedas equivalentes, y prefija 'name:' para no colisionar con barcodes.
 function nameKey(query: string): string {
   return `name:${normalizeQuery(query)}`;
 }
@@ -56,8 +60,7 @@ function nameKey(query: string): string {
 //
 // `score: null` es un estado de primera clase desde v2.1: §1 del documento
 // enumera los casos en que NO se emite puntaje, y "la ausencia de datos nunca
-// mejora un puntaje". Antes se devolvía un 40 conservador que el cliente no
-// podía distinguir de un 40 calculado.
+// mejora un puntaje".
 function scorePresentation(score: number | null): Pick<
   FitogenixProduct,
   'scoreLabel' | 'scoreColor' | 'tagline' | 'fito'
@@ -88,7 +91,7 @@ function cleanName(raw: string | undefined, fallback: string): string {
 // Exportada para reutilizarla en productRowMapper (listados de guardados e
 // historial): los productos guardados se recomputan con el MISMO mapeo que un
 // lookup.
-export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
+export function mapRawToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
   const breakdown = ftgScoreWithBreakdown(off);
   // Los ingredientes salen del MISMO breakdown, no de una segunda pasada: en
   // v2.1 la posición de cada ingrediente y su resta son parte del cálculo, así
@@ -113,10 +116,11 @@ export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixPro
     imageUrl: off.image_front_url ?? off.image_url ?? null,
     ingredients,
     nutrition,
-    breakdown,
+    // `breakdown` NO se adjunta a la respuesta (decisión de producto,
+    // 2026-08-18) — ver la nota en types/fitogenix.ts.
     dataSource: off._aiSource ? 'ai' : 'off',
     // Default para tipar; los resolutores la pisan con el id real de la fila
-    // en `products` (del hit de cache, del catálogo o del upsert awaiteado).
+    // en `products` (del hit de cache o del catálogo).
     productId: '',
     aiEnriched: off._aiEnriched,
     ...scorePresentation(breakdown.score),
@@ -128,143 +132,94 @@ export function mapOFFToProduct(off: RawOFFProduct, query: string): FitogenixPro
 // interna de proceso (barcode o 'name:<...>').
 const inFlight = new Map<string, Promise<FitogenixProduct | null>>();
 
-// `cacheKey` es la clave INTERNA de proceso (Redis/in-flight/logs): barcode o
-// 'name:<...>'. `dbKey` es la referencia de búsqueda en la DB ({ barcode } o
-// { nameKey } sin prefijo); de ella se deriva el barcode real cuando existe
-// (para OBF/Edamam y la imagen de retailer).
-async function resolveWithImages(
+async function withSingleflight(
   cacheKey: string,
-  dbKey: CacheKeyRef,
-  fetchData: () => Promise<RawOFFProduct | null>,
-  originalQuery: string,
+  resolve: () => Promise<FitogenixProduct | null>,
 ): Promise<FitogenixProduct | null> {
   const existing = inFlight.get(cacheKey);
   if (existing) return existing;
 
-  const promise = doResolveWithImages(cacheKey, dbKey, fetchData, originalQuery).finally(() => {
-    inFlight.delete(cacheKey);
-  });
+  const promise = resolve().finally(() => inFlight.delete(cacheKey));
   inFlight.set(cacheKey, promise);
   return promise;
 }
 
-async function doResolveWithImages(
-  cacheKey: string,
-  dbKey: CacheKeyRef,
-  fetchData: () => Promise<RawOFFProduct | null>,
+async function resolveByBarcode(
+  barcode: string,
   originalQuery: string,
 ): Promise<FitogenixProduct | null> {
-  const barcode = 'barcode' in dbKey ? dbKey.barcode : null;
+  return withSingleflight(barcode, async () => {
+    // Level 1 — Redis (fastest, in-memory cache).
+    const redisHit = await getFromRedis(barcode);
+    // Entradas viejas (pre-migración 006) no traen productId serializado: sin
+    // él el cliente no puede guardar el producto, así que se tratan como miss
+    // y Supabase las repobla con el campo nuevo.
+    if (redisHit && typeof redisHit.productId === 'string' && redisHit.productId) {
+      logSource(barcode, 'redis', redisHit.dataSource);
+      return redisHit;
+    }
 
-  // Level 1 — Redis (fastest, in-memory cache)
-  const redisHit = await getFromRedis(cacheKey);
-  // Entradas viejas (pre-migración 006) no traen productId serializado: sin él
-  // el cliente no puede guardar el producto, así que se tratan como miss y el
-  // nivel Supabase las repobla con el campo nuevo.
-  if (redisHit && typeof redisHit.productId === 'string' && redisHit.productId) {
-    logSource(cacheKey, 'redis', redisHit.dataSource);
-    return redisHit;
-  }
+    // Level 2 — Supabase (catálogo). Único nivel de resolución: si no está
+    // acá, no está — no hay cascada externa (ver docstring del archivo).
+    const cached = await getCachedProductByBarcode(barcode);
+    if (!cached) return null;
 
-  // Level 2 — Supabase (persistent cache). Guardamos crudos → recomputamos con
-  // el MISMO mapOFFToProduct que un lookup fresco, así el cacheado es idéntico.
-  const cached =
-    'barcode' in dbKey
-      ? await getCachedProductByBarcode(dbKey.barcode)
-      : await getCachedProductByNameKey(dbKey.nameKey);
-  if (cached) {
-    const product = mapOFFToProduct(cached.raw, originalQuery);
+    const product = mapRawToProduct(cached.raw, originalQuery);
     product.dataSource = cached.dataSource;
     product.productId = cached.productId;
-    logSource(cacheKey, 'supabase', product.dataSource);
-    // Populate Redis so next hit is faster; use shorter TTL if AI-sourced
+    logSource(barcode, 'supabase', product.dataSource);
+
     const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-    setInRedis(cacheKey, product, ttl).catch((err: unknown) =>
+    setInRedis(barcode, product, ttl).catch((err: unknown) =>
       console.error('[productLookupService] setInRedis error:', err),
     );
+
     return product;
-  }
+  });
+}
 
-  // Level 3 — cascada de fuentes crudas + Claude (cold path)
-  // La imagen de retailer se busca por barcode; sin barcode (producto solo-IA)
-  // no aplica.
-  const retailerPromise = barcode ? fetchRetailerImage(barcode) : Promise.resolve(null);
+async function resolveByName(trimmed: string): Promise<FitogenixProduct | null> {
+  const cacheKey = nameKey(trimmed);
 
-  // Cascada de datos crudos, cortando ni bien haya match. Solo el nivel OFF
-  // aplica sin barcode (búsqueda por nombre); OBF y Edamam son estrictamente
-  // por barcode. Cada nivel se envuelve en try/catch: si falla (timeout/500)
-  // logueamos y seguimos al siguiente, nunca crasheamos la cascada.
-  let data: RawOFFProduct | null = null;
-  let source: LookupSource = 'off';
-
-  // Nivel OFF (o search→completeResolvedMatch para el path por nombre).
-  try {
-    data = await fetchData();
-  } catch (err) {
-    console.error('[productLookupService] fallo nivel OFF:', err);
-  }
-
-  // Nivel OBF (Open Beauty Facts) — solo por barcode.
-  if (!data && barcode) {
-    try {
-      data = await fetchBeautyProductByBarcode(barcode);
-      if (data) source = 'obf';
-    } catch (err) {
-      console.error('[productLookupService] fallo nivel OBF:', err);
+  return withSingleflight(cacheKey, async () => {
+    // Level 1 — Redis, bajo la clave de ESTA query textual.
+    const redisHit = await getFromRedis(cacheKey);
+    if (redisHit && typeof redisHit.productId === 'string' && redisHit.productId) {
+      logSource(cacheKey, 'redis', redisHit.dataSource);
+      return redisHit;
     }
-  }
 
-  // Nivel Edamam — solo por barcode. Saltea internamente si faltan las keys.
-  if (!data && barcode) {
-    try {
-      data = await fetchEdamamByBarcode(barcode);
-      if (data) source = 'edamam';
-    } catch (err) {
-      console.error('[productLookupService] fallo nivel Edamam:', err);
+    // Level 2 — búsqueda por nombre en el catálogo (índice trigram + ranking
+    // por similitud, ver migración 014). Único nivel de resolución para
+    // texto: sin match acá, el producto todavía no está en el catálogo.
+    const cached = await findCachedProductByName(trimmed);
+    if (!cached) return null;
+
+    const product = mapRawToProduct(cached.raw, trimmed);
+    product.dataSource = cached.dataSource;
+    product.productId = cached.productId;
+    logSource(cacheKey, 'catalog', product.dataSource);
+
+    if (cached.barcode) {
+      // La fila tiene barcode: la próxima vez que alguien busque este mismo
+      // texto, resolveByBarcode la sirve directo desde Redis/Supabase por
+      // barcode — no hace falta cachear el producto bajo la clave de texto
+      // también (sería una segunda copia que nadie vuelve a leer).
+      setSearchBarcode(trimmed, cached.barcode).catch((err: unknown) =>
+        console.error('[productLookupService] setSearchBarcode error:', err),
+      );
+    } else {
+      // Fila solo-nombre (sin barcode, típicamente resuelta por IA en su
+      // momento): la única forma de encontrarla rápido de nuevo es cachear
+      // bajo la clave de ESTA query.
+      const ttl = product.dataSource === 'ai' ? 259200 : 604800;
+      setInRedis(cacheKey, product, ttl).catch((err: unknown) =>
+        console.error('[productLookupService] setInRedis error:', err),
+      );
     }
-  }
 
-  if (data) {
-    data = await enrichWithAI(data);
-  } else {
-    // Último recurso — Claude.
-    const ai = await aiLookupProduct(originalQuery);
-    if (!ai) return null;
-    data = await enrichWithAI(ai);
-    source = 'ai';
-  }
-
-  const product = mapOFFToProduct(data, originalQuery);
-  // mapOFFToProduct deriva dataSource del flag _aiSource; para OBF/Edamam es
-  // dato "real" (no IA), así que reflejamos la fuente de la cascada.
-  if (source === 'obf' || source === 'edamam') product.dataSource = source;
-  logSource(cacheKey, product.dataSource === 'ai' ? 'ai' : source, product.dataSource);
-
-  const retailerImage = await retailerPromise;
-  if (!product.imageUrl && retailerImage) product.imageUrl = retailerImage;
-  if (!product.imageUrl) {
-    const searchImage = await fetchSearchImageUrl(product.name, product.brand);
-    if (searchImage) product.imageUrl = searchImage;
-  }
-
-  // Persistencia en Supabase AWAITEADA: el upsert devuelve el id de la fila y
-  // el payload lo necesita (productId). Agrega ~100-300ms a un cold path que
-  // ya tarda segundos; los hits de cache no cambian. Si falla, el producto se
-  // sirve igual con productId vacío (el cliente no podrá guardarlo esta vez).
-  try {
-    const productId = await setCachedProduct(product, data, dbKey);
-    if (productId) product.productId = productId;
-  } catch (err) {
-    console.error('[productLookupService] setCachedProduct error:', err);
-  }
-
-  // Redis sigue fire-and-forget (ya con productId en el payload serializado).
-  const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-  setInRedis(cacheKey, product, ttl).catch((err: unknown) =>
-    console.error('[productLookupService] setInRedis (cold) error:', err),
-  );
-
-  return product;
+    return product;
+  });
 }
 
 export async function lookupProduct(query: string): Promise<FitogenixProduct | null> {
@@ -272,101 +227,16 @@ export async function lookupProduct(query: string): Promise<FitogenixProduct | n
   const isBarcode = /^\d{8,14}$/.test(trimmed);
 
   if (isBarcode) {
-    return resolveWithImages(
-      trimmed, // clave interna = barcode
-      { barcode: trimmed },
-      () => fetchProductByBarcode(trimmed),
-      trimmed,
-    );
+    return resolveByBarcode(trimmed, trimmed);
   }
 
-  // Fase 3 — cache texto→barcode. Si otra request ya resolvió esta misma query,
-  // saltamos el OFF search (~500ms) y vamos directo al barcode cacheado.
-  // getSearchBarcode normaliza internamente (lowercase+trim), así que le pasamos
-  // `trimmed` tal cual; no duplicamos la normalización acá.
+  // Si otra búsqueda ya resolvió esta query a un barcode, saltamos derecho a
+  // ese camino (Redis/Supabase por barcode) en vez de repetir la búsqueda por
+  // nombre.
   const cachedBarcode = await getSearchBarcode(trimmed);
   if (cachedBarcode) {
-    return resolveWithImages(
-      cachedBarcode, // clave interna = barcode
-      { barcode: cachedBarcode },
-      () => fetchProductByBarcode(cachedBarcode),
-      trimmed,
-    );
+    return resolveByBarcode(cachedBarcode, trimmed);
   }
 
-  let resolved: Awaited<ReturnType<typeof resolveQueryToCode>>;
-  try {
-    resolved = await resolveQueryToCode(trimmed);
-  } catch (err) {
-    if (err instanceof OffServiceUnavailableError) {
-      resolved = null;
-    } else {
-      throw err;
-    }
-  }
-
-  if (!resolved) {
-    // Antes de gastar IA, buscamos en NUESTRO catálogo (`products`) por nombre:
-    // si el producto ya está cacheado (típicamente por barcode, con datos
-    // reales), lo servimos de acá y evitamos duplicarlo como fila solo-IA con
-    // otro score. Envuelto en try/catch: si el catálogo falla, la cascada
-    // sigue a la IA — nunca crashea.
-    try {
-      const catalogHit = await findCachedProductByName(trimmed);
-      if (catalogHit) {
-        const product = mapOFFToProduct(catalogHit.raw, trimmed);
-        product.dataSource = catalogHit.dataSource;
-        product.productId = catalogHit.productId;
-        // Clave interna de la fila para Redis/logs: su barcode, o 'name:<...>'
-        // si es una fila solo-IA con name_key.
-        const internalKey =
-          catalogHit.barcode ??
-          (catalogHit.nameKey ? `name:${catalogHit.nameKey}` : null);
-        logSource(internalKey ?? catalogHit.productId, 'catalog', product.dataSource);
-        if (internalKey) {
-          // Poblamos Redis bajo la clave de la fila para acelerar próximos hits.
-          const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-          setInRedis(internalKey, product, ttl).catch((err: unknown) =>
-            console.error('[productLookupService] setInRedis (catalog) error:', err),
-          );
-        }
-        // Si la fila tiene barcode, cacheamos query→barcode: la próxima búsqueda
-        // idéntica salta directo al barcode sin pasar por OFF search ni catálogo.
-        if (catalogHit.barcode) {
-          setSearchBarcode(trimmed, catalogHit.barcode).catch((err: unknown) =>
-            console.error('[productLookupService] setSearchBarcode (catalog) error:', err),
-          );
-        }
-        return product;
-      }
-    } catch (err) {
-      console.error('[productLookupService] fallo catálogo propio:', err);
-    }
-
-    // Sin match en OFF → producto resuelto solo por IA. No tiene barcode, así
-    // que en la DB se guarda con name_key = <query normalizado SIN prefijo>
-    // (barcode null); la clave interna de Redis/in-flight sí lleva el prefijo
-    // 'name:'. En la próxima búsqueda idéntica lo sirve getCachedProductByNameKey
-    // y NO se vuelve a pedir IA. fetchData devuelve null a propósito →
-    // doResolveWithImages cae al aiLookup.
-    return resolveWithImages(
-      nameKey(trimmed), // clave interna 'name:<...>'
-      { nameKey: normalizeQuery(trimmed) }, // a la DB va sin prefijo
-      async () => null,
-      trimmed,
-    );
-  }
-
-  // Guardamos la asociación query→barcode para futuras búsquedas idénticas.
-  // Fire-and-forget: no bloquea el lookup; el error se loguea.
-  setSearchBarcode(trimmed, resolved.code).catch((err: unknown) =>
-    console.error('[productLookupService] setSearchBarcode error:', err),
-  );
-
-  return resolveWithImages(
-    resolved.code, // clave interna = barcode
-    { barcode: resolved.code },
-    () => completeResolvedMatch(resolved.code, resolved.fields),
-    trimmed,
-  );
+  return resolveByName(trimmed);
 }

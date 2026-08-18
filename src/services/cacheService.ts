@@ -14,7 +14,7 @@ const admin = (): ReturnType<typeof createClient<any>> => {
 };
 
 // Lo que devuelve la lectura del cache: los datos CRUDOS reconstruidos como
-// un RawOFFProduct (para que pasen por el MISMO mapOFFToProduct que un lookup
+// un RawOFFProduct (para que pasen por el MISMO mapRawToProduct que un lookup
 // fresco) más el dataSource de la fila. El score NO se guarda: se recomputa.
 export type CachedRaw = {
   raw: RawOFFProduct;
@@ -132,15 +132,15 @@ function escapeLikeToken(token: string): string {
 }
 
 /**
- * Busca en NUESTRO catálogo (`products`) un producto ya cacheado cuyo nombre
- * matchee el query de texto. Se usa como paso previo a la IA en la cascada de
- * búsqueda por nombre: si OFF search falla pero el producto ya existe cacheado
- * (típicamente por barcode, con datos reales), lo servimos de acá y evitamos
- * crear un duplicado solo-IA con otro score.
+ * Busca en NUESTRO catálogo (`products`) el producto cuyo nombre mejor
+ * matchee el query de texto. Desde 2026-08-18 es el ÚNICO mecanismo de
+ * resolución por nombre — no hay cascada a OFF ni a la IA: si no aparece acá,
+ * el producto todavía no está en el catálogo.
  *
- * Selección entre múltiples matches: preferimos filas con barcode (datos
- * reales) sobre filas solo-IA, y entre ellas la de nombre más corto (match más
- * ajustado). Filas sin crudos (o sin id) se descartan como candidatas.
+ * La búsqueda y el ranking corren en Postgres (RPC `search_products_by_name`,
+ * migración 014): índice GIN trigram sobre `product_name` en vez de un
+ * sequential scan, y orden por similitud real en vez de `updated_at`. Ver el
+ * comentario de la migración para el porqué.
  */
 export async function findCachedProductByName(
   query: string,
@@ -149,38 +149,22 @@ export async function findCachedProductByName(
   // Guard: queries demasiado cortos matchearían medio catálogo ("a", "co").
   if (normalized.length < 3) return null;
 
-  // Patrón %tok1%tok2%...% — los tokens deben aparecer en orden en el nombre.
-  const tokens = normalized.split(' ').filter((t) => t.length > 0);
-  const pattern = `%${tokens.map(escapeLikeToken).join('%')}%`;
-
-  const { data, error } = await admin()
-    .from('products')
-    .select('*')
-    .ilike('product_name', pattern)
-    .order('updated_at', { ascending: false })
-    .limit(5);
+  const { data, error } = await admin().rpc('search_products_by_name', {
+    search_query: normalized,
+    match_limit: 5,
+  });
 
   if (error || !data || data.length === 0) return null;
 
   // Candidatas = filas con crudos reconstruibles; el resto son cache miss.
-  const candidates = (data as Record<string, unknown>[])
-    .map((row) => ({ row, cached: rowToCachedRaw(row) }))
-    .filter(
-      (c): c is { row: Record<string, unknown>; cached: CachedProductRow } => c.cached !== null,
-    );
-  if (candidates.length === 0) return null;
+  // El RPC ya devuelve las filas ordenadas por similitud (mejor match primero),
+  // así que la primera candidata reconstruible es la respuesta.
+  for (const row of data as Record<string, unknown>[]) {
+    const cached = rowToCachedRaw(row);
+    if (cached) return cached;
+  }
 
-  // Orden de preferencia: barcode presente primero, después nombre más corto.
-  candidates.sort((a, b) => {
-    const aBarcode = a.cached.barcode ? 1 : 0;
-    const bBarcode = b.cached.barcode ? 1 : 0;
-    if (aBarcode !== bBarcode) return bBarcode - aBarcode;
-    const aLen = typeof a.row.product_name === 'string' ? a.row.product_name.length : Infinity;
-    const bLen = typeof b.row.product_name === 'string' ? b.row.product_name.length : Infinity;
-    return aLen - bLen;
-  });
-
-  return candidates[0].cached;
+  return null;
 }
 
 /**

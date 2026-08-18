@@ -2,10 +2,9 @@ import type {
   AnalyzedIngredient,
   NoScoreCode,
   NutritionFacts,
-  ScoreBreakdown,
 } from '../domain/product/ftgEngine';
 
-export type { AnalyzedIngredient, NoScoreCode, NutritionFacts, ScoreBreakdown };
+export type { AnalyzedIngredient, NoScoreCode, NutritionFacts };
 
 export type FitogenixProduct = {
   id: string;
@@ -32,9 +31,11 @@ export type FitogenixProduct = {
   imageUrl: string | null;
   ingredients: readonly AnalyzedIngredient[];
   nutrition: NutritionFacts;
-  /** El desglose completo de §7: la cuenta paso por paso, el procesamiento, la
-   *  mirada Fitogenix, los sellos y la cola de curaduría. */
-  breakdown: ScoreBreakdown | null;
+  // No se manda `breakdown` (decisión de producto, 2026-08-18): la cuenta
+  // paso por paso es información nuestra, no del usuario B2C — la lista de
+  // ingredientes con severidad ya cubre el "por qué". El motor lo sigue
+  // calculando internamente (ver ftgScoreWithBreakdown / scripts de ETL y
+  // auditoría), solo que ya no cruza la red.
   dataSource: string;
   aiEnriched?: boolean;
   // Identidad del producto: uuid de la fila en `products` (migración 006).

@@ -69,7 +69,7 @@ function toOFFNutriments(n: EdamamNutrients): Record<string, number> {
 }
 
 // ── Adapter: food de Edamam → RawOFFProduct ──
-// Reusamos RawOFFProduct como contrato común para que mapOFFToProduct + ftgEngine
+// Reusamos RawOFFProduct como contrato común para que mapRawToProduct + ftgEngine
 // scoreen igual sin importar la fuente.
 function toRawOFFProduct(food: EdamamFood): RawOFFProduct {
   return {

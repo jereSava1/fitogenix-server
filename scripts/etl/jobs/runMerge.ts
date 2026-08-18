@@ -30,7 +30,7 @@ import {
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 import { isComplete } from '../lib/completeness';
-import { mapOFFToProduct } from '../../../src/services/productLookupService';
+import { mapRawToProduct } from '../../../src/services/productLookupService';
 import { buildCachePayload } from '../../../src/services/cacheService';
 import { enrichWithAI } from '../../../src/services/claudeService';
 
@@ -140,7 +140,7 @@ async function main() {
         incomplete = !isComplete(combined);
       }
 
-      const product = mapOFFToProduct(combined, barcode);
+      const product = mapRawToProduct(combined, barcode);
       if (!combined._aiSource) product.dataSource = primarySourceOf(entries);
       payloads.push(buildCachePayload(product, combined, { barcode }) as Record<string, unknown>);
       pending.push({ barcode, rows: trigger, incomplete, wasEnriched });
