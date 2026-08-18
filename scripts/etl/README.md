@@ -1,6 +1,6 @@
 # ETL — poblamiento masivo del catálogo
 
-Código del Agente ETL (ver `fitogenix-agents/06-agente-etl-data.md` para el diseño completo — este README es solo el cómo correrlo). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload`, `mapOFFToProduct`, `enrichWithAI` y `ftgEngine` directamente, sin duplicarlos. No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts existentes en `scripts/`.
+Código del Agente ETL (ver `fitogenix-agents/06-agente-etl-data.md` para el diseño completo — este README es solo el cómo correrlo). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload`, `mapRawToProduct`, `enrichWithAI` y `ftgEngine` directamente, sin duplicarlos. No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts existentes en `scripts/`.
 
 ```
 scripts/etl/
