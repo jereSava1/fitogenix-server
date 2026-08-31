@@ -15,10 +15,10 @@
    `./scoring/`.
 ═══════════════════════════════════════════════════════════ */
 
-import { analyzeIngredients, scoreProduct } from './scoring';
-import type { AnalyzedIngredient, NutritionFacts, ProductInput, ScoreBreakdown } from './scoring';
+import { analyzeIngredients, scoreProduct } from './scoring/index';
+import type { AnalyzedIngredient, NutritionFacts, ProductInput, ScoreBreakdown } from './scoring/index';
 
-export { ENGINE_VERSION } from './scoring';
+export { ENGINE_VERSION } from './scoring/index';
 
 export type {
   AnalyzedIngredient,
@@ -35,10 +35,10 @@ export type {
   Severity,
   Tier,
   WarningSeal,
-} from './scoring';
+} from './scoring/index';
 
 /** Compatibilidad: el motor v2 exponía la severidad con este nombre. */
-export type { Severity as SeverityLevel } from './scoring';
+export type { Severity as SeverityLevel } from './scoring/index';
 
 /**
  * Un producto → su puntaje y el desglose que lo explica.
