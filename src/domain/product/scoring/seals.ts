@@ -11,9 +11,31 @@
    envase. Nuestro puntaje no; por eso viven en su propio módulo y se exponen
    aparte, aunque además alimenten el modificador nutricional.
 
-   ANTES DE PUBLICITAR ESTO como "los sellos oficiales" conviene contrastar
-   los umbrales contra el texto del decreto: si alguno cambió, se corrige acá
-   y en ningún otro lado.
+   CONTRASTADO EL 2026-08-31 contra el modelo de perfil de nutrientes de OPS,
+   que es la fuente que la ley adopta (Ley 27.642, art. 7). Resultado:
+
+     ✅ azúcares ≥10% de la energía        — coincide con OPS
+     ✅ grasas saturadas ≥10% de la energía — coincide con OPS
+     ✅ grasas totales ≥30% de la energía   — coincide con OPS
+     ✅ sodio ≥1 mg por kcal                — coincide con OPS
+     🔴 calorías 275 (sólidos) / 70 (líquidos) — SIN VERIFICAR
+
+   El umbral de calorías no sale de OPS: su modelo no define un criterio de
+   energía. Es un agregado de la norma argentina y su valor está en el Anexo II
+   del Decreto 151/2022, que no está disponible online (argentina.gob.ar bloquea
+   la descarga; ANMAT devuelve 403). Es el único de los cinco sin respaldo
+   citable — ver `fitogenix-agents/nutricion/NUTRICION.md §N6` N-5.
+
+   Que NO haya octógono de grasas trans es correcto y está verificado: la ley
+   no la incluye entre los nutrientes críticos, a diferencia de OPS que sí la
+   contempla (≥1% de la energía). Ver NUTRICION.md §N3.
+
+   La excepción del art. 7 —alimentos in natura e ingredientes culinarios sin
+   nutrientes críticos añadidos— NO se implementa acá sino en `steps.ts`
+   (`applyNutrition` corta antes de llamar a esta función). Si venís a buscar
+   por qué la leche entera no lleva sellos, está allá.
+
+   Si algún umbral cambia, se corrige acá y en ningún otro lado.
 ═══════════════════════════════════════════════════════════ */
 
 import type { WarningSeal } from './types';
