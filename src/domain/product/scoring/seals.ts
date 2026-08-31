@@ -67,6 +67,18 @@ const ENERGY_SHARE = { sugars: 0.1, satFat: 0.1, totalFat: 0.3 } as const;
  */
 const SODIUM_PER_KCAL = 1;
 const SODIUM_PER_100G = 300;
+/**
+ * Tercera condición, solo para bebidas analcohólicas SIN aporte energético:
+ * ≥40 mg de sodio cada 100 ml. El Manual define "sin aporte energético" como
+ * ≤4 kcal **por porción**.
+ *
+ * 🟡 Acá se aproxima con ≤4 kcal/100 ml, porque el motor no conoce el tamaño de
+ * porción: solo tiene el panel por 100. Una porción de bebida suele ser 200 ml,
+ * así que el criterio real sería ≈2 kcal/100 ml — esta aproximación es más
+ * inclusiva y puede marcar alguna bebida de más. Ver NUTRICION.md §N6.
+ */
+const SODIUM_PER_100ML_NO_ENERGY = 40;
+const NO_ENERGY_KCAL = 4;
 
 /**
  * kcal/100 — el umbral de líquidos es distinto al de sólidos.
@@ -74,8 +86,7 @@ const SODIUM_PER_100G = 300;
  * `liquid` era 70, que no es ninguna de las dos etapas argentinas (50 y 25):
  * es el valor final del modelo chileno. La calculadora oficial de ANMAT
  * devuelve «Calorías 21 <25 N/A» para una bebida, así que el corte vigente es
- * 25. Con 70 se dejaban de marcar todas las bebidas entre 25 y 70 kcal/100 ml
- * que en la góndola sí llevan el octógono.
+ * 25.
  */
 const CALORIE_LIMIT = { solid: 275, liquid: 25 } as const;
 
@@ -124,10 +135,36 @@ export function computeWarningSeals(input: SealInput): WarningSeal[] {
   // sellos, igual que en la góndola— y no se rompe por un umbral nuevo.
   const sodiumByMass =
     energy != null && sodiumMg100 != null && sodiumMg100 >= SODIUM_PER_100G;
-  if (sodiumByRatio || sodiumByMass) {
+  // Bebida analcohólica sin aporte energético: umbral propio y más bajo.
+  const sodiumByDrinkNoEnergy =
+    input.isLiquid &&
+    kcal100 != null &&
+    kcal100 <= NO_ENERGY_KCAL &&
+    sodiumMg100 != null &&
+    sodiumMg100 >= SODIUM_PER_100ML_NO_ENERGY;
+  if (sodiumByRatio || sodiumByMass || sodiumByDrinkNoEnergy) {
     seals.push('EXCESO EN SODIO');
   }
-  if (kcal100 != null && kcal100 >= (input.isLiquid ? CALORIE_LIMIT.liquid : CALORIE_LIMIT.solid)) {
+  // Las calorías NO son un nutriente crítico: son una unidad de medida. Por eso
+  // su octógono exige DOS condiciones a la vez (Manual de Aplicación, Rev. I,
+  // Disp. ANMAT 11362/2024, pág. 10 y 17):
+  //
+  //   i)  el producto ya lleva alguno de los sellos de exceso en AZÚCARES,
+  //       GRASAS TOTALES o GRASAS SATURADAS  ← esta faltaba
+  //   ii) supera el límite de energía (275 kcal/100 g · 25 kcal/100 ml)
+  //
+  // Sin (i) el motor marcaba por energía sola, y le ponía octógono de calorías
+  // a productos densos que en la góndola no lo llevan. Notar que el SODIO no
+  // habilita el sello de calorías: la norma nombra solo esos tres.
+  const CALORIE_ENABLERS: readonly WarningSeal[] = [
+    'EXCESO EN AZÚCARES',
+    'EXCESO EN GRASAS TOTALES',
+    'EXCESO EN GRASAS SATURADAS',
+  ];
+  const hasEnablingSeal = seals.some((s) => CALORIE_ENABLERS.includes(s));
+  const overEnergyLimit =
+    kcal100 != null && kcal100 >= (input.isLiquid ? CALORIE_LIMIT.liquid : CALORIE_LIMIT.solid);
+  if (hasEnablingSeal && overEnergyLimit) {
     seals.push('EXCESO EN CALORÍAS');
   }
 

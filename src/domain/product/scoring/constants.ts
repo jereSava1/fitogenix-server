@@ -21,12 +21,18 @@ import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types
  * NOVA y la regresión a neutro por cobertura. Los puntajes de v2 NO son
  * comparables con los de v2.1.
  *
- * v2.2 — se corrigen dos umbrales de octógonos contra la Tabla 1 del Decreto
- * 151/2022, verificados con la calculadora oficial de ANMAT: el sodio gana su
- * condición alternativa (≥300 mg/100 g) y el corte de calorías de bebidas baja
- * de 70 a 25 (ver `scoring/seals.ts`). Los dos erraban de menos, así que hay
- * productos que pasan a llevar un octógono más y por lo tanto bajan de puntaje
- * vía `sealPenalty`.
+ * v2.2 — se corrigen cuatro reglas de octógonos contra la Tabla 1 del Decreto
+ * 151/2022 y el Manual de Aplicación Rev. I (Disp. ANMAT 11362/2024), con la
+ * calculadora oficial de ANMAT como verificación (ver `scoring/seals.ts`):
+ *   · sodio gana su condición alternativa (≥300 mg/100 g);
+ *   · sodio gana la condición de bebidas sin aporte energético (≥40 mg/100 ml);
+ *   · el corte de calorías de bebidas baja de 70 a 25;
+ *   · el octógono de calorías pasa a exigir que YA haya un sello de azúcares,
+ *     grasas totales o saturadas — antes salía por energía sola.
+ *
+ * Los tres primeros marcaban DE MENOS y el cuarto DE MÁS, así que hay productos
+ * que ganan un octógono y otros que lo pierden. En los dos casos cambia el
+ * puntaje vía `sealPenalty`.
  *
  * El bump NO es cosmético: `redisService` trata como MISS toda entrada cuyo
  * sobre no coincida con esta constante, así que sin bumpear, Redis seguiría

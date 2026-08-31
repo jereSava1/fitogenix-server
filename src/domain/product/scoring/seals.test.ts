@@ -91,26 +91,41 @@ describe('azúcares libres vs. totales', () => {
   });
 });
 
-describe('umbral de calorías según estado físico', () => {
-  const base = { sugars100: 0, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: false };
+describe('octógono de calorías: exige DOS condiciones', () => {
+  // Manual de Aplicación Rev. I (Disp. ANMAT 11362/2024, pág. 10 y 17): las
+  // calorías no son un nutriente crítico. El sello sale solo si el producto YA
+  // lleva alguno de los de azúcares / grasas totales / grasas saturadas Y
+  // ademas supera el límite de energía.
+  const sinOtroSello = { sugars100: 0, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: false };
+  // 30 g de azúcar sobre 300 kcal = 40% de la energía: dispara azúcares.
+  const conAzucares = { sugars100: 30, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: true };
 
-  // El corte de bebidas era 70 en este archivo. Setenta no es ninguna de las dos
-  // etapas argentinas (50 y 25): es el valor final del modelo chileno. La
-  // calculadora oficial de ANMAT devuelve «Calorías 21 <25 N/A» para una bebida.
-  it('líquidos: 25 kcal/100ml', () => {
-    expect(computeWarningSeals({ ...base, kcal100: 30, isLiquid: true })).toContain('EXCESO EN CALORÍAS');
-    expect(computeWarningSeals({ ...base, kcal100: 20, isLiquid: true })).toEqual([]);
+  it('sólidos: >=275 kcal/100g, pero solo si ya hay otro sello', () => {
+    expect(computeWarningSeals({ ...conAzucares, kcal100: 300, isLiquid: false }))
+      .toContain('EXCESO EN CALORÍAS');
   });
 
-  it('una bebida entre 25 y 70 kcal/100ml SÍ lleva el octógono', () => {
-    // Es el rango que el umbral viejo dejaba pasar entero: jugos, saborizadas,
-    // gaseosas comunes. Este caso es la regresión de N-6.
-    expect(computeWarningSeals({ ...base, kcal100: 42, isLiquid: true })).toContain('EXCESO EN CALORÍAS');
+  it('un sólido denso SIN otro sello no lleva calorías', () => {
+    // Era el over-marking: el motor marcaba por energía sola.
+    expect(computeWarningSeals({ ...sinOtroSello, kcal100: 500, isLiquid: false }))
+      .not.toContain('EXCESO EN CALORÍAS');
   });
 
-  it('sólidos: 275 kcal/100g', () => {
-    expect(computeWarningSeals({ ...base, kcal100: 300, isLiquid: false })).toContain('EXCESO EN CALORÍAS');
-    expect(computeWarningSeals({ ...base, kcal100: 200, isLiquid: false })).toEqual([]);
+  it('el sodio NO habilita el sello de calorías', () => {
+    // La norma nombra azúcares, grasas totales y saturadas. El sodio no está.
+    const saladoYDenso = { ...sinOtroSello, sodiumMg100: 900 };
+    const s = computeWarningSeals({ ...saladoYDenso, kcal100: 500, isLiquid: false });
+    expect(s).toContain('EXCESO EN SODIO');
+    expect(s).not.toContain('EXCESO EN CALORÍAS');
+  });
+
+  it('líquidos: el corte es 25 kcal/100ml, no 70', () => {
+    // 70 no es ninguna de las dos etapas argentinas (50 y 25): es el valor
+    // chileno. Con 70 se dejaba pasar toda la franja de jugos y gaseosas.
+    expect(computeWarningSeals({ ...conAzucares, kcal100: 42, isLiquid: true }))
+      .toContain('EXCESO EN CALORÍAS');
+    expect(computeWarningSeals({ ...conAzucares, kcal100: 20, isLiquid: true }))
+      .not.toContain('EXCESO EN CALORÍAS');
   });
 });
 
@@ -129,10 +144,26 @@ describe('sodio: las dos condiciones de la Tabla 1', () => {
       .toContain('EXCESO EN SODIO');
   });
 
-  it('no marca cuando ninguna de las dos se cumple', () => {
-    // 200/500 = 0,4 < 1 y 200 < 300. (El producto igual lleva calorías por los
-    // 500 kcal: acá se afirma sobre el sodio, no sobre el resto del panel.)
+  it('no marca cuando ninguna de las tres se cumple', () => {
+    // 200/500 = 0,4 < 1 y 200 < 300.
     expect(computeWarningSeals({ ...base, kcal100: 500, sodiumMg100: 200 }))
+      .not.toContain('EXCESO EN SODIO');
+  });
+
+  it('bebida sin aporte energético: el umbral propio es 40 mg/100 ml', () => {
+    // Tercera condición del Manual. Una saborizada sin calorías con 50 mg de
+    // sodio no llega por ratio (energía ~0) ni por masa (<300), y sin esta
+    // condición escapaba.
+    expect(computeWarningSeals({ ...base, kcal100: 2, sodiumMg100: 50, isLiquid: true }))
+      .toContain('EXCESO EN SODIO');
+  });
+
+  it('la condición de 40 mg no aplica a sólidos ni a bebidas con energía', () => {
+    // 50/100 = 0,5 < 1 y 50 < 300: sin la condición (c) no hay sello. Un sólido
+    // nunca la usa, y una bebida CON aporte energético tampoco.
+    expect(computeWarningSeals({ ...base, kcal100: 100, sodiumMg100: 50, isLiquid: false }))
+      .not.toContain('EXCESO EN SODIO');
+    expect(computeWarningSeals({ ...base, kcal100: 100, sodiumMg100: 50, isLiquid: true }))
       .not.toContain('EXCESO EN SODIO');
   });
 });
