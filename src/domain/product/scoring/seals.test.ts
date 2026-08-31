@@ -11,12 +11,16 @@ import { computeWarningSeals } from './index';
 const sellosDe = (p: ProductInput) => scoreProduct(p).warnings;
 
 describe('productos que SÍ llevan sellos', () => {
-  it('una gaseosa cola azucarada lleva exceso en azúcares', () => {
+  // Este caso esperaba SOLO azúcares, con el umbral de bebidas en 70 kcal/100ml.
+  // Con el corte real de la Tabla 1 (25) una gaseosa de 42 kcal lleva las dos, y
+  // es lo que corresponde: la expectativa vieja era una suposición, no una
+  // observación verificada. Contrastado contra la calculadora oficial de ANMAT.
+  it('una gaseosa cola azucarada lleva exceso en azúcares Y en calorías', () => {
     expect(sellosDe({
       ingredients_text: 'agua, azúcar, colorante caramelo, acidulante',
       categories: 'Bebidas, Gaseosas', nova_group: 4,
       nutriments: { 'energy-kcal_100g': 42, 'sugars_100g': 10.6, 'sodium_100g': 0.01 },
-    })).toEqual(['EXCESO EN AZÚCARES']);
+    })).toEqual(['EXCESO EN AZÚCARES', 'EXCESO EN CALORÍAS']);
   });
 
   it('una galletita dulce lleva varios', () => {
@@ -90,9 +94,18 @@ describe('azúcares libres vs. totales', () => {
 describe('umbral de calorías según estado físico', () => {
   const base = { sugars100: 0, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: false };
 
-  it('líquidos: 70 kcal/100ml', () => {
-    expect(computeWarningSeals({ ...base, kcal100: 80, isLiquid: true })).toContain('EXCESO EN CALORÍAS');
-    expect(computeWarningSeals({ ...base, kcal100: 60, isLiquid: true })).toEqual([]);
+  // El corte de bebidas era 70 en este archivo. Setenta no es ninguna de las dos
+  // etapas argentinas (50 y 25): es el valor final del modelo chileno. La
+  // calculadora oficial de ANMAT devuelve «Calorías 21 <25 N/A» para una bebida.
+  it('líquidos: 25 kcal/100ml', () => {
+    expect(computeWarningSeals({ ...base, kcal100: 30, isLiquid: true })).toContain('EXCESO EN CALORÍAS');
+    expect(computeWarningSeals({ ...base, kcal100: 20, isLiquid: true })).toEqual([]);
+  });
+
+  it('una bebida entre 25 y 70 kcal/100ml SÍ lleva el octógono', () => {
+    // Es el rango que el umbral viejo dejaba pasar entero: jugos, saborizadas,
+    // gaseosas comunes. Este caso es la regresión de N-6.
+    expect(computeWarningSeals({ ...base, kcal100: 42, isLiquid: true })).toContain('EXCESO EN CALORÍAS');
   });
 
   it('sólidos: 275 kcal/100g', () => {
@@ -101,11 +114,44 @@ describe('umbral de calorías según estado físico', () => {
   });
 });
 
+describe('sodio: las dos condiciones de la Tabla 1', () => {
+  const base = { sugars100: 0, satFat100: 0, totalFat100: 0, isLiquid: false, hasAddedSugar: false };
+
+  it('marca por ratio: >=1 mg de sodio por kcal', () => {
+    expect(computeWarningSeals({ ...base, kcal100: 100, sodiumMg100: 120 }))
+      .toContain('EXCESO EN SODIO');
+  });
+
+  it('marca por masa: >=300 mg/100g aunque el ratio no llegue', () => {
+    // Un snack salado y muy calórico diluye su ratio (350/500 = 0,7 < 1) y con
+    // la condición sola escapaba a un sello que el envase sí lleva.
+    expect(computeWarningSeals({ ...base, kcal100: 500, sodiumMg100: 350 }))
+      .toContain('EXCESO EN SODIO');
+  });
+
+  it('no marca cuando ninguna de las dos se cumple', () => {
+    // 200/500 = 0,4 < 1 y 200 < 300. (El producto igual lleva calorías por los
+    // 500 kcal: acá se afirma sobre el sodio, no sobre el resto del panel.)
+    expect(computeWarningSeals({ ...base, kcal100: 500, sodiumMg100: 200 }))
+      .not.toContain('EXCESO EN SODIO');
+  });
+});
+
 describe('sin panel nutricional no hay sellos', () => {
   it('no se inventan sellos cuando falta la energía declarada', () => {
     expect(computeWarningSeals({
       kcal100: null, sugars100: 50, satFat100: 20, totalFat100: 40, sodiumMg100: 900,
       isLiquid: false, hasAddedSugar: true,
+    })).toEqual([]);
+  });
+
+  it('tampoco por la vía del sodio por masa', () => {
+    // La condición de >=300 mg/100g no necesita energía para calcularse, pero
+    // igual la exige: sin panel no hay sellos es regla del archivo, y un umbral
+    // nuevo no la rompe.
+    expect(computeWarningSeals({
+      kcal100: null, sugars100: 0, satFat100: 0, totalFat100: 0, sodiumMg100: 900,
+      isLiquid: false, hasAddedSugar: false,
     })).toEqual([]);
   });
 });

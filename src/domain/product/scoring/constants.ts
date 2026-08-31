@@ -20,8 +20,19 @@ import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types
  * techos → clamp. Desaparecen el promedio ponderado de ejes, el modificador
  * NOVA y la regresión a neutro por cobertura. Los puntajes de v2 NO son
  * comparables con los de v2.1.
+ *
+ * v2.2 — se corrigen dos umbrales de octógonos contra la Tabla 1 del Decreto
+ * 151/2022, verificados con la calculadora oficial de ANMAT: el sodio gana su
+ * condición alternativa (≥300 mg/100 g) y el corte de calorías de bebidas baja
+ * de 70 a 25 (ver `scoring/seals.ts`). Los dos erraban de menos, así que hay
+ * productos que pasan a llevar un octógono más y por lo tanto bajan de puntaje
+ * vía `sealPenalty`.
+ *
+ * El bump NO es cosmético: `redisService` trata como MISS toda entrada cuyo
+ * sobre no coincida con esta constante, así que sin bumpear, Redis seguiría
+ * sirviendo hasta 7 días los octógonos viejos.
  */
-export const ENGINE_VERSION = 'ftg-rubric-v2.1';
+export const ENGINE_VERSION = 'ftg-rubric-v2.2';
 
 /* ── §2 Paso 1 — Punto de partida ─────────────────────────────────────── */
 

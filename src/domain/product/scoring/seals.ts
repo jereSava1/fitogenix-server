@@ -11,20 +11,29 @@
    envase. Nuestro puntaje no; por eso viven en su propio módulo y se exponen
    aparte, aunque además alimenten el modificador nutricional.
 
-   CONTRASTADO EL 2026-08-31 contra el modelo de perfil de nutrientes de OPS,
-   que es la fuente que la ley adopta (Ley 27.642, art. 7). Resultado:
+   CONTRASTADO EL 2026-08-31 contra el perfil de nutrientes de OPS —la fuente
+   que la ley adopta (Ley 27.642, art. 7)— y contra la CALCULADORA OFICIAL de
+   ANMAT, que es la implementación de referencia. Tabla 1 del Decreto 151/2022,
+   segunda etapa (la vigente):
 
-     ✅ azúcares ≥10% de la energía        — coincide con OPS
-     ✅ grasas saturadas ≥10% de la energía — coincide con OPS
-     ✅ grasas totales ≥30% de la energía   — coincide con OPS
-     ✅ sodio ≥1 mg por kcal                — coincide con OPS
-     🔴 calorías 275 (sólidos) / 70 (líquidos) — SIN VERIFICAR
+     ✅ azúcares ≥10% de la energía          coincide
+     ✅ grasas saturadas ≥10% de la energía  coincide
+     ✅ grasas totales ≥30% de la energía    coincide
+     ✅ calorías ≥275 kcal/100 g (sólidos)   coincide
+     🔧 sodio: la norma tiene DOS condiciones alternativas, no una
+     🔧 calorías de bebidas: era 70, la norma dice 25
 
-   El umbral de calorías no sale de OPS: su modelo no define un criterio de
-   energía. Es un agregado de la norma argentina y su valor está en el Anexo II
-   del Decreto 151/2022, que no está disponible online (argentina.gob.ar bloquea
-   la descarga; ANMAT devuelve 403). Es el único de los cinco sin respaldo
-   citable — ver `fitogenix-agents/nutricion/NUTRICION.md §N6` N-5.
+   Los dos últimos se corrigieron acá. Los dos erraban en la MISMA dirección
+   —de menos— así que el usuario veía menos octógonos de los que su envase
+   lleva, que es el peor error posible para el único dato que puede verificar.
+
+   La salida de la calculadora oficial que lo cierra, para una bebida:
+
+     Sodio mg/kcal   0,5   <1     N/A
+     Sodio mg/100g   10    <300
+     Calorías        21    <25    N/A
+
+   Detalle y fuentes: `fitogenix-agents/nutricion/NUTRICION.md` §N3 y §N6.
 
    Que NO haya octógono de grasas trans es correcto y está verificado: la ley
    no la incluye entre los nutrientes críticos, a diferencia de OPS que sí la
@@ -46,11 +55,29 @@ const KCAL_PER_GRAM = { sugar: 4, fat: 9 } as const;
 /** Fracción de la energía total a partir de la cual el sello aplica. */
 const ENERGY_SHARE = { sugars: 0.1, satFat: 0.1, totalFat: 0.3 } as const;
 
-/** mg de sodio por kcal. */
+/**
+ * Sodio: la norma marca DOS condiciones alternativas, no una.
+ *
+ * Tabla 1 del Decreto 151/2022, segunda etapa: «≥ 1 mg de sodio por 1 kcal
+ * **o** ≥ 300 mg/100 g». Verificado contra la calculadora oficial de ANMAT, que
+ * evalúa las dos por separado y las muestra en filas distintas.
+ *
+ * La segunda no depende de la energía declarada: un producto sin panel
+ * energético igual puede superarla.
+ */
 const SODIUM_PER_KCAL = 1;
+const SODIUM_PER_100G = 300;
 
-/** kcal/100 — el umbral de líquidos es distinto al de sólidos. */
-const CALORIE_LIMIT = { solid: 275, liquid: 70 } as const;
+/**
+ * kcal/100 — el umbral de líquidos es distinto al de sólidos.
+ *
+ * `liquid` era 70, que no es ninguna de las dos etapas argentinas (50 y 25):
+ * es el valor final del modelo chileno. La calculadora oficial de ANMAT
+ * devuelve «Calorías 21 <25 N/A» para una bebida, así que el corte vigente es
+ * 25. Con 70 se dejaban de marcar todas las bebidas entre 25 y 70 kcal/100 ml
+ * que en la góndola sí llevan el octógono.
+ */
+const CALORIE_LIMIT = { solid: 275, liquid: 25 } as const;
 
 export interface SealInput {
   readonly kcal100: number | null;
@@ -90,7 +117,14 @@ export function computeWarningSeals(input: SealInput): WarningSeal[] {
   if (sharesOf(totalFat100, KCAL_PER_GRAM.fat, ENERGY_SHARE.totalFat)) {
     seals.push('EXCESO EN GRASAS TOTALES');
   }
-  if (energy != null && sodiumMg100 != null && sodiumMg100 / energy >= SODIUM_PER_KCAL) {
+  const sodiumByRatio =
+    energy != null && sodiumMg100 != null && sodiumMg100 / energy >= SODIUM_PER_KCAL;
+  // Exige energía declarada igual que el resto, aunque este criterio no la use
+  // para calcular: es la regla del archivo —un producto sin panel no lleva
+  // sellos, igual que en la góndola— y no se rompe por un umbral nuevo.
+  const sodiumByMass =
+    energy != null && sodiumMg100 != null && sodiumMg100 >= SODIUM_PER_100G;
+  if (sodiumByRatio || sodiumByMass) {
     seals.push('EXCESO EN SODIO');
   }
   if (kcal100 != null && kcal100 >= (input.isLiquid ? CALORIE_LIMIT.liquid : CALORIE_LIMIT.solid)) {
