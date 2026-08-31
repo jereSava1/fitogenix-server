@@ -1,28 +1,43 @@
 # fitogenix-server
 
 Backend Fastify de Fitogenix: recibe búsquedas de productos (barcode o nombre),
-resuelve los datos contra una cascada de fuentes, aplica el scoring Fitogénico
-(`ftgEngine`) y cachea el resultado para no repetir consultas costosas (IA).
+resuelve los datos **contra el catálogo propio**, aplica el scoring Fitogénico
+(`ftgEngine`) y cachea el resultado.
 
-## Arquitectura de lookup — cascada (waterfall)
+## Arquitectura de lookup — catalog-only
 
-`POST /products/lookup` → `src/services/productLookupService.ts`. El orden es
-estricto y corta ni bien hay match; cada nivel tiene try/catch propio: si falla
-(timeout/500) se loguea y la cascada **continúa al siguiente nivel**, nunca
-crashea.
+> **Corregido el 2026-08-28.** Este README describía una cascada en vivo
+> `OFF → OBF → Edamam → Claude` como la arquitectura del lookup. Se retiró del
+> camino de request el **2026-08-18** (decisión de producto, ver ADR-002 nota
+> "parte 2" en `fitogenix-agents/BITACORA_DECISIONES.md`), y el README no se
+> actualizó. La tabla de niveles 1a/1b/2/3 que estaba acá ya no describe ninguna
+> ruta de código.
+
+`POST /products/lookup` → `src/services/productLookupService.ts`. Es un camino
+de **solo lectura**: Redis, después Supabase, y si el producto no está en el
+catálogo, `lookupProduct` devuelve `null` y la ruta responde que todavía no lo
+tenemos. **No hay fallback a proveedores externos ni a IA durante la request.**
 
 | Nivel | Fuente | Costo | Notas |
 |---|---|---|---|
 | 0a | Redis (Upstash) | 0 | Caché caliente. No-op limpio si faltan las env vars. |
-| 0b | Supabase `products` | 0 | Caché persistente. Guarda datos **crudos** y recomputa el score al leer. |
-| 1a | Open Food Facts (OFF) | 0 | Alimentos. Sin API key. |
-| 1b | Open Beauty Facts (OBF) | 0 | Cosméticos. Mismo esquema que OFF. Solo lookup por barcode. |
-| 2 | Edamam Food Database | cuota free | Fallback freemium. Solo por barcode. Se saltea (logueado) si faltan las keys. Free tier ≈ 10 req/min; un 429 cae limpio al nivel 3. |
-| 3 | Claude (IA) | tokens | Último recurso. Único nivel que aplica a búsquedas por nombre sin match en OFF. |
+| 0b | Supabase `products` | 0 | Caché persistente **y catálogo**. Guarda datos **crudos** y recomputa el score al leer. Por nombre resuelve con el índice trigram de la migración 014. |
+| — | *(sin nivel 1+)* | — | Miss = `null`. El catálogo crece por el ETL, no por el tráfico de búsqueda. |
 
-Todas las fuentes se normalizan a `RawOFFProduct` (patrón Adapter, ver
-`openBeautyFactsApi.ts` y `fallbackFoodApi.ts`) para que `mapOFFToProduct` +
-`ftgEngine` scoreen igual sin importar el origen.
+Por qué: la cascada agregaba varios round-trips de red secuenciales —era la
+causa principal de que una búsqueda en frío tardara segundos— y duplicaba
+trabajo que el ETL ya hace en batch, con curaduría y sin una request HTTP
+esperando. El docstring de `productLookupService.ts` lo explica en detalle.
+
+`offService.ts`, `openBeautyFactsApi.ts`, `fallbackFoodApi.ts` y
+`claudeService.ts` **siguen existiendo y siguen manteniéndose**: hoy los invoca
+el pipeline de `scripts/etl/` en batch. Todas las fuentes se normalizan a
+`RawOFFProduct` (patrón Adapter) para que `mapRawToProduct` + `ftgEngine`
+scoreen igual sin importar el origen.
+
+**Consecuencia operativa:** si el ETL no pobló el catálogo, el usuario no tiene
+resultado. El poblamiento dejó de ser una optimización de costo y pasó a ser
+condición de que el producto funcione.
 
 ## Caché (Supabase) — identidad por `products.id`
 
@@ -110,10 +125,13 @@ npx tsc --noEmit     # typecheck
 npx vitest run       # unit tests
 ```
 
-**Unit tests (119):** co-locados como `src/**/*.test.ts`. Cubren, entre otros:
-- Cascada por barcode: hit de cache sin tocar cold path; OFF falla → OBF
-  resuelve; OFF+OBF fallan → Edamam resuelve; todos fallan → Claude; OBF/Edamam
-  no se consultan en búsquedas por nombre; singleflight (requests concurrentes
+**Unit tests:** co-locados como `src/**/*.test.ts` (27 archivos entre `src/` y
+`scripts/`; ~345 casos `it()` contados estáticamente el 28/8/2026 — el número
+"119" que figuraba acá quedó viejo, y la suite no se re-corrió en esa sesión).
+Cubren, entre otros:
+- Lookup catalog-only: hit de Redis, hit de Supabase, y **miss = `null` sin
+  cascada a ningún proveedor externo**; si el catálogo lanza, el error se
+  propaga en vez de inventar un fallback; singleflight (requests concurrentes
   comparten una resolución).
 - Cache: round-trip de `buildCachePayload`/`getCachedProductByBarcode`/
   `getCachedProductByNameKey`, filas viejas sin crudos (o con `nutriments` `{}`)
@@ -124,7 +142,12 @@ npx vitest run       # unit tests
 - Los servicios externos se mockean con `vi.mock` (ver
   `productLookupService.test.ts` como referencia de estilo).
 
-**Verificación end-to-end realizada (2026-07-07/08), contra servicios reales:**
+**Verificación end-to-end realizada (2026-07-07/08), contra servicios reales.**
+⚠️ **Es anterior al rediseño catalog-only del 18/8:** los tres puntos siguientes
+verificaron la cascada en vivo, que ya no existe en el request path. Se
+conservan como registro histórico de que esos adapters funcionan contra los
+servicios reales —lo que hoy le importa al ETL, que es quien los usa— no como
+descripción del comportamiento actual del endpoint.
 - Supabase: write→read→recompute por barcode y por `name:` verificado con
   scripts efímeros; hits confirmados desde la UI (`source:"supabase"`, ~3.5x
   más rápido que el cold path).
