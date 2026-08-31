@@ -158,6 +158,30 @@ export interface NutritionResult {
 }
 
 /**
+ * El nutriente detrás de cada octógono, en lenguaje llano.
+ *
+ * **El octógono no se nombra en texto de usuario.** Desde el 31/8/2026 es
+ * insumo interno del puntaje: resta, y no se muestra (`CONTEXT.md §2.5`). La
+ * nota de este paso viaja en `steps[].detail`, que SÍ es texto de usuario, así
+ * que no puede decir "sello", "octógono" ni citar la Ley 27.642 — eso afirmaría
+ * que el envase los lleva, y lo nuestro es una aproximación calculada desde la
+ * ETIQUETA, no desde la formulación del producto, que es lo que exige el método
+ * oficial (`fitogenix-agents/nutricion/NUTRICION.md` §N7).
+ *
+ * El campo `warnings` del desglose sigue llevando los octógonos: es información
+ * verdadera y sirve para curaduría. Lo que no se hace es renderizarla.
+ *
+ * Copy provisional: el definitivo lo redacta el agente de UX.
+ */
+const SEAL_NUTRIENT: Readonly<Record<WarningSeal, string>> = {
+  'EXCESO EN AZÚCARES': 'azúcares',
+  'EXCESO EN GRASAS SATURADAS': 'grasas saturadas',
+  'EXCESO EN GRASAS TOTALES': 'grasas totales',
+  'EXCESO EN SODIO': 'sodio',
+  'EXCESO EN CALORÍAS': 'calorías',
+};
+
+/**
  * Los octógonos de la Ley 27.642 y la grasa trans declarada.
  *
  * La ley exime a los alimentos SIN nutrientes críticos AÑADIDOS: la grasa de
@@ -189,7 +213,9 @@ export function applyNutrition(
 
   const notes: string[] = [];
   let delta = -sealPenalty(seals);
-  if (seals.length > 0) notes.push(`Sellos de advertencia: ${seals.join(', ')}.`);
+  if (seals.length > 0) {
+    notes.push(`Perfil nutricional desfavorable en ${seals.map((s) => SEAL_NUTRIENT[s]).join(', ')}.`);
+  }
 
   // §5.1 solo ataca la grasa trans por ingrediente, lo que deja pasar a
   // cualquier producto que la declare sin nombrar el aceite hidrogenado.

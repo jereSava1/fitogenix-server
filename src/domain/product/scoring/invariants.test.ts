@@ -81,3 +81,71 @@ describe('invariantes sobre entradas rotas', () => {
     expect(Date.now() - inicio).toBeLessThan(5000);
   });
 });
+
+/* Decisión de producto del 31/8/2026 (`CONTEXT.md §2.5`): el octógono resta
+ * puntos y NO se muestra. El cálculo propio parte de la etiqueta, no de la
+ * formulación, así que es una aproximación — y una aproximación no se puede
+ * presentar como el dato que el usuario contrasta contra el envase.
+ *
+ * Este bloque protege la mitad frágil de esa decisión: el `warnings` del
+ * contrato es fácil de no renderizar, pero el texto de los pasos se escribe a
+ * mano y ahí ya se había filtrado el nombre de cada octógono.
+ */
+describe('los octógonos restan, pero no se nombran en texto de usuario', () => {
+  /** Dispara los cinco octógonos a la vez. */
+  const CON_OCTOGONOS = {
+    product_name: 'Galletitas dulces rellenas',
+    ingredients_text: 'harina de trigo, azucar, aceite vegetal, jarabe de glucosa, sal',
+    nutriments: {
+      'energy-kcal_100g': 480,
+      'sugars_100g': 25,
+      'fat_100g': 20,
+      'saturated-fat_100g': 10,
+      'sodium_100g': 0.6,
+    },
+  };
+
+  /* Lo que jamás puede aparecer en algo que el usuario lee.
+   *
+   * "advertencia" a secas NO está en la lista, a propósito: el texto de la
+   * anulación por colorantes azoicos dice "la UE exige la advertencia…", que es
+   * verdadero y no tiene nada que ver con los octógonos. Y "sello" a secas
+   * tampoco, porque el sello Fitogénico sí se muestra (`CONTEXT.md §3.2`). Lo
+   * que se prohíbe es afirmar el octógono, no la palabra suelta. */
+  const PROHIBIDO = [/EXCESO EN/i, /oct[óo]gono/i, /sellos? de advertencia/i, /27\.?642/, /151\/2022/];
+
+  function textoDeUsuario(bd: ReturnType<typeof scoreProduct>): string {
+    return [
+      ...bd.steps.map((s) => `${s.label} ${s.detail ?? ''}`),
+      ...bd.notices,
+      bd.fitogenixView,
+      bd.tierMessage,
+      ...bd.ingredients.map((i) => `${i.name} ${i.desc} ${i.detail ?? ''}`),
+    ].join(' | ');
+  }
+
+  it('el producto lleva los cinco octógonos y penaliza', () => {
+    const bd = scoreProduct(CON_OCTOGONOS as never);
+    expect(bd.warnings.length).toBe(5);
+    const paso = bd.steps.find((s) => s.label === 'Panel nutricional');
+    expect(paso, 'el paso nutricional tiene que existir').toBeDefined();
+    expect(paso!.delta!).toBeLessThan(0);
+  });
+
+  it('ningún texto de usuario nombra el octógono', () => {
+    const bd = scoreProduct(CON_OCTOGONOS as never);
+    const texto = textoDeUsuario(bd);
+    for (const patron of PROHIBIDO) {
+      expect(patron.test(texto), `"${patron}" aparece en: ${texto}`).toBe(false);
+    }
+  });
+
+  it('tampoco en ninguna de las entradas rotas', () => {
+    for (const product of ENTRADAS_ROTAS) {
+      const texto = textoDeUsuario(scoreProduct(product as never));
+      for (const patron of PROHIBIDO) {
+        expect(patron.test(texto), `"${patron}" en ${JSON.stringify(product).slice(0, 60)}`).toBe(false);
+      }
+    }
+  });
+});
