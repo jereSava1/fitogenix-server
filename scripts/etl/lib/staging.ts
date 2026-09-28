@@ -167,24 +167,36 @@ export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<stri
   const byBarcode = new Map<string, StagingRowFull[]>();
   if (barcodes.length === 0) return byBarcode;
 
-  const { data, error } = await admin()
-    .from('products_staging')
-    .select('id, barcode, source, merge_status, run_id, raw_payload')
-    .in('barcode', barcodes);
-
-  if (error || !data) {
-    console.error('[staging] fetchRowsForBarcodes error:', error?.message);
-    return byBarcode;
-  }
-
-  for (const row of data as (StagingRowFull & { raw_payload: RawOFFProduct })[]) {
-    const list = byBarcode.get(row.barcode) ?? [];
-    list.push({
-      id: row.id, barcode: row.barcode, source: row.source,
-      merge_status: row.merge_status, run_id: row.run_id, raw: row.raw_payload,
-    });
-    byBarcode.set(row.barcode, list);
-  }
+  // Pagina, como manda el comentario de PAGE_SIZE: un lote de BATCH_SIZE
+  // barcodes toca ~3 filas por barcode (OFF + los cuatro retailers), o sea muy
+  // por encima de las 1000 que PostgREST devuelve por request.
+  //
+  // Sin paginar, la respuesta se cortaba EN SILENCIO y los barcodes de la cola
+  // del lote volvían con cero filas: `runMerge` hacía `continue` y los dejaba en
+  // `pending`. No se perdía estado —se reintentaban en la corrida siguiente— pero
+  // cada corrida procesaba ~64 % de lo que decía procesar, sin un solo error.
+  // Medido el 2026-09-03: `--limit 5000` escribió 3.209 barcodes y salteó 1.791.
+  await paginateRows<StagingRowFull & { raw_payload: RawOFFProduct }>(
+    'fetchRowsForBarcodes',
+    (from, to) =>
+      admin()
+        .from('products_staging')
+        .select('id, barcode, source, merge_status, run_id, raw_payload')
+        .in('barcode', barcodes)
+        .order('id')
+        .range(from, to),
+    (rows) => {
+      for (const row of rows) {
+        const list = byBarcode.get(row.barcode) ?? [];
+        list.push({
+          id: row.id, barcode: row.barcode, source: row.source,
+          merge_status: row.merge_status, run_id: row.run_id, raw: row.raw_payload,
+        });
+        byBarcode.set(row.barcode, list);
+      }
+      return true;
+    },
+  );
   return byBarcode;
 }
 
