@@ -1,0 +1,35 @@
+
+  error supabase-redis-solo-en-infra: src/services/scanHistoryService.ts → node_modules/@supabase/supabase-js/dist/index.mjs
+  error supabase-redis-solo-en-infra: src/services/savedProductsService.ts → node_modules/@supabase/supabase-js/dist/index.mjs
+  error supabase-redis-solo-en-infra: src/services/redisService.ts → node_modules/@upstash/redis/nodejs.mjs
+  error supabase-redis-solo-en-infra: src/services/cacheService.ts → node_modules/@supabase/supabase-js/dist/index.mjs
+  error supabase-redis-solo-en-infra: src/routes/users/deleteMe.ts → node_modules/@supabase/supabase-js/dist/index.mjs
+  error supabase-redis-solo-en-infra: src/plugins/auth.ts → node_modules/@supabase/supabase-js/dist/index.mjs
+  error scripts-solo-apis-publicas: scripts/test-search-rpc.ts → src/services/productLookupService.ts
+  error scripts-solo-apis-publicas: scripts/test-search-rpc.ts → src/services/cacheService.ts
+  error scripts-solo-apis-publicas: scripts/score-histogram.ts → src/domain/product/ftgEngine.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/supabaseAdmin.ts → src/config.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/staging.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/qualityHeuristics.ts → src/domain/product/nutrientPlausibility.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/qualityAI.ts → src/config.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/merge.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/merge.test.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/lib/completeness.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/runMerge.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/runMerge.ts → src/services/productLookupService.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/runMerge.ts → src/services/claudeService.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/runMerge.ts → src/services/cacheService.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/enrichCencosud.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/enrichCencosud.ts → src/services/productLookupService.ts
+  error scripts-solo-apis-publicas: scripts/etl/jobs/enrichCencosud.ts → src/services/cacheService.ts
+  error scripts-solo-apis-publicas: scripts/etl/adapters/vtexAdapter.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/etl/adapters/offAdapter.ts → src/types/fitogenix.ts
+  error scripts-solo-apis-publicas: scripts/capture-golden.ts → src/domain/product/ftgEngine.ts
+  error scripts-solo-apis-publicas: scripts/audit-scores.ts → src/domain/product/ftgEngine.ts
+  error scripts-solo-apis-publicas: scripts/add-en-aliases.ts → src/domain/product/ingredientData.ts
+  error anthropic-solo-en-etl: src/services/claudeService.ts → node_modules/@anthropic-ai/sdk/index.js
+  error anthropic-solo-en-etl: scripts/etl/lib/qualityAI.ts → node_modules/@anthropic-ai/sdk/index.js
+
+x 30 dependency violations (30 errors, 0 warnings). 112 modules, 284 dependencies cruised.
+
+exit=30

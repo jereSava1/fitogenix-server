@@ -1,0 +1,11 @@
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.9 /Users/jeremiassavarino/fitogenix-native
+
+
+ Test Files  5 passed (5)
+      Tests  49 passed (49)
+   Start at  18:04:24
+   Duration  1.49s (transform 215ms, setup 527ms, import 569ms, tests 638ms, environment 2.17s)
+
+exit=0
