@@ -138,3 +138,62 @@ describe('fetchStagingStatusRows', () => {
     ]);
   });
 });
+
+describe('fetchRowsForBarcodes', () => {
+  /** N filas de staging para `barcodeCount` barcodes, `perBarcode` filas cada uno (una por fuente). */
+  function stagingRows(barcodeCount: number, perBarcode: number, offset = 0): Record<string, unknown>[] {
+    const sources = ['off', 'vea', 'disco', 'jumbo', 'carrefour'];
+    const rows: Record<string, unknown>[] = [];
+    for (let b = 0; b < barcodeCount; b++) {
+      for (let s = 0; s < perBarcode; s++) {
+        rows.push({
+          id: `${offset + b}-${s}`,
+          barcode: String(offset + b),
+          source: sources[s % sources.length],
+          merge_status: 'pending',
+          run_id: 'run-1',
+          raw_payload: { product_name: `p${offset + b}` },
+        });
+      }
+    }
+    return rows;
+  }
+
+  it('pagina más allá del tope de 1000 filas de PostgREST (antes el merge procesaba ~64%)', async () => {
+    // 500 barcodes × 3 fuentes = 1500 filas: sin paginar, PostgREST cortaba en
+    // 1000 y los barcodes de la cola volvían sin filas.
+    const all = stagingRows(500, 3);
+    pages = [all.slice(0, 1000), all.slice(1000)];
+    const barcodes = Array.from({ length: 500 }, (_, i) => String(i));
+
+    const result = await staging.fetchRowsForBarcodes(barcodes);
+
+    expect(result.size).toBe(500);
+    expect([...result.values()].every((rows) => rows.length === 3)).toBe(true);
+    expect(rangesSeen).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+  });
+
+  it('agrupa las filas por barcode y mapea raw_payload a raw', async () => {
+    pages = [stagingRows(2, 2)];
+
+    const result = await staging.fetchRowsForBarcodes(['0', '1']);
+
+    expect(result.get('0')).toHaveLength(2);
+    expect(result.get('1')?.[0]).toMatchObject({
+      barcode: '1',
+      source: 'off',
+      merge_status: 'pending',
+      raw: { product_name: 'p1' },
+    });
+  });
+
+  it('no consulta la base si no hay barcodes', async () => {
+    const result = await staging.fetchRowsForBarcodes([]);
+
+    expect(result.size).toBe(0);
+    expect(from).not.toHaveBeenCalled();
+  });
+});
