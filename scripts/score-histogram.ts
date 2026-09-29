@@ -13,7 +13,7 @@
 // No escribe en la base. Seguro de correr con el ETL en curso.
 import 'dotenv/config';
 import { admin } from './etl/lib/supabaseAdmin';
-import { ftgScoreWithBreakdown, type ProductInput } from '../src/domain/product/ftgEngine';
+import { scoreProduct, type ProductInput } from '../src/modules/scoring';
 
 const PAGE_SIZE = 1000;
 
@@ -76,7 +76,7 @@ async function main() {
   let scored = 0;
 
   for (const r of rows) {
-    const bd = ftgScoreWithBreakdown(toInput(r));
+    const bd = scoreProduct(toInput(r));
     for (const t of bd.unidentified) unidentified.set(t, (unidentified.get(t) ?? 0) + 1);
 
     if (!bd.scoreAvailable || bd.score == null) {
@@ -141,7 +141,7 @@ async function main() {
 
   // ── 4. La palanca: cola de curaduría ─────────────────────────────────────
   console.log('\n=== ⭐ Cola de curaduría — términos no identificados más frecuentes ===');
-  console.log('    (cada uno que se agregue a ingredientData.ts recupera catálogo\n');
+  console.log('    (cada uno que se agregue a data/ingredients.ts recupera catálogo\n');
   console.log('     sin tocar el motor ni la base)\n');
   const top = [...unidentified.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40);
   const maxU = top[0]?.[1] ?? 1;

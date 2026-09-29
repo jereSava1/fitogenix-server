@@ -1,6 +1,6 @@
 /* Motor v2.1 — comportamiento por sección del documento.
  *
- * La calibración contra la tabla de §8 vive en ftgEngine.calibration.test.ts;
+ * La calibración contra la tabla de §8 vive en calibration.test.ts;
  * acá se fija el comportamiento de cada regla por separado, para que cuando
  * §8 falle se pueda saber CUÁL regla se rompió.
  */
@@ -9,9 +9,8 @@ import {
   scoreProduct,
   analyzeIngredients,
   type ProductInput,
-} from './index';
-import { CEILINGS, DEDUCTIONS } from './index';
-import { ingredientCount } from '../ftgEngine';
+} from '../index';
+import { CEILINGS, DEDUCTIONS } from './constants';
 
 const score = (p: ProductInput) => scoreProduct(p).score;
 
@@ -458,19 +457,6 @@ describe('§7 — salida', () => {
       ingredients_text: 'harina de trigo, azúcar, aceite de girasol',
     });
     expect(conNombre).toBe(sinNombre);
-  });
-});
-
-/* ── Utilidades ────────────────────────────────────────────────────────── */
-
-describe('ingredientCount', () => {
-  it('cuenta ingredientes separados por coma o punto y coma', () => {
-    expect(ingredientCount(undefined)).toBe(0);
-    expect(ingredientCount('')).toBe(0);
-    expect(ingredientCount('   ')).toBe(0);
-    expect(ingredientCount('agua, sal, azúcar')).toBe(3);
-    expect(ingredientCount('agua; sal; azúcar; harina de trigo')).toBe(4);
-    expect(ingredientCount('agua, sal,')).toBe(2);
   });
 });
 

@@ -10,11 +10,11 @@ import { mapRawToProduct } from './productLookupService';
 
 const forcedScore = vi.hoisted(() => ({ value: null as number | null }));
 
-vi.mock('../domain/product/ftgEngine', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../domain/product/ftgEngine')>();
+vi.mock('../modules/scoring', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../modules/scoring')>();
   return {
     ...original,
-    ftgScoreWithBreakdown: () => ({
+    scoreProduct: () => ({
       score: forcedScore.value,
       scoreAvailable: forcedScore.value != null,
       noScore: forcedScore.value == null ? { code: 'sin-ingredientes', message: 'sin datos' } : null,

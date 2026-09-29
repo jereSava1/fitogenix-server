@@ -36,6 +36,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 type ClaudeServiceModule = typeof import('./claudeService');
 let enrichWithAI: ClaudeServiceModule['enrichWithAI'];
 let aiLookupProduct: ClaudeServiceModule['aiLookupProduct'];
+let ingredientCount: ClaudeServiceModule['ingredientCount'];
 
 beforeAll(async () => {
   // config.ts exige estas env vars al importarse — mismo patrón que
@@ -43,7 +44,7 @@ beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  ({ enrichWithAI, aiLookupProduct } = await import('./claudeService'));
+  ({ enrichWithAI, aiLookupProduct, ingredientCount } = await import('./claudeService'));
 });
 
 beforeEach(() => {
@@ -146,5 +147,17 @@ describe('aiLookupProduct', () => {
     setClaudeResponse({});
     const result = await aiLookupProduct('producto inexistente xyz');
     expect(result).toBeNull();
+  });
+});
+
+// Movido tal cual desde scoring/rules.test.ts en M-03, junto con la función.
+describe('ingredientCount', () => {
+  it('cuenta ingredientes separados por coma o punto y coma', () => {
+    expect(ingredientCount(undefined)).toBe(0);
+    expect(ingredientCount('')).toBe(0);
+    expect(ingredientCount('   ')).toBe(0);
+    expect(ingredientCount('agua, sal, azúcar')).toBe(3);
+    expect(ingredientCount('agua; sal; azúcar; harina de trigo')).toBe(4);
+    expect(ingredientCount('agua, sal,')).toBe(2);
   });
 });

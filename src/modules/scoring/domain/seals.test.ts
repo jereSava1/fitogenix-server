@@ -5,8 +5,8 @@
 // el paquete y verificarlos. Si nuestro cálculo no coincide con el envase, la
 // app pierde credibilidad de una forma que un puntaje discutible no provoca.
 import { describe, expect, it } from 'vitest';
-import { scoreProduct, type ProductInput } from './index';
-import { computeWarningSeals } from './index';
+import { scoreProduct, type ProductInput } from '../index';
+import { computeWarningSeals } from './seals';
 
 const sellosDe = (p: ProductInput) => scoreProduct(p).warnings;
 

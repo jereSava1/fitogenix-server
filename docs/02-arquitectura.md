@@ -214,10 +214,10 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 
 | # | Archivo actual | Destino (módulo · capa) | Acción | Nota |
 |---|---|---|---|---|
-| 1 | `domain/product/ftgEngine.ts` · `ftgScoreWithBreakdown`, `ENGINE_VERSION`, re-exports de tipos | `scoring` · `index.ts` | FUSIONAR | La fachada pasa a ser la API pública del módulo |
+| 1 | `domain/product/ftgEngine.ts` · `ftgScoreWithBreakdown`, `ENGINE_VERSION`, re-exports de tipos | `scoring` · `index.ts` | FUSIONAR | La fachada pasa a ser la API pública del módulo. **Hecho en M-03:** `ftgScoreWithBreakdown` quedó como `scoreProduct` |
 | 2 | `domain/product/ftgEngine.ts` · `extractNutrition`, `extractCategory` | `catalog` · `domain/productData.ts` | PARTIR | Parsean datos crudos: no son puntaje |
-| 3 | `domain/product/ftgEngine.ts` · `ftgScore`, `ftgAnalyzeIngredients`, `ingredientCount` | — | ELIMINAR | Solo las usan scripts; los scripts pasan a `scoreProduct` |
-| 4 | `domain/product/ingredientData.ts` | `scoring` · `domain/data/ingredients.ts` | MOVER | La consume `scoring/catalog.ts` |
+| 3 | `domain/product/ftgEngine.ts` · `ftgScore`, `ftgAnalyzeIngredients`, `ingredientCount` | — | ELIMINAR | Solo las usan scripts; los scripts pasan a `scoreProduct`. **Corregido en M-03:** `ftgScore` se borró en E-03; `ftgAnalyzeIngredients` queda público como `analyzeIngredients` (lo usa `capture-golden`); `ingredientCount` lo usa `claudeService` (no solo scripts) y se mudó ahí, para irse con él al ETL en M-08 |
+| 4 | `domain/product/ingredientData.ts` | `scoring` · `domain/data/ingredients.ts` | MOVER | La consume `scoring/catalog.ts`. Hecho en M-03 |
 | 5 | `domain/product/productService.ts` | — | ELIMINAR | Re-export de `resolveProductStatus` + 2 funciones sin uso |
 | 6 | `domain/product/nutrientPlausibility.ts` (+test) | `etl` · `quality/nutrientPlausibility.ts` | MOVER | Solo lo usan el ETL y `claudeService` |
 | 7 | `domain/product/scoring/*.ts` (pipeline, steps, gates, ledger, classify, cleaning, matching, seals, explain, text, types, constants, catalog) (+tests) | `scoring` · `domain/` | MOVER | **Sin cambios de lógica**; primero, tests de caracterización |

@@ -36,7 +36,7 @@
  */
 
 import { getRedis } from '../platform/redis';
-import { ENGINE_VERSION } from '../domain/product/ftgEngine';
+import { ENGINE_VERSION } from '../modules/scoring';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';

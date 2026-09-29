@@ -47,7 +47,7 @@ beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
   cache = await import('./cacheService');
-  ({ ENGINE_VERSION } = await import('../domain/product/ftgEngine'));
+  ({ ENGINE_VERSION } = await import('../modules/scoring'));
 });
 
 beforeEach(() => {

@@ -2,16 +2,18 @@
    FITOGENIX — Motor de puntuación v2.1
    (fitogenix_scoring_engine_v2_1.md)
 
-   API pública del motor. Todo lo que está afuera de esta carpeta importa de
-   acá y de ningún otro archivo interno.
+   API pública del módulo `scoring` (docs/02-arquitectura.md §8.1, ADR-0003).
+   Todo lo que está afuera de `src/modules/scoring/` importa de acá y de
+   ningún archivo interno (regla `modulo-solo-por-index`).
 
-   ── Cómo está armado ──
+   ── Cómo está armado (`domain/`) ──
 
      types.ts      el contrato: todas las formas del dominio, sin lógica
      constants.ts  los números de §2, juntos y auditables contra el documento
      text.ts       utilidades de string puras (normalizar, matchear frases)
      rubric/       el documento traducido a datos, una sección por archivo
-     catalog.ts    la tabla de §4 crecida (ingredientData), tras una sola puerta
+     data/         la tabla de §4 crecida (ingredients.ts)
+     catalog.ts    la única puerta a esa tabla
      matching.ts   consultas puras sobre la rúbrica
      cleaning.ts   §6 — limpiar la etiqueta antes de contar
      classify.ts   un ingrediente limpio → su clasificación (cadena de reglas)
@@ -34,20 +36,25 @@
       con su costo (−8) y su techo. No se estima por analogía, no se deduce
       del nombre, no se le da el beneficio de la duda.
 
-   Lógica pura, cero imports de React Native / Expo: corre idéntico en el
-   servidor y en los scripts de curaduría. Que sea agnóstico del framework es
-   lo que permite que la curaduría use exactamente el mismo scoring que un
-   escaneo en vivo.
+   Dominio puro: sin I/O, sin config, sin paquetes npm ni builtins de Node, y
+   sin importar otros módulos ni `platform` (regla `scoring-es-puro`). Corre
+   idéntico en el servidor, en el ETL y en los scripts de curaduría: la
+   curaduría usa exactamente el mismo scoring que un escaneo en vivo.
 ═══════════════════════════════════════════════════════════ */
 
-export { analyzeIngredients, scoreProduct } from './pipeline';
+/**
+ * `scoreProduct`: un producto → su puntaje y el desglose que lo explica.
+ * `score` es `null` cuando §1 dice que no se puntúa. Nunca un número
+ * estimado: "la ausencia de datos nunca mejora un puntaje".
+ *
+ * `analyzeIngredients`: los ingredientes analizados, en el orden de la
+ * etiqueta (§7). Sale del mismo cálculo que el puntaje, así que la lista
+ * siempre le corresponde al número que se está mostrando.
+ */
+export { analyzeIngredients, scoreProduct } from './domain/pipeline';
 
-export { CEILINGS, DEDUCTIONS, ENGINE_VERSION } from './constants';
+export { ENGINE_VERSION } from './domain/constants';
 
-export { matchesPhrase, normalizeText } from './text';
-export { resolveLabelAbbreviation } from './matching';
-export { resolvesToSomething } from './classify';
-export { computeWarningSeals, type SealInput } from './seals';
 export {
   getScoreLabel,
   getScoreTagline,
@@ -56,33 +63,21 @@ export {
   type ProductStatus,
   type ProductStatusTone,
   type ScoreLabel,
-} from './presentation';
+} from './domain/presentation';
 
 export type {
   AnalyzedIngredient,
-  Anchor,
-  AnchorMatch,
-  AnnulGate,
   Ceiling,
-  CleanedList,
-  CleanIngredient,
-  Disclaimer,
-  EvaluatedIngredient,
   Impact,
-  ImpactEntry,
-  ImpactMatch,
-  IngredientResolver,
   NoScore,
   NoScoreCode,
   NutritionFacts,
   ProcessingVerdict,
   ProductInput,
-  RubricMatch,
   ScoreBreakdown,
   ScoreStep,
   ScoreStepKind,
   Severity,
   Tier,
-  TierDefinition,
   WarningSeal,
-} from './types';
+} from './domain/types';

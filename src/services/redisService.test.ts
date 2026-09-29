@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ENGINE_VERSION } from '../domain/product/ftgEngine';
+import { ENGINE_VERSION } from '../modules/scoring';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 // ── Fake de Upstash ──

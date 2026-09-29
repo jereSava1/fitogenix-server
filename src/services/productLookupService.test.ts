@@ -235,7 +235,7 @@ describe('lookupProduct — singleflight', () => {
 /* T-02 · Caracterización de la respuesta completa (docs/05-plan.md).
  *
  * Snapshot de `mapRawToProduct` para 10 productos de
- * `domain/product/scoring/regression.test.ts` (copiados tal cual: ese archivo
+ * `modules/scoring/domain/regression.test.ts` (copiados tal cual: ese archivo
  * no exporta sus goldens). Cubre las cuatro bandas y los dos lados del corte
  * de `flagged` (< 40): Mayonesa 38 y Nutella 28 salen marcadas, Coca-Cola Zero
  * 47 no. Cualquier cambio en un campo de la respuesta aparece en el diff del

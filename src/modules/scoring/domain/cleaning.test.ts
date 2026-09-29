@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { cleanIngredientList } from './cleaning';
-import { resolvesToSomething } from './index';
+import { resolvesToSomething } from './classify';
 
 const resolves = resolvesToSomething;
 const clean = (t: string) => cleanIngredientList(t, resolves);

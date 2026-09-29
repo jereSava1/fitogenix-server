@@ -13,7 +13,8 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify from 'fastify';
-import { ftgScoreWithBreakdown, extractNutrition } from '../../domain/product/ftgEngine';
+import { scoreProduct } from '../../modules/scoring';
+import { extractNutrition } from '../../modules/catalog/domain/productData';
 import type { FitogenixProduct } from '../../types/fitogenix';
 
 vi.mock('../../services/productLookupService', () => ({
@@ -50,11 +51,11 @@ beforeEach(() => {
 /**
  * Producto armado con un cálculo REAL del motor v2.1 — no un objeto de
  * fantasía. `score`/`ingredients`/`scoreAvailable`/`noScore` salen del mismo
- * `ftgScoreWithBreakdown`, aunque el `breakdown` en sí no se adjunte al
+ * `scoreProduct`, aunque el `breakdown` en sí no se adjunte al
  * producto (no es parte del contrato de `FitogenixProduct`).
  */
-function producto(raw: Parameters<typeof ftgScoreWithBreakdown>[0]): FitogenixProduct {
-  const breakdown = ftgScoreWithBreakdown(raw);
+function producto(raw: Parameters<typeof scoreProduct>[0]): FitogenixProduct {
+  const breakdown = scoreProduct(raw);
   return {
     id: '7790895000123',
     name: 'Producto de prueba',
