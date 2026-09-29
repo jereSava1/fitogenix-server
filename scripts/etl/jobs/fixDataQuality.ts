@@ -13,7 +13,7 @@
 //     que separe, del mismo texto, la porción real de ingredientes de la de
 //     fabricante/dirección/RNE-RNPA. La porción real de ingredientes queda
 //     en ingredients_text; la de fabricante se MUEVE a
-//     `manufacturer_info` (requiere migrations/010_manufacturer_info.sql
+//     `manufacturer_info` (requiere supabase/migrations/legacy/012_manufacturer_info.sql
 //     aplicada) en vez de perderse. Si no hay nada rescatable, se anula
 //     ingredients_text — la fila vuelve a pasar por el gate de completitud +
 //     runMerge.ts que ya existe, en vez de quedar con un dato inventado.

@@ -126,7 +126,7 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | C-02 | ✅ Hecho en `docs/c02-readme`, mergeado a `fitogenix/refactor-cleanup`. README reescrito: apunta a `docs/`, variables y rutas reales, cómo resuelve un producto (incluido el 404 ante caídas, caracterizado), base de datos, ETL, deploy y ramas; sin la cascada retirada ni citas a `fitogenix-agents` |
 | C-06 | ✅ Hecho en `docs/c06-docs-config` (native), mergeado y pusheado. README del proyecto; `CLAUDE.md` sin el SSOT externo; `AGENTS.md` y `REFACTOR_PLAN` con docs de Expo v57; `.env.example` sin claves de servidor (las de Supabase marcadas como temporales hasta F-12); `eas.json` sin el Apple ID personal ni el `ascAppId` de ejemplo (siguen en el historial de git); comentarios de `api/client.ts`, `CleanProductImage` y `scanCopy` |
 | C-07 | ✅ Hecho en `docs/c07-refactor-plan` (native), mergeado y pusheado. `REFACTOR_PLAN.md`: B1-B3 respondidas, los 3 ajustes aplicados (servicios solo contra el server, tipos generados, imágenes directas) y estado de los bloqueantes B1-B4 |
-| C-05 | Pendiente: necesita la CLI de Supabase y acceso a la base |
+| C-05 | En curso en `chore/c05-baseline` (primer merge): las `001`–`014` y la `015` (D-09) movidas a `supabase/migrations/legacy/`, con su README; referencias corregidas (dos apuntaban a `010_manufacturer_info`, que es la `012`). Falta la baseline: procedimiento en [`sql/c05/`](sql/c05/README.md) (CLI, Docker y contraseña de la base, D-58) |
 | C-08 | Pendiente: acción manual del responsable |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |

@@ -1,4 +1,4 @@
-// Lectura/escritura de `products_staging` (migrations/009_products_staging.sql).
+// Lectura/escritura de `products_staging` (supabase/migrations/legacy/009_products_staging.sql).
 // Ningún adapter ni job escribe directo a `products` — todo pasa por acá primero.
 import { admin } from './supabaseAdmin';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';

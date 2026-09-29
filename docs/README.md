@@ -27,6 +27,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
 | `borradores/dependency-cruiser.cjs` | Reglas de dependencias entre módulos, listas para copiar a la raíz |
 | `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |
+| `sql/c05/` | C-05: procedimiento para generar la baseline de migraciones con la CLI de Supabase |
 | `sql/u01/` | U-01: verificación, cambio y rollback para cerrar el catálogo a la anon key, con el procedimiento y las pruebas |
 | `raw/` | Salidas crudas de herramientas (knip, madge, tsc, vitest, dependency-cruiser), schema real de Supabase, migración 015 aplicada en producción y el patch del arreglo de paginación del ETL |
 

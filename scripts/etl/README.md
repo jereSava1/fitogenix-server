@@ -134,7 +134,7 @@ npm run etl:fix-quality -- --limit 200
 npm run etl:fix-quality -- --limit 200 --apply
 ```
 
-Requiere `migrations/010_manufacturer_info.sql` aplicada antes de correr con
+Requiere `supabase/migrations/legacy/012_manufacturer_info.sql` aplicada antes de correr con
 `--apply` (agrega una columna nueva, nullable, para no perder info de
 fabricante — ver abajo).
 
