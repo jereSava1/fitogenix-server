@@ -4,13 +4,11 @@
  * COMPORTA HOY (M-04 es una mudanza, sin cambios de comportamiento). La forma
  * objetivo de §8.2 llega por partes:
  *   - fallas técnicas como `DependencyUnavailableError` en vez de "miss" → H-01;
- *   - Redis guarda los crudos (`RawProduct` + `id`), no la respuesta armada → K-02;
  *   - `findById` para `GET /v1/products/:id` → K-04.
  * Los implementan `infrastructure/supabaseProductReader.ts` y
  * `infrastructure/redisProductCache.ts`; el caso de uso los recibe en M-05.
  */
 
-import type { FitogenixProduct } from './productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 
 // Lo que devuelve la lectura del cache: los datos CRUDOS reconstruidos como
@@ -39,11 +37,16 @@ export interface ProductReader {
   findByName(query: string): Promise<CachedProductRow | null>;
 }
 
-/** Cache Redis de respuestas armadas. Todo método falla en silencio (miss o
- *  no-op), y no hace nada si Redis no está configurado. */
+/** Lo que guarda el cache: el producto crudo con su identidad y su origen,
+ *  lo mismo que devuelve la base (K-02, D-45). */
+export type CachedProduct = Pick<CachedProductRow, 'raw' | 'dataSource' | 'productId'>;
+
+/** Cache Redis de productos crudos (el lookup los recalcula al leer). Todo
+ *  método falla en silencio (miss o no-op), y no hace nada si Redis no está
+ *  configurado. */
 export interface ProductCache {
-  get(key: string): Promise<FitogenixProduct | null>;
-  set(key: string, product: FitogenixProduct, ttlSeconds?: number): Promise<void>;
+  get(key: string): Promise<CachedProduct | null>;
+  set(key: string, cached: CachedProduct, ttlSeconds?: number): Promise<void>;
   getBarcodeForQuery(query: string): Promise<string | null>;
   setBarcodeForQuery(query: string, barcode: string): Promise<void>;
 }

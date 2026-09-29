@@ -146,3 +146,38 @@ describe('lookup — Redis caído (T-06)', () => {
     expect(res.statusCode).toBe(200);
   });
 });
+
+/* K-02 · Con el cableado real: Redis guarda crudos y la respuesta se arma al
+ * leer. */
+describe('lookup — formato del cache Redis (K-02)', () => {
+  it('entrada de antes de K-02 (sobre con la respuesta armada) → miss, 200 desde Supabase y se repuebla con el crudo', async () => {
+    redis.get.mockResolvedValue({
+      engineVersion: 'ftg-rubric-v2.3',
+      product: { productId: FILA.id, name: 'Yogur viejo', score: 99 },
+    });
+
+    const res = await lookup('7790000000062');
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ productId: FILA.id, name: 'Yogur natural' });
+    expect(supabase.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(redis.set).toHaveBeenCalledWith(
+      'ftg:product:7790000000062',
+      { productId: FILA.id, dataSource: 'off', raw: expect.objectContaining({ product_name: 'Yogur natural' }) },
+      { ex: 604800 },
+    );
+  });
+
+  it('entrada cruda → 200 sin tocar Supabase, con la misma respuesta que desde Supabase', async () => {
+    const desdeSupabase = await lookup('7790000000079');
+    const guardado = redis.set.mock.calls[0][1];
+
+    vi.clearAllMocks();
+    redis.get.mockResolvedValue(guardado);
+    const desdeRedis = await lookup('7790000000079');
+
+    expect(desdeRedis.statusCode).toBe(200);
+    expect(supabase.maybeSingle).not.toHaveBeenCalled();
+    expect(desdeRedis.json()).toStrictEqual(desdeSupabase.json());
+  });
+});

@@ -112,32 +112,52 @@ describe('lookupProduct — barcode', () => {
   });
 });
 
+/* K-02 · Redis guarda crudos (`{ productId, dataSource, raw }`) y el lookup
+ * los recalcula. Antes: la respuesta armada se servía tal cual, y una entrada
+ * sin productId (pre-006) era miss acá; ese chequeo pasó al adaptador
+ * (`parseCachedProduct`, redisProductCache.test.ts). */
 describe('lookupProduct — Redis', () => {
-  it('entrada con productId se sirve directo (hit), sin tocar Supabase', async () => {
+  it('entrada cruda: se recalcula y se sirve sin tocar Supabase (K-02)', async () => {
     vi.mocked(redisService.getFromRedis).mockResolvedValue({
-      name: 'Galletitas',
+      raw: rawProduct,
       dataSource: 'off',
       productId: 'uuid-redis',
-    } as unknown as FitogenixProduct);
+    });
 
     const product = await lookupProduct('7790895000123');
 
     expect(product?.productId).toBe('uuid-redis');
+    expect(product?.name).toBe('Galletitas');
     expect(cacheService.getCachedProductByBarcode).not.toHaveBeenCalled();
   });
 
-  it('entrada vieja SIN productId (pre-006) se trata como miss y la repobla Supabase', async () => {
+  it('un hit de Redis y uno de Supabase del mismo producto dan la MISMA respuesta (K-02)', async () => {
+    // Por eso un campo nuevo del contrato no rompe las entradas cacheadas: la
+    // respuesta se arma al leer, con el código de hoy.
+    const fila = cachedHit();
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(fila);
+    const desdeSupabase = await lookupProduct('7790895000123');
+
     vi.mocked(redisService.getFromRedis).mockResolvedValue({
-      name: 'Galletitas',
-      dataSource: 'off',
-      cacheKey: '7790895000123', // forma vieja
-    } as unknown as FitogenixProduct);
+      raw: fila.raw,
+      dataSource: fila.dataSource,
+      productId: fila.productId,
+    });
+    const desdeRedis = await lookupProduct('7790895000123');
+
+    expect(desdeRedis).toStrictEqual(desdeSupabase);
+  });
+
+  it('lo que se guarda en Redis es el crudo de la fila, no la respuesta armada (K-02)', async () => {
     vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(cachedHit());
 
-    const product = await lookupProduct('7790895000123');
+    await lookupProduct('7790895000123');
 
-    expect(product?.productId).toBe('uuid-galletitas');
-    expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
+    expect(redisService.setInRedis).toHaveBeenCalledWith(
+      '7790895000123',
+      { raw: rawProduct, dataSource: 'off', productId: 'uuid-galletitas' },
+      604800,
+    );
   });
 });
 

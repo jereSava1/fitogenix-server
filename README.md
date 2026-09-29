@@ -51,7 +51,7 @@ La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrat
 
 ## Cómo resuelve un producto
 
-`POST /products/lookup` → `src/modules/catalog/` (caso de uso `application/lookupProduct.ts`), de **solo lectura**: Redis → Supabase. Si no está en el catálogo, responde `404`; no hay fallback a proveedores externos ni a IA durante la request.
+`POST /products/lookup` → `src/modules/catalog/` (caso de uso `application/lookupProduct.ts`), de **solo lectura**: Redis → Supabase. Redis guarda los datos crudos del producto y la respuesta se arma en cada lectura, así que un cambio del motor o del contrato no deja entradas viejas que invalidar. Si no está en el catálogo, responde `404`; no hay fallback a proveedores externos ni a IA durante la request.
 
 - En Supabase se guardan los **datos crudos** (`ingredients_text`, `nutriments`, `additives_tags`…) y el puntaje se **recalcula al leer**, así un cambio del motor no deja puntajes viejos. Una fila sin ingredientes ni nutrientes cuenta como "no está en el catálogo".
 - La identidad del producto es `products.id` (uuid), que viaja como `productId` y es lo que referencian guardados e historial.
