@@ -172,6 +172,8 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | K-05 | P1 | REFACTOR | native | `openapi-typescript` → `src/api/schema.d.ts` (commiteado) + `openapi-fetch` en `api/client.ts`; se borran `lib/contracts/product.ts` y `domain/product/lookupProduct.ts` | ADR-0011 | Medio | Antes: T-07. Después: T-07 adaptado; `tsc` verde | `PR-N07 feat(native): tipos generados del contrato` |
 | K-06 | P1 | REFACTOR | native | Pantallas con el contrato v1: `id` único (arregla el ícono de guardado), mostrar `noScore`, `highlight` en vez de `score < 50`, sin los fallbacks 75/50/25 de `HomeScreen`, filas de grasas trans y colesterol, imagen directa desde `imageUrl` con placeholder propio, abrir el detalle con `GET /v1/products/:id` | RNF-U03, RNF-U06, D-32, D-34, D-49, RF-008 | Medio | Después: tests de `useProductResult` y del ícono de guardado | `PR-N08 feat(native): pantallas con el contrato v1` |
 | ~~K-07~~ | — | — | — | Innecesario: sin alias (D-57) | D-57 | — | — | — |
+| K-08 | P1 | AGREGAR | server | `GET /v1/scoring/bands`: las bandas tal como las define el motor (nombre, color, desde/hasta, mensaje, sello de cada banda y la banda "sin datos"), armadas desde `TIERS`, `NO_DATA_TIER` y `getSello`, sin transcribir números. Entra al contrato generado | D-62, ADR-0003, ADR-0011 | Bajo | Después: test de que la respuesta sale de `TIERS` (cambiar un corte cambia la respuesta) y de que el sello coincide con `getSello` en cada banda | `PR-29 feat(scoring): bandas en el contrato` |
+| K-09 | P1 | REFACTOR | native | Sin umbrales escritos a mano en ningún lado: `GuideScreen` y `ScoringExplainerModal` se arman con `GET /v1/scoring/bands` (hoy tienen su propia tabla: la guía le promete el sello FITOGÉNICO a una banda del medio y el modal usa otros colores); `HomeScreen · scoreColor/scoreLabel` y `ScanResultScreen · isBad` usan lo que trae el producto (se coordina con K-06). Test que falla si aparece una tabla de cortes en `src/` | D-62, RNF-U06 | Medio | Después: tests de las dos pantallas con bandas simuladas; el test guardián | `PR-N08b feat(native): bandas del server en toda la app` |
 
 ---
 
@@ -256,6 +258,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | D-59 | Estrategia de ramas | Rama de integración `fitogenix/refactor-cleanup` desde `main` en los dos repos; cada ítem en su rama, mergeada a la integración; al terminar, integración → `main` |
 | D-60 | Default privileges de `public` | U-01 **no los cambia**: solo los muestra (consulta 1E). Cambiarlos afecta a todo objeto futuro, así que va con la baseline de migraciones (C-05) y el checklist del ADR-0009 |
 | D-61 | Analítica (L-09) | Se difiere como DT-05; rumbo: endpoint propio `POST /v1/events` en el server |
+| D-62 | Bandas del puntaje en la app | Coherentes en todos lados; manda el server (K-08, K-09) |
 
 1. ~~**Analítica (L-09):** pendiente de decisión~~ → resuelta por **D-61** (2026-09-28): se difiere como [DT-05](deuda-tecnica.md), con rumbo a un endpoint propio.
 
