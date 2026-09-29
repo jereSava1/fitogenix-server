@@ -1,8 +1,7 @@
 /**
  * Cache Redis del catálogo (Upstash REST). Implementa `ProductCache`
- * (application/ports.ts). Antes era `services/redisService.ts`; se mudó en M-04
- * sin cambios (su `normalizeQuery` propia, distinta de `domain/query.ts`, se
- * unifica en H-04; el sobre versionado se va en K-02).
+ * (application/ports.ts). Antes era `services/redisService.ts` (M-04); su
+ * `normalizeQuery` propia, distinta de `domain/query.ts`, se unifica en H-04.
  *
  * Todas las funciones son no-op cuando faltan UPSTASH_REDIS_REST_URL / TOKEN,
  * así el servidor corre sin Redis en desarrollo.
@@ -11,37 +10,26 @@
  *   Producto normal : 7 días  (604800 s)
  *   Origen IA       : 3 días  (259200 s)
  *
- * ── Invalidación por versión de motor ──
+ * ── Qué se guarda: los datos crudos (K-02, D-45) ──
  *
- * A diferencia del cache de Supabase (que guarda los CRUDOS y recomputa con
- * mapRawToProduct en cada lectura, así que nunca puede servir una forma vieja),
- * acá guardamos el `FitogenixProduct` YA SERIALIZADO. Una entrada escrita por
- * `ftg-rubric-v2` trae `subscores`, `breakdown.components` y un `score`
- * numérico donde v2.1 devolvería `null`: servirla tal cual es romperle el
- * contrato al cliente.
+ * `ftg:product:<clave>` guarda lo mismo que devuelve la base: el producto
+ * CRUDO (`raw`) con su identidad (`productId`) y su origen (`dataSource`). El
+ * lookup lo pasa por `mapRawToProduct` en cada lectura, igual que un hit de
+ * Supabase, así que el cache no depende ni del motor ni del contrato: un
+ * cambio de puntaje o un campo nuevo en la respuesta no dejan entradas que
+ * haya que invalidar.
  *
- * Por eso el valor va adentro de un SOBRE con la versión del motor que lo
- * generó, y toda entrada cuya versión no coincida con ENGINE_VERSION se trata
- * como MISS — el nivel Supabase la repuebla con la forma nueva. Es el mismo
- * precedente que las entradas pre-migración 006 sin `productId`
- * (application/lookupProduct.ts · resolveByBarcode), pero el chequeo vive acá porque
- * es un problema de SERIALIZACIÓN, no de la cascada.
- *
- * Por qué el sobre y NO versionar la clave (`ftg:product:v2.1:<barcode>`):
- * las dos invalidan igual de bien, pero la clave versionada deja HUÉRFANO todo
- * el namespace viejo —potencialmente el catálogo entero— ocupando storage pago
- * hasta que venza el TTL (7 días), y ninguna ruta de código lo sobrescribe
- * nunca (haría falta un SCAN + DEL a mano). Con el sobre, el miss REESCRIBE la
- * misma clave: el storage queda acotado y la limpieza es automática. Además el
- * sobre es autodescriptivo — se puede inspeccionar una entrada y saber con qué
- * motor se calculó, cosa que la clave sola no resuelve si el payload cambia
- * por un motivo que no sea un bump de versión.
+ * Hasta K-02 se guardaba la respuesta ya armada (`FitogenixProduct`) adentro
+ * de un sobre `{ engineVersion, product }`, y toda entrada de otro motor era
+ * miss. Con eso tampoco se cubría un campo requerido nuevo del contrato: la
+ * entrada vieja no lo tenía y ese producto respondía 500 hasta que venciera
+ * su TTL (03-contratos §B.4.1). Las entradas con el formato viejo (o
+ * cualquier cosa que no sea un crudo) se leen como MISS, sin error, y el
+ * nivel Supabase las pisa con el formato nuevo en la misma clave.
  */
 
 import { getRedis } from '../../../platform/redis';
-import { ENGINE_VERSION } from '../../scoring';
-import type { FitogenixProduct } from '../application/productResponse';
-import type { ProductCache } from '../application/ports';
+import type { CachedProduct, ProductCache } from '../application/ports';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';
 const SEARCH_KEY_PREFIX = 'ftg:search:';
@@ -51,77 +39,41 @@ function normalizeQuery(query: string): string {
   return query.toLowerCase().trim();
 }
 
-/**
- * Lo que efectivamente se guarda en `ftg:product:<clave>`: el producto más la
- * versión del motor que lo calculó. El nombre del campo va completo (y no `v`)
- * a propósito: el peso extra es despreciable al lado del payload y hace que la
- * entrada se pueda leer a ojo desde la consola de Upstash.
- */
-export type RedisProductEnvelope = {
-  engineVersion: string;
-  product: FitogenixProduct;
-};
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
- * Decide si lo que había en la clave sirve para ESTA versión del motor.
- * Función PURA (sin I/O) y exportada para poder testear la invalidación sin
- * levantar Redis.
- *
- * Devuelve el producto solo si la versión coincide con ENGINE_VERSION; en
- * cualquier otro caso devuelve null, que el caller trata como cache miss.
- *
- * Tres formas posibles en la clave:
- *   1. Sobre { engineVersion, product } — la forma que escribe setInRedis.
- *   2. FitogenixProduct pelado CON breakdown.engineVersion — lo que escribiría
- *      una instancia que ya corre v2.1 pero todavía tiene el redisService
- *      viejo (ventana de un deploy rolling). Se acepta si la versión del
- *      breakdown coincide: el payload ya tiene la forma nueva.
- *   3. FitogenixProduct pelado SIN breakdown, o con una versión distinta —
- *      todo lo escrito por v2 y anteriores. Siempre miss.
+ * Lo que había en la clave → el producto crudo, o `null` (miss) si no tiene
+ * la forma que escribe `setInRedis`. Función PURA, exportada para testear sin
+ * levantar Redis. No mira la versión del motor ni los campos de la respuesta:
+ * el crudo se recalcula al leer.
  */
-export function unwrapCachedProduct(raw: unknown): FitogenixProduct | null {
+export function parseCachedProduct(value: unknown): CachedProduct | null {
+  if (!isRecord(value)) return null;
+  const { productId, dataSource, raw } = value;
+  if (typeof productId !== 'string' || productId === '') return null;
+  if (typeof dataSource !== 'string') return null;
   if (!isRecord(raw)) return null;
-
-  // (1) Forma nueva: sobre explícito.
-  if (typeof raw.engineVersion === 'string' && isRecord(raw.product)) {
-    return raw.engineVersion === ENGINE_VERSION
-      ? (raw.product as unknown as FitogenixProduct)
-      : null;
-  }
-
-  // (2)/(3) Payload pelado: la única versión confiable es la que el propio
-  // motor estampó en el breakdown. Sin breakdown no hay forma de saber con qué
-  // motor se calculó → se descarta.
-  const breakdown = isRecord(raw.breakdown) ? raw.breakdown : null;
-  const version = breakdown && typeof breakdown.engineVersion === 'string'
-    ? breakdown.engineVersion
-    : null;
-
-  return version === ENGINE_VERSION ? (raw as unknown as FitogenixProduct) : null;
+  return { productId, dataSource, raw: raw as CachedProduct['raw'] };
 }
 
-export async function getFromRedis(barcode: string): Promise<FitogenixProduct | null> {
+export async function getFromRedis(key: string): Promise<CachedProduct | null> {
   const redis = getRedis();
   if (!redis) return null;
 
   try {
-    const raw = await redis.get<unknown>(REDIS_KEY_PREFIX + barcode);
-    if (raw == null) return null;
+    const value = await redis.get<unknown>(REDIS_KEY_PREFIX + key);
+    if (value == null) return null;
 
-    const product = unwrapCachedProduct(raw);
-    if (!product) {
-      // Entrada de otra versión del motor. Se loguea como evento propio (no
-      // como error) porque el día del deploy va a pasar con TODO el catálogo:
-      // sirve para ver la curva de repoblado, no para alertar.
-      console.info(
-        JSON.stringify({ event: 'redis_stale_engine_version', cacheKey: barcode }),
-      );
+    const cached = parseCachedProduct(value);
+    if (!cached) {
+      // Entrada con otro formato (la respuesta armada de antes de K-02). Se
+      // loguea como evento propio (no como error) porque el día del deploy va
+      // a pasar con TODO el catálogo: sirve para ver la curva de repoblado.
+      console.info(JSON.stringify({ event: 'redis_stale_format', cacheKey: key }));
     }
-    return product;
+    return cached;
   } catch (err) {
     console.error('[redisService] getFromRedis error:', err);
     return null;
@@ -129,16 +81,20 @@ export async function getFromRedis(barcode: string): Promise<FitogenixProduct | 
 }
 
 export async function setInRedis(
-  barcode: string,
-  product: FitogenixProduct,
+  key: string,
+  cached: CachedProduct,
   ttlSeconds = 604800,
 ): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
 
   try {
-    const envelope: RedisProductEnvelope = { engineVersion: ENGINE_VERSION, product };
-    await redis.set(REDIS_KEY_PREFIX + barcode, envelope, { ex: ttlSeconds });
+    const value: CachedProduct = {
+      productId: cached.productId,
+      dataSource: cached.dataSource,
+      raw: cached.raw,
+    };
+    await redis.set(REDIS_KEY_PREFIX + key, value, { ex: ttlSeconds });
   } catch (err) {
     console.error('[redisService] setInRedis error:', err);
   }

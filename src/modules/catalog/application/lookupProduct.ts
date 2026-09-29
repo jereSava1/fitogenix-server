@@ -1,4 +1,4 @@
-import type { ProductCache, ProductReader } from './ports';
+import type { CachedProduct, ProductCache, ProductReader } from './ports';
 import { mapRawToProduct } from './productResponse';
 import { isBarcode, nameKey } from '../domain/query';
 import type { FitogenixProduct } from './productResponse';
@@ -40,6 +40,20 @@ function logSource(cacheKey: string, source: LookupSource, dataSource: string): 
   console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
 }
 
+/** El crudo (de Redis o de la base) → la respuesta, con la identidad y el
+ *  origen de la fila. Es el único armado del lookup: desde K-02 Redis guarda
+ *  crudos, así que un hit de cache se presenta igual que uno de Supabase. */
+function present(cached: CachedProduct, query: string): FitogenixProduct {
+  const product = mapRawToProduct(cached.raw, query);
+  product.dataSource = cached.dataSource;
+  product.productId = cached.productId;
+  return product;
+}
+
+function toCached(cached: CachedProduct): CachedProduct {
+  return { productId: cached.productId, dataSource: cached.dataSource, raw: cached.raw };
+}
+
 export function makeLookupProduct(deps: {
   reader: ProductReader;
   cache: ProductCache;
@@ -68,14 +82,13 @@ export function makeLookupProduct(deps: {
     originalQuery: string,
   ): Promise<FitogenixProduct | null> {
     return withSingleflight(barcode, async () => {
-      // Level 1 — Redis (fastest, in-memory cache).
+      // Level 1 — Redis (fastest, in-memory cache). Guarda el crudo: se
+      // recalcula con el motor y el contrato de hoy (K-02). Las entradas que
+      // no tienen ese formato (o sin productId) el adaptador las da como miss.
       const redisHit = await cache.get(barcode);
-      // Entradas viejas (pre-migración 006) no traen productId serializado: sin
-      // él el cliente no puede guardar el producto, así que se tratan como miss
-      // y Supabase las repobla con el campo nuevo.
-      if (redisHit && typeof redisHit.productId === 'string' && redisHit.productId) {
+      if (redisHit) {
         logSource(barcode, 'redis', redisHit.dataSource);
-        return redisHit;
+        return present(redisHit, originalQuery);
       }
 
       // Level 2 — Supabase (catálogo). Único nivel de resolución: si no está
@@ -83,13 +96,11 @@ export function makeLookupProduct(deps: {
       const cached = await reader.findByBarcode(barcode);
       if (!cached) return null;
 
-      const product = mapRawToProduct(cached.raw, originalQuery);
-      product.dataSource = cached.dataSource;
-      product.productId = cached.productId;
+      const product = present(cached, originalQuery);
       logSource(barcode, 'supabase', product.dataSource);
 
       const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-      cache.set(barcode, product, ttl).catch((err: unknown) =>
+      cache.set(barcode, toCached(cached), ttl).catch((err: unknown) =>
         console.error('[productLookupService] setInRedis error:', err),
       );
 
@@ -101,11 +112,11 @@ export function makeLookupProduct(deps: {
     const cacheKey = nameKey(trimmed);
 
     return withSingleflight(cacheKey, async () => {
-      // Level 1 — Redis, bajo la clave de ESTA query textual.
+      // Level 1 — Redis, bajo la clave de ESTA query textual (crudo, K-02).
       const redisHit = await cache.get(cacheKey);
-      if (redisHit && typeof redisHit.productId === 'string' && redisHit.productId) {
+      if (redisHit) {
         logSource(cacheKey, 'redis', redisHit.dataSource);
-        return redisHit;
+        return present(redisHit, trimmed);
       }
 
       // Level 2 — búsqueda por nombre en el catálogo (índice trigram + ranking
@@ -114,9 +125,7 @@ export function makeLookupProduct(deps: {
       const cached = await reader.findByName(trimmed);
       if (!cached) return null;
 
-      const product = mapRawToProduct(cached.raw, trimmed);
-      product.dataSource = cached.dataSource;
-      product.productId = cached.productId;
+      const product = present(cached, trimmed);
       logSource(cacheKey, 'catalog', product.dataSource);
 
       if (cached.barcode) {
@@ -132,7 +141,7 @@ export function makeLookupProduct(deps: {
         // momento): la única forma de encontrarla rápido de nuevo es cachear
         // bajo la clave de ESTA query.
         const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-        cache.set(cacheKey, product, ttl).catch((err: unknown) =>
+        cache.set(cacheKey, toCached(cached), ttl).catch((err: unknown) =>
           console.error('[productLookupService] setInRedis error:', err),
         );
       }

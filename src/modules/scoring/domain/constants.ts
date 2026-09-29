@@ -12,8 +12,15 @@
 import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types';
 
 /**
- * Versión del motor. Se persiste con cada fila cacheada y se compara al leer:
- * una entrada escrita por otra versión se trata como miss.
+ * Versión del motor. Se persiste en `products.engine_version` al escribir el
+ * catálogo (la columna se va en B-01, D-35).
+ *
+ * Hasta K-02 también invalidaba el cache Redis: ahí se guardaba la respuesta
+ * armada dentro de un sobre con esta versión, y un bump era la forma de que
+ * un cambio del motor le llegara al usuario antes de que venciera el TTL (es
+ * lo que cuentan v2.2 y v2.3 abajo). Desde K-02 Redis guarda los datos
+ * crudos y la respuesta se recalcula en cada lectura, así que un cambio del
+ * motor llega en el mismo deploy, con o sin bump.
  *
  * v2.1 — el puntaje pasa a ser una función de la lista de ingredientes:
  * base 75 → restas por impacto y posición → modificador de procesamiento →
