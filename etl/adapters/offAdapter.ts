@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
 // Países soportados y su tag de OFF. Mapa

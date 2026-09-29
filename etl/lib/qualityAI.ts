@@ -1,9 +1,9 @@
 // Clasificación + extracción asistida por Claude para la corrección de
-// calidad de datos (scripts/etl/jobs/fixDataQuality.ts). A propósito NO vive
-// en src/services/claudeService.ts: ese archivo es código HOT-PATH del scan
-// en vivo (resolución de producto nuevo) — esto es auditoría/corrección
+// calidad de datos (jobs/fixDataQuality.ts). A propósito NO vive en
+// enrichment/claudeEnricher.ts: ese archivo completa datos FALTANTES de un
+// producto que entra al catálogo (merge) — esto es auditoría/corrección
 // batch de datos que YA existen en `products`, una tarea distinta con reglas
-// distintas. Mismo patrón lazy-singleton que claudeService.ts, mismo modelo
+// distintas. Mismo patrón lazy-singleton que claudeEnricher.ts, mismo modelo
 // (Haiku), pero nunca se tocan entre sí.
 //
 // Principio clave, distinto del enrichment (enrichWithAI): acá NUNCA se le
@@ -11,7 +11,7 @@
 // EXTRAIGA texto que ya está en la fila — mucho menor riesgo de alucinación
 // que "completá los nutrientes de este producto que no conocés".
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAnthropicApiKey } from '../../../src/platform/config';
+import { requireAnthropicApiKey } from '../config';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {
@@ -47,7 +47,7 @@ export type IngredientsExtraction = {
 
 /** Parsea la respuesta cruda de Claude — separado de la llamada de red para
  * poder testearlo sin mockear el SDK (mismo motivo que el resto del
- * proyecto no testea claudeService.ts directamente). */
+ * proyecto no testea la llamada de red de claudeEnricher.ts). */
 export function parseIngredientsExtraction(raw: string): IngredientsExtraction {
   const fallback: IngredientsExtraction = {
     isCorrupted: true,

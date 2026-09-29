@@ -6,7 +6,7 @@
 # y te avisa al final.
 #
 # Uso:
-#   ./scripts/etl/run-all.sh [--countries argentina,chile,...] [--enrich] \
+#   ./etl/run-all.sh [--countries argentina,chile,...] [--enrich] \
 #       [--off-file /tmp/off-products.jsonl.gz] [--off-limit 500] [--merge-limit 2000] \
 #       [--vtex-pages 3] [--vtex-page-size 50]
 #
@@ -19,9 +19,9 @@
 #
 # Para que el Mac no se duerma a mitad de la corrida (puede tardar bastante
 # si hay que descargar el dump de OFF, ~30 min):
-#   caffeinate -i ./scripts/etl/run-all.sh [...]
+#   caffeinate -i ./etl/run-all.sh [...]
 set -euo pipefail
-cd "$(dirname "$0")/../.."   # raíz de fitogenix-server, sea cual sea el cwd
+cd "$(dirname "$0")/.."   # raíz de fitogenix-server, sea cual sea el cwd
 
 ENRICH=""
 COUNTRIES_FLAG=""

@@ -21,7 +21,7 @@ import type { FitogenixProduct } from '../../../types/fitogenix';
  * caliente adelante. Si un producto no está en el catálogo, `lookup` devuelve
  * `null` — la ruta responde que todavía no lo tenemos, sin intentar
  * resolverlo con proveedores externos. El catálogo crece por el ETL
- * (`scripts/etl/`), no por el tráfico de búsqueda.
+ * (`etl/`), no por el tráfico de búsqueda.
  *
  * Antes era `services/productLookupService.ts`, que importaba los adaptadores
  * directo; desde M-05 los recibe como puertos (ADR-0002) y el cableado real

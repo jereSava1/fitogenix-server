@@ -5,7 +5,7 @@
  * Durante la etapa 4 del plan (docs/05-plan.md) las reglas de módulos, capas y
  * SDKs están en `warn`: la estructura de src/modules/ se arma de a un módulo
  * por PR. M-10 las pasa todas a `error`. Ya son `error` las generales (ciclos,
- * importar tests) y `scoring-es-puro` (M-03).
+ * importar tests), `scoring-es-puro` (M-03) y `etl-solo-apis-publicas` (M-08).
  */
 
 /** Módulos de negocio bajo src/modules/. */
@@ -156,8 +156,9 @@ module.exports = {
       to: { path: '^(etl|scripts)/' },
     },
     {
+      // En `error` desde M-08, cuando el ETL se mudó a etl/ con su config.
       name: 'etl-solo-apis-publicas',
-      severity: 'warn',
+      severity: 'error',
       comment: 'El ETL usa solo las APIs públicas de catalog y scoring.',
       from: { path: '^etl/' },
       to: {

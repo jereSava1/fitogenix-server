@@ -1,7 +1,7 @@
 // Uso: npm run etl:audit-quality
 //
 // Auditoría de calidad de `products` — SOLO LECTURA, no escribe nada. Junta
-// candidatos por heurística (scripts/etl/lib/qualityHeuristics.ts) para tres
+// candidatos por heurística (etl/lib/qualityHeuristics.ts) para tres
 // patrones de corrupción conocidos:
 //   1. ingredients_text con pinta de dirección/boilerplate legal en vez de
 //      una lista de ingredientes real (típico de datos comunitarios de OFF).

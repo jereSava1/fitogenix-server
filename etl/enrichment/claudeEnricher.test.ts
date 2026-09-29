@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RawOFFProduct } from '../types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 
 // ── Mock del SDK de Anthropic ──
 // `new Anthropic({...})` debe devolver un objeto con `messages.create()` —
@@ -17,7 +17,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
   // { default: ... }, rompiendo la resolución de `Anthropic`.
   //
   // `function` en vez de arrow function en mockImplementation — `new
-  // Anthropic(...)` en claudeService.ts usa `new` sobre el mock; una arrow
+  // Anthropic(...)` en claudeEnricher.ts usa `new` sobre el mock; una arrow
   // function no es invocable con `new` (TypeError silencioso que Vitest
   // logueaba como warning, no como fallo de test). Con `function` sí
   // funciona como constructor.
@@ -33,7 +33,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
   }),
 }));
 
-type ClaudeServiceModule = typeof import('./claudeService');
+type ClaudeServiceModule = typeof import('./claudeEnricher');
 let enrichWithAI: ClaudeServiceModule['enrichWithAI'];
 let aiLookupProduct: ClaudeServiceModule['aiLookupProduct'];
 let ingredientCount: ClaudeServiceModule['ingredientCount'];
@@ -44,7 +44,7 @@ beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  ({ enrichWithAI, aiLookupProduct, ingredientCount } = await import('./claudeService'));
+  ({ enrichWithAI, aiLookupProduct, ingredientCount } = await import('./claudeEnricher'));
 });
 
 beforeEach(() => {

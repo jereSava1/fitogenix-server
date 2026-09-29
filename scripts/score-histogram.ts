@@ -12,7 +12,7 @@
 //
 // No escribe en la base. Seguro de correr con el ETL en curso.
 import 'dotenv/config';
-import { admin } from './etl/lib/supabaseAdmin';
+import { admin } from '../etl/lib/supabaseAdmin';
 import { scoreProduct, type ProductInput } from '../src/modules/scoring';
 
 const PAGE_SIZE = 1000;

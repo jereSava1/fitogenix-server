@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 
 /**
  * Gate de completitud. MISMO criterio que

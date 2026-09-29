@@ -14,6 +14,13 @@ import { lookupRoutes, type OnScan } from './routes/lookup.route';
 export { productResponseFromRow } from './infrastructure/productRow';
 export type { OnScan };
 
+// Para el ETL (ADR-0004): arma la respuesta y el payload que persiste en
+// `products` con el mismo código que el server. Los tipos viven todavía en
+// src/types/fitogenix.ts; pasan al módulo en M-09.
+export { mapRawToProduct } from './application/productResponse';
+export { buildCachePayload } from './infrastructure/supabaseProductWriter';
+export type { FitogenixProduct, RawOFFProduct } from '../../types/fitogenix';
+
 /** Registra `POST /products/lookup` con los adaptadores reales. `onScan` lo
  *  arma `main.ts` con user-library (catalog no lo conoce). */
 export async function registerCatalog(

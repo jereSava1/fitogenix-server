@@ -11,7 +11,7 @@
 //     si esto alguna vez tira algo, hay un problema de infraestructura, no
 //     de datos (constraint caída, RLS bypaseado raro, etc.).
 //  2. Mismo barcode en dos formatos (EAN-13 = '0' + UPC-A de 12 dígitos) —
-//     el caso que normalizeBarcode (scripts/etl/lib/barcode.ts) previene
+//     el caso que normalizeBarcode (etl/lib/barcode.ts) previene
 //     desde 2026-08-06 para filas NUEVAS del ETL. Si aparece acá es data
 //     vieja (pre-normalización) o algo que entró por el lookup en vivo
 //     (que no normaliza — ver barcode.ts).

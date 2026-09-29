@@ -1,9 +1,10 @@
 // Cliente Supabase con service role, compartido por todo el pipeline ETL.
 // Mismo patrón lazy-singleton que el server (src/platform/supabase.ts)
-// — no lo reimplementamos distinto, solo vive acá porque scripts/etl/ está
-// fuera de src/ (no se compila con el server, ver README de la carpeta).
+// — no lo reimplementamos distinto, solo vive acá porque etl/ está fuera de
+// src/ (no se compila con el server, ver README de la carpeta) y usa su
+// propia config (etl/config.ts).
 import { createClient } from '@supabase/supabase-js';
-import { config } from '../../../src/platform/config';
+import { config } from '../config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _admin: ReturnType<typeof createClient<any>> | null = null;
