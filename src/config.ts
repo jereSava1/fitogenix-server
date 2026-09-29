@@ -11,8 +11,6 @@ export const config = {
   anthropicApiKey: required('ANTHROPIC_API_KEY'),
   supabaseUrl: required('SUPABASE_URL'),
   supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
-  serpApiKey: required('SERPAPI_API_KEY'),
-  removeBgApiKey: optional('REMOVE_BG_API_KEY'),
   upstashRedisUrl: optional('UPSTASH_REDIS_REST_URL'),
   upstashRedisToken: optional('UPSTASH_REDIS_REST_TOKEN'),
 };

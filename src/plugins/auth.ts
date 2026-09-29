@@ -4,7 +4,7 @@
  * Usage: register this plugin on a scoped Fastify sub-instance, then every
  * handler underneath it has access to `request.userId: string`.
  *
- * Public routes (health, GET /products/image) must NOT be registered under
+ * Public routes (health, POST /products/lookup) must NOT be registered under
  * this plugin — register them directly on the root app.
  */
 

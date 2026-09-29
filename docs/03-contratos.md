@@ -107,7 +107,7 @@ Resultado: cada ingrediente pasa de 10 campos a 3. En un producto con 30 ingredi
 | Endpoint | Entrada | Schema | Observación |
 |---|---|---|---|
 | `POST /products/lookup` | body `{ query }` | ✅ string 1..200 | Sin `additionalProperties: false` (se aceptan campos de más en silencio) |
-| `GET /products/image` | query `url` | ❌ **ninguno** | Solo `if (!url)`. Falta: formato URL, `https`, allowlist de hosts, largo máximo (RNF-S05) |
+| ~~`GET /products/image`~~ | query `url` | — | **Eliminado en E-02** (D-49) |
 | `DELETE /users/me` | — | — | — |
 | `GET /users/me/saved` | — | — | Sin paginación |
 | `POST /users/me/saved` | body `{ productId }` | ✅ uuid | Sin `additionalProperties: false` |
