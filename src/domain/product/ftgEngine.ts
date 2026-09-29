@@ -50,11 +50,6 @@ export function ftgScoreWithBreakdown(product: ProductInput): ScoreBreakdown {
   return scoreProduct(product);
 }
 
-/** El puntaje solo, para los llamadores que no necesitan el desglose. */
-export function ftgScore(product: ProductInput): number | null {
-  return scoreProduct(product).score;
-}
-
 /**
  * Los ingredientes analizados, en el orden de la etiqueta (§7).
  *

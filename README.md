@@ -133,8 +133,8 @@ Cubren, entre otros:
   cascada a ningún proveedor externo**; si el catálogo lanza, el error se
   propaga en vez de inventar un fallback; singleflight (requests concurrentes
   comparten una resolución).
-- Cache: round-trip de `buildCachePayload`/`getCachedProductByBarcode`/
-  `getCachedProductByNameKey`, filas viejas sin crudos (o con `nutriments` `{}`)
+- Cache: round-trip de `buildCachePayload`/`getCachedProductByBarcode`,
+  filas viejas sin crudos (o con `nutriments` `{}`)
   tratadas como miss, upsert awaiteado que devuelve el `id`, upgrade
   name→barcode (misma fila, id conservado), fila `name_key` con barcode null.
 - Guardados e historial por `product_id` (upserts idempotentes, FK → 404,

@@ -10,7 +10,6 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json",
-    "prestart": "npm run build",
     "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -3,8 +3,7 @@ import {
   extractNutrition,
   ftgScoreWithBreakdown,
 } from '../domain/product/ftgEngine';
-import { getScoreLabel, getScoreTagline } from '../domain/product/scoring';
-import { resolveProductStatus } from '../domain/product/productService';
+import { getScoreLabel, getScoreTagline, resolveProductStatus } from '../domain/product/scoring';
 import { findCachedProductByName, getCachedProductByBarcode } from './cacheService';
 import { normalizeQuery } from './queryNormalization';
 import {

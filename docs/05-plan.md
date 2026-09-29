@@ -98,7 +98,9 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 |---|---|
 | E-01 | ✅ Hecho en `chore/e01-cascada-retirada`, mergeado a `fitogenix/refactor-cleanup`. Borrados `offService.ts`, `fallbackFoodApi.ts` y `openBeautyFactsApi.ts` (+ sus 2 tests, 12 casos) y `EDAMAM_*` de `config.ts` y `.env.example`. Ningún import en `src/` ni `scripts/` (solo comentarios). Suite: 514 → 502. En Render, `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` quedan sin uso y se pueden borrar |
 | E-02 | ✅ Hecho en `chore/e02-imagenes`, mergeado a `fitogenix/refactor-cleanup`. Borrados `imageService.ts` y `routes/products/image.ts` (+ su registro en `main.ts`); `serpApiKey` y `removeBgApiKey` salen de `config.ts` y `.env.example`, así que el server ya no exige `SERPAPI_API_KEY` para arrancar (D-05). No había tests de esos archivos. `GET /products/image` → 404 cuando esto llegue a `main` (native cae a la foto original por `CleanProductImage · onError` hasta K-06). En Render, `SERPAPI_API_KEY` y `REMOVE_BG_API_KEY` quedan sin uso. Los tests que setean `SERPAPI_API_KEY` se limpian en C-03 |
-| E-03 a E-07 | Pendientes |
+| E-03 | ✅ Hecho en `chore/e03-restos-sin-uso`, mergeado a `fitogenix/refactor-cleanup`. Borrados `domain/product/productService.ts` (`productLookupService` importaba de ahí `resolveProductStatus`, que era un re-export: ahora lo importa de `scoring`), `cacheService · getCachedProductByNameKey` (con su test), `ftgEngine · ftgScore`, `scripts/test-search-rpc.ts` (D-31), `MOTOR_V21_INFORME.md` (D-54) y el hook `prestart` (localmente, `npm start` ya no compila: correr `npm run build` antes). Suite: 502 → 501; `npm run build` OK |
+| E-04 | Pendiente: el plan pide T-03 antes (golden sobre la muestra del catálogo) |
+| E-05 a E-07 | Pendientes (native) |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
