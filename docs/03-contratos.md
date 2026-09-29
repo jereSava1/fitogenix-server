@@ -402,6 +402,20 @@ type OnboardingAnswers = {   // claves ESTABLES (hoy diets y allergies usan el t
 
 Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOALS`, `SYMPTOMS`, `DIETS`, `ALLERGIES`, `AVOID` y las fuentes). `diets` y `allergies` hoy se identifican por su **texto** ("Sin Gluten", "Maní"): el contrato usa claves estables y la app mapea.
 
+**Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error:
+
+| Caso | Status | `code` | `error` |
+|---|---|---|---|
+| Validación de body, params o querystring (ajv), JSON roto | 400 | `VALIDATION_ERROR` | "La solicitud no es válida." (fijo; el detalle de ajv va al log, D-69) |
+| Otros 4xx de Fastify antes del handler (413, 415…) | el suyo | `VALIDATION_ERROR` | ídem |
+| Sin token o sesión inválida (`requireAuth`) | 401 | `UNAUTHENTICATED` | el mensaje de siempre ("Falta el token de sesión" / "Sesión inválida o expirada") |
+| Lookup sin producto | 404 | `PRODUCT_NOT_IN_CATALOG` | "Todavía no tenemos este producto en nuestro catálogo." |
+| Guardar un `productId` que no existe | 404 | `NOT_FOUND` | "Producto no encontrado en el catálogo" |
+| Ruta inexistente (incluidas las viejas sin `/v1`) | 404 | `NOT_FOUND` | "La ruta no existe." |
+| Rate limit | 429 (+ `Retry-After`) | `RATE_LIMITED` | "Demasiadas solicitudes. Intentá de nuevo en un momento." |
+| Error que responde un handler | 500 | `INTERNAL` | el mensaje propio del handler |
+| Excepción que no atrapa nadie | 500 | `INTERNAL` | "Ocurrió un error inesperado. Intentá de nuevo en un momento." (sin el mensaje interno; va al log) |
+
 ---
 
 ## B.3 Endpoints: request, response, errores y validación
@@ -414,7 +428,7 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 
 | # | Endpoint | Auth | Request | 2xx | Errores | Hoy |
 |---|---|---|---|---|---|---|
-| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Tiene schema de request y de 200/404; le faltan `additionalProperties:false`, los errores y el 503 (hoy responde 404 si la base falla) |
+| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Con `/v1` y los errores `400`/`404`/`429`/`500` declarados (K-03); le faltan `additionalProperties:false` y el 503 (hoy responde 404 si la base falla, H-01) |
 | 2 | `GET /products/:id` | Opcional | params `{ id: Uuid }` | `200 ProductDetail` | `400`, `404 NOT_FOUND`, `503` | **Nuevo** (D-32) |
 | 3 | ~~`GET /products/image`~~ | — | — | — | — | **Se elimina (D-49)**: la app muestra `imageUrl` directo |
 
@@ -543,7 +557,7 @@ DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, 
 
 ## B.5 Fuente única del contrato: TypeBox → OpenAPI → tipos del cliente
 
-Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01, 2026-09-29):** pasos 1 a 3 hechos para el contrato actual (sin `/v1`): schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. El paso 4 es K-05 (native) y el formato único de errores, K-03. Resumen del pipeline:
+Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01 y K-03, 2026-09-29):** pasos 1 a 3 hechos: schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. Desde K-03 el contrato es `/v1` con el formato único de errores (`0.2.0`). El paso 4 es K-05 (native). Resumen del pipeline:
 
 ```mermaid
 flowchart LR

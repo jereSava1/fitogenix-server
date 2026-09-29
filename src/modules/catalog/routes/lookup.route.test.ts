@@ -172,8 +172,9 @@ describe('POST /products/lookup — contrato de respuesta', () => {
   });
 
   // T-06: el body no declara additionalProperties, así que hoy un campo extra
-  // se acepta en silencio y se ignora. Ningún ítem del plan lo cambia todavía;
-  // si el contrato v1 (K-01/K-03) lo vuelve estricto, este test cambia ahí.
+  // se acepta en silencio y se ignora. K-03 no lo cambió (solo prefijo y
+  // formato de errores); el ítem que agregue `additionalProperties: false`
+  // (03-contratos §B.3) cambia este test.
   it('body con campos extra → se acepta y se busca solo por query (T-06)', async () => {
     vi.mocked(productLookupService.lookupProduct).mockResolvedValue(null);
 
@@ -202,6 +203,7 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({
       error: 'Todavía no tenemos este producto en nuestro catálogo.',
+      code: 'PRODUCT_NOT_IN_CATALOG',
     });
     await app.close();
   });

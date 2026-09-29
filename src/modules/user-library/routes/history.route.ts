@@ -7,6 +7,7 @@
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
 import { requireAuth } from '../../../platform/http/auth';
+import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas } from '../../../platform/http/schemas';
 import type { ScanHistory } from '../application/history';
 import { librarySharedSchemas, listHistorySchema } from './library.schema';
@@ -27,7 +28,7 @@ export const historyRoutes = (deps: { history: ScanHistory }): FastifyPluginAsyn
       return reply.send({ items });
     } catch (err) {
       app.log.error(err, 'Error al listar el historial de escaneos');
-      return reply.status(500).send({ error: 'No se pudo obtener el historial' });
+      return reply.status(500).send(apiError('INTERNAL', 'No se pudo obtener el historial'));
     }
   });
 };

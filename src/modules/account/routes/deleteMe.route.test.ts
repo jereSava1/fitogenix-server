@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { registerErrorHandling } from '../../../platform/http/errors';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -33,6 +34,7 @@ beforeAll(async () => {
   const { registerAccount } = await import('../index');
 
   app = Fastify();
+  registerErrorHandling(app); // como en producción (buildApp)
   await registerAccount(app);
   await app.ready();
 });
@@ -57,7 +59,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
   ] as const)('%s %s sin token → 401 sin llegar al servicio', async (method, url) => {
     const res = await app.inject({ method, url });
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Falta el token de sesión' });
+    expect(res.json()).toEqual({ error: 'Falta el token de sesión', code: 'UNAUTHENTICATED' });
     expect(supabaseAuth.admin.deleteUser).not.toHaveBeenCalled();
   });
 });
@@ -74,7 +76,7 @@ describe('DELETE /users/me (T-05)', () => {
     supabaseAuth.admin.deleteUser.mockResolvedValue({ data: null, error: { message: 'boom' } });
     const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
     expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudo eliminar la cuenta' });
+    expect(res.json()).toEqual({ error: 'No se pudo eliminar la cuenta', code: 'INTERNAL' });
   });
 });
 
@@ -94,17 +96,17 @@ describe('aislamiento entre usuarios (T-05)', () => {
 });
 
 /* M-07 · Supabase que LANZA (excepción de red, no un `error` en la
- * respuesta). La ruta de antes no lo atrapaba y Fastify respondía su 500
- * genérico; la mudanza lo conserva. */
+ * respuesta). La ruta no lo atrapa: hasta K-03 salía el 500 genérico de
+ * Fastify (`{ statusCode, error, message }`, con el mensaje interno); desde
+ * K-03 lo arma el manejador de errores con el formato único. */
 describe('DELETE /users/me — el cliente de Supabase lanza (M-07)', () => {
-  it('500 genérico de Fastify, sin el mensaje propio — CARACTERIZA: cambia en H-01', async () => {
+  it('500 INTERNAL del manejador de errores, sin el mensaje interno — CARACTERIZA: cambia en H-01 (503)', async () => {
     supabaseAuth.admin.deleteUser.mockRejectedValue(new TypeError('fetch failed'));
     const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({
-      statusCode: 500,
-      error: 'Internal Server Error',
-      message: 'fetch failed',
+      error: 'Ocurrió un error inesperado. Intentá de nuevo en un momento.',
+      code: 'INTERNAL',
     });
   });
 });

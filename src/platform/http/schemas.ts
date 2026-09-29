@@ -9,7 +9,7 @@
  * `components.schemas`, y native los recibe como tipos con nombre.
  */
 
-import { Type, type TSchema } from '@sinclair/typebox';
+import { Type, type Static, type TSchema } from '@sinclair/typebox';
 import type { FastifyInstance } from 'fastify';
 
 /**
@@ -24,27 +24,42 @@ export function Nullable<T extends TSchema>(schema: T) {
   return Type.Unsafe<T['static'] | null>({ ...rest, type: [type, 'null'] });
 }
 
-/** Cuerpo de los errores que responden los handlers hoy: `{ error }`. El
- *  formato único `{ error, code }` llega con K-03. */
-export const ApiErrorSchema = Type.Object(
-  { error: Type.String() },
-  { $id: 'ApiError' },
-);
+/**
+ * Códigos de error del contrato (03-contratos §B.2). Solo los que el server
+ * puede responder hoy: cada ítem que agrega un error nuevo suma su código acá
+ * y en contract/CHANGELOG.md (`DEPENDENCY_UNAVAILABLE` con H-01, los de
+ * `/auth/*` con F-02 y F-03).
+ */
+export const ERROR_CODES = [
+  'VALIDATION_ERROR',
+  'UNAUTHENTICATED',
+  'NOT_FOUND',
+  'PRODUCT_NOT_IN_CATALOG',
+  'RATE_LIMITED',
+  'INTERNAL',
+] as const;
+export type ErrorCode = (typeof ERROR_CODES)[number];
 
 /**
- * El 500 de hoy tiene dos formas: `{ error }` cuando lo responde el handler, y
- * el genérico de Fastify (`{ statusCode, error, message }`) cuando algo lanza
- * antes o fuera del handler (T-04, T-06 y M-07 lo caracterizan). Se declaran
- * los dos para no recortar ninguno al serializar; K-03 los unifica.
+ * Formato ÚNICO de error en todos los endpoints (K-03): `error` es el mensaje
+ * para mostrar, en español; `code` es estable, para que la app decida qué
+ * hacer. `code` va como `enum` (y no como `anyOf` de literales) para que el
+ * OpenAPI y los tipos de native lo lean como una unión de strings.
  */
-export const InternalErrorSchema = Type.Object(
+export const ApiErrorSchema = Type.Object(
   {
     error: Type.String(),
-    statusCode: Type.Optional(Type.Number()),
-    message: Type.Optional(Type.String()),
+    code: Type.Unsafe<ErrorCode>({ type: 'string', enum: [...ERROR_CODES] }),
   },
-  { $id: 'InternalError' },
+  { $id: 'ApiError' },
 );
+export type ApiError = Static<typeof ApiErrorSchema>;
+
+/** Las respuestas de error de una ruta, todas con `ApiError`. */
+export function errorResponses<S extends number>(...statuses: S[]) {
+  const ref = Type.Ref(ApiErrorSchema);
+  return Object.fromEntries(statuses.map((s) => [s, ref])) as Record<S, typeof ref>;
+}
 
 /** `{ ok: true }`: lo responden las escrituras que no devuelven datos. */
 export const OkSchema = Type.Object({ ok: Type.Literal(true) }, { $id: 'Ok' });

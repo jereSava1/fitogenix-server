@@ -8,6 +8,7 @@
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
 import { requireAuth } from '../../../platform/http/auth';
+import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas } from '../../../platform/http/schemas';
 import type { SavedProducts } from '../application/saved';
 import {
@@ -30,7 +31,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
       return reply.send({ items });
     } catch (err) {
       app.log.error(err, 'Error al listar productos guardados');
-      return reply.status(500).send({ error: 'No se pudieron obtener los guardados' });
+      return reply.status(500).send(apiError('INTERNAL', 'No se pudieron obtener los guardados'));
     }
   });
 
@@ -42,12 +43,12 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
     try {
       const result = await saveProduct(request.userId, request.body.productId);
       if (result === 'not_found') {
-        return reply.status(404).send({ error: 'Producto no encontrado en el catálogo' });
+        return reply.status(404).send(apiError('NOT_FOUND', 'Producto no encontrado en el catálogo'));
       }
       return reply.send({ ok: true });
     } catch (err) {
       app.log.error(err, 'Error al guardar producto');
-      return reply.status(500).send({ error: 'No se pudo guardar el producto' });
+      return reply.status(500).send(apiError('INTERNAL', 'No se pudo guardar el producto'));
     }
   });
 
@@ -61,7 +62,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
         return reply.send({ ok: true });
       } catch (err) {
         app.log.error(err, 'Error al quitar producto guardado');
-        return reply.status(500).send({ error: 'No se pudo quitar el producto guardado' });
+        return reply.status(500).send(apiError('INTERNAL', 'No se pudo quitar el producto guardado'));
       }
     },
   );

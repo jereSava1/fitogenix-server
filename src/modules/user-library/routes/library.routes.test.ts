@@ -88,7 +88,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
   ] as const)('%s %s sin token → 401 sin llegar al servicio', async (method, url) => {
     const res = await app.inject({ method, url, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined });
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Falta el token de sesión' });
+    expect(res.json()).toEqual({ error: 'Falta el token de sesión', code: 'UNAUTHENTICATED' });
     expect(saved.listSavedProducts).not.toHaveBeenCalled();
     expect(saved.saveProduct).not.toHaveBeenCalled();
     expect(saved.removeSavedProduct).not.toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
   it('token de otro sistema → 401', async () => {
     const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: { authorization: 'Bearer ajeno' } });
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 });
 
@@ -115,7 +115,7 @@ describe('GET /users/me/saved (T-05)', () => {
     vi.mocked(saved.listSavedProducts).mockRejectedValue(new Error('db'));
     const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: comoA });
     expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudieron obtener los guardados' });
+    expect(res.json()).toEqual({ error: 'No se pudieron obtener los guardados', code: 'INTERNAL' });
   });
 });
 
@@ -130,7 +130,7 @@ describe('POST /users/me/saved (T-05)', () => {
     vi.mocked(saved.saveProduct).mockResolvedValue('not_found');
     const res = await app.inject({ method: 'POST', url: '/users/me/saved', headers: comoA, payload: { productId: PRODUCT_ID } });
     expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual({ error: 'Producto no encontrado en el catálogo' });
+    expect(res.json()).toEqual({ error: 'Producto no encontrado en el catálogo', code: 'NOT_FOUND' });
   });
 
   it.each([
@@ -147,7 +147,7 @@ describe('POST /users/me/saved (T-05)', () => {
     vi.mocked(saved.saveProduct).mockRejectedValue(new Error('db'));
     const res = await app.inject({ method: 'POST', url: '/users/me/saved', headers: comoA, payload: { productId: PRODUCT_ID } });
     expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudo guardar el producto' });
+    expect(res.json()).toEqual({ error: 'No se pudo guardar el producto', code: 'INTERNAL' });
   });
 });
 
@@ -168,7 +168,7 @@ describe('DELETE /users/me/saved/:productId (T-05)', () => {
     vi.mocked(saved.removeSavedProduct).mockRejectedValue(new Error('db'));
     const res = await app.inject({ method: 'DELETE', url: `/users/me/saved/${PRODUCT_ID}`, headers: comoA });
     expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudo quitar el producto guardado' });
+    expect(res.json()).toEqual({ error: 'No se pudo quitar el producto guardado', code: 'INTERNAL' });
   });
 });
 
@@ -205,7 +205,7 @@ describe('GET /users/me/history (T-05)', () => {
     vi.mocked(history.listScanHistory).mockRejectedValue(new Error('db'));
     const res = await app.inject({ method: 'GET', url: '/users/me/history', headers: comoA });
     expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudo obtener el historial' });
+    expect(res.json()).toEqual({ error: 'No se pudo obtener el historial', code: 'INTERNAL' });
   });
 });
 
