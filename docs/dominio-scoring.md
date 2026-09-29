@@ -85,7 +85,7 @@ La Disposición ANMAT 11378/2024 (Anexo I) obliga a los fabricantes, no a Fitoge
 | F4 / F10 | Disposición ANMAT 11362/2024 y su **Manual de Aplicación**, Revisión I (`IF-2024-135393117-APN-DLEIAER#ANMAT`, 60 págs.) | Qué es "añadido", árbol de decisión, calorías, bebidas sin energía |
 | F5 / F9 | Disposición ANMAT 11378/2024 y su Anexo I (`IF-2024-139959417-APN-DRI#ANMAT`) | Publicidad (§S5) |
 
-Los PDF de F10 y F9 están guardados hoy en `fitogenix-agents/nutricion/fuentes/` (el Boletín Oficial bloquea la descarga automática). **Falta** la publicación completa del modelo de OPS (`iris.paho.org`): es el fundamento científico de cada umbral y hace falta para auditar el criterio propio (§S7, M-3).
+Los PDF de F10 y F9 **no se versionan en este repo** (D-64): se citan por su identificador oficial, y hay copias locales en `fitogenix-agents/nutricion/fuentes/` (el Boletín Oficial bloquea la descarga automática). **Falta** la publicación completa del modelo de OPS (`iris.paho.org`): es el fundamento científico de cada umbral y hace falta para auditar el criterio propio (§S7, M-3).
 
 ## §S7 — Temas abiertos del motor
 
@@ -105,5 +105,5 @@ Relevados en `CONTEXT.md §6` y `§8` y re-verificados contra el código el 2026
 
 ## [PREGUNTA]
 
-1. **NOVA.** `CONTEXT.md §2.4` registra una decisión del 2026-08-31, "NOVA se sostiene, no se borra de ningún lado", y hay dos usos que D-36 (2026-09-28, eliminar `nova_group`) no menciona: `scripts/audit-scores.ts` lo usa como señal de calidad (un NOVA 4 con puntaje alto se marca para revisión) y es la forma directa de chequear la excepción legal del art. 7 (M-7). D-36 es posterior y manda. ¿Se confirma, o se revisa antes de B-01 (el ítem que borra la columna)?
+1. **NOVA.** `CONTEXT.md §2.4` registra una decisión del 2026-08-31, "NOVA se sostiene, no se borra de ningún lado", y hay dos usos que D-36 (2026-09-28, eliminar `nova_group`) no menciona: `scripts/audit-scores.ts` lo usa como señal de calidad (un NOVA 4 con puntaje alto se marca para revisión) y es la forma directa de chequear la excepción legal del art. 7 (M-7). D-36 es posterior y manda. Dato para decidir (medido el 2026-09-29): solo **3.955 de 81.449 productos (4,9 %)** tienen `nova_group`, y de los que tienen ingredientes, el 20 % (3.889 de 19.308); por grupo, 415 NOVA 1, 165 NOVA 2, 445 NOVA 3 y 2.930 NOVA 4. ¿Se confirma, o se revisa antes de B-01 (el ítem que borra la columna)?
 2. **Fuentes primarias.** ¿Copio los PDF de F10 y F9 (6,5 MB) a `docs/fuentes/`, o quedan referenciados por su identificador oficial?
