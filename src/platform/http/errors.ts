@@ -3,12 +3,16 @@
 // al cliente, un mensaje en español; el detalle, al log.
 
 import type { FastifyError, FastifyInstance } from 'fastify';
+import { DependencyUnavailableError } from '../dependencyError';
 import type { ApiError, ErrorCode } from './schemas';
 
 export const VALIDATION_MESSAGE = 'La solicitud no es válida.';
 export const RATE_LIMITED_MESSAGE = 'Demasiadas solicitudes. Intentá de nuevo en un momento.';
 export const NOT_FOUND_ROUTE_MESSAGE = 'La ruta no existe.';
 export const INTERNAL_MESSAGE = 'Ocurrió un error inesperado. Intentá de nuevo en un momento.';
+export const UNAVAILABLE_MESSAGE = 'El servicio no está disponible en este momento. Intentá de nuevo en un rato.';
+/** Segundos que se le sugieren al cliente antes de reintentar un 503. */
+export const UNAVAILABLE_RETRY_AFTER_S = 10;
 
 export function apiError(code: ErrorCode, error: string): ApiError {
   return { error, code };
@@ -25,6 +29,13 @@ export function rateLimitedError(statusCode: number): FastifyError {
 
 export function registerErrorHandling(app: FastifyInstance): void {
   app.setErrorHandler<FastifyError>((err, request, reply) => {
+    if (err instanceof DependencyUnavailableError) {
+      request.log.warn({ err, dependency: err.dependency }, 'Dependencia no disponible');
+      return reply
+        .status(503)
+        .header('retry-after', String(UNAVAILABLE_RETRY_AFTER_S))
+        .send(apiError('DEPENDENCY_UNAVAILABLE', UNAVAILABLE_MESSAGE));
+    }
     if (err.validation) {
       request.log.info(
         { validation: err.validation, context: err.validationContext },

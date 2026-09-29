@@ -158,7 +158,10 @@ describe('requireAuth — token aceptado (T-04)', () => {
     usuarioValido();
     await pedir('Bearer jwt-valido');
     expect(supabase.createClient).toHaveBeenCalledTimes(1);
-    expect(supabase.createClient).toHaveBeenCalledWith('https://test.supabase.co', 'sb_secret_test');
+    // H-01: con un `fetch` que corta a los 2 s.
+    expect(supabase.createClient).toHaveBeenCalledWith('https://test.supabase.co', 'sb_secret_test', {
+      global: { fetch: expect.any(Function) },
+    });
   });
 });
 

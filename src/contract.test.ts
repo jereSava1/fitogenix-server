@@ -20,7 +20,7 @@ vi.mock('@supabase/supabase-js', () => {
   const builder = (table: string) => {
     const result = () => Promise.resolve(db.results[table] ?? { data: null, error: null });
     const b: Record<string, unknown> = {};
-    for (const m of ['select', 'eq', 'order', 'limit', 'upsert', 'delete', 'in', 'is', 'ilike']) {
+    for (const m of ['select', 'retry', 'eq', 'order', 'limit', 'upsert', 'delete', 'in', 'is', 'ilike']) {
       b[m] = () => b;
     }
     b.maybeSingle = result;
@@ -160,7 +160,7 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expectMatchesContract('/v1/products/{id}', 'get', 404, noExiste.json());
   });
 
-  it('GET /users/me/saved → 200, 401 y 500', async () => {
+  it('GET /users/me/saved → 200, 401 y 503', async () => {
     const ok = await call('GET', '/v1/users/me/saved', { auth: true });
     expect(ok.statusCode).toBe(200);
     expectMatchesContract('/v1/users/me/saved', 'get', 200, ok.json());
@@ -171,11 +171,11 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
 
     db.results.saved_products = { data: null, error: { message: 'boom' } };
     const falla = await call('GET', '/v1/users/me/saved', { auth: true });
-    expect(falla.statusCode).toBe(500);
-    expectMatchesContract('/v1/users/me/saved', 'get', 500, falla.json());
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/saved', 'get', 503, falla.json());
   });
 
-  it('POST /users/me/saved → 200, 404, 401 y 500', async () => {
+  it('POST /users/me/saved → 200, 404, 401 y 503', async () => {
     const payload = { productId: PRODUCT_ID };
     db.results.saved_products = { error: null };
     const ok = await call('POST', '/v1/users/me/saved', { auth: true, payload });
@@ -193,11 +193,11 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
 
     db.results.saved_products = { error: { code: '42P01', message: 'boom' } };
     const falla = await call('POST', '/v1/users/me/saved', { auth: true, payload });
-    expect(falla.statusCode).toBe(500);
-    expectMatchesContract('/v1/users/me/saved', 'post', 500, falla.json());
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/saved', 'post', 503, falla.json());
   });
 
-  it('DELETE /users/me/saved/:productId → 200, 401 y 500', async () => {
+  it('DELETE /users/me/saved/:productId → 200, 401 y 503', async () => {
     const url = `/v1/users/me/saved/${PRODUCT_ID}`;
     db.results.saved_products = { error: null };
     const ok = await call('DELETE', url, { auth: true });
@@ -210,11 +210,11 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
 
     db.results.saved_products = { error: { message: 'boom' } };
     const falla = await call('DELETE', url, { auth: true });
-    expect(falla.statusCode).toBe(500);
-    expectMatchesContract('/v1/users/me/saved/{productId}', 'delete', 500, falla.json());
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/saved/{productId}', 'delete', 503, falla.json());
   });
 
-  it('GET /users/me/history → 200, 401 y 500', async () => {
+  it('GET /users/me/history → 200, 401 y 503', async () => {
     const ok = await call('GET', '/v1/users/me/history', { auth: true });
     expect(ok.statusCode).toBe(200);
     expectMatchesContract('/v1/users/me/history', 'get', 200, ok.json());
@@ -225,8 +225,8 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
 
     db.results.scan_history = { data: null, error: { message: 'boom' } };
     const falla = await call('GET', '/v1/users/me/history', { auth: true });
-    expect(falla.statusCode).toBe(500);
-    expectMatchesContract('/v1/users/me/history', 'get', 500, falla.json());
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/history', 'get', 503, falla.json());
   });
 
   it('DELETE /users/me → 200, 401 y 500 (del handler y de una excepción)', async () => {
@@ -433,6 +433,35 @@ describe('contrato — forma del producto y campos de más (K-04, D-70)', () => 
       expect(res.statusCode, `${method} ${path}`).toBe(400);
       expect(res.json()).toEqual(VALIDATION);
       expectMatchesContract(path, method, 400, res.json());
+    }
+  });
+});
+
+describe('contrato — caídas de la base (H-01)', () => {
+  const NO_DISPONIBLE = {
+    error: 'El servicio no está disponible en este momento. Intentá de nuevo en un rato.',
+    code: 'DEPENDENCY_UNAVAILABLE',
+  };
+
+  it('lookup y detalle con la base caída → 503 con retry-after, nunca "no está"', async () => {
+    db.results.products = { data: null, error: { message: 'TypeError: fetch failed' } };
+    for (const [path, method, res] of [
+      ['/v1/products/lookup', 'post', await call('POST', '/v1/products/lookup', { payload: { query: '7790000000017' } })],
+      ['/v1/products/{id}', 'get', await call('GET', `/v1/products/${PRODUCT_ID}`)],
+    ] as const) {
+      expect(res.statusCode, path).toBe(503);
+      expect(res.headers['retry-after']).toBe('10');
+      expect(res.json()).toEqual(NO_DISPONIBLE);
+      expectMatchesContract(path, method, 503, res.json());
+    }
+  });
+
+  it('las rutas que leen o escriben la base declaran 503', () => {
+    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history'];
+    for (const ruta of conBase) {
+      for (const op of Object.values(contract.paths[ruta]!)) {
+        expect(Object.keys(op.responses), ruta).toContain('503');
+      }
     }
   });
 });

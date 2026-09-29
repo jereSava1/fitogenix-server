@@ -9,7 +9,11 @@ let mockRpcError: unknown = null;
 
 const maybeSingle = vi.fn(async () => ({ data: mockRow, error: mockError }));
 const eq = vi.fn(() => ({ maybeSingle }));
-const select = vi.fn(() => ({ eq }));
+const retry = vi.fn();
+const select = vi.fn(() => {
+  const chain = { eq, retry: retry.mockImplementation(() => chain) };
+  return chain;
+});
 const rpc = vi.fn(async () => ({ data: mockRpcRows, error: mockRpcError }));
 const from = vi.fn(() => ({ select }));
 
@@ -256,9 +260,14 @@ describe('getCachedProductByBarcode', () => {
     await expect(cache.getCachedProductByBarcode('7790001')).resolves.toBeNull();
   });
 
-  it('devuelve null cuando Supabase da error', async () => {
+  it('un error de Supabase es una caída, no un "no está"', async () => {
     mockError = { message: 'boom' };
-    await expect(cache.getCachedProductByBarcode('7790001')).resolves.toBeNull();
+    await expect(cache.getCachedProductByBarcode('7790001')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
+  });
+
+  it('si el cliente lanza (red, timeout), también', async () => {
+    maybeSingle.mockRejectedValueOnce(new TypeError('fetch failed'));
+    await expect(cache.getCachedProductByBarcode('7790001')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
   });
 });
 
@@ -343,13 +352,13 @@ describe('findCachedProductByName', () => {
     expect(result?.dataSource).toBe('ai');
   });
 
-  it('sin candidatas válidas (o error del RPC) → null', async () => {
+  it('sin candidatas válidas → null; error del RPC → caída', async () => {
     mockRpcRows = [makeRow({ ingredients_text: null, nutriments: null })];
     await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
 
     mockRpcRows = null;
     mockRpcError = { message: 'boom' };
-    await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
+    await expect(cache.findCachedProductByName('coca cola')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
   });
 });
 
@@ -380,6 +389,8 @@ describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
 
     expect(from).toHaveBeenCalledWith('products');
     expect(select).toHaveBeenCalledWith('*');
+    // Sin reintentos de postgrest-js: una caída tiene que dar 503 en ~2 s, no en ~15.
+    expect(retry).toHaveBeenCalledWith(false);
     expect(eq).toHaveBeenCalledWith('id', 'uuid-galletitas');
     expect(result).toEqual(cache.rowToCachedRaw(row));
   });
@@ -396,12 +407,13 @@ describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
     expect(result?.productId).toBe('uuid-galletitas');
   });
 
-  it('un error de Supabase sigue siendo miss (null) — CARACTERIZA: cambia en H-01', async () => {
+  // H-01: antes un error de Supabase era un miss (`null`) y el usuario veía "no está".
+  it('un error de Supabase es DependencyUnavailableError en los tres métodos', async () => {
     mockError = { message: 'boom' };
     mockRpcError = { message: 'boom' };
 
-    await expect(cache.supabaseProductReader.findById('uuid-galletitas')).resolves.toBeNull();
-    await expect(cache.supabaseProductReader.findByBarcode('7790001')).resolves.toBeNull();
-    await expect(cache.supabaseProductReader.findByName('galletitas')).resolves.toBeNull();
+    await expect(cache.supabaseProductReader.findById('uuid-galletitas')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
+    await expect(cache.supabaseProductReader.findByBarcode('7790001')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
+    await expect(cache.supabaseProductReader.findByName('galletitas')).rejects.toMatchObject({ name: 'DependencyUnavailableError', dependency: 'supabase' });
   });
 });

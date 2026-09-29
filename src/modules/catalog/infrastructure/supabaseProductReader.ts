@@ -1,7 +1,7 @@
 // Lector del catálogo: tabla `products` y RPC `search_products_by_name`.
-// Un error de Supabase hoy se devuelve como miss (`null`); cambia en H-01.
+// `null` solo si la consulta salió bien y no hay fila; una falla es DependencyUnavailableError.
 
-import { supabaseAdmin as admin } from '../../../platform/supabase';
+import { queryFailed, runQuery, supabaseAdmin as admin } from '../../../platform/supabase';
 import type { CachedProductRow, ProductReader } from '../application/ports';
 import { normalizeQuery } from '../domain/query';
 import { rowToCachedRaw } from './productRow';
@@ -11,13 +11,12 @@ async function getCachedBy(
   column: 'id' | 'barcode' | 'name_key',
   value: string,
 ): Promise<CachedProductRow | null> {
-  const { data, error } = await admin()
-    .from('products')
-    .select('*')
-    .eq(column, value)
-    .maybeSingle();
+  const { data, error } = await runQuery('products select', () =>
+    admin().from('products').select('*').retry(false).eq(column, value).maybeSingle(),
+  );
 
-  if (error || !data) return null;
+  if (error) throw queryFailed('products select', error);
+  if (!data) return null;
 
   return rowToCachedRaw(data as Record<string, unknown>);
 }
@@ -43,12 +42,12 @@ export async function findCachedProductByName(
   // Guard: queries demasiado cortos matchearían medio catálogo ("a", "co").
   if (normalized.length < 3) return null;
 
-  const { data, error } = await admin().rpc('search_products_by_name', {
-    search_query: normalized,
-    match_limit: 5,
-  });
+  const { data, error } = await runQuery('search_products_by_name', () =>
+    admin().rpc('search_products_by_name', { search_query: normalized, match_limit: 5 }),
+  );
 
-  if (error || !data || data.length === 0) return null;
+  if (error) throw queryFailed('search_products_by_name', error);
+  if (!Array.isArray(data) || data.length === 0) return null;
 
   // Candidatas = filas con crudos reconstruibles; el resto son cache miss.
   // El RPC ya devuelve las filas ordenadas por similitud (mejor match primero),

@@ -408,6 +408,8 @@ Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOAL
 
 **Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error:
 
+**H-01 (2026-09-29, contrato `0.4.0`):** se suma `DEPENDENCY_UNAVAILABLE` (503 + `Retry-After: 10`) cuando la base no responde o falla, en el lookup, el detalle, guardados e historial. "No está" (404) queda solo para una consulta que salió bien sin filas. El 503 ante una caída de Supabase Auth llega con H-02.
+
 | Caso | Status | `code` | `error` |
 |---|---|---|---|
 | Validación de body, params o querystring (ajv), JSON roto | 400 | `VALIDATION_ERROR` | "La solicitud no es válida." (fijo; el detalle de ajv va al log, D-69) |
@@ -432,15 +434,15 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 
 | # | Endpoint | Auth | Request | 2xx | Errores | Hoy |
 |---|---|---|---|---|---|---|
-| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Con `/v1` y los errores `400`/`404`/`429`/`500` declarados (K-03); responde `ProductDetail` y rechaza campos de más (K-04, D-70); le falta el 503 (hoy responde 404 si la base falla, H-01) |
-| 2 | `GET /products/:id` | Opcional | params `{ id: Uuid }` | `200 ProductDetail` | `400`, `404 NOT_FOUND`, `503` | **Hecho en K-04** (D-32): no registra el escaneo; sin nombre, el de reemplazo es el barcode de la fila; le falta el 503 (un error de base responde 404, H-01) |
+| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Con `/v1` y los errores `400`/`404`/`429`/`500` declarados (K-03); responde `ProductDetail` y rechaza campos de más (K-04, D-70); 503 si la base falla (H-01) |
+| 2 | `GET /products/:id` | Opcional | params `{ id: Uuid }` | `200 ProductDetail` | `400`, `404 NOT_FOUND`, `503` | **Hecho en K-04** (D-32): no registra el escaneo; sin nombre, el de reemplazo es el barcode de la fila; 503 si la base falla (H-01) |
 | 3 | ~~`GET /products/image`~~ | — | — | — | — | **Se elimina (D-49)**: la app muestra `imageUrl` directo |
 
 ### B.3.2 `user-library`
 
 | # | Endpoint | Auth | Request | 2xx | Errores | Hoy |
 |---|---|---|---|---|---|---|
-| 4 | `GET /users/me/saved` | Sí | — | `200 { items: SavedItem[] }` | `401`, `503` | **K-04:** resumen + `savedAt` (ISO); sin nombre, el barcode de la fila (antes, el uuid). Le falta el 503 (H-01) |
+| 4 | `GET /users/me/saved` | Sí | — | `200 { items: SavedItem[] }` | `401`, `503` | **K-04:** resumen + `savedAt` (ISO); sin nombre, el barcode de la fila (antes, el uuid). 503 si la base falla (H-01) |
 | 5 | `POST /users/me/saved` | Sí | body `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `404 NOT_FOUND`, `503` | Schema de request OK; campos de más → 400 (K-04, D-70) |
 | 6 | `DELETE /users/me/saved/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | Schema de params OK |
 | 7 | `GET /users/me/history` | Sí | query `{ limit?: integer 1..50 (default 20) }` | `200 { items: HistoryItem[] }` | `400`, `401`, `503` | **K-04:** resumen + `scannedAt` (ISO); parámetros de más → 400 (D-70). El rango se sigue ajustando en el handler en vez del schema |

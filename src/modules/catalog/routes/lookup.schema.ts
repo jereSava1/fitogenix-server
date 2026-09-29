@@ -13,5 +13,5 @@ export const lookupBodySchema = Type.Object(
  *  errores (platform/http/errors.ts). */
 export const lookupResponseSchema = {
   200: Type.Ref(ProductDetailSchema),
-  ...errorResponses(400, 404, 429, 500),
+  ...errorResponses(400, 404, 429, 500, 503),
 };

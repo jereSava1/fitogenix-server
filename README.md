@@ -50,9 +50,10 @@ Todas las rutas del contrato llevan el prefijo **`/v1`** (D-44), sin alias de la
 | `DELETE /v1/users/me/saved/:productId` | sí | Quitar un guardado (idempotente) |
 | `GET /v1/users/me/history?limit=` | sí | Historial de escaneos: resumen más `scannedAt` (`limit` entre 1 y 50, por defecto 20) |
 | `DELETE /v1/users/me` | sí | Eliminar la cuenta |
-| `GET /health` | no | Chequeo de vida |
+| `GET /health` | no | Chequeo de vida (el proceso responde) |
+| `GET /health/ready` | no | Listo para atender: 503 si Supabase no responde; informa el estado de Redis |
 
-Todos los errores tienen la misma forma, `{ error, code }`: `error` es el mensaje para mostrar, en español, y `code` es estable para que la app decida qué hacer (`VALIDATION_ERROR` 400, `UNAUTHENTICATED` 401, `NOT_FOUND` / `PRODUCT_NOT_IN_CATALOG` 404, `RATE_LIMITED` 429, `INTERNAL` 500). Lo que no responde un handler (validación, rate limit, ruta inexistente, excepciones) lo arma `src/platform/http/errors.ts`; el detalle técnico va solo al log. Un campo de más en un body o en el querystring del historial es un `400 VALIDATION_ERROR`: no se ignora en silencio (D-70).
+Todos los errores tienen la misma forma, `{ error, code }`: `error` es el mensaje para mostrar, en español, y `code` es estable para que la app decida qué hacer (`VALIDATION_ERROR` 400, `UNAUTHENTICATED` 401, `NOT_FOUND` / `PRODUCT_NOT_IN_CATALOG` 404, `RATE_LIMITED` 429, `INTERNAL` 500, `DEPENDENCY_UNAVAILABLE` 503 con `Retry-After` si la base no responde). Lo que no responde un handler (validación, rate limit, ruta inexistente, excepciones) lo arma `src/platform/http/errors.ts`; el detalle técnico va solo al log. Un campo de más en un body o en el querystring del historial es un `400 VALIDATION_ERROR`: no se ignora en silencio (D-70).
 
 La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrato de estas rutas (request, respuestas y errores) está en [`contract/openapi.json`](contract/openapi.json), generado desde los schemas TypeBox de cada módulo, y las bandas del puntaje (cortes, colores, mensajes y sellos) en [`contract/scoring-bands.json`](contract/scoring-bands.json), generado desde el motor; sus cambios, en [`contract/CHANGELOG.md`](contract/CHANGELOG.md). El contrato objetivo (endpoints que faltan: auth, perfil, feedback) está en [`docs/03-contratos.md`](docs/03-contratos.md).
 
@@ -62,7 +63,7 @@ La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrat
 
 - En Supabase se guardan los **datos crudos** (`ingredients_text`, `nutriments`, `additives_tags`…) y el puntaje se **recalcula al leer**, así un cambio del motor no deja puntajes viejos. Una fila sin ingredientes ni nutrientes cuenta como "no está en el catálogo".
 - La identidad del producto es `products.id` (uuid), que viaja como `id` en el detalle y en los listados, y es lo que referencian guardados e historial (el `productId` de `POST /v1/users/me/saved`).
-- Hoy una caída de Supabase también responde `404` y Redis no tiene timeout: está caracterizado en los tests y se corrige en H-01 (ver `docs/05-plan.md`).
+- Una caída de Supabase responde `503` (nunca "no está"), con 2 s de tope por consulta; Redis tiene 200 ms y, si no responde, se sigue sin él.
 
 Cada lookup deja una línea de log:
 
