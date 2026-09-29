@@ -72,12 +72,13 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 
 | ID | Estado |
 |---|---|
-| T-01 | ✅ Hecho en `ci/t01-tests-y-tipos`, mergeado a `fitogenix/refactor-cleanup`. `npm run typecheck` (src + `tsconfig.scripts.json`: 32 archivos de `scripts/`, 0 errores) y `npm test` (424) en cada push y PR. Falta ver el primer run en GitHub (no se pusheó) |
+| T-01 | ✅ Hecho en `ci/t01-tests-y-tipos`, mergeado a `fitogenix/refactor-cleanup`. `npm run typecheck` (src + `tsconfig.scripts.json`: 32 archivos de `scripts/`, 0 errores) y `npm test` (424) en cada push y PR. Primer run en GitHub verde (2026-09-29, run `36511322197`, 22 s) |
 | T-02 | ✅ Hecho en `test/t02-caracterizar-presentacion`, mergeado a `fitogenix/refactor-cleanup`. 32 tests nuevos: bordes de banda en `presentation.test.ts`; `fito` y `flagged` por borde en `productLookupService.presentation.test.ts` (motor simulado; `flagged` < 40 marcado `CARACTERIZA … K-04`); snapshot de la respuesta completa de `mapRawToProduct` para 10 goldens (`__snapshots__/`, generado, 966 líneas). Prueba de mutación: mover el corte de `flagged` o un color de banda hace fallar la suite |
 | T-03 | En curso en `test/t03-golden-catalogo` (primer merge: solo la consulta): consulta [`sql/t03-muestra-catalogo.sql`](sql/t03-muestra-catalogo.sql) entregada; el golden y su test se agregan cuando llegue la muestra (D-58) |
 | T-04 | ✅ Hecho en `test/t04-caracterizar-auth`, mergeado a `fitogenix/refactor-cleanup`. `src/plugins/auth.test.ts`: 17 tests con Supabase simulado. Cuatro `CARACTERIZA … H-02`: Auth caído → 401; `getUser` que lanza → 500; `Bearer` sin espacio se manda como token; un header sin prefijo `Bearer` se usa entero como token. Prueba de mutación verificada |
 | T-05 | ✅ Hecho en `test/t05-rutas-privadas`, mergeado a `fitogenix/refactor-cleanup`. `src/routes/users/users.test.ts`: 34 tests con `app.inject()` sobre los módulos de rutas reales (Supabase y servicios simulados): 401 sin sesión en las 5 rutas, status y forma de cada respuesta (200, 400, 404, 500), `limit` del historial ajustado a [1, 50], y aislamiento: el id de otro usuario en body, query o headers se ignora. Junto con los tests de `savedProductsService` y `scanHistoryService` (que fijan `.eq('user_id', …)`), la cadena token → ruta → consulta queda cubierta (RNF-S03). Prueba de mutación verificada |
-| T-06 y T-07 | Pendientes |
+| T-06 | Pendiente |
+| T-07 | En curso en fitogenix-native (`test/t07-caracterizar-cliente`, otro agente) |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
