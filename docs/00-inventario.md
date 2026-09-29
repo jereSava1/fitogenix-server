@@ -345,9 +345,9 @@ Se registran acá para que no se pierdan. Cada uno se formaliza en su fase: RNF 
 1. Borrar la policy `"Anyone can read products"`.
 2. `REVOKE` de todos los privilegios de `anon` y `authenticated` sobre `products` y `products_staging` (RLS queda activo, como segunda barrera).
 3. `REVOKE EXECUTE` de `search_products_by_name` para `anon`, `authenticated` **y `PUBLIC`** (Postgres le da `EXECUTE` a `PUBLIC` por default en toda función nueva).
-4. Revisar los default privileges de Supabase en `public`, para que una tabla o función nueva no vuelva a quedar expuesta.
+4. Revisar los default privileges de Supabase en `public`, para que una tabla o función nueva no vuelva a quedar expuesta. **Actualización (D-60):** U-01 solo los releva; el cambio va en C-05.
 5. Verificación después del fix: pruebas negativas con la anon key (las del RNF) + smoke test de `POST /products/lookup` por barcode y por nombre.
-6. Rollback: recrear la policy y los grants (script en la Fase 5).
+6. Rollback: recrear la policy y los grants. **Scripts, procedimiento y pruebas:** [`sql/u01/`](sql/u01/README.md) (ítem U-01).
 
 No se tocan `is_username_available` ni `profiles`: los usa native legítimamente. **Actualización (D-28, ADR-0010):** cuando native deje de hablar con Supabase, también se revoca el acceso `anon` a `profiles` e `is_username_available`: `anon` queda sin acceso a nada.
 

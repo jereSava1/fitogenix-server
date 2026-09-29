@@ -65,6 +65,7 @@
 | D-57 | Transición a `/v1` | Sin alias: todo a `/v1` de una vez | [05-plan.md](05-plan.md) | Vigente |
 | D-58 | Consultas y migraciones en Supabase | Se entregan las queries y las corre el responsable | [05-plan.md](05-plan.md) | Vigente |
 | D-59 | Estrategia de ramas | Integración `fitogenix/refactor-cleanup` desde `main` en ambos repos; features → integración → `main` al final | [05-plan.md](05-plan.md) | Vigente |
+| D-60 | Default privileges de `public` (SEC-01, punto 4) | U-01 no los cambia, solo los releva. Se ajustan en C-05 (baseline + checklist del ADR-0009), porque afectan a todo objeto que se cree después | [05-plan.md](05-plan.md), [sql/u01/](sql/u01/README.md) | Vigente |
 
 ## Decisiones de arquitectura (ADRs)
 
