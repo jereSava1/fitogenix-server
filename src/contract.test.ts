@@ -8,8 +8,9 @@
  *      productos de la muestra del catálogo exactamente como los arma el
  *      código (antes de K-01 esas rutas no tenían schema y Fastify serializaba
  *      con JSON.stringify).
+ *   3. `contract/scoring-bands.json` es lo que arma el motor (K-08).
  * Que `contract/openapi.json` esté al día con los schemas lo verifica
- * `npm run contract:check` en el CI.
+ * `npm run contract:check` en el CI (que chequea también las bandas).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -230,6 +231,16 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     const lanza = await call('DELETE', '/users/me', { auth: true });
     expect(lanza.json()).toEqual({ statusCode: 500, error: 'Internal Server Error', message: 'fetch failed' });
     expectMatchesContract('/users/me', 'delete', 500, lanza.json());
+  });
+});
+
+describe('contrato — bandas del puntaje (K-08, D-63)', () => {
+  it('contract/scoring-bands.json es exactamente lo que arma el motor', async () => {
+    const { scoringBands } = await import('./modules/scoring');
+    const commiteado = JSON.parse(
+      readFileSync(join(__dirname, '../contract/scoring-bands.json'), 'utf8'),
+    );
+    expect(commiteado).toStrictEqual(JSON.parse(JSON.stringify(scoringBands())));
   });
 });
 
