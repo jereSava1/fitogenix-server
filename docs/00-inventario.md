@@ -349,8 +349,6 @@ Se registran acá para que no se pierdan. Cada uno se formaliza en su fase: RNF 
 5. Verificación después del fix: pruebas negativas con la anon key (las del RNF) + smoke test de `POST /products/lookup` por barcode y por nombre.
 6. Rollback: recrear la policy y los grants (script en la Fase 5).
 
-**Scripts (2026-09-29):** [`sql/u01/`](sql/u01/README.md). El punto 4 (default privileges) pasa a C-05 (D-61).
-
 No se tocan `is_username_available` ni `profiles`: los usa native legítimamente. **Actualización (D-28, ADR-0010):** cuando native deje de hablar con Supabase, también se revoca el acceso `anon` a `profiles` e `is_username_available`: `anon` queda sin acceso a nada.
 
 ### 7.2 DB-01 · Eliminación por etapas de las tablas de validación (P1)
