@@ -144,6 +144,11 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 
 ## 5. Etapa 4 — Reorganizar el server en módulos
 
+| ID | Estado |
+|---|---|
+| M-01 | ✅ Hecho en `refactor/m01-platform`, mergeado a `fitogenix/refactor-cleanup`. `src/platform/config.ts` (con su test), `platform/supabase.ts · supabaseAdmin()` (un solo cliente admin: antes había uno por servicio y otro en auth) y `platform/redis.ts · getRedis()`. `deleteMe` sigue creando su cliente por request hasta M-07. `.dependency-cruiser.cjs` desde el borrador, con las reglas de módulos, capas y SDKs en `warn` y las generales (ciclos, importar tests) en `error`; `npm run lint:deps` en CI: 0 errores, 24 avisos (los que resuelven M-02 a M-09). Sin cambios de comportamiento: 508 tests y snapshots idénticos |
+| M-02 a M-10 | Pendientes |
+
 Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 2 pasan **sin tocarlos** (solo cambian los imports); un módulo por PR; cada PR revertible por sí solo. Mapa archivo por archivo: [02-arquitectura.md §5](02-arquitectura.md).
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |

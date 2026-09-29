@@ -27,7 +27,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | `dominio-scoring.md` | Qué evalúa el motor, cómo se arma el puntaje, bandas y sello, los octógonos y la norma que los fundamenta, y los temas abiertos del motor |
 | `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica, calidad del motor) |
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
-| `borradores/dependency-cruiser.cjs` | Reglas de dependencias entre módulos, listas para copiar a la raíz |
+| `borradores/dependency-cruiser.cjs` | Borrador original de las reglas de dependencias (ya copiado a la raíz como `.dependency-cruiser.cjs` en M-01) |
 | `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |
 | `sql/c05/` | C-05: procedimiento para generar la baseline de migraciones con la CLI de Supabase |
 | `sql/u01/` | U-01: verificación, cambio y rollback para cerrar el catálogo a la anon key, con el procedimiento y las pruebas |

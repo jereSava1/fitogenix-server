@@ -35,8 +35,7 @@
  * por un motivo que no sea un bump de versión.
  */
 
-import { Redis } from '@upstash/redis';
-import { config } from '../config';
+import { getRedis } from '../platform/redis';
 import { ENGINE_VERSION } from '../domain/product/ftgEngine';
 import type { FitogenixProduct } from '../types/fitogenix';
 
@@ -99,24 +98,6 @@ export function unwrapCachedProduct(raw: unknown): FitogenixProduct | null {
     : null;
 
   return version === ENGINE_VERSION ? (raw as unknown as FitogenixProduct) : null;
-}
-
-// Lazily created — only when env vars are present.
-let _redis: Redis | null | undefined = undefined; // undefined = not yet checked
-
-function getRedis(): Redis | null {
-  if (_redis !== undefined) return _redis;
-
-  if (config.upstashRedisUrl && config.upstashRedisToken) {
-    _redis = new Redis({
-      url: config.upstashRedisUrl,
-      token: config.upstashRedisToken,
-    });
-  } else {
-    _redis = null;
-  }
-
-  return _redis;
 }
 
 export async function getFromRedis(barcode: string): Promise<FitogenixProduct | null> {

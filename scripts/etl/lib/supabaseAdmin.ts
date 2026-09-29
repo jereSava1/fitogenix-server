@@ -3,7 +3,7 @@
 // — no lo reimplementamos distinto, solo vive acá porque scripts/etl/ está
 // fuera de src/ (no se compila con el server, ver README de la carpeta).
 import { createClient } from '@supabase/supabase-js';
-import { config } from '../../../src/config';
+import { config } from '../../../src/platform/config';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _admin: ReturnType<typeof createClient<any>> | null = null;

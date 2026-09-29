@@ -1,17 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-import { config } from '../config';
+import { supabaseAdmin as admin } from '../platform/supabase';
 import { ENGINE_VERSION } from '../domain/product/ftgEngine';
 import { getScoreLabel, getSello } from '../domain/product/scoring';
 import { normalizeQuery } from './queryNormalization';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _admin: ReturnType<typeof createClient<any>> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const admin = (): ReturnType<typeof createClient<any>> => {
-  if (!_admin) _admin = createClient(config.supabaseUrl, config.supabaseSecretKey);
-  return _admin;
-};
 
 // Lo que devuelve la lectura del cache: los datos CRUDOS reconstruidos como
 // un RawOFFProduct (para que pasen por el MISMO mapRawToProduct que un lookup

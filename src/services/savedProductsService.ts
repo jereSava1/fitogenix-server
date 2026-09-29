@@ -12,18 +12,10 @@
  * unitariamente sin levantar Fastify ni mockear el plugin de auth.
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { config } from '../config';
+import { supabaseAdmin as admin } from '../platform/supabase';
 import { joinedRowToProduct } from './productRowMapper';
 import type { FitogenixProduct } from '../types/fitogenix';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _admin: ReturnType<typeof createClient<any>> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const admin = (): ReturnType<typeof createClient<any>> => {
-  if (!_admin) _admin = createClient(config.supabaseUrl, config.supabaseSecretKey);
-  return _admin;
-};
 
 export type SaveResult = 'ok' | 'not_found';
 

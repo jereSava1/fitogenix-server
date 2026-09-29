@@ -8,10 +8,9 @@
  * this plugin — register them directly on the root app.
  */
 
-import { createClient } from '@supabase/supabase-js';
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { config } from '../config';
+import { supabaseAdmin } from '../platform/supabase';
 
 // Extend FastifyRequest so TypeScript knows about `userId`.
 declare module 'fastify' {
@@ -19,17 +18,6 @@ declare module 'fastify' {
     userId: string;
   }
 }
-
-// Lazily-created singleton — avoids reconnecting on every request.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _adminClient: ReturnType<typeof createClient<any>> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const adminClient = (): ReturnType<typeof createClient<any>> => {
-  if (!_adminClient) {
-    _adminClient = createClient(config.supabaseUrl, config.supabaseSecretKey);
-  }
-  return _adminClient;
-};
 
 const authPlugin: FastifyPluginAsync = async (app) => {
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -40,7 +28,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
       return reply.status(401).send({ error: 'Falta el token de sesión' });
     }
 
-    const { data, error } = await adminClient().auth.getUser(token);
+    const { data, error } = await supabaseAdmin().auth.getUser(token);
 
     if (error || !data.user) {
       return reply.status(401).send({ error: 'Sesión inválida o expirada' });
