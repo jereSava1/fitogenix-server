@@ -1,17 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Las bandas del puntaje, como dato del contrato
-
-   Lo que native necesita para mostrar las bandas (la guía, el explicador, los
-   colores) sin transcribir ningún corte a mano (D-62, D-63). Se arma SOLO
-   desde `TIERS` y `NO_DATA_TIER`, y el label, el mensaje y el sello de cada
-   banda se piden a las mismas funciones que presentan un producto
-   (`getScoreLabel`, `getScoreTagline`, `getSello`): si una banda y un
-   producto de esa banda dijeran cosas distintas, lo detecta `bands.test.ts`.
-
-   El server lo publica en `contract/scoring-bands.json` junto con el OpenAPI
-   (`npm run contract:generate`, K-08); el CI falla si el archivo commiteado
-   no coincide con el motor.
-═══════════════════════════════════════════════════════════ */
+// Las bandas como dato del contrato (contract/scoring-bands.json): salen solo de `TIERS` y
+// `NO_DATA_TIER`, con las mismas funciones que presentan un producto.
 
 import { NO_DATA_TIER, TIERS } from './constants';
 import { MAX_SCORE, MIN_SCORE } from './ledger';
@@ -26,8 +14,7 @@ export interface ScoringBand {
   readonly from: number;
   readonly to: number;
   readonly color: string;
-  /** El mensaje de la banda (hasta K-04 llegaba en el `tagline` de cada
-   *  producto; ahora solo viaja acá, D-38). */
+  /** El mensaje de la banda. */
   readonly message: string;
   /** El sello de la banda, o `null` en las del medio. */
   readonly sello: string | null;

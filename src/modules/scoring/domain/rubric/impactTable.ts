@@ -1,13 +1,4 @@
-/* =========================================================
-   FITOGENIX - S4 - TABLA DE INGREDIENTES
-
-   "Esta seccion es datos, no reglas. Crece sin agregar complejidad al
-   sistema. Migra a la base de datos: el motor consulta, no clasifica."
-
-   Agregar una fila aca no toca ninguna funcion del motor. Ese es el punto:
-   cada regla es una oportunidad de fallar, cada fila es un lookup que no
-   cuesta nada.
-========================================================= */
+// §4 Tabla de ingredientes: datos, no reglas. Agregar una fila no toca ninguna función.
 
 import type { ImpactEntry } from '../types';
 
@@ -381,10 +372,8 @@ export const IMPACT_TABLE: readonly ImpactEntry[] = [
     ],
   },
   {
-    // §5 — Sustancias que anulan. Están acá además de en ANNUL_GATES para que
-    // el motor las RECONOZCA: si cayeran en "no identificado", un producto con
-    // dos de ellas se iría a "sin datos suficientes" por §1.2 y nunca llegaría
-    // a la anulación que le corresponde.
+    // §5: también acá para que el motor las reconozca; como no identificadas, dos de ellas
+    // mandarían el producto a "sin datos" (§1.2) antes de llegar a la anulación.
     id: 'sustancia-anulante',
     impact: 'alto',
     marker: true,
@@ -676,26 +665,17 @@ export const IMPACT_TABLE: readonly ImpactEntry[] = [
  * junto con la stevia y el monk fruit. Se resuelve acá, no en el motor. */
 export const NON_MARKER_OVERRIDES: readonly string[] = ['eritritol', 'e968', 'erythritol', 'stevia', 'estevia', 'monk fruit'];
 
-/**
- * §3.3 v2.0 heredado — Patrón de aditivo industrial. Un ingrediente que
- * matchea esto pero no está en IMPACT_TABLE se penaliza como impacto MEDIO:
- * la ausencia de clasificación específica no equivale a sin riesgo, y un
- * número E declarado ya prueba que es un aditivo.
- */
+/** Patrón de aditivo industrial: si no está en IMPACT_TABLE, impacto MEDIO (un número E ya
+ *  prueba que es un aditivo; sin clasificar no es sin riesgo). */
 export const ADDITIVE_PATTERN =
   /\be\s?\d{3,4}[a-d]?\b|\bins\s?\d{3,4}\b|emulsionante|emulsificante|estabilizante|estabilizador|conservante|conservador|colorante|potenciador de sabor|antiaglomerante|antihumectante|antioxidante|humectante|espesante|acidulante|regulador de acidez|gasificante|leudante|antiespumante|emulsifier|preservative|stabili[sz]er|colou?ring|thickener|anticaking|flavou?r enhancer|humectant|raising agent/i;
 
-/**
- * Gondola de bebidas: una "manzana" aca es jugo de manzana, no una manzana.
- * Tambien decide el umbral de calorias de los octogonos (liquido vs solido).
- */
+/** Góndola de bebidas: "manzana" acá es jugo. También define el umbral de calorías de los
+ *  octógonos (líquido o sólido). */
 export const DRINK_CATEGORY_PATTERN =
   /bebida|gaseosa|refresco|jugo|zumo|juice|drink|beverage|agua saborizada/i;
 
-/**
- * Regla de cierre de la seccion 4.2: cualquier ingrediente cuya funcion sea
- * aportar azucares libres se penaliza como azucar anadida. El jugo pierde la
- * fibra y la matriz de la fruta, asi que entra aca aunque sea 100% exprimido.
- */
+/** §4.2: lo que aporta azúcares libres se penaliza como azúcar añadida; el jugo entra
+ *  aunque sea 100 % exprimido. */
 export const FRUIT_JUICE_PATTERN =
   /\bjugos?\b|\bzumos?\b|\bjuice\b|\bn[eé]ctar(?:es)?\b|\bexprimido\b/i;

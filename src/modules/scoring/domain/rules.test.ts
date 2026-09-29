@@ -1,9 +1,4 @@
-/* Motor v2.1 — comportamiento por sección del documento.
- *
- * La calibración contra la tabla de §8 vive en calibration.test.ts;
- * acá se fija el comportamiento de cada regla por separado, para que cuando
- * §8 falle se pueda saber CUÁL regla se rompió.
- */
+// Cada regla por separado, para saber cuál se rompió cuando falla la calibración de §8.
 import { describe, expect, it } from 'vitest';
 import {
   scoreProduct,
@@ -154,11 +149,8 @@ describe('§2 Paso 3 — modificador de procesamiento', () => {
 });
 
 describe('§2 Paso 4 — techos', () => {
-  // NOTA DE CALIBRACIÓN: con base 75 y −8 por no identificado, un producto con
-  // un solo término opaco no puede pasar de 67, así que el techo de 74 nunca
-  // llega a morder. Se registra igual —la UI lo muestra como límite declarado—
-  // y el test fija que se detecte, no que recorte. Si alguna vez §2 sube la
-  // base o baja el costo del no identificado, este techo empieza a servir.
+  // Con base 75 y −8 por no identificado, un término opaco no pasa de 67: el techo de 74
+  // no muerde. Se fija que se detecte (la UI lo muestra), no que recorte.
   it('1 ingrediente no identificado → techo 74 declarado', () => {
     const bd = scoreProduct({ ingredients_text: 'agua, sal, vinagre, zzqxwrrp' });
     expect(bd.ceiling?.value).toBe(CEILINGS.soft);

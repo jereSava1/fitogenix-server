@@ -1,11 +1,5 @@
-/* Blindaje de los umbrales de banda — §2 del documento:
- * 75-100 Excelente · 50-74 Bueno · 25-49 Moderado · 0-24 Malo · sin puntaje.
- *
- * Ojo al leer esto contra el historial: los umbrales originales eran 85/70/50
- * y la banda "Malo" arrancaba en <50. El documento ensancha las bandas del
- * medio y reserva "Malo" para 0-24, que en la práctica es casi siempre un
- * producto con una anulación de §5.
- */
+// Umbrales de banda (§2): 75-100 Excelente · 50-74 Bueno · 25-49 Moderado · 0-24 Malo ·
+// sin puntaje.
 import { describe, expect, it } from 'vitest';
 import { getScoreLabel, getScoreTagline, getSello, presentScore, resolveProductStatus } from './presentation';
 
@@ -58,14 +52,7 @@ describe('scoring — sin puntaje (§1)', () => {
   });
 });
 
-/* La coherencia entre las tres presentaciones del mismo puntaje.
- *
- * Este bloque existe por un bug concreto: había tres criterios distintos para
- * la misma decisión —75/50/25 en las bandas, 70/50 en el estado del producto,
- * 75/25 en el sello— así que un producto de 72 salía "BUENO / Buena opción" y
- * al mismo tiempo con estado "Fitogénico". Ahora los tres salen de TIERS, y
- * esto lo mantiene así.
- */
+// Bandas, estado y sello salen de TIERS: no pueden contradecirse para un mismo puntaje.
 describe('coherencia de umbrales', () => {
   const TODOS = Array.from({ length: 101 }, (_, score) => score);
 
@@ -100,11 +87,7 @@ describe('coherencia de umbrales', () => {
   });
 });
 
-/* T-02 · Caracterización de los bordes de banda (docs/05-plan.md).
- *
- * Fija la presentación completa en cada borde, tal como está hoy. Si un
- * cambio mueve un corte, este bloque falla en el borde exacto.
- */
+// La presentación completa en cada borde: si un corte se mueve, falla en el borde exacto.
 describe('caracterización — bordes de banda (T-02)', () => {
   const BORDES: ReadonlyArray<[
     number | null,
@@ -131,9 +114,7 @@ describe('caracterización — bordes de banda (T-02)', () => {
   });
 });
 
-/* K-04 · `presentScore`: lo que recibe la app (ADR-0003). Cada borde de banda
- * que exige el ADR (0, 24, 25, 49, 50, 74, 75, 100 y `null`), más el 39/40 del
- * `flagged` que reemplaza `highlight`. */
+// `presentScore` en cada borde de banda, más 39/40.
 describe('presentScore — bordes de banda (K-04)', () => {
   const BORDES: ReadonlyArray<[number | null, ReturnType<typeof presentScore>]> = [
     [0, { label: 'MALO', color: '#dc2626', fito: 'nofito', highlight: 'cuestionables' }],

@@ -1,16 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Consultas sobre la rúbrica
-
-   Todo lo que responde "¿qué dice la rúbrica sobre este texto?". Son
-   funciones puras sobre las tablas de `rubric/`: no conocen el pipeline, no
-   arman salida y no deciden puntajes.
-
-   El índice se construye una sola vez al cargar el módulo, con los alias
-   ordenados de más largo a más corto. Ese orden es la regla de desempate del
-   documento: en cada tramo del texto gana el término más específico, así
-   "azúcar de coco" no queda tapada por "azúcar" ni "aceite de oliva extra
-   virgen" por "aceite de oliva".
-═══════════════════════════════════════════════════════════ */
+// Consultas puras sobre las tablas de `rubric/`. El índice ordena los alias de más largo a más
+// corto: gana el término más específico ("azúcar de coco" antes que "azúcar").
 
 import { indexOfPhrase, matchesAnyTerm, normalizeText } from './text';
 import type {
@@ -44,13 +33,8 @@ interface AliasIndexEntry {
   readonly entry: ImpactEntry;
 }
 
-/**
- * El eritritol aparece en dos lugares del documento a propósito: §4.6 lo
- * lista entre los polioles (impacto medio) y §2 Paso 3 lo excluye
- * explícitamente de los marcadores de ultraprocesado, junto con la stevia y
- * el monk fruit. La excepción se resuelve al construir el índice, no en el
- * motor.
- */
+/** El eritritol es poliol (§4.6, impacto medio) pero no marcador de ultraprocesado (§2
+ *  Paso 3), como la stevia y el monk fruit: se resuelve al armar el índice. */
 function isMarker(entry: ImpactEntry, alias: string): boolean {
   if (!entry.marker) return false;
   return !NON_MARKER_OVERRIDES.includes(alias);
@@ -74,13 +58,8 @@ function overlaps(a: readonly [number, number], bStart: number, bEnd: number): b
   return bStart < a[1] && a[0] < bEnd;
 }
 
-/**
- * TODAS las sustancias de la rúbrica presentes en el fragmento, sin
- * superponerse y en el orden en que aparecen.
- *
- * Existe porque un fragmento no siempre es un ingrediente: cuando el rotulado
- * viene mal parseado, "AGUA CARBONATADA AZUCARES" llega como uno solo.
- */
+/** Todas las sustancias del fragmento, sin superponerse y en orden (un fragmento mal
+ *  parseado puede traer varias: "AGUA CARBONATADA AZUCARES"). */
 export function rubricMatches(text: string): RubricMatch[] {
   const haystack = normalizeText(text);
   const found: RubricMatch[] = [];
@@ -115,15 +94,8 @@ export function worstImpact(a: Impact, b: Impact): Impact {
   return IMPACT_SEVERITY.indexOf(a) <= IMPACT_SEVERITY.indexOf(b) ? a : b;
 }
 
-/**
- * El veredicto de la rúbrica sobre un fragmento, o `null` si no tiene
- * opinión.
- *
- * Manda el PEOR impacto: un fragmento como "AGUA CARBONATADA AZUCARES" (el
- * OCR se comió la coma) contiene agua y azúcar, y lo que define al producto es
- * el azúcar. El marcador, en cambio, es del fragmento entero: si adentro hay
- * dos sustancias y una es marcador, el fragmento lo es.
- */
+/** El veredicto de la rúbrica sobre un fragmento, o `null`. Manda el peor impacto; si alguna
+ *  sustancia es marcador, lo es el fragmento entero. */
 export function rubricImpact(text: string): ImpactMatch | null {
   const all = rubricMatches(text);
   if (all.length === 0) return null;
@@ -144,17 +116,8 @@ export function rubricImpact(text: string): ImpactMatch | null {
    §8 — Abreviaturas del rotulado argentino
    ──────────────────────────────────────────────────────────── */
 
-/**
- * Resuelve "COL 150 d" / "ACI 338" / "ARO" a su clase y su impacto.
- *
- * El rotulado nacional declara la CLASE del aditivo abreviada más su número
- * INS, no el nombre completo. Sin esta tabla, todos esos aditivos caían como
- * "alimento no reconocido" — y una gaseosa con los tres en notación abreviada
- * salía "Buena opción".
- *
- * §6.3: cuando hay número, el número manda. "COL 102" es tartrazina (impacto
- * alto), no un colorante genérico.
- */
+/** "COL 150 d" / "ACI 338" / "ARO" → clase e impacto: el rotulado declara la clase
+ *  abreviada más el INS. Con número, manda el número (§6.3): "COL 102" es tartrazina. */
 export function resolveLabelAbbreviation(text: string): AbbreviationMatch | null {
   const trimmed = text.trim();
 
@@ -180,13 +143,7 @@ export function resolveLabelAbbreviation(text: string): AbbreviationMatch | null
    §3 — Anclas
    ──────────────────────────────────────────────────────────── */
 
-/**
- * §3 — Valor determinista de un ancla.
- *
- * §7 exige que el mismo producto dé siempre el mismo puntaje, así que el
- * rango del documento se resuelve a su punto medio y no a un valor elegido en
- * runtime.
- */
+/** §3: el rango del ancla se resuelve a su punto medio (mismo producto, mismo puntaje). */
 export function anchorScore(anchor: Anchor): number {
   return Math.round((anchor.min + anchor.max) / 2);
 }
@@ -209,16 +166,8 @@ function hasRequiredIngredients(names: readonly string[], anchor: Anchor, catego
   return anchor.categoryPattern?.test(categories) ?? false;
 }
 
-/**
- * Regla de cierre de §4.2 aplicada a las anclas: el jugo aporta los azúcares
- * de la fruta sin su fibra ni su matriz, así que no puede llevarse el ancla de
- * la fruta entera.
- *
- * Sin esto, "Jugo de naranja 100% exprimido" puntuaba 95 — decirle a alguien
- * que el jugo equivale a comerse la naranja es exactamente la confusión que
- * esa regla existe para evitar. El agua y las infusiones quedan fuera de la
- * exclusión: un té no es un jugo aunque esté en la góndola de bebidas.
- */
+/** §4.2 aplicada a las anclas: un jugo no se lleva el ancla de la fruta entera (pierde la
+ *  fibra y la matriz). El agua y las infusiones no son jugo. */
 function looksLikeJuice(names: readonly string[], categories: string): boolean {
   return names.some((n) => FRUIT_JUICE_PATTERN.test(n)) || DRINK_CATEGORY_PATTERN.test(categories);
 }
@@ -229,14 +178,8 @@ function isDisqualifiedAsJuice(anchor: Anchor): boolean {
   return POSITIVE_ANCHORS.includes(anchor) && !JUICE_EXEMPT_ANCHORS.has(anchor.id);
 }
 
-/**
- * §3 — El ancla que cubre a TODOS los ingredientes de la lista, o `null`.
- *
- * `sugars` es el control cruzado con el panel: los datos de catálogo son
- * colaborativos, y una gaseosa cargada con un único ingrediente "Agua"
- * recibiría el puntaje del agua mineral. Si el panel desmiente al listado, el
- * ancla no aplica.
- */
+/** §3: el ancla que cubre a TODOS los ingredientes, o `null`. Si el panel (`sugars`)
+ *  desmiente la lista, no aplica: una gaseosa cargada como "Agua" no puntúa como agua. */
 export function matchAnchor(
   names: readonly string[],
   categories = '',

@@ -1,5 +1,4 @@
-/* K-08 · Las bandas del contrato salen del motor y coinciden con cómo se
- * presenta cada puntaje (D-63). */
+// Las bandas del contrato salen del motor y coinciden con cómo se presenta cada puntaje.
 import { describe, expect, it } from 'vitest';
 import { scoringBands } from './bands';
 import { NO_DATA_TIER, TIERS } from './constants';

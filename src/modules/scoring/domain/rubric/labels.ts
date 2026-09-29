@@ -1,30 +1,13 @@
-/* =========================================================
-   FITOGENIX - S6 y S4.7 - Lo que hay en una etiqueta y no es un ingrediente
+// §6 y §4.7: patrones sobre el texto del rotulado (alérgenos, certificaciones, separadores,
+// denominaciones de marketing), no juicios sobre sustancias.
 
-   Advertencias de alergenos, certificaciones, separadores, y las
-   denominaciones de marketing que S4.7 manda tratar como NO IDENTIFICADO.
-
-   El hilo comun: son patrones sobre el TEXTO del rotulado, no juicios sobre
-   sustancias. Por eso viven aparte de la tabla de S4.
-========================================================= */
-
-/**
- * §6.1 — Todo lo que sigue a una de estas frases es advertencia de alérgenos,
- * no lista de ingredientes: no activa anulaciones, no resta puntaje, no se
- * describe.
- *
- * *Un ingrediente presente solo como traza no es parte de la formulación.
- * Fitogenix evalúa lo que el fabricante eligió poner, no lo que pudo tocar el
- * producto en la planta.*
- */
+/** §6.1: lo que sigue a estas frases es advertencia de alérgenos: no anula, no resta, no se
+ *  describe (se evalúa lo que el fabricante puso, no las trazas). */
 export const ALLERGEN_PREAMBLE =
   /(?:puede(?:n)? contener|contiene trazas|trazas de|elaborado en|producido en instalaciones|procesado en|al[eé]rg[eé]nos?\s*:|contains traces|may contain)/i;
 
-/**
- * §4.7 — Certificaciones y reclamos de etiqueta. NO son ingredientes: se
- * sacan de la lista antes de evaluar. Si después de sacarlas no queda ningún
- * ingrediente → "Sin datos suficientes".
- */
+/** §4.7: certificaciones y reclamos; se sacan antes de evaluar. Si no queda ningún
+ *  ingrediente, "Sin datos suficientes". */
 export const CERTIFICATION_PATTERNS: readonly RegExp[] = [
   /^sin\s+t\.?a\.?c\.?c\.?$/i,
   /^sin\s+gluten$/i,
@@ -95,16 +78,8 @@ export const UNIDENTIFIED_DESC =
 export const OPACITY_NOTE =
   'Fitogenix penaliza la opacidad. Un fabricante que elige no decirnos qué contiene su producto no recibe el beneficio de la duda. Que la frase suene bien no es información.';
 
-/* ────────────────────────────────────────────────────────────
-
-/**
- * El preambulo de marketing puede ser largo ("GALLETITAS DULCES CON SABOR A
- * VAINILLA RELLENAS..."). Se busca "Ingredientes:" en los primeros 200
- * caracteres; si no aparece, el texto se toma entero.
- *
- * Antes se miraban solo los primeros 60 y el encabezado quedaba pegado al
- * primer ingrediente, que era como una galletita terminaba puntuando 82.
- */
+/** "Ingredientes:" se busca en los primeros 200 caracteres (el preámbulo de marketing puede
+ *  ser largo); si no aparece, el texto se toma entero. */
 export const INGREDIENTS_PREAMBLE = /^[\s\S]{0,200}?\bingr(?:edientes?)?\s*[:.]+\s*/i;
 
 /** Ruido de rotulado que no es parte del nombre del ingrediente. */
@@ -115,13 +90,8 @@ export const LABEL_NOISE =
    Seccion 8 - Abreviaturas del rotulado argentino
    --------------------------------------------------------------- */
 
-/**
- * El rotulado nacional declara la CLASE del aditivo abreviada mas su numero
- * INS, no el nombre completo: "COL 150 d" es colorante caramelo, "ACI 338"
- * acido fosforico, "ARO" aroma. El documento lista los nombres completos y no
- * contempla esta notacion, asi que sin esta tabla todos estos aditivos caian
- * como "alimento no reconocido".
- */
+/** Clase de aditivo abreviada del rotulado nacional ("COL 150 d", "ACI 338", "ARO"), que
+ *  el documento no contempla. */
 export const LABEL_ABBREVIATIONS: readonly { prefix: RegExp; label: string }[] = [
   { prefix: /^col\b/i,  label: 'Colorante' },
   { prefix: /^aro\b/i,  label: 'Aroma' },

@@ -1,17 +1,6 @@
-/* T-03 · Golden de scoreProduct sobre una muestra del catálogo real
- * (docs/05-plan.md).
- *
- * `fixtures/catalog-sample.json`: 200 filas de `products` con datos crudos
- * (las primeras 200 con ingredientes o nutrientes, en orden de `id`, tomadas
- * el 2026-09-29), sin id, barcode, marca ni imagen: solo lo que usa el motor.
- * Se mapean igual que `rowToCachedRaw` de catalog (`category` →
- * `categories`).
- *
- * El snapshot guarda una línea por producto con puntaje, banda y motivo de
- * "sin puntaje". Si cambia un solo puntaje, falla. Un cambio a propósito del
- * motor se revisa en el diff del snapshot y se actualiza con `vitest -u` en el
- * PR del ítem que lo cambia.
- */
+// Golden sobre 200 productos reales (fixtures/catalog-sample.json): una línea por producto con
+// puntaje, banda y motivo. Un cambio a propósito del motor se revisa en el diff y se
+// actualiza con `vitest -u`.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

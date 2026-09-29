@@ -1,21 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Presentación derivada del puntaje
-
-   Label, color, tagline, sello, estado y qué ingredientes destacar. Todo
-   sale de `TIERS`, que es la ÚNICA fuente de los umbrales en el sistema.
-   Lo que ve la app sale de `presentScore` (ADR-0003, K-04).
-
-   Antes no era así, y el síntoma se veía en el payload: había tres criterios
-   distintos para la misma decisión —75/50/25 en las bandas, 70/50 en el
-   estado del producto, 75/25 en el sello— así que un producto de 72 salía
-   "Bueno / Buena opción" y al mismo tiempo con sello "Fitogénico", y uno de
-   35 salía "no fitogénico" mientras la columna de sello quedaba vacía.
-   Tres números para una sola pregunta es tres oportunidades de contradecirse.
-
-   `null` es un valor legítimo: el motor no emite puntaje en los casos de §1.
-   Se trata como su propia banda en vez de coercionarlo a cero, que se leería
-   como "el peor producto posible".
-═══════════════════════════════════════════════════════════ */
+// Presentación derivada del puntaje, toda desde `TIERS`. `null` es su propia banda: nunca se
+// lee como cero. Lo que ve la app sale de `presentScore`.
 
 import { BAD_BELOW, EXCELLENT_FROM, GOOD_FROM, NO_DATA_TIER } from './constants';
 import { tierFor } from './explain';
@@ -35,13 +19,7 @@ export function getScoreTagline(score: number | null): string {
   return score == null ? NO_DATA_TIER.message : tierFor(score).message;
 }
 
-/**
- * El sello sigue las bandas: Excelente lleva el sello Fitogénico, Malo lleva
- * el contrario, y las dos bandas del medio van sin sello.
- *
- * Sin puntaje no hay sello: no sabemos lo suficiente como para poner ninguno
- * de los dos.
- */
+/** Excelente lleva el sello Fitogénico, Malo el contrario; el medio y sin puntaje, ninguno. */
 export function getSello(score: number | null): string | null {
   if (score == null) return null;
   if (score >= EXCELLENT_FROM) return 'FITOGÉNICO';
@@ -56,12 +34,7 @@ export interface ProductStatus {
   readonly tone: ProductStatusTone;
 }
 
-/**
- * El estado del producto, con los MISMOS cortes que las bandas.
- *
- * Coincide con `getSello` por construcción: si el sello dice "Fitogénico", el
- * estado también, siempre.
- */
+/** El estado del producto, con los mismos cortes: coincide con `getSello`. */
 export function resolveProductStatus(score: number | null): ProductStatus {
   if (score == null) return { label: 'Sin datos suficientes', tone: 'neutral' };
   if (score >= EXCELLENT_FROM) return { label: 'Fitogénico', tone: 'positive' };
@@ -80,13 +53,8 @@ const FITO_BY_TONE: Record<ProductStatusTone, Fito> = {
   neutral: 'none',
 };
 
-/**
- * Qué grupo de ingredientes destaca la pantalla de resultado. Reemplaza al
- * `flagged` (< 40) que se armaba en catalog y al `score < 50` de native: el
- * corte es el de la banda Buena (`GOOD_FROM`). Sin puntaje no se destaca
- * ninguno: si el producto no se pudo medir, no se puede decir que sus
- * ingredientes sean beneficiosos ni cuestionables (D-71).
- */
+/** Qué grupo destaca la app: cuestionables debajo de la banda Buena, beneficiosos desde ahí,
+ *  ninguno sin puntaje (D-71). */
 export type Highlight = 'cuestionables' | 'beneficiosos' | 'ninguno';
 
 export interface ScorePresentation {
@@ -96,12 +64,7 @@ export interface ScorePresentation {
   readonly highlight: Highlight;
 }
 
-/**
- * La presentación del puntaje que recibe la app (ADR-0003): ÚNICA fuente, así
- * ni catalog ni native recalculan cortes. Sin `tagline` (D-38) ni `sello`
- * (equivale a `fito`; el sello escrito solo alimenta la columna que se borra
- * en B-01, D-35).
- */
+/** La presentación que recibe la app (ADR-0003): nadie más recalcula cortes. */
 export function presentScore(score: number | null): ScorePresentation {
   const { label, color } = getScoreLabel(score);
   const fito = FITO_BY_TONE[resolveProductStatus(score).tone];

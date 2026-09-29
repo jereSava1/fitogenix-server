@@ -1,21 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Clasificación de un ingrediente
-
-   Un ingrediente limpio entra, un `EvaluatedIngredient` sale. Función pura,
-   sin estado, sin conocer el resto de la lista ni el puntaje.
-
-   El orden de precedencia de §4 está modelado como una CADENA DE RESOLUTORES
-   y no como una escalera de `if`. Tres motivos:
-
-   · el orden queda a la vista, como dato, en un solo lugar (`RESOLVERS`);
-   · cada regla se puede testear sola, sin montar todo el pipeline;
-   · agregar una regla es agregar una función a un array, no meter una rama en
-     el medio de una escalera de veinte líneas.
-
-   La última de la cadena nunca devuelve `null`: si nadie reconoció el
-   ingrediente, es NO IDENTIFICADO. "No inventes. No infieras. No estimes por
-   analogía."
-═══════════════════════════════════════════════════════════ */
+// Un ingrediente limpio → `EvaluatedIngredient`. El orden de precedencia de §4 es una cadena
+// de resolutores (`RESOLVERS`); la última nunca devuelve null: NO IDENTIFICADO. No se infiere
+// por analogía.
 
 import { normalizeText, toSentenceCase } from './text';
 import { rubricImpact, rubricMatches, resolveLabelAbbreviation, worstImpact } from './matching';
@@ -79,11 +64,7 @@ function unidentified(item: CleanIngredient): EvaluatedIngredient {
 /** Largo máximo del texto de etiqueta que conviene mostrar tal cual. */
 const MAX_VERBATIM_DISPLAY = 40;
 
-/**
- * El texto de la etiqueta gana cuando es más específico y entra en una línea:
- * "cuero de cerdo" es más honesto que "Cerdo", y "cebolla de verdeo" no se
- * confunde con la cebolla común.
- */
+/** El texto de la etiqueta gana cuando es más específico y entra en una línea. */
 function preferLabelText(labelText: string, canonical: string): string {
   const trimmed = labelText.trim();
   const isRicher =
@@ -93,16 +74,9 @@ function preferLabelText(labelText: string, canonical: string): string {
   return isRicher ? toSentenceCase(trimmed) : canonical;
 }
 
-/**
- * Nombre a mostrar. Un producto con "PALM OIL" se muestra como "Aceite de
- * palma", y el idioma de origen nunca sale del motor (§6.2).
- *
- * `winningTerm` es el término que DECIDIÓ el impacto. Que el nombre salga de
- * ahí y no del fragmento entero es lo que impide el defecto más caro que tuvo
- * el motor: cuando el OCR se comía las comas, "AGUA CARBONATADA AZUCARES"
- * quedaba como un fragmento, puntuaba por el azúcar y se mostraba como "Agua"
- * pintada de rojo. El puntaje estaba bien; lo que leía el usuario era falso.
- */
+/** Nombre a mostrar, desde el término que decidió el impacto y no del fragmento entero: con
+ *  el OCR sin comas, "AGUA CARBONATADA AZUCARES" se mostraría como "Agua" pintada de rojo.
+ *  El idioma de origen nunca sale del motor (§6.2). */
 function displayNameFor(labelText: string, winningTerm?: string): string {
   const matches = rubricMatches(labelText);
 
@@ -152,15 +126,8 @@ function stripMarketingWrapper(text: string): string {
   );
 }
 
-/**
- * §4.7 — "cualquier frase que contenga adjetivos valorativos, sustantivos
- * colectivos sin desagregar, reclamos de propiedad o reclamos funcionales Y NO
- * NOMBRE UN INGREDIENTE INDIVIDUAL VERIFICABLE".
- *
- * La segunda mitad de la condición es la que hace la regla usable: "aroma
- * natural" tiene un adjetivo valorativo y sigue siendo un aroma; "mezcla
- * natural de granos ancestrales seleccionados" no nombra nada.
- */
+/** §4.7: frase valorativa, colectiva o de reclamo QUE NO NOMBRA un ingrediente verificable
+ *  ("aroma natural" sigue siendo un aroma; "mezcla natural de granos" no nombra nada). */
 function isMarketingDenomination(text: string): boolean {
   const signals = {
     collective: COLLECTIVE_NOUNS.test(text),
@@ -273,10 +240,7 @@ const byCatalog: IngredientResolver = (item) => {
   });
 };
 
-/**
- * El orden de §4, explícito. Se lee de arriba a abajo y el primero que
- * responde gana.
- */
+/** El orden de §4: el primero que responde gana. */
 const RESOLVERS: readonly IngredientResolver[] = [
   byENumber,              // §6.3 — el número E manda sobre el nombre
   byMarketingDenomination, // §4.7 — la frase entera es el problema
@@ -291,12 +255,7 @@ const RESOLVERS: readonly IngredientResolver[] = [
    Entrada principal
    ──────────────────────────────────────────────────────────── */
 
-/**
- * §6.4 — "y/o": un ingrediente, con la clasificación del PEOR de los
- * declarados. Se resuelve clasificando cada alternativa por separado y
- * quedándose con la peor, para que la regla valga sea cual sea el resolutor
- * que atienda a cada rama.
- */
+/** §6.4 "y/o": se clasifica cada alternativa y gana la peor. */
 function classifyAlternatives(item: CleanIngredient, alternatives: readonly string[]): EvaluatedIngredient {
   const parts = alternatives.map((alt) =>
     classifyIngredient({ ...item, raw: alt, key: normalizeText(alt), alternatives: undefined }),
@@ -326,10 +285,7 @@ export function classifyIngredient(item: CleanIngredient): EvaluatedIngredient {
   return unidentified(item);
 }
 
-/**
- * ¿El motor sabe qué es esta cadena? Lo usa §6.5 para decidir si un paréntesis
- * es una sub-lista o una aclaración de etiqueta.
- */
+/** ¿El motor reconoce esta cadena? (§6.5: sub-lista o aclaración). */
 export function resolvesToSomething(text: string): boolean {
   if (rubricMatches(text).length > 0) return true;
   if (ADDITIVE_PATTERN.test(text)) return true;

@@ -1,10 +1,4 @@
-/* =========================================================
-   FITOGENIX - S1 - Cuando NO se puntua
-
-   Los tres casos que se verifican ANTES de cualquier calculo. En los tres no
-   se emite puntaje, ni color, ni descripciones - y nunca un numero estimado:
-   "la ausencia de datos nunca mejora un puntaje".
-========================================================= */
+// §1: cuándo NO se puntúa. Sin puntaje, color ni descripciones, y nunca un número estimado.
 
 import type { OutOfScopeRule } from '../types';
 
@@ -49,22 +43,16 @@ export const OUT_OF_SCOPE: readonly OutOfScopeRule[] = [
   },
 ];
 
-/**
- * §1.1 Red de contención — sustancias no alimentarias. Si aparecen en el
- * listado, no se puntúa aunque la categoría en la base diga que es un
- * alimento. La categoría es un dato de terceros; la lista de ingredientes es
- * el producto.
- */
+/** §1.1: sustancias no alimentarias. Si están en la lista, no se puntúa aunque la categoría
+ *  diga alimento. */
 export const NON_FOOD_SUBSTANCES =
   /\bpolietileno\b|\bpolipropileno\b|\bdimeticona\b|\bdimethicone\b|\blauril ?sulfato\b|\bsodium lauryl\b|\blaureth\b|\bparaben(o|os)?\b|\bmethylparaben\b|\bpropilenglicol industrial\b|\btriclos[aá]n\b|\bhipoclorito\b|\bformaldeh[ií]do\b|\bpetrolatum\b|\bibuprofeno\b|\bparacetamol\b|\bsildenafil\b|\bamoxicilina\b/i;
 
 export const OUT_OF_SCOPE_NON_FOOD_MESSAGE =
   'La lista declara sustancias que no son alimentos. Fitogenix evalúa alimentos para consumo humano.';
 
-/**
- * §1.2 — Términos que son CATEGORÍA, no ingrediente. Una lista que se reduce
- * a estos no describe nada: no se puede puntuar lo que no se sabe.
- */
+/** §1.2: términos que son categoría y no ingrediente; una lista hecha solo de estos no
+ *  describe nada. */
 export const CATEGORY_TERMS: readonly string[] = [
   'cereales', 'cereal', 'vegetales', 'vegetal', 'verduras', 'frutas', 'fruta',
   'especias', 'condimentos', 'aditivos', 'aditivo', 'conservantes',

@@ -1,13 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Base de datos de ingredientes y aditivos (Rubric v1)
-   Generado por scripts/migrate-data.ts a partir de la estructura original.
-
-   Cada ingrediente es UN registro con toda su información:
-     aliases  — patrones a buscar (español + inglés). Longest match gana.
-     b        — severidad Capa B (Fitogenix) — la que se muestra.
-     a        — severidad Capa A (regulatoria) — solo si diverge de b.
-     desc     — descripción mostrada al usuario.
-═══════════════════════════════════════════════════════════ */
+// Tabla de ingredientes y aditivos. `aliases`: patrones (gana el más largo); `b`: severidad
+// que se muestra; `a`: severidad regulatoria, solo si difiere; `desc`: texto para el usuario.
 
 export type Sev = 'red' | 'orange' | 'yellow' | 'green' | 'gray';
 

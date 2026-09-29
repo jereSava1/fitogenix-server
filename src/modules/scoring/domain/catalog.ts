@@ -1,20 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — La tabla de §4, crecida
-
-   §4 dice que la tabla de ingredientes "es datos, no reglas", que "crece sin
-   agregar complejidad al sistema" y que "el motor consulta, no clasifica".
-   `data/ingredients.ts` ES esa tabla crecida: 271 registros con la prosa que
-   lee el usuario, generados a partir de la base original.
-
-   Este módulo es la única puerta a ese archivo. Se consulta DESPUÉS de la
-   rúbrica —la rúbrica es la autoridad cuando tiene opinión— y ANTES de
-   declarar algo NO IDENTIFICADO.
-
-   Sin este respaldo, media góndola argentina caería en "sin datos" por la
-   regla de los 3 no identificados de §1.2, que no es lo que esa sección
-   quiere decir: §1.2 habla de etiquetas que no describen nada, no de
-   ingredientes reales que todavía no cargamos en la rúbrica.
-═══════════════════════════════════════════════════════════ */
+// La tabla de ingredientes de §4 (data/ingredients.ts), única puerta a ese archivo. Se
+// consulta después de la rúbrica (que manda) y antes de declarar algo NO IDENTIFICADO.
 
 import { ADDITIVES, INGREDIENTS, type Additive, type Ingredient, type Sev } from './data/ingredients';
 import { matchesPhrase, normalizeText } from './text';
@@ -37,11 +22,7 @@ interface CatalogEntry {
   readonly record: Ingredient;
 }
 
-/**
- * Todos los aliases aplanados y ordenados de más largo a más corto, para que
- * el primer match sea siempre el más específico y se pueda cortar ahí en vez
- * de recorrer los 271 registros en cada clasificación.
- */
+/** Aliases aplanados, de más largo a más corto: el primer match es el más específico. */
 const CATALOG_INDEX: readonly CatalogEntry[] = INGREDIENTS
   .flatMap((record) => record.aliases.map((alias) => ({ alias: normalizeText(alias), record })))
   .sort((a, b) => b.alias.length - a.alias.length);
@@ -61,11 +42,7 @@ export function impactFromCatalog(record: Ingredient): Impact {
   return SEVERITY_TO_IMPACT[record.b];
 }
 
-/**
- * Nombre canónico en español. El primer alias siempre lo es (los de otros
- * idiomas se agregan después), así que un producto con "PALM OIL" se muestra
- * como "Aceite de palma".
- */
+/** Nombre canónico en español: el primer alias ("PALM OIL" se muestra "Aceite de palma"). */
 export function canonicalNameFor(text: string): string | null {
   const record = findInCatalog(text);
   if (!record) return null;
