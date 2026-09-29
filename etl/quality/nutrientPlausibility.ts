@@ -1,10 +1,10 @@
-// Rangos físicamente plausibles de nutrientes por 100g/100ml. Vive en
-// domain/ (no en scripts/etl/) porque lo usan DOS consumidores: el ETL
-// (scripts/etl/lib/qualityHeuristics.ts, auditoría de `products` ya
-// guardado) y el enrichment en vivo (services/claudeService.ts,
-// enrichWithAI) — un valor que Claude inventa fuera de rango es el MISMO
-// tipo de error que uno que llegó corrupto de una fuente externa, así que
-// usan la misma validación, una sola vez, acá.
+// Rangos físicamente plausibles de nutrientes por 100g/100ml. Lo usan DOS
+// consumidores del ETL: la auditoría de `products` ya guardado
+// (lib/qualityHeuristics.ts) y el enriquecimiento con IA
+// (enrichment/claudeEnricher.ts, enrichWithAI) — un valor que Claude inventa
+// fuera de rango es el MISMO tipo de error que uno que llegó corrupto de una
+// fuente externa, así que usan la misma validación, una sola vez, acá. Hasta
+// M-08 vivía en src/domain/product/ (ADR-0004: ahora es solo del ETL).
 const NUTRIENT_RANGES: Record<string, [number, number]> = {
   'energy-kcal_100g': [0, 900],
   proteins_100g: [0, 100],

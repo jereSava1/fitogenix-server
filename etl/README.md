@@ -1,9 +1,12 @@
 # ETL — poblamiento masivo del catálogo
 
-Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload`, `mapRawToProduct`, `enrichWithAI` y `ftgEngine` directamente, sin duplicarlos. No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts existentes en `scripts/`.
+Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload` y `mapRawToProduct` de la API pública de catalog (`src/modules/catalog/index.ts`) y el motor de `scoring`, sin duplicarlos; del server no importa nada más (regla `etl-solo-apis-publicas` de `lint:deps`). Tiene su propia config (`config.ts`: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` y, solo para enriquecer con IA, `ANTHROPIC_API_KEY`). No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts de `scripts/`. Hasta M-08 vivía en `scripts/etl/`.
 
 ```
-scripts/etl/
+etl/
+├── config.ts       # env del ETL (no usa la del server)
+├── enrichment/     # claudeEnricher.ts: completa datos faltantes con IA (enrichWithAI)
+├── quality/        # nutrientPlausibility.ts: rangos físicos plausibles
 ├── adapters/       # fuente cruda → RawOFFProduct (nunca escriben nada)
 │   ├── offAdapter.ts
 │   └── vtexAdapter.ts
@@ -139,7 +142,7 @@ Requiere `supabase/migrations/legacy/012_manufacturer_info.sql` aplicada antes d
 fabricante — ver abajo).
 
 Nunca reescribe un campo con un dato INVENTADO — Claude (`lib/qualityAI.ts`,
-Haiku, separado de `claudeService.ts` que es hot-path del scan en vivo) se
+Haiku, separado de `enrichment/claudeEnricher.ts`, que completa datos faltantes al mergear) se
 usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
 
 - **brand vacío**: primero el diccionario determinístico (gratis). Si la

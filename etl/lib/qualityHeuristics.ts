@@ -67,9 +67,9 @@ export function findBrandInName(
 }
 
 // El chequeo de rango físico plausible de nutrientes vive en
-// src/domain/product/nutrientPlausibility.ts, NO acá — lo usa también
-// claudeService.ts (enrichWithAI) para rechazar valores implausibles que
-// Claude pueda alucinar en el enrichment en vivo, así que es domain/
-// compartido, no una heurística exclusiva del ETL. Re-exportado acá para no
+// quality/nutrientPlausibility.ts, NO acá — lo usa también
+// enrichment/claudeEnricher.ts (enrichWithAI) para rechazar valores
+// implausibles que Claude pueda alucinar al enriquecer, así que es
+// compartido, no una heurística exclusiva de esta auditoría. Re-exportado acá para no
 // romper a quien ya importaba `findImplausibleNutrients` desde este módulo.
-export { findImplausibleNutrients, type ImplausibleNutrient } from '../../../src/domain/product/nutrientPlausibility';
+export { findImplausibleNutrients, type ImplausibleNutrient } from '../quality/nutrientPlausibility';

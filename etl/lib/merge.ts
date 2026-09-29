@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 
 export type StagingEntry = { source: string; raw: RawOFFProduct };
 

@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
 // Shape parcial de la respuesta de `GET /api/catalog_system/pub/products/search`

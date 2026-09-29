@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mergeRawProducts, primarySourceOf } from './merge';
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 
 describe('mergeRawProducts', () => {
   it('prioriza OFF sobre un scraper de retailer para campos que ambos traen', () => {

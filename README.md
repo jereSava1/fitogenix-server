@@ -1,6 +1,6 @@
 # fitogenix-server
 
-Backend de Fitogenix (Fastify + TypeScript). Resuelve productos por barcode o por nombre **contra el catálogo propio** (Supabase, con Redis adelante), calcula el puntaje con el motor de `src/modules/scoring/` (API pública en su `index.ts`) y guarda los guardados y el historial de cada usuario. El catálogo lo puebla el ETL de `scripts/etl/`, fuera del server.
+Backend de Fitogenix (Fastify + TypeScript). Resuelve productos por barcode o por nombre **contra el catálogo propio** (Supabase, con Redis adelante), calcula el puntaje con el motor de `src/modules/scoring/` (API pública en su `index.ts`) y guarda los guardados y el historial de cada usuario. El catálogo lo puebla el ETL de `etl/`, fuera del server.
 
 La documentación completa (auditoría, requisitos, arquitectura objetivo, contratos, decisiones y plan de limpieza) está en [`docs/`](docs/README.md). Este README es el cómo correrlo.
 
@@ -69,7 +69,7 @@ Cada lookup deja una línea de log:
 
 ## ETL
 
-El ETL (`scripts/etl/`, scripts `etl:*` de `package.json`) ingesta Open Food Facts y supermercados VTEX a `products_staging`, mergea al catálogo y opcionalmente enriquece con IA. No es parte del build del server. Cómo correrlo: [`scripts/etl/README.md`](scripts/etl/README.md).
+El ETL (`etl/`, scripts `etl:*` de `package.json`, con su propia config en `etl/config.ts`) ingesta Open Food Facts y supermercados VTEX a `products_staging`, mergea al catálogo y opcionalmente enriquece con IA. No es parte del build del server. Cómo correrlo: [`etl/README.md`](etl/README.md).
 
 ## Deploy
 

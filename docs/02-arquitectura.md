@@ -219,7 +219,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 3 | `domain/product/ftgEngine.ts` · `ftgScore`, `ftgAnalyzeIngredients`, `ingredientCount` | — | ELIMINAR | Solo las usan scripts; los scripts pasan a `scoreProduct`. **Corregido en M-03:** `ftgScore` se borró en E-03; `ftgAnalyzeIngredients` queda público como `analyzeIngredients` (lo usa `capture-golden`); `ingredientCount` lo usa `claudeService` (no solo scripts) y se mudó ahí, para irse con él al ETL en M-08 |
 | 4 | `domain/product/ingredientData.ts` | `scoring` · `domain/data/ingredients.ts` | MOVER | La consume `scoring/catalog.ts`. Hecho en M-03 |
 | 5 | `domain/product/productService.ts` | — | ELIMINAR | Re-export de `resolveProductStatus` + 2 funciones sin uso |
-| 6 | `domain/product/nutrientPlausibility.ts` (+test) | `etl` · `quality/nutrientPlausibility.ts` | MOVER | Solo lo usan el ETL y `claudeService` |
+| 6 | `domain/product/nutrientPlausibility.ts` (+test) | `etl` · `quality/nutrientPlausibility.ts` | MOVER | Solo lo usan el ETL y `claudeService`. Hecho en M-08 |
 | 7 | `domain/product/scoring/*.ts` (pipeline, steps, gates, ledger, classify, cleaning, matching, seals, explain, text, types, constants, catalog) (+tests) | `scoring` · `domain/` | MOVER | **Sin cambios de lógica**; primero, tests de caracterización |
 | 8 | `domain/product/scoring/presentation.ts` | `scoring` · `domain/presentation.ts`, expuesto como `presentScore` | MOVER + ampliar | Absorbe `scorePresentation` y el `flagged` de `productLookupService.ts`, derivado de `BAD_BELOW` en vez del `40` hardcodeado |
 | 9 | `domain/product/scoring/rubric/*.ts` | `scoring` · `domain/rubric/` | MOVER | — |
@@ -244,7 +244,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 23 | `savedProductsService.ts` · `listSavedProducts`, `saveProduct`, `removeSavedProduct` | `user-library` · `application/saved.ts` + `infrastructure/supabaseSavedRepository.ts` | PARTIR | Hecho en M-06: el repositorio hace el SQL y el caso de uso presenta las filas con `catalog.productResponseFromRow` |
 | 24 | `scanHistoryService.ts` · `recordScan`, `listScanHistory` | `user-library` · `application/history.ts` + `infrastructure/supabaseHistoryRepository.ts` | PARTIR | + `removeFromHistory` (RF-017). **M-06:** partido; `removeFromHistory` queda para F-01. El "nunca lanza" de `recordScan` vive en el repositorio, que loguea como antes |
 | 25 | `scanHistoryService.ts` · `resolveUserIdFromToken` | `platform` · `http/auth.ts` (`optionalAuth`) | MOVER | ⚠ alto riesgo (auth). **M-06:** mudado sin cambios a `http/auth.ts` (T-04 idéntico; sus 2 tests en `resolveUserIdFromToken.test.ts`); `optionalAuth` lo reemplaza en H-02 |
-| 26 | `claudeService.ts` · `enrichWithAI` (+test) | `etl` · `enrichment/claudeEnricher.ts` | MOVER | `@anthropic-ai/sdk` deja de ser dependencia del server |
+| 26 | `claudeService.ts` · `enrichWithAI` (+test) | `etl` · `enrichment/claudeEnricher.ts` | MOVER | `@anthropic-ai/sdk` deja de ser dependencia del server. **Hecho en M-08:** con `ingredientCount`; el SDK pasó a `devDependencies` (misma versión, 0.55.1) |
 | 27 | `offService.ts` | — | ELIMINAR | Sin importadores |
 | 28 | `fallbackFoodApi.ts` (+test) | — | ELIMINAR | Cascada retirada; se lleva `EDAMAM_*` |
 | 29 | `openBeautyFactsApi.ts` (+test) | — | ELIMINAR | Cascada retirada |
@@ -254,7 +254,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | # | Archivo actual | Destino | Acción | Nota |
 |---|---|---|---|---|
 | 30 | `main.ts` | `main.ts` (composition root) + `platform/http/buildApp.ts` | PARTIR | `buildApp` separado para testear con `inject()` |
-| 31 | `config.ts` | `platform/config.ts` (server) + `etl/config.ts` (ETL) | PARTIR | Cada proceso exige solo lo suyo (D-05) |
+| 31 | `config.ts` | `platform/config.ts` (server) + `etl/config.ts` (ETL) | PARTIR | Cada proceso exige solo lo suyo (D-05). **Hecho en M-08:** `ANTHROPIC_API_KEY` y `requireAnthropicApiKey` salen del server |
 | 32 | `plugins/auth.ts` · `requireAuth` | `platform/http/auth.ts` | MOVER | ⚠ alto riesgo; su propio cliente Supabase pasa a `platform/supabase.ts` |
 | 33 | `routes/products/lookup.ts` | `catalog/routes/lookup.route.ts` | MOVER | Sin `import` de `user-library` (§3.3). **Hecho en M-05:** `lookupRoutes({ lookup, onScan })`; `main.ts` arma `onScan` con `resolveUserIdFromToken` + `recordScan`. Mientras no exista `optionalAuth` (H-02), `onScan` recibe `{ token, productId }` en vez del `(userId, productId)` de §8.2 |
 | 34 | `routes/products/lookupSchema.ts` | `catalog/routes/lookup.schema.ts` | MOVER | La Fase 3 decide la fuente única del contrato. Hecho en M-05 |
@@ -268,7 +268,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 
 | # | Actual | Destino | Acción |
 |---|---|---|---|
-| 40 | `scripts/etl/**` | `etl/**` | MOVER; imports de `src/services/*` → APIs públicas de `catalog` y `scoring` |
+| 40 | `scripts/etl/**` | `etl/**` | MOVER; imports de `src/services/*` → APIs públicas de `catalog` y `scoring`. **Hecho en M-08** (el ETL usa `catalog/index.ts`: `mapRawToProduct`, `buildCachePayload` y los tipos) |
 | 41 | `scripts/{audit-scores,score-histogram,capture-golden,add-en-aliases}.ts` | `scripts/` | Se quedan; imports → `scoring/index.ts` |
 | 42 | `scripts/test-search-rpc.ts` | — | ELIMINAR (smoke manual de una sola vez; confirmado, D-31) |
 | 43 | `migrations/*.sql` | `supabase/migrations/` + baseline | ADR-0009 |

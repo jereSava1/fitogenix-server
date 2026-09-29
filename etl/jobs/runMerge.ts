@@ -26,11 +26,11 @@ import {
   type StagingRowFull,
 } from '../lib/staging';
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
-import type { RawOFFProduct } from '../../../src/types/fitogenix';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 import { isComplete } from '../lib/completeness';
-import { mapRawToProduct } from '../../../src/modules/catalog/application/productResponse';
-import { buildCachePayload } from '../../../src/modules/catalog/infrastructure/supabaseProductWriter';
-import { enrichWithAI } from '../../../src/services/claudeService';
+import { mapRawToProduct } from '../../src/modules/catalog';
+import { buildCachePayload } from '../../src/modules/catalog';
+import { enrichWithAI } from '../enrichment/claudeEnricher';
 
 function parseArgs() {
   const args = process.argv.slice(2);

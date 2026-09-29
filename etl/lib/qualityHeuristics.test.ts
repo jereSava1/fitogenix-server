@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { checkIngredientsText, findBrandInName } from './qualityHeuristics';
-// findImplausibleNutrients ahora vive (y se testea) en
-// src/domain/product/nutrientPlausibility.test.ts — compartido con
-// claudeService.ts, no es exclusivo de este módulo. Ver el re-export en
+// findImplausibleNutrients vive (y se testea) en
+// quality/nutrientPlausibility.test.ts — compartido con
+// enrichment/claudeEnricher.ts, no es exclusivo de este módulo. Ver el re-export en
 // qualityHeuristics.ts si algo todavía lo importa desde acá.
 
 describe('checkIngredientsText', () => {

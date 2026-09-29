@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAnthropicApiKey } from '../platform/config';
-import { findImplausibleNutrients } from '../domain/product/nutrientPlausibility';
-import type { RawOFFProduct } from '../types/fitogenix';
+import { requireAnthropicApiKey } from '../config';
+import { findImplausibleNutrients } from '../quality/nutrientPlausibility';
+import type { RawOFFProduct } from '../../src/modules/catalog';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {
