@@ -5,8 +5,9 @@
  * usuario LEE no puede contradecir lo que el motor calculó.
  */
 import { describe, expect, it } from 'vitest';
-import { analyzeIngredients, scoreProduct } from './index';
-import { matchesPhrase, normalizeText, resolveLabelAbbreviation } from './index';
+import { analyzeIngredients, scoreProduct } from '../index';
+import { matchesPhrase, normalizeText } from './text';
+import { resolveLabelAbbreviation } from './matching';
 
 const ings = (t: string) => analyzeIngredients({ ingredients_text: t });
 const nameOf = (t: string, needle: string) =>

@@ -4,8 +4,8 @@
  *
  * Durante la etapa 4 del plan (docs/05-plan.md) las reglas de módulos, capas y
  * SDKs están en `warn`: la estructura de src/modules/ se arma de a un módulo
- * por PR. M-10 las pasa todas a `error`. Las generales (ciclos, importar tests)
- * ya son `error`.
+ * por PR. M-10 las pasa todas a `error`. Ya son `error` las generales (ciclos,
+ * importar tests) y `scoring-es-puro` (M-03).
  */
 
 /** Módulos de negocio bajo src/modules/. */
@@ -59,11 +59,13 @@ module.exports = {
       to: { path: insideOf(mod) },
     })),
     {
+      // En `error` desde M-03. Los tests del motor quedan afuera: usan vitest
+      // y leen su fixture con node:fs, y no son parte del runtime.
       name: 'scoring-es-puro',
-      severity: 'warn',
+      severity: 'error',
       comment:
         'El motor no depende de nada fuera de sí mismo: ni platform, ni otros módulos, ni npm, ni builtins de Node (ADR-0003).',
-      from: { path: '^src/modules/scoring/' },
+      from: { path: '^src/modules/scoring/', pathNot: '\\.test\\.ts$' },
       to: {
         pathNot: '^src/modules/scoring/',
       },

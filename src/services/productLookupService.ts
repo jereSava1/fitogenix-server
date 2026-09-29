@@ -1,9 +1,10 @@
+import { extractCategory, extractNutrition } from '../modules/catalog/domain/productData';
 import {
-  extractCategory,
-  extractNutrition,
-  ftgScoreWithBreakdown,
-} from '../domain/product/ftgEngine';
-import { getScoreLabel, getScoreTagline, resolveProductStatus } from '../domain/product/scoring';
+  getScoreLabel,
+  getScoreTagline,
+  resolveProductStatus,
+  scoreProduct,
+} from '../modules/scoring';
 import { findCachedProductByName, getCachedProductByBarcode } from './cacheService';
 import { normalizeQuery } from './queryNormalization';
 import {
@@ -91,7 +92,7 @@ function cleanName(raw: string | undefined, fallback: string): string {
 // historial): los productos guardados se recomputan con el MISMO mapeo que un
 // lookup.
 export function mapRawToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
-  const breakdown = ftgScoreWithBreakdown(off);
+  const breakdown = scoreProduct(off);
   // Los ingredientes salen del MISMO breakdown, no de una segunda pasada: en
   // v2.1 la posición de cada ingrediente y su resta son parte del cálculo, así
   // que recalcularlos aparte podría dar una lista que no corresponde al

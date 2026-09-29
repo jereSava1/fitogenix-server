@@ -1,6 +1,6 @@
 import { supabaseAdmin as admin } from '../platform/supabase';
-import { ENGINE_VERSION } from '../domain/product/ftgEngine';
-import { getScoreLabel, getSello } from '../domain/product/scoring';
+import { ENGINE_VERSION } from '../modules/scoring';
+import { getScoreLabel, getSello } from '../modules/scoring';
 import { normalizeQuery } from './queryNormalization';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 

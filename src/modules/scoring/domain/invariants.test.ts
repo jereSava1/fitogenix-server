@@ -9,7 +9,7 @@
  * lista y listo.
  */
 import { describe, expect, it } from 'vitest';
-import { scoreProduct } from './index';
+import { scoreProduct } from '../index';
 
 const ENTRADAS_ROTAS: unknown[] = [
   {},

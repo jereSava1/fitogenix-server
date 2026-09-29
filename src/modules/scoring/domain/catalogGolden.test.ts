@@ -15,7 +15,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scoreProduct, type ProductInput } from './index';
+import { scoreProduct, type ProductInput } from '../index';
 
 type SampleRow = {
   product_name: string | null;

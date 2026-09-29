@@ -8,11 +8,11 @@
  * Cada bloque anota por qué el número es el que es — sin eso, un diff de este
  * archivo parece una regresión.
  *
- * La calibración contra §8 vive en ftgEngine.calibration.test.ts. Acá van los
+ * La calibración contra §8 vive en calibration.test.ts. Acá van los
  * productos que §8 no incluye.
  */
 import { describe, expect, it } from 'vitest';
-import { scoreProduct, type ProductInput } from './index';
+import { scoreProduct, type ProductInput } from '../index';
 import { expectStepsReconstructScore } from './calibration.test';
 
 type Golden = { label: string; expected: number; tier: string; why: string; product: ProductInput };

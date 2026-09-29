@@ -1,7 +1,7 @@
 // Captura scores del motor ACTUAL para productos reales representativos.
 // Estos valores se congelan como golden de regresión antes del refactor.
-import { ftgScoreWithBreakdown, ftgAnalyzeIngredients } from '../src/domain/product/ftgEngine';
-import type { ProductInput } from '../src/domain/product/ftgEngine';
+import { analyzeIngredients, scoreProduct } from '../src/modules/scoring';
+import type { ProductInput } from '../src/modules/scoring';
 
 const FIXTURES: Record<string, ProductInput> = {
   // NOVA 1 alimento entero — ingredientes verdes en español
@@ -44,8 +44,8 @@ const FIXTURES: Record<string, ProductInput> = {
 };
 
 for (const [name, product] of Object.entries(FIXTURES)) {
-  const bd = ftgScoreWithBreakdown(product);
-  const ings = ftgAnalyzeIngredients(product);
+  const bd = scoreProduct(product);
+  const ings = analyzeIngredients(product);
   console.log(`\n═══ ${name} ═══`);
   console.log(`score=${bd.score ?? 'sin puntaje'} tier=${bd.tier}${bd.noScore ? ` (${bd.noScore.code})` : ''}`);
   // El desglose ES la salida: §7 regla 1 pide que el usuario pueda seguir la

@@ -1,6 +1,6 @@
 # fitogenix-server
 
-Backend de Fitogenix (Fastify + TypeScript). Resuelve productos por barcode o por nombre **contra el catálogo propio** (Supabase, con Redis adelante), calcula el puntaje con el motor de `src/domain/product/scoring/` y guarda los guardados y el historial de cada usuario. El catálogo lo puebla el ETL de `scripts/etl/`, fuera del server.
+Backend de Fitogenix (Fastify + TypeScript). Resuelve productos por barcode o por nombre **contra el catálogo propio** (Supabase, con Redis adelante), calcula el puntaje con el motor de `src/modules/scoring/` (API pública en su `index.ts`) y guarda los guardados y el historial de cada usuario. El catálogo lo puebla el ETL de `scripts/etl/`, fuera del server.
 
 La documentación completa (auditoría, requisitos, arquitectura objetivo, contratos, decisiones y plan de limpieza) está en [`docs/`](docs/README.md). Este README es el cómo correrlo.
 

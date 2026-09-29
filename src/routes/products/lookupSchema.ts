@@ -3,7 +3,7 @@
  *
  * ── FUENTE DE VERDAD ──
  * `src/types/fitogenix.ts` (tipo `FitogenixProduct`) junto con los tipos del
- * motor en `src/domain/product/ftgEngine.ts` (`ScoreBreakdown`,
+ * motor en `src/modules/scoring/index.ts` (`ScoreBreakdown`,
  * `AnalyzedIngredient`, `NutritionFacts`, `ScoreStep`). Este archivo NO define
  * el contrato: lo TRANSCRIBE a JSON Schema para que Fastify lo serialice, y
  * queda atado a los tipos en tiempo de compilación (ver los `satisfies
@@ -30,8 +30,8 @@
  *    los `satisfies`.
  *
  * ── `breakdown` no viaja (2026-08-18) ──
- * El motor lo sigue calculando (ver `ftgScoreWithBreakdown` en
- * `domain/product/ftgEngine.ts`, usado internamente por ETL/auditoría), pero
+ * El motor lo sigue calculando (ver `scoreProduct` en
+ * `modules/scoring/index.ts`, usado internamente por ETL/auditoría), pero
  * `FitogenixProduct` ya NO tiene un campo `breakdown`: es información nuestra
  * (la cuenta paso por paso, base/ancla/técho/anulaciones) y no algo que un
  * usuario B2C necesite ver. La UI ya cubre el "por qué" con la lista de
@@ -56,7 +56,7 @@ import type { FitogenixProduct } from '../../types/fitogenix';
 import type {
   AnalyzedIngredient,
   NutritionFacts,
-} from '../../domain/product/ftgEngine';
+} from '../../modules/scoring';
 
 /** Un nodo de JSON Schema. Suelto a propósito: acá el que tipa es el `satisfies`. */
 type SchemaNode = Record<string, unknown>;

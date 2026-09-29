@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAnthropicApiKey } from '../platform/config';
-import { ingredientCount } from '../domain/product/ftgEngine';
 import { findImplausibleNutrients } from '../domain/product/nutrientPlausibility';
 import type { RawOFFProduct } from '../types/fitogenix';
 
@@ -23,6 +22,15 @@ const SYSTEM_PROMPT =
 // filtrarla después.
 const NUTRIMENT_FIELDS_SPEC =
   '"nutriments": {"energy-kcal_100g":N,"proteins_100g":N,"carbohydrates_100g":N,"sugars_100g":N,"fat_100g":N,"saturated-fat_100g":N,"fiber_100g":N,"sodium_100g":N} — TODOS los valores en GRAMOS por 100g/100ml, incluido sodium_100g (si la etiqueta real dice "500 mg de sodio" acá va 0.5, no 500 — el sodio de un alimento real casi nunca supera 2-3g/100g salvo casos extremos como caldo concentrado o sal de mesa)';
+
+/** Cuenta rápida de ingredientes declarados. Sirve para decidir si vale la
+ *  pena pedir más datos, no para puntuar. Vivía en la fachada del motor
+ *  (`ftgEngine.ts`); se mudó acá en M-03 porque este es su único uso, y se
+ *  va con este archivo al ETL en M-08. */
+export function ingredientCount(text?: string): number {
+  if (!text || text.trim().length < 3) return 0;
+  return text.split(/[,;]/).filter((part) => part.trim().length > 1).length;
+}
 
 function hasKeyNuts(n?: Record<string, unknown>): boolean {
   if (!n) return false;

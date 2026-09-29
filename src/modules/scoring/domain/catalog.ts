@@ -3,7 +3,7 @@
 
    §4 dice que la tabla de ingredientes "es datos, no reglas", que "crece sin
    agregar complejidad al sistema" y que "el motor consulta, no clasifica".
-   `ingredientData.ts` ES esa tabla crecida: 271 registros con la prosa que
+   `data/ingredients.ts` ES esa tabla crecida: 271 registros con la prosa que
    lee el usuario, generados a partir de la base original.
 
    Este módulo es la única puerta a ese archivo. Se consulta DESPUÉS de la
@@ -16,7 +16,7 @@
    ingredientes reales que todavía no cargamos en la rúbrica.
 ═══════════════════════════════════════════════════════════ */
 
-import { ADDITIVES, INGREDIENTS, type Additive, type Ingredient, type Sev } from '../ingredientData';
+import { ADDITIVES, INGREDIENTS, type Additive, type Ingredient, type Sev } from './data/ingredients';
 import { matchesPhrase, normalizeText } from './text';
 import type { Impact } from './types';
 

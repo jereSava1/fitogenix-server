@@ -1,6 +1,7 @@
 # Dominio del puntaje: qué evalúa el motor y con qué fundamento
 
 > Fecha: 2026-09-29 · Verificado contra `fitogenix/refactor-cleanup` (motor `ENGINE_VERSION` = `ftg-rubric-v2.3`).
+> Rutas: `scoring/…` es `src/modules/scoring/domain/…` desde M-03 (antes `src/domain/product/scoring/…`); la API pública del motor es `src/modules/scoring/index.ts`.
 > Reemplaza como fuente a `fitogenix-agents/docs/CONTEXT.md` (§1–§3, §8) y `fitogenix-agents/nutricion/NUTRICION.md`, que **no son fuente de verdad** (ver [README](README.md)). De ahí se trajo solo lo que se verificó contra el código y no choca con [`decisiones.md`](decisiones.md); lo que choca queda al final como [PREGUNTA].
 > **Regla:** los umbrales **vigentes** no se transcriben acá; viven en el código y se citan por archivo + símbolo. Los valores de la §S4 son **los de la norma** (la fuente contra la que se contrasta el código), no la implementación.
 
@@ -15,7 +16,7 @@
 - El puntaje es una **función de la lista de ingredientes**: parte de una base, resta por impacto y por posición de cada ingrediente, aplica un modificador de procesamiento (por marcadores de ultraprocesado en el texto, **no** por `nova_group`), los techos y las anulaciones, y clampea. Los nutrientes restan a través de los octógonos (§S4).
 - **Todos los coeficientes** están en `scoring/constants.ts`; la ejecución, en `scoring/steps.ts` y `scoring/pipeline.ts`.
 - **Todo puntaje es reconstruible:** `breakdown.steps` es la salida principal y `scoring/ledger.ts · ScoreLedger` hace imposible mover el número sin registrar el paso. Lo verifican `calibration.test.ts · expectStepsReconstructScore` y los goldens (`regression.test.ts`, `catalogGolden.test.ts`).
-- **No se inventa:** un ingrediente que no está en la tabla (`ingredientData.ts`, `scoring/rubric/`) queda **no identificado**, con su costo y su techo. No se estima por analogía.
+- **No se inventa:** un ingrediente que no está en la tabla (`scoring/data/ingredients.ts`, `scoring/rubric/`) queda **no identificado**, con su costo y su techo. No se estima por analogía.
 - El motor v2 (cuatro componentes ponderados: toxicidad, nutrición, procesamiento, alineación, y el modificador NOVA) **ya no existe** desde v2.1: los puntajes de v2 no son comparables. Todo texto que describa esos componentes está desactualizado (hoy: `fitogenix-native · ScoringExplainerModal`, ver K-09).
 
 ## §S3 — Bandas, sello Fitogénico y "sin datos"
@@ -96,7 +97,7 @@ Relevados en `CONTEXT.md §6` y `§8` y re-verificados contra el código el 2026
 | M-1 | **El motor puntúa sin haber entendido la etiqueta:** no hay un mínimo de cobertura de ingredientes identificados para emitir puntaje (caso medido: un té "Excelente" con 0 % de cobertura) | Abierto: no hay gate de cobertura en `scoring/gates.ts` |
 | M-2 | **La cola de curaduría se calcula y se tira:** `scripts/audit-scores.ts · CURATION_QUEUE` junta los términos no identificados y nunca se imprime | Abierto |
 | M-3 | **Falta el fundamento científico del criterio propio** (publicación completa de OPS); sin eso, M-1 y M-6 no se pueden cerrar con criterio | Abierto |
-| M-4 | **Ingredientes reales sin alias:** el motor no los ve y calcula mal. Caso testigo: la sigla `jmaf` figura en la descripción de "jarabe de maíz" (`ingredientData.ts`) pero no en sus `aliases` | Abierto |
+| M-4 | **Ingredientes reales sin alias:** el motor no los ve y calcula mal. Caso testigo: la sigla `jmaf` figura en la descripción de "jarabe de maíz" (`scoring/data/ingredients.ts`) pero no en sus `aliases` | Abierto |
 | M-5 | **Frescos sin puntaje, y no se declara** (§S1) | Abierto: decidir si se declara el límite o si hay criterio sin lista |
 | M-6 | **El puntaje casi no discrimina:** medido el 2026-09-19, el 75 % de los productos puntuados cae en la misma banda (la más angosta). No lo arreglan los cortes sino cómo el motor reparte los puntajes | Abierto. Hace falta contrastar contra fuentes externas antes de tocar coeficientes |
 | M-7 | La excepción del art. 7 por aproximación (§S4) | Abierto: medir cuánto diverge del criterio legal antes de cambiar nada |

@@ -12,7 +12,7 @@
 // No escribe en la base. Es seguro correrlo con el ETL en curso.
 import 'dotenv/config';
 import { admin } from './etl/lib/supabaseAdmin';
-import { ftgScoreWithBreakdown, type ProductInput } from '../src/domain/product/ftgEngine';
+import { scoreProduct, type ProductInput } from '../src/modules/scoring';
 
 const PAGE_SIZE = 1000;
 
@@ -61,7 +61,7 @@ const PROCESSED_MEAT = /fiambre|salchich|jamón|jamon|mortadela|salame|chorizo|p
  * preguntas para un humano.
  */
 function analyze(r: Row): Finding[] {
-  const bd = ftgScoreWithBreakdown(toInput(r));
+  const bd = scoreProduct(toInput(r));
   const out: Finding[] = [];
   const base = {
     name: r.product_name ?? '(sin nombre)',

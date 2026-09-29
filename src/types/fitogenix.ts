@@ -2,7 +2,7 @@ import type {
   AnalyzedIngredient,
   NoScoreCode,
   NutritionFacts,
-} from '../domain/product/ftgEngine';
+} from '../modules/scoring';
 
 export type { AnalyzedIngredient, NoScoreCode, NutritionFacts };
 
@@ -34,7 +34,7 @@ export type FitogenixProduct = {
   // No se manda `breakdown` (decisión de producto, 2026-08-18): la cuenta
   // paso por paso es información nuestra, no del usuario B2C — la lista de
   // ingredientes con severidad ya cubre el "por qué". El motor lo sigue
-  // calculando internamente (ver ftgScoreWithBreakdown / scripts de ETL y
+  // calculando internamente (ver `scoreProduct` en `modules/scoring` / scripts de ETL y
   // auditoría), solo que ya no cruza la red.
   dataSource: string;
   aiEnriched?: boolean;

@@ -15,7 +15,7 @@
  * actualiza el documento primero. No tocar los rangos para que pase el test.
  */
 import { describe, expect, it } from 'vitest';
-import { scoreProduct, type ProductInput, type ScoreBreakdown } from './index';
+import { scoreProduct, type ProductInput, type ScoreBreakdown } from '../index';
 
 type Case = {
   label: string;
