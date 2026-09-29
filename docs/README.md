@@ -8,7 +8,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-59) |
+| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-60) |
 | Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
 | Saber qué tiene que hacer el sistema | [`01-requerimientos.md`](01-requerimientos.md) |
 | Ver cómo se va a organizar el server | [`02-arquitectura.md`](02-arquitectura.md) y [`adr/`](adr/README.md) |
@@ -23,7 +23,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 |---|---|
 | `00-inventario.md` … `05-plan.md` | Un documento por fase de la auditoría |
 | `decisiones.md` | Registro único de decisiones |
-| `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes) |
+| `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica) |
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
 | `borradores/dependency-cruiser.cjs` | Reglas de dependencias entre módulos, listas para copiar a la raíz |
 | `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |

@@ -195,7 +195,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | L-06 | Catálogo limpio y cobertura de puntaje ≥ 95% | DT-01, DT-02 |
 | L-07 | Política de privacidad actualizada (datos de salud, flujos por el server) | RF-045, RNF-S10 |
 | L-08 | Medir el p95 desde los logs y monitoreo externo de disponibilidad | RNF-P01–P04, RNF-D07 |
-| L-09 | Destino de la analítica | RF-047 |
+| L-09 | Analítica: endpoint propio `POST /v1/events` + medición de "fuera de catálogo" desde los 404 del lookup. Antes de L-07 (la política de privacidad la tiene que declarar) | RF-047, D-60, DT-05 |
 | L-10 | Hosting propio de imágenes por HTTPS | DT-04 |
 
 ### 7.5 Tamaño del backlog
@@ -223,8 +223,9 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | D-57 | Transición a `/v1` | **Sin alias:** se migra todo a `/v1` de una vez (K-07 deja de existir) |
 | D-58 | Consultas y migraciones en Supabase | Se entregan las queries al responsable, que las corre y devuelve los resultados (aplica a U-01, C-05 y la etapa 8) |
 | D-59 | Estrategia de ramas | Rama de integración `fitogenix/refactor-cleanup` desde `main` en los dos repos; cada ítem en su rama, mergeada a la integración; al terminar, integración → `main` |
+| D-60 | Analítica (L-09) | **Diferida** (DT-05) con dirección elegida: endpoint propio `POST /v1/events`; "fuera de catálogo" medido en el server; sin SDK de terceros en la app |
 
-1. **Analítica (L-09):** pendiente de decisión (ver la explicación en la conversación del 2026-09-28; opciones: endpoint propio `POST /v1/events`, PostHog, Firebase/Amplitude/Mixpanel, o diferir como DT-05).
+Sin [PREGUNTA] abiertas: la analítica (L-09) quedó resuelta por D-60 el 2026-09-29.
 
 ## 9. Definition of Done
 
