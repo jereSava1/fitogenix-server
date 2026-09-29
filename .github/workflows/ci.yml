@@ -17,4 +17,5 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint:deps
       - run: npm run lint:unused
+      - run: npm run contract:check
       - run: npm test

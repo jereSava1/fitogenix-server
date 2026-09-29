@@ -1,0 +1,620 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fitogenix API",
+    "version": "0.1.0",
+    "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Access token de Supabase Auth"
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "subtitle",
+          "brand",
+          "category",
+          "categoryEmoji",
+          "score",
+          "scoreAvailable",
+          "noScore",
+          "flagged",
+          "emoji",
+          "bgColor",
+          "imageUrl",
+          "ingredients",
+          "nutrition",
+          "dataSource",
+          "productId",
+          "scoreLabel",
+          "scoreColor",
+          "tagline",
+          "fito"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "brand": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "categoryEmoji": {
+            "type": "string"
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "scoreAvailable": {
+            "type": "boolean"
+          },
+          "noScore": {
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "flagged": {
+            "type": "boolean"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "bgColor": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "position": {
+                  "type": "number"
+                },
+                "impact": {
+                  "type": "string"
+                },
+                "delta": {
+                  "type": "number"
+                },
+                "sev": {
+                  "type": "string"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "flag": {
+                  "type": "boolean"
+                },
+                "marker": {
+                  "type": "boolean"
+                },
+                "percent": {
+                  "type": "number"
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "nutrition": {
+            "type": "object",
+            "properties": {
+              "calories": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "protein": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "carbs": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "sugars": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "fats": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "satFats": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "sodium": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "fiber": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "transFat": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "cholesterol": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              }
+            }
+          },
+          "dataSource": {
+            "type": "string"
+          },
+          "aiEnriched": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "scoreLabel": {
+            "type": "string"
+          },
+          "scoreColor": {
+            "type": "string"
+          },
+          "tagline": {
+            "type": "string"
+          },
+          "fito": {
+            "type": "string"
+          }
+        }
+      },
+      "InternalError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Ok": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/products/lookup": {
+      "post": {
+        "summary": "Buscar un producto por código de barras o por nombre",
+        "tags": [
+          "catalog"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query"
+                ],
+                "properties": {
+                  "query": {
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "delete": {
+        "summary": "Eliminar la cuenta del usuario",
+        "tags": [
+          "account"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/saved": {
+      "get": {
+        "summary": "Listar los guardados del usuario, más reciente primero",
+        "tags": [
+          "user-library"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Guardar un producto (idempotente)",
+        "tags": [
+          "user-library"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "productId"
+                ],
+                "properties": {
+                  "productId": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/saved/{productId}": {
+      "delete": {
+        "summary": "Quitar un producto de los guardados (idempotente)",
+        "tags": [
+          "user-library"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "productId",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/history": {
+      "get": {
+        "summary": "Listar el historial de escaneos, más reciente primero",
+        "tags": [
+          "user-library"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "default": 20,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

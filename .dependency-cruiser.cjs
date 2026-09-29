@@ -167,8 +167,9 @@ module.exports = {
     {
       name: 'scripts-solo-apis-publicas',
       severity: 'error',
-      comment: 'Los scripts de análisis usan solo las APIs públicas de catalog y scoring.',
-      from: { path: '^scripts/' },
+      comment:
+        'Los scripts de análisis usan solo las APIs públicas de catalog y scoring. Excepción: el generador del contrato arma la app del server (K-01).',
+      from: { path: '^scripts/', pathNot: '^scripts/generate-contract\\.ts$' },
       to: {
         path: '^src/',
         pathNot: '^src/modules/(catalog|scoring)/index\\.ts$',

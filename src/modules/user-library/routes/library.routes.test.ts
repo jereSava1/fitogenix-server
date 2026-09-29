@@ -40,6 +40,7 @@ let app: FastifyInstance;
 const TOKENS: Record<string, string> = { 'token-a': USER_A, 'token-b': USER_B };
 const comoA = { authorization: 'Bearer token-a' };
 const comoB = { authorization: 'Bearer token-b' };
+let YOGUR: unknown;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -47,6 +48,13 @@ beforeAll(async () => {
 
   const { savedRoutes } = await import('./saved.route');
   const { historyRoutes } = await import('./history.route');
+  const { mapRawToProduct } = await import('../../catalog');
+  // K-01: desde que estas respuestas tienen schema, un ítem tiene que ser un
+  // producto completo (antes pasaba cualquier objeto: `{ productId, name }`).
+  YOGUR = {
+    ...mapRawToProduct({ product_name: 'Yogur', ingredients_text: 'leche, fermentos lácticos' }, PRODUCT_ID),
+    productId: PRODUCT_ID,
+  };
 
   app = Fastify();
   await app.register(savedRoutes({ saved }));
@@ -96,7 +104,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
 
 describe('GET /users/me/saved (T-05)', () => {
   it('200 con { items } tal como los devuelve el servicio', async () => {
-    const items = [{ productId: PRODUCT_ID, name: 'Yogur' }];
+    const items = [YOGUR];
     vi.mocked(saved.listSavedProducts).mockResolvedValue(items as never);
     const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: comoA });
     expect(res.statusCode).toBe(200);
@@ -166,7 +174,7 @@ describe('DELETE /users/me/saved/:productId (T-05)', () => {
 
 describe('GET /users/me/history (T-05)', () => {
   it('200 con { items }; sin limit pide 20', async () => {
-    const items = [{ productId: PRODUCT_ID, name: 'Yogur' }];
+    const items = [YOGUR];
     vi.mocked(history.listScanHistory).mockResolvedValue(items as never);
     const res = await app.inject({ method: 'GET', url: '/users/me/history', headers: comoA });
     expect(res.statusCode).toBe(200);

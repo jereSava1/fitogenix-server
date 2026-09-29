@@ -1,21 +1,22 @@
 /**
- * Contrato de respuesta de POST /products/lookup, como JSON Schema.
+ * Contrato de POST /products/lookup y del producto (`Product`), en TypeBox.
  *
- * ── FUENTE DE VERDAD ──
- * `application/productResponse.ts` (tipo `FitogenixProduct`) junto con los tipos del
- * motor en `src/modules/scoring/index.ts` (`ScoreBreakdown`,
- * `AnalyzedIngredient`, `NutritionFacts`, `ScoreStep`). Este archivo NO define
- * el contrato: lo TRANSCRIBE a JSON Schema para que Fastify lo serialice, y
- * queda atado a los tipos en tiempo de compilación (ver los `satisfies
- * Record<keyof …>` de abajo). Si alguien agrega un campo al tipo y se olvida
- * de agregarlo acá, `npx tsc --noEmit` no compila.
+ * ── DESDE K-01 (ADR-0011) ──
+ * Estos schemas son los que Fastify usa para validar y serializar, y de acá
+ * sale `contract/openapi.json` (`npm run contract:generate`; el CI falla si el
+ * archivo commiteado no coincide). El JSON Schema que generan es IDÉNTICO al
+ * que se escribía a mano antes de K-01: se migró la sintaxis, no la forma.
+ * Siguen atados al tipo `FitogenixProduct` (application/productResponse.ts) y
+ * a los del motor con `satisfies Record<keyof …>`: si alguien agrega un campo
+ * al tipo y se olvida de agregarlo acá, `tsc` no compila. K-04 invierte la
+ * relación (el tipo sale del schema con `Static<>`).
  *
  * ── ESPEJO DEL CLIENTE ──
  * Los tipos espejo de la app native viven en
- * `fitogenix-native/src/lib/contracts/`. El cliente NO recalcula scoring: solo
- * renderiza estos campos (incluidos `scoreLabel`, `scoreColor`, `tagline` y
- * `fito`, que ya vienen derivados del servidor). Todo cambio acá hay que
- * reflejarlo allá.
+ * `fitogenix-native/src/lib/contracts/` hasta K-05, que los genera desde el
+ * OpenAPI. El cliente NO recalcula scoring: solo renderiza estos campos
+ * (incluidos `scoreLabel`, `scoreColor`, `tagline` y `fito`, que ya vienen
+ * derivados del servidor).
  *
  * ── Por qué schema de respuesta y no solo un tipo de TypeScript ──
  * 1. El contrato queda EXPLÍCITO: hoy el cliente depende de "lo que el
@@ -52,50 +53,61 @@
  * producción en vez de en un error de compilación.
  */
 
+import { Type, type Static, type TSchema } from '@sinclair/typebox';
+import { ApiErrorSchema, Nullable } from '../../../platform/http/schemas';
 import type { FitogenixProduct } from '../application/productResponse';
 import type {
   AnalyzedIngredient,
   NutritionFacts,
 } from '../../scoring';
 
-/** Un nodo de JSON Schema. Suelto a propósito: acá el que tipa es el `satisfies`. */
-type SchemaNode = Record<string, unknown>;
-
-const STRING: SchemaNode = { type: 'string' };
-const NULLABLE_STRING: SchemaNode = { type: ['string', 'null'] };
-const NUMBER: SchemaNode = { type: 'number' };
-const NULLABLE_NUMBER: SchemaNode = { type: ['number', 'null'] };
-const BOOLEAN: SchemaNode = { type: 'boolean' };
-const STRING_ARRAY: SchemaNode = { type: 'array', items: { type: 'string' } };
+const STRING = Type.String();
+const NULLABLE_STRING = Nullable(Type.String());
+const NUMBER = Type.Number();
+const NULLABLE_NUMBER = Nullable(Type.Number());
+const BOOLEAN = Type.Boolean();
 
 /** Panel nutricional por 100 g/ml. Todo campo puede faltar en el origen. */
 const nutritionProperties = {
-  calories: NULLABLE_NUMBER,
-  protein: NULLABLE_NUMBER,
-  carbs: NULLABLE_NUMBER,
-  sugars: NULLABLE_NUMBER,
-  fats: NULLABLE_NUMBER,
-  satFats: NULLABLE_NUMBER,
-  sodium: NULLABLE_NUMBER,
-  fiber: NULLABLE_NUMBER,
-  transFat: NULLABLE_NUMBER,
-  cholesterol: NULLABLE_NUMBER,
-} satisfies Record<keyof NutritionFacts, SchemaNode>;
+  calories: Type.Optional(NULLABLE_NUMBER),
+  protein: Type.Optional(NULLABLE_NUMBER),
+  carbs: Type.Optional(NULLABLE_NUMBER),
+  sugars: Type.Optional(NULLABLE_NUMBER),
+  fats: Type.Optional(NULLABLE_NUMBER),
+  satFats: Type.Optional(NULLABLE_NUMBER),
+  sodium: Type.Optional(NULLABLE_NUMBER),
+  fiber: Type.Optional(NULLABLE_NUMBER),
+  transFat: Type.Optional(NULLABLE_NUMBER),
+  cholesterol: Type.Optional(NULLABLE_NUMBER),
+} satisfies Record<keyof NutritionFacts, TSchema>;
 
 /** §7 — cada ingrediente con su posición en la etiqueta y cuánto restó. */
 const ingredientProperties = {
-  name: STRING,
-  position: NUMBER,
-  impact: STRING, // 'alto' | 'medio' | 'bajo' | 'none' | 'desconocido'
-  delta: NUMBER,
-  sev: STRING, // 'red' | 'orange' | 'yellow' | 'green' | 'gray'
-  desc: STRING,
-  flag: BOOLEAN,
-  marker: BOOLEAN,
-  percent: NUMBER,
-  detail: STRING,
-} satisfies Record<keyof AnalyzedIngredient, SchemaNode>;
+  name: Type.Optional(STRING),
+  position: Type.Optional(NUMBER),
+  impact: Type.Optional(STRING), // 'alto' | 'medio' | 'bajo' | 'none' | 'desconocido'
+  delta: Type.Optional(NUMBER),
+  sev: Type.Optional(STRING), // 'red' | 'orange' | 'yellow' | 'green' | 'gray'
+  desc: Type.Optional(STRING),
+  flag: Type.Optional(BOOLEAN),
+  marker: Type.Optional(BOOLEAN),
+  percent: Type.Optional(NUMBER),
+  detail: Type.Optional(STRING),
+} satisfies Record<keyof AnalyzedIngredient, TSchema>;
 
+const IngredientSchema = Type.Object(ingredientProperties);
+
+/**
+ * `required` SOLO en el nivel superior, y sin `aiEnriched` (es opcional en el
+ * tipo). fast-json-stringify LANZA si falta un campo requerido, así que la
+ * lista es exactamente lo que `mapRawToProduct` produce siempre: un payload al
+ * que le falte algo de esto está roto y es mejor un 500 ruidoso que un
+ * producto a medias que el cliente no sabe renderizar.
+ *
+ * Los objetos anidados van SIN `required` a propósito (todos sus campos son
+ * `Type.Optional`), para acotar el radio de explosión: que un campo nuevo del
+ * motor se omita no debería tumbar la respuesta entera.
+ */
 const productProperties = {
   id: STRING,
   name: STRING,
@@ -108,53 +120,37 @@ const productProperties = {
   // conservador: "la ausencia de datos nunca mejora un puntaje".
   score: NULLABLE_NUMBER,
   scoreAvailable: BOOLEAN,
-  noScore: {
-    type: ['object', 'null'],
-    properties: { code: STRING, message: STRING },
-  },
+  noScore: Nullable(
+    Type.Object({ code: Type.Optional(STRING), message: Type.Optional(STRING) }),
+  ),
 
   flagged: BOOLEAN,
   emoji: STRING,
   bgColor: STRING,
   imageUrl: NULLABLE_STRING,
-  ingredients: {
-    type: 'array',
-    items: { type: 'object', properties: ingredientProperties },
-  },
-  nutrition: { type: 'object', properties: nutritionProperties },
+  // `readonly` en el tipo, como `FitogenixProduct.ingredients`; el JSON Schema
+  // es el mismo `{ type: 'array', items }`.
+  ingredients: Type.Unsafe<ReadonlyArray<Static<typeof IngredientSchema>>>(
+    Type.Array(IngredientSchema),
+  ),
+  nutrition: Type.Object(nutritionProperties),
   dataSource: STRING, // off | obf | edamam | ai
-  aiEnriched: BOOLEAN,
+  aiEnriched: Type.Optional(BOOLEAN),
   productId: STRING, // uuid de products.id — con esto el cliente guarda/quita
   scoreLabel: STRING,
   scoreColor: STRING,
   tagline: STRING,
   fito: STRING, // 'fito' | 'nofito' | 'none'
-} satisfies Record<keyof FitogenixProduct, SchemaNode>;
+} satisfies Record<keyof FitogenixProduct, TSchema>;
 
-/**
- * `required` SOLO en el nivel superior, y sin `aiEnriched` (es opcional en el
- * tipo). fast-json-stringify LANZA si falta un campo requerido, así que la
- * lista es exactamente lo que `mapRawToProduct` produce siempre: un payload al
- * que le falte algo de esto está roto y es mejor un 500 ruidoso que un
- * producto a medias que el cliente no sabe renderizar.
- *
- * Los objetos anidados van SIN `required` a propósito, para acotar el radio de
- * explosión: que un campo nuevo del breakdown se omita no debería tumbar la
- * respuesta entera.
- */
-const REQUIRED_TOP_LEVEL = (
-  Object.keys(productProperties) as (keyof FitogenixProduct)[]
-).filter((k) => k !== 'aiEnriched');
+/** El producto que responden el lookup y los listados de user-library. */
+export const ProductSchema = Type.Object(productProperties, { $id: 'Product' });
+
+export const lookupBodySchema = Type.Object({
+  query: Type.String({ minLength: 1, maxLength: 200 }),
+});
 
 export const lookupResponseSchema = {
-  200: {
-    type: 'object',
-    properties: productProperties,
-    required: REQUIRED_TOP_LEVEL,
-  },
-  404: {
-    type: 'object',
-    properties: { error: STRING },
-    required: ['error'],
-  },
+  200: Type.Ref(ProductSchema),
+  404: Type.Ref(ApiErrorSchema),
 };

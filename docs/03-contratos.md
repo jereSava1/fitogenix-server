@@ -543,7 +543,7 @@ DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, 
 
 ## B.5 Fuente única del contrato: TypeBox → OpenAPI → tipos del cliente
 
-Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). Resumen del pipeline:
+Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01, 2026-09-29):** pasos 1 a 3 hechos para el contrato actual (sin `/v1`): schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. El paso 4 es K-05 (native) y el formato único de errores, K-03. Resumen del pipeline:
 
 ```mermaid
 flowchart LR

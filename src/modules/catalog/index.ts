@@ -9,9 +9,12 @@ import type { FastifyInstance } from 'fastify';
 import { makeLookupProduct } from './application/lookupProduct';
 import { redisProductCache } from './infrastructure/redisProductCache';
 import { supabaseProductReader } from './infrastructure/supabaseProductReader';
+import { addSharedSchemas, ApiErrorSchema } from '../../platform/http/schemas';
 import { lookupRoutes, type OnScan } from './routes/lookup.route';
+import { ProductSchema } from './routes/lookup.schema';
 
 export { productResponseFromRow } from './infrastructure/productRow';
+export { ProductSchema } from './routes/lookup.schema';
 export type { OnScan };
 
 // Para el ETL (ADR-0004): arma la respuesta y el payload que persiste en
@@ -29,6 +32,8 @@ export async function registerCatalog(
   app: FastifyInstance,
   deps: { onScan?: OnScan } = {},
 ): Promise<void> {
+  // En la raíz, para que el OpenAPI los tenga como componentes (ADR-0011).
+  addSharedSchemas(app, [ApiErrorSchema, ProductSchema]);
   const lookup = makeLookupProduct({ reader: supabaseProductReader, cache: redisProductCache });
   await app.register(lookupRoutes({ lookup, onScan: deps.onScan }));
 }
