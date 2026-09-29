@@ -21,6 +21,8 @@ npm run dev             # tsx watch src/main.ts, puerto 3000
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | sí | Catálogo, guardados, historial y validación de sesión. Es la secret key (`sb_secret_…`), que opera como `service_role` |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | no | Cache caliente de productos. Sin ellas, el server anda sin Redis |
 | `PORT` | no | Por defecto 3000 |
+| `CORS_ORIGINS` | no | Orígenes web con CORS, separados por coma. Vacía = sin CORS (la app nativa no lo usa) |
+| `TRUST_PROXY_HOPS` | en deploy | Proxies delante del server. Sin esto, detrás del balanceador de Render el rate limit por IP ve la del proxy y todos comparten el límite |
 | `ANTHROPIC_API_KEY` | solo ETL | Enriquecimiento con IA del ETL. El server no la usa |
 
 ## Antes de dar algo por terminado
@@ -80,7 +82,7 @@ El ETL (`etl/`, scripts `etl:*` de `package.json`, con su propia config en `etl/
 
 ## Deploy
 
-Render (plan free), desde `main`: build `npm install && npm run build`, start `node dist/main.js`. La configuración vive en el dashboard de Render.
+Render (plan free), desde `main`: build `npm install && npm run build`, start `node dist/main.js`. La configuración vive en el dashboard de Render: ahí hay que definir `TRUST_PROXY_HOPS` (ver Variables).
 
 Forma portable ([ADR-0007](docs/adr/0007-portabilidad-de-hosting.md)): el `Dockerfile` construye una imagen con solo dependencias de producción, configurable por variables de entorno (las de `.env.example`). El CI la construye, la levanta y le pide `/health`.
 

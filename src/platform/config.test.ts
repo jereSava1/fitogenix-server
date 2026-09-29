@@ -25,6 +25,20 @@ describe('config (C-03)', () => {
     expect('anthropicApiKey' in config).toBe(false);
   });
 
+  it('CORS_ORIGINS separada por comas; vacía, sin orígenes. TRUST_PROXY_HOPS por defecto 0', async () => {
+    vi.stubEnv('CORS_ORIGINS', ' https://a.test , https://b.test ,');
+    vi.stubEnv('TRUST_PROXY_HOPS', '1');
+    expect(await cargarConfig()).toMatchObject({
+      config: { corsOrigins: ['https://a.test', 'https://b.test'], trustProxyHops: 1 },
+    });
+
+    vi.stubEnv('CORS_ORIGINS', '');
+    vi.stubEnv('TRUST_PROXY_HOPS', '');
+    const { config } = await cargarConfig();
+    expect(config.corsOrigins).toEqual([]);
+    expect(config.trustProxyHops).toBe(0);
+  });
+
   it.each(['SUPABASE_URL', 'SUPABASE_SECRET_KEY'])('sin %s, la config no carga', async (key) => {
     vi.stubEnv(key, '');
     await expect(cargarConfig()).rejects.toThrow(`Missing required env var: ${key}`);
