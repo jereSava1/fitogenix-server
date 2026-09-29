@@ -1,18 +1,16 @@
 /**
  * Rutas de productos guardados por usuario (favoritos). Todas bajo requireAuth
  * (mismo patrón que deleteMe.ts): `request.userId` viene del JWT de Supabase.
- * La lógica vive en savedProductsService para poder testearla sin Fastify.
+ * Los casos de uso (`application/saved.ts`) se inyectan desde el index del
+ * módulo (M-06).
  */
 
-import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../../platform/http/auth';
-import {
-  listSavedProducts,
-  removeSavedProduct,
-  saveProduct,
-} from '../../services/savedProductsService';
+import type { FastifyPluginAsync } from 'fastify';
+import { requireAuth } from '../../../platform/http/auth';
+import type { SavedProducts } from '../application/saved';
 
-export async function savedProductsRoutes(app: FastifyInstance) {
+export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync => async (app) => {
+  const { listSavedProducts, removeSavedProduct, saveProduct } = deps.saved;
   await app.register(requireAuth);
 
   // Listado de guardados, más reciente primero.
@@ -77,4 +75,4 @@ export async function savedProductsRoutes(app: FastifyInstance) {
       }
     },
   );
-}
+};

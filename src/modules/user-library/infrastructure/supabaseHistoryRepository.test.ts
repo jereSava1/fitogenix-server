@@ -1,18 +1,16 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ScanHistory } from '../application/history';
 
 // ── Mock de Supabase ──
 // createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
-// en los `*Result`. Cubre las tres formas que usa scanHistoryService:
+// en los `*Result`. Cubre las dos formas que usa el repositorio de historial:
 //   .from().select().eq().order().limit()  → selectResult (GET historial)
 //   .from().upsert()                       → upsertResult (recordScan)
-//   .auth.getUser()                        → getUserResult (resolveUserIdFromToken)
+// (los tests de resolveUserIdFromToken se fueron con la función a
+// platform/http en M-06)
 type DbError = { message: string; code?: string } | null;
 let selectResult: { data: unknown; error: DbError } = { data: null, error: null };
 let upsertResult: { error: DbError } = { error: null };
-let getUserResult: { data: { user: { id: string } | null }; error: DbError } = {
-  data: { user: null },
-  error: null,
-};
 
 const limitFn = vi.fn(async () => selectResult);
 const order = vi.fn(() => ({ limit: limitFn }));
@@ -20,26 +18,27 @@ const selectEq = vi.fn(() => ({ order }));
 const select = vi.fn(() => ({ eq: selectEq }));
 const upsert = vi.fn(async (_payload: unknown, _options: unknown) => upsertResult);
 const from = vi.fn(() => ({ select, upsert }));
-const getUser = vi.fn(async () => getUserResult);
 
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({ from, auth: { getUser } })),
+  createClient: vi.fn(() => ({ from })),
 }));
 
-type HistoryModule = typeof import('./scanHistoryService');
-let history: HistoryModule;
+// Portado de services/scanHistoryService.test.ts (M-06): se prueban los casos
+// de uso cableados con el repositorio real, igual que en producción.
+let history: ScanHistory;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  history = await import('./scanHistoryService');
+  const { makeScanHistory } = await import('../application/history');
+  const { supabaseHistoryRepository } = await import('./supabaseHistoryRepository');
+  history = makeScanHistory(supabaseHistoryRepository);
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
   selectResult = { data: null, error: null };
   upsertResult = { error: null };
-  getUserResult = { data: { user: null }, error: null };
 });
 
 afterEach(() => {
@@ -117,23 +116,6 @@ describe('recordScan', () => {
 
     await expect(history.recordScan('user-1', 'uuid-purgado')).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalled();
-  });
-});
-
-describe('resolveUserIdFromToken', () => {
-  it('devuelve el userId con un token válido', async () => {
-    getUserResult = { data: { user: { id: 'user-1' } }, error: null };
-
-    await expect(history.resolveUserIdFromToken('jwt-valido')).resolves.toBe('user-1');
-    expect(getUser).toHaveBeenCalledWith('jwt-valido');
-  });
-
-  it('devuelve null con token inválido/expirado, sin loguear error (caso normal)', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    getUserResult = { data: { user: null }, error: { message: 'invalid JWT' } };
-
-    await expect(history.resolveUserIdFromToken('jwt-vencido')).resolves.toBeNull();
-    expect(consoleError).not.toHaveBeenCalled();
   });
 });
 
