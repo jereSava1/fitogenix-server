@@ -18,4 +18,4 @@ Registro de decisiones de arquitectura de este repo. Formato: contexto, decisió
 | [0008](0008-validacion-de-jwt.md) | Validación del JWT: local con JWKS vs. `getUser` | **Aceptado** (D-29) |
 | [0009](0009-migraciones.md) | Un solo mecanismo de migraciones + baseline | Propuesto |
 | [0010](0010-server-unica-puerta-de-entrada.md) | El server como única puerta de entrada del cliente | Propuesto (D-28) |
-| [0011](0011-contrato-http-fuente-unica.md) | El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente | Propuesto |
+| [0011](0011-contrato-http-fuente-unica.md) | El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente | **Aceptado** (D-68) |

@@ -284,6 +284,7 @@ Se hace con C-05 pendiente (D-67).
 | D-65 | Escritura sin uso en catalog | Se eliminan `setCachedProduct` y `findUpgradableNameRow` con sus tests (M-04); lo que queda de `name_key` se limpia antes de B-01 |
 | D-66 | Código del ETL sin uso | Se eliminan `aiLookupProduct` (con sus 2 tests) y las funciones de a un barcode de `staging.ts` (M-10) |
 | D-67 | Etapa 5 sin C-05 | La etapa 5 avanza con C-05 pendiente (no toca la base); C-05 es requisito antes de la primera migración nueva (etapa 7) |
+| D-68 | ADR-0011 | Aceptado después de K-01 |
 
 1. ~~**Analítica (L-09):** pendiente de decisión~~ → resuelta por **D-61** (2026-09-28): se difiere como [DT-05](deuda-tecnica.md), con rumbo a un endpoint propio.
 2. ~~**Escritura sin uso en catalog (M-04):** ¿borrar `setCachedProduct` / `findUpgradableNameRow`?~~ → resuelta por **D-65** (2026-09-29): se borraron en M-04.

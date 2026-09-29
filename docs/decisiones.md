@@ -73,6 +73,7 @@
 | D-65 | Escritura sin uso en catalog | **Se eliminan** `setCachedProduct` y `findUpgradableNameRow` (upsert desde el server y upgrade name→barcode) con sus 7 tests, en M-04: no los llamaba ni el server (el lookup es de solo lectura desde el 2026-08-18) ni el ETL, que solo usa `buildCachePayload` y hace el upsert con su cliente. Además escribían `name_key`, que B-01 elimina (D-41). Sigue en el código lo que lee `name_key` (`productRow`, `getCachedBy`) y la rama `nameKey` de `buildCachePayload`: se limpian antes de B-01. El `ProductWriter` del ETL (M-08) se arma desde `buildCachePayload` | [05-plan.md](05-plan.md) (M-04, §8) | Vigente |
 | D-66 | Código del ETL sin uso (M-10) | **Se eliminan** `aiLookupProduct` (búsqueda de producto con IA de la cascada retirada el 2026-08-18; solo la llamaban sus 2 tests, que se borran) y `fetchPendingRowsForBarcode`, `fetchAllRowsForBarcode`, `markStagingRows` y el tipo `PendingStagingRow` de `etl/lib/staging.ts` (versiones de a un barcode que reemplazó el merge por lotes; sin ningún uso). Los encontró `knip` al sumarlo al CI. La explicación de por qué el merge trae **todas** las filas del barcode pasa a `fetchRowsForBarcodes` | [05-plan.md](05-plan.md) (M-10, §8) | Vigente |
 | D-67 | Etapa 5 con C-05 pendiente | La etapa 5 (contrato generado + v1) **se hace sin esperar a C-05** (baseline de migraciones): ninguno de sus ítems toca la base ni necesita migraciones. Es una excepción al orden obligatorio de §0.1, pedida por el responsable. **C-05 pasa a ser requisito antes de la primera migración nueva** (etapa 7: F-06, F-07; etapa 8), por la Definition of Done (punto 5) y por D-60 (default privileges de `public`) | [05-plan.md](05-plan.md) (§0.1, C-05) | Vigente |
+| D-68 | ADR-0011 | **Aceptado** por el responsable el 2026-09-29, después de K-01 (el contrato actual ya sale de los schemas TypeBox y el CI verifica `contract/openapi.json`) | [adr/0011](adr/0011-contrato-http-fuente-unica.md) | Vigente |
 
 ## Decisiones de arquitectura (ADRs)
 
@@ -88,4 +89,4 @@
 | [0008](adr/0008-validacion-de-jwt.md) | Validación del JWT: local con JWKS vs. `getUser` | **Aceptado** (D-29) |
 | [0009](adr/0009-migraciones.md) | Un solo mecanismo de migraciones + baseline | Propuesto |
 | [0010](adr/0010-server-unica-puerta-de-entrada.md) | El server como única puerta de entrada del cliente | Propuesto (D-28) |
-| [0011](adr/0011-contrato-http-fuente-unica.md) | El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente | Propuesto |
+| [0011](adr/0011-contrato-http-fuente-unica.md) | El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente | **Aceptado** (D-68) |
