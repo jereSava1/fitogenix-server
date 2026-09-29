@@ -6,8 +6,17 @@ const required = (key: string): string => {
 
 const optional = (key: string): string | undefined => process.env[key];
 
+/** "a, b" → ['a', 'b']; vacía o ausente → []. */
+const list = (key: string): string[] =>
+  (process.env[key] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
+  // Orígenes web con CORS; vacío = sin CORS (la app nativa no lo usa).
+  corsOrigins: list('CORS_ORIGINS'),
+  // Proxies delante del server (en Render, su balanceador): sin esto el rate limit por IP
+  // ve la IP del proxy y todos los clientes comparten el mismo contador.
+  trustProxyHops: Number(process.env.TRUST_PROXY_HOPS ?? 0),
   // ANTHROPIC_API_KEY no: solo la usa el ETL (etl/config.ts).
   supabaseUrl: required('SUPABASE_URL'),
   supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
