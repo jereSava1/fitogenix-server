@@ -94,6 +94,11 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 
 ## 3. Etapa 2 — Eliminar código muerto
 
+| ID | Estado |
+|---|---|
+| E-01 | ✅ Hecho en `chore/e01-cascada-retirada`, mergeado a `fitogenix/refactor-cleanup`. Borrados `offService.ts`, `fallbackFoodApi.ts` y `openBeautyFactsApi.ts` (+ sus 2 tests, 12 casos) y `EDAMAM_*` de `config.ts` y `.env.example`. Ningún import en `src/` ni `scripts/` (solo comentarios). Suite: 514 → 502. En Render, `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` quedan sin uso y se pueden borrar |
+| E-02 a E-07 | Pendientes |
+
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
 | E-01 | P1 | ELIMINAR | server | `src/services/offService.ts`; `fallbackFoodApi.ts` + test; `openBeautyFactsApi.ts` + test; `config.ts · edamamAppId/Key`; `.env.example · EDAMAM_*` | 04-analisis §2.1 #1-3 | Bajo | Antes: CI verde. Después: CI verde; `knip` sin esos archivos | `PR-07 chore: eliminar la cascada retirada` |

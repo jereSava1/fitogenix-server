@@ -34,8 +34,8 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
  * todavía no lo tenemos, sin intentar resolverlo con proveedores externos. El
  * catálogo crece por el ETL (`scripts/etl/`), no por el tráfico de búsqueda.
  *
- * offService/claudeService/openBeautyFactsApi/fallbackFoodApi/imageService
- * NO se tocaron: el ETL los sigue usando para poblar el catálogo en batch.
+ * La cascada retirada (offService, openBeautyFactsApi, fallbackFoodApi) se
+ * eliminó en E-01 (docs/05-plan.md). claudeService e imageService siguen.
  */
 
 type LookupSource = 'redis' | 'supabase' | 'catalog';
