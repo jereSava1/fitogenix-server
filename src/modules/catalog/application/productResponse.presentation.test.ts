@@ -6,12 +6,12 @@
  * borde y se mira qué campos de presentación salen en la respuesta.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { mapRawToProduct } from './productLookupService';
+import { mapRawToProduct } from './productResponse';
 
 const forcedScore = vi.hoisted(() => ({ value: null as number | null }));
 
-vi.mock('../modules/scoring', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../modules/scoring')>();
+vi.mock('../../scoring', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../scoring')>();
   return {
     ...original,
     scoreProduct: () => ({
@@ -22,17 +22,6 @@ vi.mock('../modules/scoring', async (importOriginal) => {
     }),
   };
 });
-
-vi.mock('../modules/catalog/infrastructure/supabaseProductReader', () => ({
-  getCachedProductByBarcode: vi.fn(async () => null),
-  findCachedProductByName: vi.fn(async () => null),
-}));
-vi.mock('../modules/catalog/infrastructure/redisProductCache', () => ({
-  getFromRedis: vi.fn(async () => null),
-  setInRedis: vi.fn(async () => undefined),
-  getSearchBarcode: vi.fn(async () => null),
-  setSearchBarcode: vi.fn(async () => undefined),
-}));
 
 describe('caracterización — presentación en la respuesta (T-02)', () => {
   const BORDES: ReadonlyArray<[

@@ -19,7 +19,7 @@
 import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 import { parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from '../adapters/vtexAdapter';
-import { mapRawToProduct } from '../../../src/services/productLookupService';
+import { mapRawToProduct } from '../../../src/modules/catalog/application/productResponse';
 import { buildCachePayload } from '../../../src/modules/catalog/infrastructure/supabaseProductWriter';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 

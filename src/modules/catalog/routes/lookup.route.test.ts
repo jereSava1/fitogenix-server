@@ -1,44 +1,41 @@
 /**
  * Contrato de POST /products/lookup.
  *
- * Lo que fija este archivo: el JSON Schema de respuesta (lookupSchema.ts) NO
+ * Lo que fija este archivo: el JSON Schema de respuesta (lookup.schema.ts) NO
  * recorta el payload MÁS de lo que se declaró a propósito. fast-json-stringify
  * elimina en silencio toda propiedad que el schema no declare, así que un
  * campo nuevo en `FitogenixProduct` que nadie agregó al schema desaparecería
  * de la respuesta sin que falle nada. Acá se compara la respuesta contra el
  * producto ENTERO — incluida la ausencia deliberada de `breakdown` (decisión
  * de producto, 2026-08-18: el motor lo sigue calculando internamente, pero ya
- * no cruza la red — ver la nota en lookupSchema.ts y types/fitogenix.ts).
+ * no cruza la red — ver la nota en lookup.schema.ts y types/fitogenix.ts).
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify from 'fastify';
-import { scoreProduct } from '../../modules/scoring';
-import { extractNutrition } from '../../modules/catalog/domain/productData';
-import type { FitogenixProduct } from '../../types/fitogenix';
+import { scoreProduct } from '../../scoring';
+import { extractNutrition } from '../domain/productData';
+import type { LookupProduct } from '../application/lookupProduct';
+import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { OnScan } from './lookup.route';
 
-vi.mock('../../services/productLookupService', () => ({
-  lookupProduct: vi.fn(async () => null),
-}));
-vi.mock('../../services/scanHistoryService', () => ({
-  recordScan: vi.fn(async () => undefined),
-  resolveUserIdFromToken: vi.fn(async () => null),
-}));
-
-type Lookup = typeof import('../../services/productLookupService');
-let productLookupService: Lookup;
-let buildApp: () => Promise<ReturnType<typeof Fastify>>;
+// Desde M-05 la ruta recibe el caso de uso inyectado: en vez de simular el
+// módulo `services/productLookupService`, se le pasa un fake con el mismo
+// nombre, así los casos y las aserciones quedan idénticos.
+const productLookupService = {
+  lookupProduct: vi.fn<LookupProduct>(async () => null),
+};
+let buildApp: (onScan?: OnScan) => Promise<ReturnType<typeof Fastify>>;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
 
-  const { productLookupRoute } = await import('./lookup');
-  productLookupService = await import('../../services/productLookupService');
+  const { lookupRoutes } = await import('./lookup.route');
 
-  buildApp = async () => {
+  buildApp = async (onScan?: OnScan) => {
     const app = Fastify();
-    await app.register(productLookupRoute);
+    await app.register(lookupRoutes({ lookup: productLookupService.lookupProduct, onScan }));
     await app.ready();
     return app;
   };
@@ -206,6 +203,73 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     expect(res.json()).toEqual({
       error: 'Todavía no tenemos este producto en nuestro catálogo.',
     });
+    await app.close();
+  });
+});
+
+/* M-05 · Registro del escaneo (onScan). Antes la ruta llamaba directo a
+ * scanHistoryService y no había test de esto; ahora se inyecta desde main.ts.
+ */
+describe('POST /products/lookup — registro del escaneo (M-05)', () => {
+  const encontrado: FitogenixProduct = {
+    ...producto({ product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar' }),
+    productId: 'uuid-galletitas',
+  };
+
+  it('con Bearer y producto encontrado: onScan recibe el token y el productId', async () => {
+    productLookupService.lookupProduct.mockResolvedValue(encontrado);
+    const onScan = vi.fn<OnScan>(async () => undefined);
+
+    const app = await buildApp(onScan);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/products/lookup',
+      headers: { authorization: 'Bearer token-123' },
+      payload: { query: '7790895000123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    await vi.waitFor(() =>
+      expect(onScan).toHaveBeenCalledWith({ token: 'token-123', productId: 'uuid-galletitas' }),
+    );
+    await app.close();
+  });
+
+  it('sin token, o sin producto: no se registra nada', async () => {
+    const onScan = vi.fn<OnScan>(async () => undefined);
+    const app = await buildApp(onScan);
+
+    productLookupService.lookupProduct.mockResolvedValue(encontrado);
+    await app.inject({ method: 'POST', url: '/products/lookup', payload: { query: 'x1' } });
+
+    productLookupService.lookupProduct.mockResolvedValue(null);
+    await app.inject({
+      method: 'POST',
+      url: '/products/lookup',
+      headers: { authorization: 'Bearer token-123' },
+      payload: { query: 'x2' },
+    });
+
+    expect(onScan).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it('si onScan falla, la respuesta igual sale 200 (fire-and-forget)', async () => {
+    productLookupService.lookupProduct.mockResolvedValue(encontrado);
+    const onScan = vi.fn<OnScan>(async () => {
+      throw new Error('historial caído');
+    });
+
+    const app = await buildApp(onScan);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/products/lookup',
+      headers: { authorization: 'Bearer token-123' },
+      payload: { query: '7790895000123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    await vi.waitFor(() => expect(onScan).toHaveBeenCalled());
     await app.close();
   });
 });

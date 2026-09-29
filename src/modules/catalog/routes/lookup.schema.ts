@@ -52,11 +52,11 @@
  * producción en vez de en un error de compilación.
  */
 
-import type { FitogenixProduct } from '../../types/fitogenix';
+import type { FitogenixProduct } from '../../../types/fitogenix';
 import type {
   AnalyzedIngredient,
   NutritionFacts,
-} from '../../modules/scoring';
+} from '../../scoring';
 
 /** Un nodo de JSON Schema. Suelto a propósito: acá el que tipa es el `satisfies`. */
 type SchemaNode = Record<string, unknown>;

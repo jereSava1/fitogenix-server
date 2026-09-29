@@ -2,7 +2,8 @@
  * (docs/05-plan.md).
  *
  * A diferencia de lookup.test.ts (que simula el servicio entero), acá corre el
- * camino real ruta → productLookupService → adaptadores de catalog (Supabase y Redis), y
+ * camino real ruta → caso de uso → adaptadores de catalog (Supabase y Redis),
+ * con el mismo cableado que en producción (`registerCatalog`), y
  * solo se simulan los clientes externos: Supabase (`createClient`) y Upstash
  * (`Redis`). Así se ve qué le llega al usuario cuando se cae cada uno.
  */
@@ -55,9 +56,9 @@ beforeAll(async () => {
   process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
 
-  const { productLookupRoute } = await import('./lookup');
+  const { registerCatalog } = await import('../index');
   app = Fastify();
-  await app.register(productLookupRoute);
+  await registerCatalog(app);
   await app.ready();
 });
 

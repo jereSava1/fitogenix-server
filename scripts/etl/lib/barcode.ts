@@ -11,8 +11,9 @@
 // se haya visto en el catálogo argentino.
 //
 // ALCANCE — esto es interno al pipeline ETL (products_staging → merge →
-// products), NO toca el lookup en vivo por scan. `productLookupService.
-// lookupProduct` usa el string tal cual lo manda el celular, sin normalizar.
+// products), NO toca el lookup en vivo por scan. El lookup de catalog
+// (`modules/catalog/application/lookupProduct.ts`) usa el string tal cual lo
+// manda el celular, sin normalizar.
 // Si un producto ETL queda guardado en un formato que el scan en vivo nunca
 // produce para ESE código, simplemente no se encuentra por barcode ahí (el
 // lookup responde "no está en el catálogo" — no rompe nada),

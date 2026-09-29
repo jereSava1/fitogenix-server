@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import { config } from './platform/config';
 import { buildApp } from './platform/http/buildApp';
-import { productLookupRoute } from './routes/products/lookup';
+import { registerCatalog } from './modules/catalog';
+import { recordScan, resolveUserIdFromToken } from './services/scanHistoryService';
 import { deleteUserRoute } from './routes/users/deleteMe';
 import { savedProductsRoutes } from './routes/users/saved';
 import { scanHistoryRoutes } from './routes/users/history';
@@ -10,7 +11,14 @@ import { scanHistoryRoutes } from './routes/users/history';
 async function start() {
   const app = await buildApp({ logger: true });
 
-  await app.register(productLookupRoute);
+  // El registro del escaneo se inyecta en catalog (02-arquitectura §3.3): el
+  // usuario se resuelve desde el token y el escaneo va al historial.
+  await registerCatalog(app, {
+    onScan: async ({ token, productId }) => {
+      const userId = await resolveUserIdFromToken(token);
+      if (userId) await recordScan(userId, productId);
+    },
+  });
   await app.register(deleteUserRoute);
   await app.register(savedProductsRoutes);
   await app.register(scanHistoryRoutes);
