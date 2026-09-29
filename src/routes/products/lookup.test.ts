@@ -175,6 +175,24 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     await app.close();
   });
 
+  // T-06: el body no declara additionalProperties, así que hoy un campo extra
+  // se acepta en silencio y se ignora. Ningún ítem del plan lo cambia todavía;
+  // si el contrato v1 (K-01/K-03) lo vuelve estricto, este test cambia ahí.
+  it('body con campos extra → se acepta y se busca solo por query (T-06)', async () => {
+    vi.mocked(productLookupService.lookupProduct).mockResolvedValue(null);
+
+    const app = await buildApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/products/lookup',
+      payload: { query: ' 7790895000123 ', userId: 'otro', extra: { a: 1 } },
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(productLookupService.lookupProduct).toHaveBeenCalledWith('7790895000123');
+    await app.close();
+  });
+
   it('producto no encontrado → 404 con el schema de error', async () => {
     vi.mocked(productLookupService.lookupProduct).mockResolvedValue(null);
 
