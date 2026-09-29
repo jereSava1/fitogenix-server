@@ -69,7 +69,7 @@ Native tiene **dos autores activos** (`jereSava`: 42 commits, `Fitogenix`: 15 co
 
 | Pieza | Declarada | Instalada | Rol |
 |---|---|---|---|
-| Node | — (sin `engines` ni `.nvmrc`) | local 22.18.0 | runtime. Render "usa la versión que indica el server", pero el server **no indica ninguna**, así que Render cae a su default (ver §2.2) |
+| Node | — (sin `engines` ni `.nvmrc`) | local 22.18.0 | runtime. Render "usa la versión que indica el server", pero el server **no indica ninguna**, así que Render cae a su default (ver §2.2). **Actualización (T-01):** `engines.node` = `22.x` y `.nvmrc` = `22` |
 | fastify | ^5.3.2 | 5.9.0 | HTTP |
 | @fastify/cors | ^10.0.2 | 10.1.0 | CORS |
 | @fastify/rate-limit | ^10.2.2 | 10.3.0 | rate limit en memoria |
@@ -94,13 +94,13 @@ Motor de scoring: `ENGINE_VERSION = 'ftg-rubric-v2.3'` (`src/domain/product/scor
 | 4 | `scripts/{add-en-aliases,capture-golden,score-histogram,test-search-rpc}.ts` | a mano (sin script npm) | utilitarios; knip los marca como no usados |
 | 5 | `scripts/etl/run-all.sh` | `npm run etl:all` | orquesta el ETL |
 
-No hay `Dockerfile`, `render.yaml` ni CI (`.github/`) en `main`. El deploy se configura en el dashboard de Render (confirmado 2026-09-28):
+No hay `Dockerfile`, `render.yaml` ni CI (`.github/`) en `main`. *(Actualización: T-01 agrega el CI en `.github/workflows/ci.yml`.)* El deploy se configura en el dashboard de Render (confirmado 2026-09-28):
 
 | Paso | Comando en Render | Observación |
 |---|---|---|
 | Build | `npm install && npm run build` | `npm run build` = `tsc`. `typescript` es devDependency: funciona mientras el build **no** corra con `NODE_ENV=production` (npm omitiría devDependencies) |
 | Start | `node dist/main.js` | no pasa por `npm start`, así que el hook `prestart` de `package.json` **no se ejecuta en Render**: es redundante con el build |
-| Node | la del server | el server no la declara (sin `engines.node` ni `.nvmrc`), así que queda la default de Render y puede cambiar sin aviso. Local y tests: 22.18.0 |
+| Node | la del server | el server no la declara (sin `engines.node` ni `.nvmrc`), así que queda la default de Render y puede cambiar sin aviso. Local y tests: 22.18.0. **Actualización (T-01):** declarada (`engines.node` = `22.x`); Render la toma en el próximo deploy |
 | Config versionada | ninguna | la config de deploy vive solo en el dashboard: no es reproducible desde el repo |
 
 ### 2.3 Rutas registradas en `main.ts`
