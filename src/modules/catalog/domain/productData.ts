@@ -1,11 +1,4 @@
-/* Datos crudos de un producto → la forma que consume la app.
- *
- * No son puntaje: parsean lo que traen las fuentes (panel nutricional,
- * categorías, nombre). Antes vivían en la fachada del motor (`ftgEngine.ts`);
- * se mudaron acá en M-03 (docs/02-arquitectura.md §5.1 #2). `cleanName` vino
- * de application/productResponse.ts en K-04: la usan la respuesta y la fila
- * que escribe el ETL.
- */
+// Parseo de lo que traen las fuentes (nutrición, categoría, nombre). No es puntaje.
 
 import type { NutritionFacts } from '../../scoring';
 
@@ -55,9 +48,7 @@ export function extractCategory(categories?: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-/** El nombre que traen las fuentes, sin paréntesis, corchetes, códigos de
- *  barras ni gramajes. Sin nombre, `fallback` (K-04: la query en el lookup, el
- *  barcode de la fila en listados y detalle). */
+/** El nombre sin paréntesis, corchetes, códigos de barras ni gramajes; sin nombre, `fallback`. */
 export function cleanName(raw: string | undefined, fallback: string): string {
   if (!raw) return fallback;
   return raw

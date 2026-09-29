@@ -2,21 +2,16 @@ import type { RawProduct } from '../../src/modules/catalog';
 
 export type StagingEntry = { source: string; raw: RawProduct };
 
-// Prioridad de fuente para el merge campo a campo. Dato real (OFF/OBF/Edamam) siempre gana sobre
-// scraper de retailer; scraper siempre gana sobre sintético/IA. Cualquier
-// fuente no listada (carrefour, jumbo, disco, vea, ...) cae en
-// DEFAULT_SCRAPER_PRIORITY — no hace falta declarar cada retailer acá.
+// Prioridad de fuente: dato real (OFF/OBF/Edamam) > scraper de retailer > IA. Una fuente no
+// listada cae en DEFAULT_SCRAPER_PRIORITY.
 const SOURCE_PRIORITY: Record<string, number> = {
   off: 100,
   obf: 90,
   edamam: 80,
   synthetic: 10,
   ai: 10,
-  // La fila que YA está en `products`, tratada como una fuente más. Prioridad
-  // mínima: solo se usa para campos que ninguna otra fuente puede llenar.
-  // Sin esto el merge RESTA — reconstruye el producto solo desde staging y
-  // pisa con null lo que había llegado por otro camino (un escaneo en vivo,
-  // el enriquecimiento por EAN, una imagen traída de la API de OFF).
+  // La fila que ya está en `products`, con prioridad mínima: solo llena lo que ninguna otra
+  // fuente trae. Sin esto el merge pisaría con null datos que llegaron por otro camino.
   existing: 1,
 };
 const DEFAULT_SCRAPER_PRIORITY = 50;
@@ -33,15 +28,7 @@ function nonEmpty(v: unknown): boolean {
   return true;
 }
 
-/**
- * ¿El valor SIRVE para ese campo, o es relleno?
- *
- * "No vacío" no alcanza. OFF tiene prioridad 100, así que un
- * `product_name: "00001017"` —técnicamente no vacío— le ganaba al nombre real
- * que traía el retailer. De ahí salían los productos con el código de barras
- * en el nombre y la marca vacía: el dato bueno estaba disponible y el merge
- * elegía el malo.
- */
+/** ¿El valor sirve para el campo o es relleno? (un `product_name` que es el barcode no sirve). */
 function isUsable(field: keyof RawProduct, v: unknown, barcode?: string): boolean {
   if (!nonEmpty(v)) return false;
   const s = typeof v === 'string' ? v.trim() : '';
@@ -71,31 +58,15 @@ function isUsable(field: keyof RawProduct, v: unknown, barcode?: string): boolea
   }
 }
 
-/**
- * Prioridad de fuente POR CAMPO, cuando difiere de la global.
- *
- * La global (OFF primero) es correcta para ingredientes y nutrición: en OFF
- * están curados. Para la IMAGEN es al revés — los retailers publican
- * fotografía de producto sobre fondo blanco y OFF trae fotos de celular
- * subidas por usuarios. Medido: los retailers traen imagen en el 100% de sus
- * filas y OFF en el 0% de las del dump.
- */
+/** Prioridad por campo cuando difiere de la global: para la imagen ganan los retailers
+ *  (foto de producto) sobre OFF (fotos de usuarios). */
 const FIELD_PRIORITY: Partial<Record<keyof RawProduct, Record<string, number>>> = {
   image_url: { off: 40, obf: 40 },
   image_front_url: { off: 40, obf: 40 },
 };
 
-/**
- * Mergea N RawProduct del MISMO barcode, campo a campo, por prioridad de
- * fuente (Fase 3b). Ejemplo: si OFF no trae `image_url` pero el scraper de
- * Jumbo sí, el resultado final lleva la imagen de Jumbo aunque el resto del
- * producto sea de OFF.
- *
- * `nutriments` es la EXCEPCIÓN a "campo a campo": se toma como bloque atómico
- * de una sola fuente (la de mejor prioridad que lo traiga). Mezclar valores
- * nutricionales de fuentes distintas — que pueden medir en bases distintas —
- * produciría una tabla internamente inconsistente, peor que no tener el dato.
- */
+/** Mergea los RawProduct de un mismo barcode, campo a campo por prioridad. `nutriments` va
+ *  en bloque de una sola fuente: mezclar bases distintas daría una tabla inconsistente. */
 export function mergeRawProducts(entries: StagingEntry[], barcode?: string): RawProduct {
   const sorted = [...entries].sort((a, b) => priorityOf(b.source) - priorityOf(a.source));
 

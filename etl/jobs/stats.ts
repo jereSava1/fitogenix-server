@@ -1,9 +1,5 @@
 // Uso: npm run etl:stats
-//
-// Chequeo rápido de "¿qué trajimos hasta ahora?" — cuenta products_staging
-// por fuente/estado, cuenta products, y muestra una muestra de los últimos
-// productos escritos. Es el paso de verificación después de correr
-// etl:off / etl:vtex / etl:merge.
+// Staging por fuente y estado, total de `products` y los últimos productos escritos.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 import { fetchStagingStatusRows } from '../lib/staging';

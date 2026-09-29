@@ -1,5 +1,4 @@
-/* K-04 · `GET /v1/products/:id`: el caso de uso con un lector falso. El
- * camino con Supabase simulado está en routes/lookup.dependencies.test.ts. */
+// El camino con Supabase simulado está en routes/lookup.dependencies.test.ts.
 import { describe, expect, it, vi } from 'vitest';
 import { makeGetProduct } from './getProduct';
 import type { CachedProductRow, ProductReader } from './ports';

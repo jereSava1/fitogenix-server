@@ -1,15 +1,5 @@
-/**
- * Contrato de POST /products/lookup.
- *
- * Lo que fija este archivo: el JSON Schema de respuesta (product.schema.ts) NO
- * recorta el payload MÁS de lo que se declaró a propósito. fast-json-stringify
- * elimina en silencio toda propiedad que el schema no declare, así que un
- * campo nuevo en `ProductDetail` que nadie agregó al schema desaparecería
- * de la respuesta sin que falle nada. Acá se compara la respuesta contra el
- * producto ENTERO — incluida la ausencia deliberada de `breakdown` (decisión
- * de producto, 2026-08-18: el motor lo sigue calculando internamente, pero ya
- * no cruza la red — ver la nota en ProductDetail).
- */
+// fast-json-stringify borra en silencio lo que el schema no declara: acá se compara
+// la respuesta contra el producto entero (y que `breakdown` no viaje).
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify from 'fastify';
@@ -20,9 +10,6 @@ import { toProductDetail, type ProductDetail } from '../application/productRespo
 import type { RawProduct } from '../domain/rawProduct';
 import type { OnScan } from './lookup.route';
 
-// Desde M-05 la ruta recibe el caso de uso inyectado: en vez de simular el
-// módulo `services/productLookupService`, se le pasa un fake con el mismo
-// nombre, así los casos y las aserciones quedan idénticos.
 const productLookupService = {
   lookupProduct: vi.fn<LookupProduct>(async () => null),
 };
@@ -47,10 +34,7 @@ beforeEach(() => {
   vi.mocked(productLookupService.lookupProduct).mockReset();
 });
 
-/**
- * Producto armado con un cálculo REAL del motor v2.1 — no un objeto de
- * fantasía: sale del mismo `toProductDetail` que el lookup.
- */
+/** Producto con un cálculo real del motor, armado igual que en el lookup. */
 function producto(raw: RawProduct): ProductDetail {
   return toProductDetail(
     { brands: 'Marca', image_url: 'https://example.com/p.jpg', ...raw },
@@ -150,10 +134,7 @@ describe('POST /products/lookup — contrato de respuesta', () => {
     await app.close();
   });
 
-  // T-06, cambiado A PROPÓSITO en K-04 (D-70): hasta acá un campo extra se
-  // aceptaba en silencio y se ignoraba (ajv lo borraba). Ahora el body declara
-  // `additionalProperties: false` y ajv corre con `removeAdditional: false`:
-  // la request se rechaza y no llega al caso de uso.
+  // D-70: los campos de más se rechazan y no llegan al caso de uso.
   it('body con campos extra → 400 VALIDATION_ERROR, sin buscar (T-06, D-70)', async () => {
     vi.mocked(productLookupService.lookupProduct).mockResolvedValue(null);
 
@@ -199,9 +180,6 @@ describe('POST /products/lookup — contrato de respuesta', () => {
   });
 });
 
-/* M-05 · Registro del escaneo (onScan). Antes la ruta llamaba directo a
- * scanHistoryService y no había test de esto; ahora se inyecta desde main.ts.
- */
 describe('POST /products/lookup — registro del escaneo (M-05)', () => {
   const encontrado = producto({ product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar' });
 

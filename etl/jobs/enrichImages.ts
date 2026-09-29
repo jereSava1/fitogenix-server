@@ -1,37 +1,6 @@
 // Uso: npm run etl:images [-- --limit 2000] [--apply] [--upgrade]
-//
-// Le pone a cada producto la MEJOR imagen disponible, en este orden:
-//
-//   1. La del retailer, si alguna fila de staging la tiene. Es gratis (ya la
-//      bajamos), no gasta un request, y es mejor: fotografía de producto
-//      sobre fondo blanco contra fotos de celular subidas por usuarios.
-//   2. La de la API de Open Food Facts, para el resto.
-//
-// El orden importa y no es cosmético: ~3.000 de los productos sin imagen ya
-// tienen una de retailer esperando en staging. La primera versión de este job
-// le preguntaba a OFF por todos ellos, gastando requests para terminar
-// guardando la peor de las dos.
-//
-// Con --upgrade además reemplaza imágenes de OFF ya guardadas cuando existe
-// una de retailer. Hacen falta porque el merge solo vuelve a pasar por un
-// barcode si tiene filas pendientes: los productos ya mergeados con la
-// prioridad vieja (cuando OFF ganaba) se quedaron con la peor.
-//
-// Por qué hace falta consultar la API: el DUMP de OFF no incluye las imágenes
-// —medido, 0 de 520 filas de staging traen `image_url`— pero la API sí las
-// tiene. Como la URL lleva un número de revisión que no se puede derivar del
-// barcode, hay que preguntarle a la API producto por producto.
-//
-// Es la mayor ganancia individual del plan de completitud: la imagen es el
-// campo más incompleto del catálogo y OFF es el origen de la mayoría de los
-// productos que no la tienen.
-//
-// No compite con la ingesta de retailers: pega a otro host. Y es seguro
-// correrlo en paralelo al merge desde que la fila existente de `products`
-// participa del merge — antes, la siguiente corrida borraba estas imágenes.
-//
-// DRY-RUN por defecto. No usa IA: la imagen es la que OFF tiene publicada
-// para ese producto.
+// Mejor imagen por producto: la del retailer si está en staging (gratis y mejor), si no la
+// de la API de OFF (el dump no las trae). --upgrade reemplaza las de OFF. Dry-run por defecto.
 import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 
@@ -85,12 +54,7 @@ async function fetchRetailerImages(): Promise<Map<string, string>> {
   return out;
 }
 
-/**
- * Imagen frontal del producto en OFF. Se prefiere `image_front_url` sobre
- * `image_url`: la primera es la foto del frente del envase, que es la que
- * sirve para reconocer el producto; `image_url` puede ser cualquiera de las
- * caras, incluida la tabla nutricional.
- */
+/** Imagen del frente en OFF: `image_front_url` antes que `image_url` (que puede ser otra cara). */
 async function fetchOffImage(barcode: string): Promise<string | null> {
   const url =
     `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json` +

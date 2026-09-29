@@ -1,10 +1,5 @@
-/* Lector del catálogo: tabla `products` y RPC `search_products_by_name`.
- *
- * Implementa `ProductReader` (application/ports.ts). Antes vivía en
- * `services/cacheService.ts`; se mudó en M-04 sin cambios de comportamiento:
- * un error de Supabase sigue devolviéndose como miss (`null`), lo que
- * caracteriza T-06 y corrige H-01.
- */
+// Lector del catálogo: tabla `products` y RPC `search_products_by_name`.
+// Un error de Supabase hoy se devuelve como miss (`null`); cambia en H-01.
 
 import { supabaseAdmin as admin } from '../../../platform/supabase';
 import type { CachedProductRow, ProductReader } from '../application/ports';
@@ -27,9 +22,7 @@ async function getCachedBy(
   return rowToCachedRaw(data as Record<string, unknown>);
 }
 
-/** Lee un producto por su identidad (uuid) y reconstruye su crudo (K-04). Un
- *  error de Supabase se devuelve como `null`, igual que por barcode, hasta
- *  H-01. */
+/** Por uuid. */
 export async function getProductById(id: string): Promise<CachedProductRow | null> {
   return getCachedBy('id', id);
 }
@@ -41,17 +34,8 @@ export async function getCachedProductByBarcode(
   return getCachedBy('barcode', barcode);
 }
 
-/**
- * Busca en NUESTRO catálogo (`products`) el producto cuyo nombre mejor
- * matchee el query de texto. Desde 2026-08-18 es el ÚNICO mecanismo de
- * resolución por nombre — no hay cascada a OFF ni a la IA: si no aparece acá,
- * el producto todavía no está en el catálogo.
- *
- * La búsqueda y el ranking corren en Postgres (RPC `search_products_by_name`,
- * migración 014): índice GIN trigram sobre `product_name` en vez de un
- * sequential scan, y orden por similitud real en vez de `updated_at`. Ver el
- * comentario de la migración para el porqué.
- */
+/** El mejor match por nombre en el catálogo propio. Busca y ordena Postgres (índice
+ *  trigram, orden por similitud). */
 export async function findCachedProductByName(
   query: string,
 ): Promise<CachedProductRow | null> {

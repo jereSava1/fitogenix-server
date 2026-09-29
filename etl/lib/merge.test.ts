@@ -59,12 +59,8 @@ describe('primarySourceOf', () => {
   });
 });
 
-// ── Calidad del valor, no solo "no vacío" ──
-// El merge elegía el primer valor NO VACÍO por prioridad de fuente, y OFF
-// tiene la prioridad más alta. Un `product_name` que era el propio código de
-// barras le ganaba al nombre real del retailer: de ahí salían los productos
-// con el barcode en el nombre y la marca vacía, con el dato bueno disponible
-// en otra fila.
+// Calidad del valor, no solo "no vacío": un nombre que es el propio barcode no le gana al
+// nombre real del retailer.
 describe('el merge descarta valores de relleno', () => {
   const off = (raw: Partial<RawProduct>) => ({ source: 'off', raw: raw as RawProduct });
   const jumbo = (raw: Partial<RawProduct>) => ({ source: 'jumbo', raw: raw as RawProduct });
@@ -136,12 +132,8 @@ describe('la imagen la gana el retailer, el resto lo gana OFF', () => {
   });
 });
 
-// ── El merge suma, nunca resta ──
-// `buildCachePayload` escribe null explícito en cada campo faltante y el
-// merge hace upsert con eso. Si el producto ya existía con datos que no están
-// en staging —llegaron por un escaneo en vivo, por el enriquecimiento por EAN
-// o por la API de OFF—, la corrida los borraba. Por eso la fila existente
-// entra al merge como una fuente más, de prioridad mínima.
+// El merge suma, nunca resta: la fila existente entra como fuente de prioridad mínima, así
+// no se pisan con null datos que llegaron por otro camino.
 describe('la fila existente en products participa del merge', () => {
   const existing = (raw: Partial<RawProduct>) => ({ source: 'existing', raw: raw as RawProduct });
   const jumbo = (raw: Partial<RawProduct>) => ({ source: 'jumbo', raw: raw as RawProduct });

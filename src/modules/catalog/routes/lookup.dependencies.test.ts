@@ -1,12 +1,5 @@
-/* T-06 · Caracterización del lookup ante fallas de dependencias
- * (docs/05-plan.md).
- *
- * A diferencia de lookup.test.ts (que simula el servicio entero), acá corre el
- * camino real ruta → caso de uso → adaptadores de catalog (Supabase y Redis),
- * con el mismo cableado que en producción (`registerCatalog`), y
- * solo se simulan los clientes externos: Supabase (`createClient`) y Upstash
- * (`Redis`). Así se ve qué le llega al usuario cuando se cae cada uno.
- */
+// El camino real ruta → caso de uso → adaptadores, con Supabase y Upstash simulados:
+// qué le llega al usuario cuando se cae cada uno.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { AJV_OPTIONS } from '../../../platform/http/buildApp';
@@ -87,8 +80,7 @@ function lookup(query: string) {
 }
 
 describe('lookup — base de datos caída (T-06)', () => {
-  // CARACTERIZA: comportamiento actual, cambia en H-01. Un error de Supabase
-  // se trata como "no está en el catálogo": el usuario ve 404 en vez de 503.
+  // CARACTERIZA: cambia en H-01. Un error de Supabase se trata como "no está" (404, no 503).
   it('por barcode: Supabase devuelve error → 404 "no lo tenemos"', async () => {
     supabase.maybeSingle.mockResolvedValue(BASE_CAIDA);
     const res = await lookup('7790000000024');
@@ -96,7 +88,7 @@ describe('lookup — base de datos caída (T-06)', () => {
     expect(res.json()).toEqual(NO_ENCONTRADO);
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-01.
+  // CARACTERIZA: cambia en H-01.
   it('por nombre: la RPC devuelve error → 404 "no lo tenemos"', async () => {
     supabase.rpc.mockResolvedValue(BASE_CAIDA);
     const res = await lookup('yogur caido');
@@ -104,9 +96,7 @@ describe('lookup — base de datos caída (T-06)', () => {
     expect(res.json()).toEqual(NO_ENCONTRADO);
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-01. Si el cliente lanza en
-  // vez de devolver el error, el caso de uso no lo atrapa y el manejador de
-  // errores responde 500 INTERNAL (K-03).
+  // CARACTERIZA: cambia en H-01. Si el cliente lanza, nadie lo atrapa: 500 INTERNAL.
   it('por barcode: el cliente de Supabase lanza → 500', async () => {
     supabase.maybeSingle.mockRejectedValue(new Error('socket hang up'));
     const res = await lookup('7790000000031');
@@ -137,9 +127,7 @@ describe('lookup — Redis caído (T-06)', () => {
     expect(supabase.rpc).toHaveBeenCalledTimes(1);
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-01 (Redis con timeout de
-  // 200 ms y sin reintentos). Si Redis no responde, el lookup espera sin
-  // límite: la respuesta sigue pendiente mucho después de los 200 ms.
+  // CARACTERIZA: cambia en H-01 (Redis con timeout de 200 ms). Hoy espera sin límite.
   it('por barcode: Redis colgado → la respuesta queda esperando (sin timeout)', async () => {
     let liberar: (v: null) => void = () => {};
     redis.get.mockImplementation(() => new Promise((resolve) => { liberar = resolve; }));
@@ -158,8 +146,6 @@ describe('lookup — Redis caído (T-06)', () => {
   });
 });
 
-/* K-02 · Con el cableado real: Redis guarda crudos y la respuesta se arma al
- * leer. */
 describe('lookup — formato del cache Redis (K-02)', () => {
   it('entrada de antes de K-02 (sobre con la respuesta armada) → miss, 200 desde Supabase y se repuebla con el crudo', async () => {
     redis.get.mockResolvedValue({
@@ -193,8 +179,6 @@ describe('lookup — formato del cache Redis (K-02)', () => {
   });
 });
 
-/* K-04 · GET /products/:id con el cableado real: lee `products` por id, sin
- * Redis, y presenta con el mismo código que el lookup. */
 describe('GET /products/:id (K-04)', () => {
   const detalle = (id: string) => app.inject({ method: 'GET', url: `/products/${id}` });
 
@@ -221,7 +205,7 @@ describe('GET /products/:id (K-04)', () => {
     expect(res.json()).toEqual({ error: 'Producto no encontrado en el catálogo', code: 'NOT_FOUND' });
   });
 
-  // CARACTERIZA: igual que por barcode, cambia en H-01.
+  // CARACTERIZA: cambia en H-01.
   it('Supabase devuelve error → 404 (como un miss)', async () => {
     supabase.maybeSingle.mockResolvedValue(BASE_CAIDA);
     expect((await detalle(FILA.id)).statusCode).toBe(404);

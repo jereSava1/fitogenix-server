@@ -1,22 +1,6 @@
-/* K-01 · Tests de contrato (ADR-0011).
- *
- * Se arma la app completa, como en producción (`buildApp` + `registerModules`),
- * con los SDK de Supabase y Upstash simulados, y se verifica que:
- *   1. cada respuesta de cada ruta (éxito y errores declarados) valida contra
- *      su schema de `contract/openapi.json`;
- *   2. el schema de respuesta no recorta nada: los listados devuelven los 200
- *      productos de la muestra del catálogo exactamente como los arma el
- *      código (antes de K-01 esas rutas no tenían schema y Fastify serializaba
- *      con JSON.stringify). Desde K-04, como resumen más la fecha de la fila.
- *   3. `contract/scoring-bands.json` es lo que arma el motor (K-08);
- *   4. todas las rutas están bajo `/v1`, sin alias de las viejas, y todo error
- *      —400, 401, 404, 429, 500— sale como `{ error, code }` (K-03);
- *   5. el producto tiene la forma de K-04 (detalle en el lookup y en
- *      `GET /v1/products/:id`, resumen con fecha en los listados) y los
- *      campos de más en bodies y querystrings se rechazan con 400 (D-70).
- * Que `contract/openapi.json` esté al día con los schemas lo verifica
- * `npm run contract:check` en el CI (que chequea también las bandas).
- */
+// La app completa con Supabase y Upstash simulados: cada respuesta valida contra el OpenAPI,
+// los schemas no recortan nada, todo va bajo /v1, los errores son `{ error, code }` y los
+// campos de más dan 400. Que el OpenAPI esté al día lo chequea `contract:check`.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Ajv from 'ajv';
@@ -86,7 +70,7 @@ const FILA = {
 const GUARDADO = { product_id: PRODUCT_ID, created_at: '2026-07-08T12:00:00.123456+00:00', products: FILA };
 const ESCANEO = { product_id: PRODUCT_ID, scanned_at: '2026-07-14T12:00:00+00:00', products: FILA };
 
-/** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary` (K-04). */
+/** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary`. */
 const CAMPOS_RESUMEN = ['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor'];
 const CAMPOS_DETALLE = [...CAMPOS_RESUMEN, 'noScore', 'fito', 'highlight', 'ingredients', 'nutrition'];
 
@@ -259,8 +243,6 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expect(errorDeSupabase.json()).toEqual({ error: 'No se pudo eliminar la cuenta', code: 'INTERNAL' });
     expectMatchesContract('/v1/users/me', 'delete', 500, errorDeSupabase.json());
 
-    // Hasta K-03, si el cliente lanzaba salía el 500 genérico de Fastify
-    // (`{ statusCode, error, message }`); ahora el mismo formato que el resto.
     db.deleteUser = async () => {
       throw new TypeError('fetch failed');
     };

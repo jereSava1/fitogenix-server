@@ -1,11 +1,4 @@
-/* T-02 · Caracterización de la presentación en la respuesta del lookup
- * (docs/05-plan.md).
- *
- * Se prueba a través de `toProductDetail` con el motor simulado: se fuerza
- * cada puntaje de borde y se mira qué campos de presentación salen en la
- * respuesta. Desde K-04 salen de `scoring.presentScore` (ADR-0003) y
- * `highlight` reemplaza a `flagged`.
- */
+// Presentación en la respuesta, con el motor simulado: se fuerza cada puntaje de borde.
 import { describe, expect, it, vi } from 'vitest';
 import { toProductDetail, toProductSummary } from './productResponse';
 
@@ -32,10 +25,6 @@ describe('caracterización — presentación en la respuesta (T-02)', () => {
     [0, { scoreLabel: 'MALO', scoreColor: '#dc2626', fito: 'nofito', highlight: 'cuestionables' }],
     [24, { scoreLabel: 'MALO', scoreColor: '#dc2626', fito: 'nofito', highlight: 'cuestionables' }],
     [25, { scoreLabel: 'MODERADO', scoreColor: '#f97316', fito: 'none', highlight: 'cuestionables' }],
-    // K-04: hasta acá `flagged` cortaba en < 40, que no coincidía con ningún
-    // borde de banda (un Moderado de 39 salía marcado y uno de 40 no). Ahora
-    // `highlight` corta en el borde de la banda Buena (50): todo Moderado
-    // destaca los cuestionables.
     [39, { scoreLabel: 'MODERADO', scoreColor: '#f97316', fito: 'none', highlight: 'cuestionables' }],
     [40, { scoreLabel: 'MODERADO', scoreColor: '#f97316', fito: 'none', highlight: 'cuestionables' }],
     [49, { scoreLabel: 'MODERADO', scoreColor: '#f97316', fito: 'none', highlight: 'cuestionables' }],
@@ -43,7 +32,7 @@ describe('caracterización — presentación en la respuesta (T-02)', () => {
     [74, { scoreLabel: 'BUENO', scoreColor: '#84cc16', fito: 'none', highlight: 'beneficiosos' }],
     [75, { scoreLabel: 'EXCELENTE', scoreColor: '#16a34a', fito: 'fito', highlight: 'beneficiosos' }],
     [100, { scoreLabel: 'EXCELENTE', scoreColor: '#16a34a', fito: 'fito', highlight: 'beneficiosos' }],
-    // D-71: sin puntaje no se destaca ningún grupo.
+    // Sin puntaje no se destaca ningún grupo (D-71).
     [null, { scoreLabel: 'SIN DATOS SUFICIENTES', scoreColor: '#9ca3af', fito: 'none', highlight: 'ninguno' }],
   ];
 

@@ -1,9 +1,4 @@
-/* API pública del módulo `account` (docs/02-arquitectura.md §8.5).
- *
- * Datos de la cuenta del usuario. Hoy: eliminar la cuenta (`DELETE /users/me`).
- * Perfil y onboarding llegan con F-05 y F-06. Acá se cablea el adaptador de
- * Supabase con el caso de uso y se registra la ruta (§3.2).
- */
+// API pública de account. Hoy: eliminar la cuenta.
 
 import type { FastifyInstance } from 'fastify';
 import { makeDeleteAccount } from './application/deleteAccount';

@@ -1,12 +1,8 @@
 import type { RawProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
-// Shape parcial de la respuesta de `GET /api/catalog_system/pub/products/search`
-// de VTEX. Confirmado en vivo contra jumbo.com.ar, disco.com.ar, vea.com.ar y
-// carrefour.com.ar (recon 2026-08-06) — los 4 responden JSON sin auth con esta
-// forma general. Solo tipamos los campos que usamos; si algún retailer difiere
-// en un campo opcional, verificar contra una respuesta real de ESE dominio
-// antes de correr en volumen (no asumir que los 4 son 100% idénticos).
+// Forma parcial de `GET /api/catalog_system/pub/products/search` de VTEX (jumbo, disco, vea,
+// carrefour). Solo los campos que se usan; verificar contra ESE dominio antes de correr en volumen.
 type VtexItem = {
   itemId?: string;
   ean?: string;
@@ -25,14 +21,8 @@ type VtexProduct = {
   Sellos?: string[];
 };
 
-/**
- * "'harina de trigo', 'manteca', 'azúcar'" → "harina de trigo, manteca, azúcar"
- *
- * Cencosud entrega la lista como un repr de Python dentro de un array. Se
- * normaliza al mismo formato de texto plano separado por comas que usa
- * `ingredients_text` en OFF, para que el motor no tenga que saber de dónde
- * vino el dato.
- */
+/** "'harina de trigo', 'manteca'" → "harina de trigo, manteca": Cencosud manda un repr
+ *  de Python; se lleva al mismo texto plano que `ingredients_text` de OFF. */
 export function parseVtexIngredients(field?: string[]): string | undefined {
   const raw = field?.[0]?.trim();
   if (!raw) return undefined;
@@ -44,11 +34,7 @@ export function parseVtexIngredients(field?: string[]): string | undefined {
   return text.length > 2 ? text : undefined;
 }
 
-/**
- * Mapa del panel nutricional de Cencosud a las claves `_100g` de OFF.
- * Los valores ya vienen por 100 unidades de `basic_unit_name` (se verificó
- * contra `*_per_portion`: 416.67 por 100g ↔ 125 por porción de 30g).
- */
+/** Panel de Cencosud → claves `_100g` de OFF. Ya viene por 100 unidades de `basic_unit_name`. */
 const NUTRIENT_MAP: Record<string, string> = {
   energy_value: 'energy-kcal_100g',
   protein_value: 'proteins_100g',
@@ -93,39 +79,22 @@ export function parseVtexSeals(field?: string[]): string[] | undefined {
 
 export type AdaptedProduct = { barcode: string; raw: RawProduct };
 
-/**
- * Códigos internos de balanza/PLU (productos de peso variable: verdulería,
- * fiambrería) — confirmados en el recon con prefijo '2' y 13 dígitos. No son
- * EAN reales: no matchean contra OFF y no representan un producto envasado
- * con ingredientes/tabla nutricional fija. Se descartan, no se cachean.
- */
+/** Códigos internos de balanza/PLU (prefijo '2', 13 dígitos): no son EAN reales ni productos
+ *  envasados. Se descartan. */
 function isInternalPluCode(ean: string): boolean {
   return ean.startsWith('2') && ean.length === 13;
 }
 
-/** "/Almacén/Galletitas Dulces/" → "Almacén > Galletitas Dulces". Mapeo a la
- * taxonomía interna de Fitogenix (equivalente a extractCategory() para OFF)
- * queda pendiente. Por ahora se preserva el string crudo del
- * retailer, legible pero sin normalizar contra las categorías de Fitogenix. */
+/** "/Almacén/Galletitas Dulces/" → "Almacén > Galletitas Dulces" (sin normalizar contra
+ *  las categorías de Fitogenix). */
 function cleanCategory(categories?: string[]): string | undefined {
   const first = categories?.[0];
   if (!first) return undefined;
   return first.split('/').filter(Boolean).join(' > ');
 }
 
-/**
- * Adapta un producto VTEX a una lista de RawProduct — un producto puede
- * tener varios SKUs/items (ej. mismo producto en presentaciones distintas),
- * cada uno con su propio EAN, así que devuelve un array (0, 1 o más).
- *
- * CORRECCIÓN respecto de la versión anterior: se daba por sentado que "un
- * retailer nunca trae ingredientes ni tabla nutricional". Es cierto para
- * Carrefour, cuyas especificaciones son puramente comerciales, pero FALSO
- * para Cencosud (Jumbo, Disco, Vea), que publica `Ingredientes`, `Tabla
- * Nutricional` y `Sellos` en la misma respuesta que ya pedíamos. Estábamos
- * descartando datos reales y mandando esos productos al gate de completitud
- * como si fueran gaps.
- */
+/** Producto VTEX → un RawProduct por SKU (cada uno con su EAN). Cencosud trae ingredientes,
+ *  tabla nutricional y sellos; Carrefour, solo datos comerciales. */
 export function adaptVtexProduct(product: VtexProduct): AdaptedProduct[] {
   const results: AdaptedProduct[] = [];
   const category = cleanCategory(product.categories);

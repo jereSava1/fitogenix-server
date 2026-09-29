@@ -6,13 +6,8 @@ import type { LookupProduct } from '../application/lookupProduct';
 import { lookupBodySchema, lookupResponseSchema } from './lookup.schema';
 import { ProductDetailSchema } from './product.schema';
 
-/**
- * Registro del escaneo, inyectado desde `main.ts` (docs/02-arquitectura.md
- * §3.3): catalog no conoce a user-library. Recibe el token tal cual llegó en
- * el header porque hoy el usuario se resuelve aparte, en segundo plano
- * (`resolveUserIdFromToken`); con `optionalAuth` (H-02) pasa a recibir el
- * `userId` ya validado.
- */
+/** Registro del escaneo, inyectado (catalog no conoce a user-library). Recibe el token
+ *  crudo: el usuario se resuelve aparte, en segundo plano (pasa a `userId` con H-02). */
 export type OnScan = (scan: { token: string; productId: string }) => Promise<void>;
 
 export function lookupRoutes(deps: {
@@ -33,11 +28,7 @@ export function lookupRoutes(deps: {
         tags: ['catalog'],
         summary: 'Buscar un producto por código de barras o por nombre',
         body: lookupBodySchema,
-        // Contrato de respuesta EXPLÍCITO (ver product.schema.ts). Fastify lo
-        // usa para serializar con fast-json-stringify; la contracara es que
-        // todo campo no declarado se elimina de la respuesta, así que el
-        // schema está atado a `ProductDetail` en tiempo de compilación.
-        // Desde K-01 es la fuente del OpenAPI (contract/openapi.json).
+        // Sin declarar en el schema, un campo no sale en la respuesta (ver product.schema.ts).
         response: lookupResponseSchema,
       },
     }, async (request, reply) => {
@@ -45,21 +36,14 @@ export function lookupRoutes(deps: {
 
       const product = await lookup(query.trim());
 
-      // Sin cascada externa (decisión de producto, 2026-08-18): el lookup solo
-      // mira Redis/Supabase. Un `null` acá significa "todavía no está en el
-      // catálogo", no "no se pudo resolver por ningún medio" — el mensaje lo
-      // refleja.
+      // `null` = todavía no está en el catálogo (no hay búsqueda externa).
       if (!product) {
         return reply.status(404).send(
           apiError('PRODUCT_NOT_IN_CATALOG', 'Todavía no tenemos este producto en nuestro catálogo.'),
         );
       }
 
-      // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no
-      // espera nada de esto y ningún error acá la rompe (el catch cubre
-      // cualquier imprevisto). El lookup solo lee del catálogo, así que el
-      // producto que devuelve ya existe en `products` y su id (uuid) sirve
-      // como FK del historial.
+      // Fire-and-forget: la respuesta no espera el registro y un error ahí no la rompe.
       const authHeader = request.headers.authorization ?? '';
       const token = authHeader.replace(/^Bearer\s+/i, '').trim();
       if (onScan && token && product.id) {

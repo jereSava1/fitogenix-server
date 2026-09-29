@@ -1,11 +1,5 @@
-/* Config del ETL (ADR-0004, D-05): exige solo lo que usa el pipeline.
- *
- * Mismo criterio que `src/platform/config.ts`, pero para el proceso del ETL:
- * las credenciales de Supabase se exigen al cargar, y ANTHROPIC_API_KEY solo
- * la pide el enriquecimiento con IA cuando la usa (`requireAnthropicApiKey`).
- * Hasta M-08 el ETL leía la config del server; ahora cada proceso tiene la
- * suya y el server ya no conoce la key de Anthropic.
- */
+// Config del ETL: Supabase se exige al cargar; ANTHROPIC_API_KEY solo cuando se usa
+// el enriquecimiento con IA (`requireAnthropicApiKey`).
 
 const required = (key: string): string => {
   const val = process.env[key];

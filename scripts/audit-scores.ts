@@ -1,15 +1,6 @@
 // Uso: npm run audit:scores [-- --rule <nombre>] [--limit 5000] [--sample 8]
-//
-// Audita el catálogo REAL contra el motor vigente y saca a la superficie los
-// puntajes que no cierran, para que un humano los juzgue.
-//
-// Por qué existe: los tests unitarios detectan regresiones, no errores de
-// criterio. Congelan lo que el motor hace hoy — si hoy está mal, lo congelan
-// mal. La única forma de saber si un puntaje es CORRECTO es que alguien mire
-// el producto y opine. Este script no decide nada: arma la cola de revisión,
-// ordenada por cuánto huele cada caso.
-//
-// No escribe en la base. Es seguro correrlo con el ETL en curso.
+// Cola de revisión humana de puntajes sospechosos del catálogo real: los tests detectan
+// regresiones, no errores de criterio. No escribe en la base.
 import 'dotenv/config';
 import { admin } from '../etl/lib/supabaseAdmin';
 import { scoreProduct, type ProductInput } from '../src/modules/scoring';
@@ -55,11 +46,7 @@ export const CURATION_QUEUE = new Map<string, number>();
 const DRINK = /bebida|gaseosa|refresco|jugo|soda|drink|beverage/i;
 const PROCESSED_MEAT = /fiambre|salchich|jamón|jamon|mortadela|salame|chorizo|panceta|bacon|embutido/i;
 
-/**
- * Cada regla describe una combinación que, si el motor acertó, tiene una
- * explicación; y si no la tiene, es un error. Ninguna es un veredicto: son
- * preguntas para un humano.
- */
+/** Cada regla es una combinación que necesita explicación: una pregunta, no un veredicto. */
 function analyze(r: Row): Finding[] {
   const bd = scoreProduct(toInput(r));
   const out: Finding[] = [];
@@ -80,10 +67,8 @@ function analyze(r: Row): Finding[] {
       why: `Excelente con solo ${Math.round(bd.coverage * 100)}% de ingredientes reconocidos.` });
   }
 
-  // Un ultraprocesado en la banda alta necesita justificarse.
-  // NOVA ya no entra al puntaje en v2.1, así que este contraste es una señal
-  // externa: si OFF lo clasificó 4 y nosotros lo pusimos Excelente, uno de los
-  // dos se equivocó y conviene mirarlo.
+  // Un ultraprocesado en la banda alta: NOVA no entra al puntaje, así que es una señal
+  // externa para mirar.
   if (r.nova_group === 4 && (bd.score ?? 0) >= 75) {
     out.push({ ...base, rule: 'ultraprocesado-excelente',
       why: 'NOVA 4 puntuando como Excelente.' });

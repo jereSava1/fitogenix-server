@@ -1,32 +1,16 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RawProduct } from '../../src/modules/catalog';
 
-// ── Mock del SDK de Anthropic ──
-// `new Anthropic({...})` debe devolver un objeto con `messages.create()` —
-// vi.fn() como constructor usa el valor de retorno de mockImplementation
-// como la instancia (comportamiento estándar de `new` sobre una función que
-// retorna un objeto).
+// SDK de Anthropic simulado: `new Anthropic()` devuelve un objeto con `messages.create()`.
 let mockResponseText = '{}';
 const messagesCreate = vi.fn(async () => ({
   content: [{ type: 'text', text: mockResponseText }],
 }));
 
 vi.mock('@anthropic-ai/sdk', () => ({
-  // __esModule: true — sin esto, el helper de interop de default-import
-  // (paquete "type": "commonjs") re-envuelve el factory en otro
-  // { default: ... }, rompiendo la resolución de `Anthropic`.
-  //
-  // `function` en vez de arrow function en mockImplementation — `new
-  // Anthropic(...)` en claudeEnricher.ts usa `new` sobre el mock; una arrow
-  // function no es invocable con `new` (TypeError silencioso que Vitest
-  // logueaba como warning, no como fallo de test). Con `function` sí
-  // funciona como constructor.
-  //
-  // Ambos bugs se manifestaban IGUAL: el catch de enrichWithAI se comía el
-  // error y devolvía el producto sin tocar — los tests que esperaban "no
-  // pasa nada" pasaban igual, por la razón equivocada, y solo los que
-  // esperaban una mutación real fallaban. Ver el debug con `messagesCreate.
-  // mock.calls.length === 0` que confirmó la causa.
+  // `__esModule: true` para que el interop de default-import no re-envuelva el mock, y
+  // `function` (no arrow) porque se usa con `new`. Si falla cualquiera, el catch de
+  // enrichWithAI se come el error y los tests pasan por la razón equivocada.
   __esModule: true,
   default: vi.fn().mockImplementation(function AnthropicMock() {
     return { messages: { create: messagesCreate } };
@@ -130,7 +114,6 @@ describe('enrichWithAI', () => {
   });
 });
 
-// Movido tal cual desde scoring/rules.test.ts en M-03, junto con la función.
 describe('ingredientCount', () => {
   it('cuenta ingredientes separados por coma o punto y coma', () => {
     expect(ingredientCount(undefined)).toBe(0);

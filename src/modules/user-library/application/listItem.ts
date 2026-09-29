@@ -1,7 +1,4 @@
-/* Una fila de `saved_products` o `scan_history` (con el producto embebido) →
- * el resumen del producto más la fecha de la fila. Lo comparten los listados
- * de guardados e historial (K-04, 03-contratos §B.3.1).
- */
+// Fila de guardados o historial → resumen del producto más la fecha de la fila.
 
 import { productSummaryFromRow, type ProductSummary } from '../../catalog';
 
@@ -13,11 +10,7 @@ function toIso(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-/**
- * `null` si la fila no sirve: sin producto, producto sin crudos (mismo
- * criterio de siempre) o sin una fecha legible en `column`. Se omite del
- * listado: mejor una lista corta que un ítem a medias.
- */
+/** `null` si la fila no sirve (sin producto, sin crudos o sin fecha legible): se omite. */
 export function summaryWithDate(
   row: unknown,
   column: 'created_at' | 'scanned_at',

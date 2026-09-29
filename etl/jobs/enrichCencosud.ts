@@ -1,21 +1,6 @@
 // Uso: npm run etl:enrich-cencosud [-- --limit 500] [--apply] [--only-missing-nutrition]
-//
-// Rellena ingredientes y tabla nutricional de los productos que ya tenemos,
-// consultando Jumbo/Disco/Vea por código de barras (fq=alternateIds_Ean).
-//
-// Por qué esta fuente y no otra: Cencosud es el ÚNICO retailer argentino que
-// publica `Ingredientes` y `Tabla Nutricional` en su API. Se verificó que
-// Coto y La Anónima no son VTEX, y que Masonline lo es pero no expone esos
-// campos. Open Food Facts ya está agotado para Argentina — de 13 productos
-// sin marca consultados en vivo, 0 traían el dato.
-//
-// Medido sobre 40 productos argentinos incompletos del catálogo: 80% aparecen
-// en Jumbo, 58% con ingredientes y 48% con tabla nutricional.
-//
-// DRY-RUN por defecto: sin --apply no escribe nada, solo informa qué haría.
-// No usa IA: todo lo que escribe viene de la etiqueta publicada por el
-// retailer. El enriquecimiento con Claude es un paso posterior y separado,
-// para lo que quede sin resolver después de esto.
+// Completa ingredientes y nutrición desde Jumbo/Disco/Vea por barcode: es el único retailer
+// argentino que los publica. Dry-run por defecto; no usa IA.
 import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 import { parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from '../adapters/vtexAdapter';
@@ -54,11 +39,8 @@ function parseArgs() {
   return {
     limit: Number(get('--limit', '500')),
     apply: args.includes('--apply'),
-    // Por defecto solo productos con EAN argentino. Un supermercado de acá no
-    // tiene el 00000996 de un producto estadounidense, y consultarlo es un
-    // request tirado: la primera versión de este job ordenaba por barcode y
-    // arrancaba justo por los "0…", dando 0% de aciertos donde a mano había
-    // medido 80%.
+    // Por defecto solo EAN argentinos: un supermercado de acá no tiene productos importados
+    // sin registro local, y consultarlos es un request tirado.
     prefix: get('--prefix', '779'),
     allPrefixes: args.includes('--all-prefixes'),
   };

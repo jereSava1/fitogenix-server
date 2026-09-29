@@ -1,7 +1,4 @@
-/* M-02 · La app base (buildApp): fija lo que hoy hace main.ts antes de
- * registrar las rutas de negocio. CORS abierto y rate limit en memoria se
- * revisan en H-03. K-03 arregló el status del rate limit (429, antes 500) y
- * sumó el formato único de errores. */
+// La app base: CORS, rate limit, errores y /health, antes de las rutas de negocio.
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from './buildApp';
@@ -21,17 +18,13 @@ describe('buildApp (M-02)', () => {
     expect(res.json()).toEqual({ ok: true, ts: expect.any(Number) });
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-03 (CORS con lista
-  // explícita, o deshabilitado: la app nativa no lo necesita).
+  // CARACTERIZA: cambia en H-03 (CORS con lista explícita o deshabilitado).
   it('CORS refleja cualquier origen', async () => {
     app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://cualquiera.test' } });
     expect(res.headers['access-control-allow-origin']).toBe('https://cualquiera.test');
   });
 
-  // Hasta K-03 salía **500**: `errorResponseBuilder` devolvía un objeto sin
-  // `statusCode` y Fastify lo trataba como error interno (caracterizado acá en
-  // M-02).
   it('rate limit global: la request 61 del minuto → 429 RATE_LIMITED con retry-after', async () => {
     app = await buildApp();
     for (let i = 0; i < 60; i++) {

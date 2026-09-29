@@ -1,12 +1,4 @@
-/* T-05 · Caracterización de las rutas privadas y del aislamiento entre
- * usuarios (docs/05-plan.md) — parte de account (`DELETE /users/me`).
- *
- * Se registra el módulo con su cableado real (`registerAccount`) y Supabase
- * simulado: el usuario que se borra tiene que salir SIEMPRE del token, nunca
- * de lo que mande el cliente. Hasta M-07 estos casos estaban en
- * `src/routes/users/users.test.ts`, junto con los de user-library (ahora en
- * user-library/routes/library.routes.test.ts); conservan sus nombres.
- */
+// El usuario que se borra sale siempre del token, nunca de lo que mande el cliente.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { AJV_OPTIONS } from '../../../platform/http/buildApp';
@@ -96,10 +88,7 @@ describe('aislamiento entre usuarios (T-05)', () => {
   });
 });
 
-/* M-07 · Supabase que LANZA (excepción de red, no un `error` en la
- * respuesta). La ruta no lo atrapa: hasta K-03 salía el 500 genérico de
- * Fastify (`{ statusCode, error, message }`, con el mensaje interno); desde
- * K-03 lo arma el manejador de errores con el formato único. */
+// Supabase que lanza (excepción de red): la ruta no lo atrapa, responde el manejador.
 describe('DELETE /users/me — el cliente de Supabase lanza (M-07)', () => {
   it('500 INTERNAL del manejador de errores, sin el mensaje interno — CARACTERIZA: cambia en H-01 (503)', async () => {
     supabaseAuth.admin.deleteUser.mockRejectedValue(new TypeError('fetch failed'));

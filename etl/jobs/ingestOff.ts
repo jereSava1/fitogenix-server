@@ -1,14 +1,6 @@
-// Uso: npm run etl:off -- --file /ruta/al/products.jsonl[.gz] [--limit 1000]
-//
-// Streamea el dump de OFF (fs.createReadStream + readline, nunca todo en
-// memoria), filtra LATAM/Argentina, adapta a RawProduct, e inserta en
-// products_staging en lotes. NUNCA escribe en `products` — eso lo hace
-// runMerge.ts después.
-//
-// El dump completo no se descarga desde acá (es de varios GB) — bajalo antes
-// con algo como:
-//   curl -L -o off-products.jsonl.gz https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz
-// y apuntá --file a ese archivo (acepta .jsonl o .jsonl.gz).
+// Uso: npm run etl:off -- --file /ruta/products.jsonl[.gz] [--limit 1000]
+// Streamea el dump de OFF (bajarlo antes: static.openfoodfacts.org) y carga
+// products_staging. Nunca escribe en `products` (eso es runMerge).
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';

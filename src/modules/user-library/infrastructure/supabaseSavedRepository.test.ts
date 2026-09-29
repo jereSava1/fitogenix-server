@@ -1,12 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SavedProducts } from '../application/saved';
 
-// ── Mock de Supabase ──
-// createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
-// en los `*Result`. Cubre las tres formas que usa el repositorio de guardados:
-//   .from().select().eq().order()   → selectResult (GET)
-//   .from().upsert()                → upsertResult (POST)
-//   .from().delete().eq().eq()      → deleteResult (DELETE)
+// Supabase simulado: `.select()…order()` → selectResult; `.upsert()` → upsertResult;
+// `.delete().eq().eq()` → deleteResult.
 type DbError = { message: string; code?: string } | null;
 let selectResult: { data: unknown; error: DbError } = { data: null, error: null };
 let upsertResult: { error: DbError } = { error: null };
@@ -25,8 +21,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from })),
 }));
 
-// Portado de services/savedProductsService.test.ts (M-06): se prueban los
-// casos de uso cableados con el repositorio real, igual que en producción.
+// Casos de uso cableados con el repositorio real, como en producción.
 let saved: SavedProducts;
 
 beforeAll(async () => {
@@ -204,9 +199,7 @@ describe('listSavedProducts — productos sin puntaje', () => {
     expect(items).toHaveLength(2);
     expect(items[0].name).toBe('Cerveza rubia');
     expect(items[0].score).toBeNull();
-    // La presentación viene igual resuelta del servidor: el cliente no tiene
-    // que decidir qué mostrar cuando no hay número. El motivo (`noScore`) y
-    // el resto viajan en el detalle (`GET /v1/products/:id`, K-04).
+    // El label viene resuelto del server también sin número.
     expect(items[0].scoreLabel).toBe('SIN DATOS SUFICIENTES');
     expect(items[0].scoreColor).toBe('#9ca3af');
     // El producto con puntaje del mismo listado no se ve afectado.

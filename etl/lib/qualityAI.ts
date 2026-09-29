@@ -1,15 +1,5 @@
-// Clasificación + extracción asistida por Claude para la corrección de
-// calidad de datos (jobs/fixDataQuality.ts). A propósito NO vive en
-// enrichment/claudeEnricher.ts: ese archivo completa datos FALTANTES de un
-// producto que entra al catálogo (merge) — esto es auditoría/corrección
-// batch de datos que YA existen en `products`, una tarea distinta con reglas
-// distintas. Mismo patrón lazy-singleton que claudeEnricher.ts, mismo modelo
-// (Haiku), pero nunca se tocan entre sí.
-//
-// Principio clave, distinto del enrichment (enrichWithAI): acá NUNCA se le
-// pide a Claude que invente un dato faltante. Se le pide que CLASIFIQUE o
-// EXTRAIGA texto que ya está en la fila — mucho menor riesgo de alucinación
-// que "completá los nutrientes de este producto que no conocés".
+// Claude para corregir datos que ya están en `products` (fixDataQuality): clasifica o
+// extrae texto que ya está en la fila, nunca inventa un dato faltante.
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAnthropicApiKey } from '../config';
 
@@ -83,11 +73,7 @@ export function parseBrandExtraction(raw: string): string | null {
   }
 }
 
-/**
- * Separa, de un `ingredients_text` sospechoso, la porción real de
- * ingredientes de la de fabricante/dirección/registro — ninguna de las dos
- * se inventa, ambas se copian literalmente del texto de entrada si están.
- */
+/** Separa ingredientes de fabricante/dirección/registro. Copia literal, no inventa. */
 export async function classifyAndExtractIngredients(rawText: string): Promise<IngredientsExtraction> {
   const prompt = `Este texto viene del campo "ingredientes" de un producto alimenticio, pero puede estar corrupto: mezclado con datos de fabricante, dirección, código de registro (RNE/RNPA), u otro texto que no es una lista de ingredientes.
 
@@ -110,11 +96,7 @@ Importante: NUNCA inventes ni completes ingredientes que no estén literalmente 
   }
 }
 
-/**
- * Extrae la marca DEL TEXTO de un product_name — no busca en ningún
- * diccionario, no inventa: si el nombre no incluye una marca identificable
- * con confianza, devuelve null.
- */
+/** La marca que está en el texto del nombre, o null. No usa diccionario ni inventa. */
 export async function extractBrandFromName(productName: string): Promise<string | null> {
   const prompt = `Nombre de producto: "${productName}"
 

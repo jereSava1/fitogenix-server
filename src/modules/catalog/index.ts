@@ -1,9 +1,4 @@
-/* API pública del módulo `catalog` (docs/02-arquitectura.md §8.2, ADR-0002).
- *
- * Desde afuera del módulo se importa solo este archivo. Acá se hace el
- * cableado a mano (sin contenedor de DI, §3.2): se crean los adaptadores, se
- * le pasan a los casos de uso y se registran las rutas.
- */
+// API pública de catalog: desde afuera se importa solo este archivo. Cableado a mano.
 
 import type { FastifyInstance } from 'fastify';
 import { makeGetProduct } from './application/getProduct';
@@ -15,8 +10,7 @@ import { productRoutes } from './routes/getProduct.route';
 import { lookupRoutes, type OnScan } from './routes/lookup.route';
 import { ProductDetailSchema, ProductSummarySchema } from './routes/product.schema';
 
-// Para los listados de user-library: el resumen de un producto desde la fila
-// join y su schema (K-04).
+// Para los listados de user-library.
 export { productSummaryFromRow } from './infrastructure/productRow';
 export { ProductSummarySchema };
 export type { OnScan };
@@ -25,7 +19,6 @@ export type { OnScan };
 // el mismo código que el server.
 export { buildCachePayload } from './infrastructure/supabaseProductWriter';
 
-// Tipos del catálogo (M-09: antes en src/types/fitogenix.ts).
 export type { ProductDetail, ProductSummary } from './application/productResponse';
 export type { RawProduct } from './domain/rawProduct';
 

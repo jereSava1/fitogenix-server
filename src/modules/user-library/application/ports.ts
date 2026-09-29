@@ -1,12 +1,5 @@
-/* Puertos de user-library (docs/02-arquitectura.md §8.3, ADR-0002).
- *
- * Describen las tablas `saved_products` y `scan_history` TAL COMO SE USAN HOY
- * (M-06 es una mudanza, sin cambios de comportamiento). Las filas se devuelven
- * como las entrega PostgREST, con el producto embebido (`products(*)`); el
- * caso de uso las presenta con `catalog.productSummaryFromRow` más la fecha de
- * la fila (`created_at` / `scanned_at`, K-04). Queda para más adelante
- * `HistoryRepository.remove` (F-01, RF-017).
- */
+// Puertos de user-library. Las filas llegan como las entrega PostgREST, con el producto
+// embebido (`products(*)`).
 
 export type SaveResult = 'ok' | 'not_found';
 

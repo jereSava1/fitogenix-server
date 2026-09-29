@@ -1,18 +1,6 @@
 // Uso: npm run etl:merge -- [--limit 200] [--enrich]
-//
-// Lee filas `pending` de products_staging, las mergea por barcode (Fase 3b),
-// aplica el gate de completitud (3c), opcionalmente enriquece gaps con Claude
-// (--enrich, GASTA TOKENS — no correr sin límite sin el ok del responsable
-// del proyecto), y upsertea a `products` reusando buildCachePayload.
-//
-// v2: procesa de a lotes de barcodes. La versión anterior hacía cuatro round
-// trips por producto, lo que servía para el volumen de validación (cientos o
-// pocos miles) pero no escala: con 70.000 barcodes pendientes tras la ingesta
-// por categorías, eso son ~7 horas. Trayendo las filas de a 500 barcodes y
-// upserteando en lote, el mismo trabajo baja a minutos.
-//
-// La semántica no cambió: mismo merge por prioridad de fuente, mismo gate de
-// completitud, mismos estados. Solo cambió el patrón de I/O.
+// Staging `pending` → merge por barcode → gate de completitud → upsert en `products`, de a
+// lotes. --enrich usa Claude (gasta tokens: no correr sin límite sin OK).
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 
@@ -44,10 +32,7 @@ function parseArgs() {
   };
 }
 
-/**
- * Los productos del lote que YA existen, mapeados a RawProduct para poder
- * entrar al merge como una fuente más.
- */
+/** Los productos del lote que ya existen, como RawProduct: entran al merge como una fuente más. */
 async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, RawProduct>> {
   const out = new Map<string, RawProduct>();
   if (barcodes.length === 0) return out;
@@ -82,10 +67,7 @@ async function main() {
   const includeDiscarded = enrich || retryDiscarded;
   console.log(`[runMerge] limit=${limit} enrich=${enrich ? 'SÍ (gasta tokens de Claude)' : 'no'}`);
 
-  // Con --enrich, también se reintentan las filas que quedaron
-  // `discarded_incomplete` en una corrida anterior — Claude puede completar
-  // ahora lo que antes faltaba. Sin --enrich, solo `pending` (reintentar un
-  // descarte sin enrichment daría el mismo resultado, no tiene sentido).
+  // Con --enrich también se reintentan los `discarded_incomplete`: Claude puede completarlos.
   const barcodes = await fetchPendingBarcodes(limit, includeDiscarded);
   console.log(`[runMerge] ${barcodes.length} barcodes para procesar${includeDiscarded ? ' (incluye descartes previos)' : ''}`);
 

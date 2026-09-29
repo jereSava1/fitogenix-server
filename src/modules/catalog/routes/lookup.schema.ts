@@ -1,11 +1,4 @@
-/**
- * Contrato de POST /v1/products/lookup, en TypeBox (ADR-0011). El producto
- * que responde (`ProductDetail`) está en product.schema.ts.
- *
- * El body rechaza los campos que no declara (`additionalProperties: false`,
- * D-70): antes Fastify los borraba en silencio y el cliente no se enteraba de
- * que mandaba algo que nadie leía.
- */
+// POST /v1/products/lookup. El body rechaza los campos que no declara (D-70).
 
 import { Type } from '@sinclair/typebox';
 import { errorResponses } from '../../../platform/http/schemas';

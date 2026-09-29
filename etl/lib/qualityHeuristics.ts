@@ -1,7 +1,4 @@
-// Heurísticas de calidad de datos — auditoría de `products`. Todo PURO (sin
-// I/O): candidatea filas sospechosas por patrón, no decide ni corrige solo.
-// El job (jobs/auditDataQuality.ts) las reporta para revisión humana antes
-// de tocar nada.
+// Heurísticas de calidad (puras): marcan filas sospechosas para revisión, no corrigen.
 
 // Patrones típicos de texto de fábrica/legal que a veces termina pegado en
 // `ingredients_text` por errores de carga comunitaria en Open Food Facts —
@@ -20,12 +17,8 @@ const BOILERPLATE_PATTERNS: { pattern: RegExp; reason: string }[] = [
 
 export type IngredientsCheckResult = { suspect: boolean; reasons: string[] };
 
-/**
- * ¿`ingredients_text` tiene pinta de dirección/boilerplate legal en vez de
- * una lista de ingredientes real? Heurística por patrones + una señal débil
- * de forma (casi sin comas para el largo del texto) que SOLO suma si ya hay
- * otra señal fuerte — así "Agua, sal" (corto, legítimo) no se marca.
- */
+/** ¿`ingredients_text` parece dirección o boilerplate legal? La señal débil (pocas comas)
+ *  solo suma si hay otra fuerte, así "Agua, sal" no se marca. */
 export function checkIngredientsText(text: string | null | undefined): IngredientsCheckResult {
   if (!text || !text.trim()) return { suspect: false, reasons: [] };
   const reasons = BOILERPLATE_PATTERNS.filter((p) => p.pattern.test(text)).map((p) => p.reason);
@@ -38,15 +31,8 @@ export function checkIngredientsText(text: string | null | undefined): Ingredien
   return { suspect: reasons.length > 0, reasons };
 }
 
-/**
- * Busca si algún brand conocido (recolectado de OTRAS filas de la propia
- * tabla) aparece como palabra completa dentro de `product_name`. Candidato a
- * "brand vacío pero está en el nombre". Case-insensitive, whole-word (evita
- * que "La" matchee dentro de otra palabra). Marcas más largas primero, para
- * que un match específico ("Molinos Río de la Plata") gane sobre uno corto
- * y genérico que también aparezca ("La"). Devuelve el brand tal cual está en
- * el diccionario, o null si no encontró nada.
- */
+/** Una marca conocida (de otras filas) como palabra completa en `product_name`. Las más
+ *  largas primero, para que "Molinos Río de la Plata" le gane a "La". */
 export function findBrandInName(
   productName: string | null | undefined,
   knownBrands: string[],
@@ -66,10 +52,5 @@ export function findBrandInName(
   return null;
 }
 
-// El chequeo de rango físico plausible de nutrientes vive en
-// quality/nutrientPlausibility.ts, NO acá — lo usa también
-// enrichment/claudeEnricher.ts (enrichWithAI) para rechazar valores
-// implausibles que Claude pueda alucinar al enriquecer, así que es
-// compartido, no una heurística exclusiva de esta auditoría. Re-exportado acá para no
-// romper a quien ya importaba `findImplausibleNutrients` desde este módulo.
+// Re-export: el chequeo de rangos vive en quality/nutrientPlausibility.ts.
 export { findImplausibleNutrients, type ImplausibleNutrient } from '../quality/nutrientPlausibility';

@@ -1,8 +1,3 @@
-/* M-04 · normalizeQuery (antes services/queryNormalization.ts, sin test propio).
- * Fija su comportamiento actual antes de que H-04 la vuelva la única
- * normalización (hoy el cache Redis usa otra, que solo pasa a minúsculas y
- * recorta).
- */
 import { describe, expect, it } from 'vitest';
 import { normalizeQuery } from './query';
 

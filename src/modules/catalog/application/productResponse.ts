@@ -1,14 +1,5 @@
-/* Producto crudo → lo que recibe la app: `ProductDetail` (lookup y
- * `GET /v1/products/:id`) y `ProductSummary` (cada ítem de guardados e
- * historial). K-04 (03-contratos §B.3.1 y §B.3.2).
- *
- * Antes era `mapRawToProduct` → `FitogenixProduct`, con 23 campos: algunos
- * constantes (`emoji`, `bgColor`, `categoryEmoji`), otros internos
- * (`dataSource`, `aiEnriched`) y dos identidades (`id` era la query y
- * `productId` el uuid). Ahora `id` es el uuid de `products` y la presentación
- * del puntaje sale entera de `scoring.presentScore` (ADR-0003): acá no se
- * recalcula ningún corte.
- */
+// Crudo → lo que recibe la app: `ProductDetail` (lookup, detalle) y `ProductSummary`
+// (listados). La presentación del puntaje sale de `scoring.presentScore`.
 
 import {
   presentScore,
@@ -30,12 +21,8 @@ export interface ProductSummary {
   name: string;
   brand: string | null;
   imageUrl: string | null;
-  /**
-   * `null` cuando §1 del motor dice que no se puntúa: fuera de alcance, sin
-   * datos suficientes, o lista que no se pudo identificar. Es un estado de
-   * primera clase, no un error: nunca se rellena con un valor conservador
-   * ("la ausencia de datos nunca mejora un puntaje").
-   */
+  /** `null` = el motor no puntúa (fuera de alcance, sin datos, sin identificar). Nunca se
+   *  rellena: la ausencia de datos no mejora un puntaje. */
   score: number | null;
   /** 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES' */
   scoreLabel: string;
@@ -55,7 +42,7 @@ export interface ProductDetail extends ProductSummary {
   /** Por qué no hay puntaje; `null` si lo hay. */
   noScore: { code: NoScoreCode; message: string } | null;
   fito: Fito;
-  /** Qué grupo de ingredientes destacar (D-71). */
+  /** Qué grupo de ingredientes destacar. */
   highlight: Highlight;
   /** En el orden de la etiqueta. No se manda `breakdown` (decisión de
    *  producto, 2026-08-18): la cuenta paso por paso es nuestra, no del

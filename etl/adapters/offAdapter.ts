@@ -1,13 +1,8 @@
 import type { RawProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
-// Países soportados y su tag de OFF. Mapa
-// completo disponible para cuando se expanda a más LATAM, pero el DEFAULT
-// activo es SOLO Argentina (ver DEFAULT_COUNTRY_TAGS abajo): Fitogenix hoy
-// solo escanea productos argentinos, así que no tiene sentido gastar tiempo
-// de merge/enrichment en productos de Chile/México/etc. que nunca se van a
-// escanear. `npm run etl:off -- --countries chile,uruguay` los habilita
-// explícitamente cuando haga falta, sin tocar código.
+// Países y su tag de OFF. Por defecto solo Argentina; otros se activan con
+// `--countries chile,uruguay`.
 export const SUPPORTED_COUNTRY_TAGS: Record<string, string> = {
   argentina: 'en:argentina',
   chile: 'en:chile',
@@ -20,15 +15,9 @@ export const SUPPORTED_COUNTRY_TAGS: Record<string, string> = {
 
 const DEFAULT_COUNTRY_TAGS = [SUPPORTED_COUNTRY_TAGS.argentina];
 
-// `countries_tags` lo llena la comunidad de OFF a mano — mucho producto real
-// (incluso de marcas grandes) no lo tiene tageado o lo tiene mal. El prefijo
-// GS1 779 identifica códigos de barra REGISTRADOS en Argentina — asignado por
-// rango de numeración, no depende de que nadie haya tageado nada. Un barcode
-// scrapeado de un retailer argentino que empieza con 779 es, por definición,
-// un producto argentino, tenga o no countries_tags en OFF. Esto sube el rate
-// de match del merge por barcode (Fase 3b) sin gastar un token de IA. Solo
-// aplica si Argentina está entre los países activos — si alguien pide
-// SOLO `--countries chile`, un barcode 779 no debería colarse igual.
+// El prefijo GS1 779 son códigos registrados en Argentina: cuentan como argentinos aunque
+// OFF no tenga `countries_tags` (lo llena la comunidad, a menudo mal). Solo si Argentina
+// está entre los países activos.
 const AR_BARCODE_PREFIX = '779';
 
 // Shape parcial de una línea del dump JSONL de OFF — solo lo que usamos.
@@ -51,15 +40,8 @@ type OffDumpLine = {
 
 export type AdaptedProduct = { barcode: string; raw: RawProduct };
 
-/**
- * Adapta una línea cruda del dump de OFF a RawProduct. Devuelve null si no
- * aplica: sin barcode válido, fuera de los países activos (`countryTags` —
- * Argentina por default, ver DEFAULT_COUNTRY_TAGS), o sin ningún dato
- * aprovechable — mismo criterio que el gate de completitud de la Fase 3,
- * aplicado acá temprano para no cargar `products_staging` con filas que se
- * van a descartar sí o sí (o que van a matchear un producto que nunca se va
- * a escanear en Argentina).
- */
+/** Línea del dump de OFF → RawProduct, o null sin barcode válido, fuera de los países
+ *  activos o sin ningún dato aprovechable (así staging no carga filas que se descartarían). */
 export function adaptOffLine(
   line: OffDumpLine,
   countryTags: string[] = DEFAULT_COUNTRY_TAGS,

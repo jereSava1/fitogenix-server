@@ -1,12 +1,5 @@
-/* El detalle de un producto por su identidad: `GET /v1/products/:id` (K-04,
- * 03-contratos §B.3.2).
- *
- * Es lo que abre la app al tocar un guardado o un ítem del historial: los
- * listados traen `ProductSummary` y el detalle se pide aparte. Lee directo de
- * la base (sin Redis: el cache está indexado por barcode y por query, no por
- * uuid) y presenta con el mismo `toProductDetail` que el lookup. No registra
- * el escaneo: abrir algo que ya está en la lista no es escanearlo.
- */
+// Detalle por uuid: lo que abre la app desde un guardado o el historial. Va directo a la
+// base (Redis está indexado por barcode y query) y no registra el escaneo.
 
 import type { ProductReader } from './ports';
 import { rowFallbackName, toProductDetail, type ProductDetail } from './productResponse';

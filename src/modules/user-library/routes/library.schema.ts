@@ -1,16 +1,5 @@
-/* Contrato de las rutas de user-library en TypeBox (ADR-0011, K-01).
- *
- * Los listados llevan el resumen del producto (`ProductSummary`) más la fecha
- * de la fila (K-04); el detalle se pide con `GET /v1/products/:id`. Los tipos
- * `SavedItem` / `HistoryItem` viven en application/ y quedan atados a estos
- * schemas con `SameShape`. Todos los errores son `ApiError` (`{ error, code }`,
- * K-03): 401 lo responde requireAuth, 404 y 500 los handlers, y 400, 429 y los
- * 500 no atrapados el manejador de errores (platform/http/errors.ts).
- *
- * El body de POST y el querystring del historial rechazan los campos que no
- * declaran (`additionalProperties: false`, D-70): un `userId` de más ya no se
- * ignora en silencio, se responde 400.
- */
+// Rutas de user-library. Los listados llevan el resumen más la fecha de la fila; el body
+// de POST y el querystring del historial rechazan campos de más (D-70).
 
 import { Type, type Static } from '@sinclair/typebox';
 import {

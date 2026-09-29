@@ -8,8 +8,7 @@ const optional = (key: string): string | undefined => process.env[key];
 
 export const config = {
   port: Number(process.env.PORT ?? 3000),
-  // ANTHROPIC_API_KEY no está: solo la usa el ETL, que tiene su config propia
-  // (etl/config.ts, M-08; D-05).
+  // ANTHROPIC_API_KEY no: solo la usa el ETL (etl/config.ts).
   supabaseUrl: required('SUPABASE_URL'),
   supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
   upstashRedisUrl: optional('UPSTASH_REDIS_REST_URL'),

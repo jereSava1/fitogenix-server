@@ -1,13 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScanHistory } from '../application/history';
 
-// ── Mock de Supabase ──
-// createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
-// en los `*Result`. Cubre las dos formas que usa el repositorio de historial:
-//   .from().select().eq().order().limit()  → selectResult (GET historial)
-//   .from().upsert()                       → upsertResult (recordScan)
-// (los tests de resolveUserIdFromToken se fueron con la función a
-// platform/http en M-06)
+// Supabase simulado: `.select().eq().order().limit()` → selectResult; `.upsert()` → upsertResult.
 type DbError = { message: string; code?: string } | null;
 let selectResult: { data: unknown; error: DbError } = { data: null, error: null };
 let upsertResult: { error: DbError } = { error: null };
@@ -23,8 +17,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from })),
 }));
 
-// Portado de services/scanHistoryService.test.ts (M-06): se prueban los casos
-// de uso cableados con el repositorio real, igual que en producción.
+// Casos de uso cableados con el repositorio real, como en producción.
 let history: ScanHistory;
 
 beforeAll(async () => {

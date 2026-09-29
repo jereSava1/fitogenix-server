@@ -1,24 +1,6 @@
-/* Genera el contrato del server (ADR-0011).
- *
- *   npm run contract:generate   escribe contract/openapi.json (K-01) y
- *                               contract/scoring-bands.json (K-08)
- *   npm run contract:check      falla si algún archivo commiteado no coincide
- *                               con lo que generan los schemas y el motor (lo
- *                               corre el CI)
- *
- * `scoring-bands.json` son las bandas del puntaje (nombre, label, desde/hasta,
- * color, mensaje y sello, más la banda "sin datos"), armadas por el motor con
- * `scoringBands()`: native las usa generadas y no transcribe cortes (D-63).
- *
- * Arma la misma app que `main.ts` (`buildApp` + `registerModules`) con
- * @fastify/swagger adelante, sin escuchar puertos ni conectarse a nada, y
- * escribe el OpenAPI 3.1 que sale de los schemas TypeBox de las rutas. Los
- * schemas con `$id` quedan en `components.schemas` con ese nombre. `/health`
- * no es parte del contrato con la app (D-44) y queda afuera: `buildApp` la
- * registra antes que el plugin de swagger, que solo ve las rutas que se
- * agregan después (las de `registerModules`). Si igual apareciera, el
- * generador falla.
- */
+/* npm run contract:generate   escribe contract/openapi.json y contract/scoring-bands.json.
+ * npm run contract:check      falla si no coinciden con los schemas y el motor (CI).
+ * `/health` no es parte del contrato: si aparece en el OpenAPI, falla. */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';

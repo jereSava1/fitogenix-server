@@ -1,9 +1,4 @@
-/* API pública del módulo `user-library` (docs/02-arquitectura.md §8.3).
- *
- * Guardados e historial del usuario. Desde afuera del módulo se importa solo
- * este archivo; acá se cablean los repositorios de Supabase con los casos de
- * uso y se registran las rutas (sin contenedor de DI, §3.2).
- */
+// API pública de user-library (guardados e historial). Cableado a mano.
 
 import type { FastifyInstance } from 'fastify';
 import { makeScanHistory } from './application/history';
