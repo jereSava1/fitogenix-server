@@ -161,12 +161,12 @@ export interface NutritionResult {
  * El nutriente detrás de cada octógono, en lenguaje llano.
  *
  * **El octógono no se nombra en texto de usuario.** Desde el 31/8/2026 es
- * insumo interno del puntaje: resta, y no se muestra (`CONTEXT.md §2.5`). La
+ * insumo interno del puntaje: resta, y no se muestra (`docs/dominio-scoring.md` §S4). La
  * nota de este paso viaja en `steps[].detail`, que SÍ es texto de usuario, así
  * que no puede decir "sello", "octógono" ni citar la Ley 27.642 — eso afirmaría
  * que el envase los lleva, y lo nuestro es una aproximación calculada desde la
  * ETIQUETA, no desde la formulación del producto, que es lo que exige el método
- * oficial (`fitogenix-agents/nutricion/NUTRICION.md` §N7).
+ * oficial (`docs/dominio-scoring.md` §S6).
  *
  * El campo `warnings` del desglose sigue llevando los octógonos: es información
  * verdadera y sirve para curaduría. Lo que no se hace es renderizarla.

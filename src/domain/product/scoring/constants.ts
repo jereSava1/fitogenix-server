@@ -41,7 +41,7 @@ import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types
  * v2.3 (31/8/2026) — el puntaje NO cambia, y aun así hay que bumpear.
  *
  * Por decisión de producto el octógono resta puntos y deja de mostrarse
- * (`CONTEXT.md §2.5`): la nota del paso nutricional ya no los nombra. Los
+ * (`docs/dominio-scoring.md` §S4): la nota del paso nutricional ya no los nombra. Los
  * desgloses cacheados con v2.2 llevan el texto viejo —"Sellos de advertencia:
  * EXCESO EN …"— dentro de `steps[].detail`, que es texto de usuario. Sin bump,
  * la decisión no llega al usuario hasta que venza el TTL. Es el mismo mecanismo

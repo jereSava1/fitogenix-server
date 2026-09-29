@@ -82,7 +82,7 @@ describe('invariantes sobre entradas rotas', () => {
   });
 });
 
-/* Decisión de producto del 31/8/2026 (`CONTEXT.md §2.5`): el octógono resta
+/* Decisión de producto del 31/8/2026 (`docs/dominio-scoring.md` §S4): el octógono resta
  * puntos y NO se muestra. El cálculo propio parte de la etiqueta, no de la
  * formulación, así que es una aproximación — y una aproximación no se puede
  * presentar como el dato que el usuario contrasta contra el envase.
@@ -110,7 +110,7 @@ describe('los octógonos restan, pero no se nombran en texto de usuario', () => 
    * "advertencia" a secas NO está en la lista, a propósito: el texto de la
    * anulación por colorantes azoicos dice "la UE exige la advertencia…", que es
    * verdadero y no tiene nada que ver con los octógonos. Y "sello" a secas
-   * tampoco, porque el sello Fitogénico sí se muestra (`CONTEXT.md §3.2`). Lo
+   * tampoco, porque el sello Fitogénico sí se muestra (`docs/dominio-scoring.md` §S3). Lo
    * que se prohíbe es afirmar el octógono, no la palabra suelta. */
   const PROHIBIDO = [/EXCESO EN/i, /oct[óo]gono/i, /sellos? de advertencia/i, /27\.?642/, /151\/2022/];
 

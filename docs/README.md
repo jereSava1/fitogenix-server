@@ -15,6 +15,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | Ver la API y los datos (endpoints, campos, tablas) | [`03-contratos.md`](03-contratos.md) |
 | Ver qué falta, qué sobra y qué está roto | [`04-analisis.md`](04-analisis.md) |
 | Ver el plan de trabajo | [`05-plan.md`](05-plan.md) (backlog por etapas + Definition of Done) |
+| Entender el criterio del puntaje y su fundamento | [`dominio-scoring.md`](dominio-scoring.md) |
 | Ver lo que se dejó para más adelante | [`deuda-tecnica.md`](deuda-tecnica.md) |
 
 ## Contenido
@@ -23,7 +24,8 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 |---|---|
 | `00-inventario.md` … `05-plan.md` | Un documento por fase de la auditoría |
 | `decisiones.md` | Registro único de decisiones |
-| `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica) |
+| `dominio-scoring.md` | Qué evalúa el motor, cómo se arma el puntaje, bandas y sello, los octógonos y la norma que los fundamenta, y los temas abiertos del motor |
+| `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica, calidad del motor) |
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
 | `borradores/dependency-cruiser.cjs` | Reglas de dependencias entre módulos, listas para copiar a la raíz |
 | `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |
