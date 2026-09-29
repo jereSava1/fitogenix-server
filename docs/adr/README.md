@@ -13,9 +13,9 @@ Registro de decisiones de arquitectura de este repo. Formato: contexto, decisió
 | [0003](0003-scoring-dominio-puro.md) | Scoring como dominio puro y única fuente de presentación del puntaje | Propuesto |
 | [0004](0004-etl-fuera-del-runtime.md) | El ETL fuera del runtime, con config propia | Propuesto |
 | [0005](0005-acceso-a-datos-y-propiedad-de-tablas.md) | Propiedad de tablas y acceso a Supabase por actor | Propuesto (revisado por 0010) |
-| [0006](0006-fallas-de-dependencias.md) | Timeouts, errores de dependencias y health | Propuesto |
+| [0006](0006-fallas-de-dependencias.md) | Timeouts, errores de dependencias y health | Propuesto · implementado (H-01, H-02) |
 | [0007](0007-portabilidad-de-hosting.md) | Portabilidad de hosting | Propuesto |
-| [0008](0008-validacion-de-jwt.md) | Validación del JWT: local con JWKS vs. `getUser` | **Aceptado** (D-29) |
+| [0008](0008-validacion-de-jwt.md) | Validación del JWT: local con JWKS vs. `getUser` | **Aceptado** (D-29) · implementado (H-02) |
 | [0009](0009-migraciones.md) | Un solo mecanismo de migraciones + baseline | Propuesto |
 | [0010](0010-server-unica-puerta-de-entrada.md) | El server como única puerta de entrada del cliente | Propuesto (D-28) |
 | [0011](0011-contrato-http-fuente-unica.md) | El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente | **Aceptado** (D-68) |

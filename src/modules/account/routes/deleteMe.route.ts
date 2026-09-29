@@ -1,4 +1,5 @@
-// DELETE /v1/users/me: borra la cuenta del usuario del token (requireAuth).
+// DELETE /v1/users/me: borra la cuenta del usuario del token. Además de verificar el JWT,
+// Supabase Auth confirma que la sesión sigue activa (ADR-0008).
 
 import { Type } from '@sinclair/typebox';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
@@ -14,14 +15,14 @@ import {
 import type { DeleteAccount } from '../application/deleteAccount';
 import { DeleteUserError } from '../application/ports';
 
-/** El 500 es `ApiError` también si el cliente de Supabase lanza. */
+/** El 500 es `ApiError` también si el cliente de Supabase lanza; 503 si Auth no responde. */
 const deleteMeSchema = {
   tags: ['account'],
   summary: 'Eliminar la cuenta del usuario',
   security: [{ bearerAuth: [] }],
   response: {
     200: Type.Ref(OkSchema),
-    ...errorResponses(401, 429, 500),
+    ...errorResponses(401, 429, 500, 503),
   },
 };
 
@@ -31,7 +32,7 @@ export const deleteMeRoutes = (deps: { deleteAccount: DeleteAccount }): FastifyP
   async (instance) => {
     addSharedSchemas(instance, accountSharedSchemas);
     const app = instance.withTypeProvider<TypeBoxTypeProvider>();
-    await app.register(requireAuth);
+    await app.register(requireAuth, { checkSession: true });
 
     app.delete('/users/me', { schema: deleteMeSchema }, async (request, reply) => {
       try {

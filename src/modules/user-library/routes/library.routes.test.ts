@@ -6,6 +6,7 @@ import { AJV_OPTIONS } from '../../../platform/http/buildApp';
 import { registerErrorHandling } from '../../../platform/http/errors';
 import type { SavedItem, SavedProducts } from '../application/saved';
 import type { HistoryItem, ScanHistory } from '../application/history';
+import { simularSupabaseAuth, SUPABASE_URL } from '../../../testing/supabaseAuth';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -29,9 +30,8 @@ const history = {
 };
 let app: FastifyInstance;
 
-const TOKENS: Record<string, string> = { 'token-a': USER_A, 'token-b': USER_B };
-const comoA = { authorization: 'Bearer token-a' };
-const comoB = { authorization: 'Bearer token-b' };
+let comoA: { authorization: string };
+let comoB: { authorization: string };
 const VALIDATION = { error: 'La solicitud no es válida.', code: 'VALIDATION_ERROR' };
 
 const RESUMEN_YOGUR = {
@@ -47,8 +47,12 @@ const YOGUR_GUARDADO: SavedItem = { ...RESUMEN_YOGUR, savedAt: '2026-07-08T12:00
 const YOGUR_ESCANEADO: HistoryItem = { ...RESUMEN_YOGUR, scannedAt: '2026-07-14T12:00:00.000Z' };
 
 beforeAll(async () => {
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
+  const auth = await simularSupabaseAuth();
+  vi.stubGlobal('fetch', auth.fetch);
+  comoA = { authorization: `Bearer ${await auth.token(USER_A)}` };
+  comoB = { authorization: `Bearer ${await auth.token(USER_B)}` };
 
   const { savedRoutes } = await import('./saved.route');
   const { historyRoutes } = await import('./history.route');
@@ -66,11 +70,6 @@ afterAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  supabaseAuth.getUser.mockImplementation(async (token: string) =>
-    TOKENS[token]
-      ? { data: { user: { id: TOKENS[token] } }, error: null }
-      : { data: { user: null }, error: { message: 'invalid JWT' } },
-  );
   vi.mocked(saved.listSavedProducts).mockResolvedValue([]);
   vi.mocked(saved.saveProduct).mockResolvedValue('ok');
   vi.mocked(saved.removeSavedProduct).mockResolvedValue(undefined);
@@ -97,6 +96,12 @@ describe('rutas privadas — sin sesión (T-05)', () => {
     const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: { authorization: 'Bearer ajeno' } });
     expect(res.statusCode).toBe(401);
     expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
+  });
+
+  it('con sesión válida no se consulta a Supabase Auth: el JWT se verifica localmente (H-02)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: comoA });
+    expect(res.statusCode).toBe(200);
+    expect(supabaseAuth.getUser).not.toHaveBeenCalled();
   });
 });
 

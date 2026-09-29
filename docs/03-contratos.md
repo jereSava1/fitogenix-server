@@ -408,13 +408,16 @@ Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOAL
 
 **Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error:
 
-**H-01 (2026-09-29, contrato `0.4.0`):** se suma `DEPENDENCY_UNAVAILABLE` (503 + `Retry-After: 10`) cuando la base no responde o falla, en el lookup, el detalle, guardados e historial. "No está" (404) queda solo para una consulta que salió bien sin filas. El 503 ante una caída de Supabase Auth llega con H-02.
+**H-01 (2026-09-29, contrato `0.4.0`):** se suma `DEPENDENCY_UNAVAILABLE` (503 + `Retry-After: 10`) cuando la base no responde o falla, en el lookup, el detalle, guardados e historial. "No está" (404) queda solo para una consulta que salió bien sin filas.
+
+**H-02 (2026-09-29, contrato `0.5.0`, D-75):** el JWT se verifica localmente (firma con el JWKS del proyecto, `exp`, `iss`, `aud`), y se exige `Bearer <token>`. Las rutas con sesión responden **503** `DEPENDENCY_UNAVAILABLE` si Supabase Auth no responde y no hay claves en cache para verificar el token; `DELETE /v1/users/me` además consulta a Supabase Auth (`getUser`): sesión revocada → 401, Auth sin responder → 503. El lookup con un token que no sirve, o sin poder verificarlo, sigue como anónimo y no registra el escaneo.
 
 | Caso | Status | `code` | `error` |
 |---|---|---|---|
 | Validación de body, params o querystring (ajv), JSON roto | 400 | `VALIDATION_ERROR` | "La solicitud no es válida." (fijo; el detalle de ajv va al log, D-69) |
 | Otros 4xx de Fastify antes del handler (413, 415…) | el suyo | `VALIDATION_ERROR` | ídem |
 | Sin token o sesión inválida (`requireAuth`) | 401 | `UNAUTHENTICATED` | el mensaje de siempre ("Falta el token de sesión" / "Sesión inválida o expirada") |
+| Supabase Auth no responde y no hay claves para verificar el token, o no confirma la sesión en `DELETE /v1/users/me` (H-02) | 503 | `DEPENDENCY_UNAVAILABLE` | el de las caídas, con `Retry-After: 10` |
 | Lookup sin producto | 404 | `PRODUCT_NOT_IN_CATALOG` | "Todavía no tenemos este producto en nuestro catálogo." |
 | Guardar un `productId` que no existe | 404 | `NOT_FOUND` | "Producto no encontrado en el catálogo" |
 | Ruta inexistente (incluidas las viejas sin `/v1`) | 404 | `NOT_FOUND` | "La ruta no existe." |
@@ -518,7 +521,7 @@ Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `ne
 
 ### B.4.4 Registro de escaneo (escritura en segundo plano)
 
-Hoy: la ruta vuelve a validar el token (`resolveUserIdFromToken`) y llama a `recordScan`. Objetivo: `optionalAuth` deja `request.userId`; la ruta llama a `onScan(userId, product.id)` (inyectado desde `main.ts`) → `HistoryRepository.upsert`.
+Desde H-02: la ruta resuelve el usuario con `optionalAuth` (verificación local, en segundo plano) y llama a `onScan({ userId, productId })` (inyectado desde `registerModules`) → `recordScan` → `HistoryRepository.upsert`. Sin sesión válida no se registra nada.
 
 ### B.4.5 Sesión (auth)
 

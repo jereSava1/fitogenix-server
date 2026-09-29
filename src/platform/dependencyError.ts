@@ -1,7 +1,7 @@
 // Una dependencia (la base, Auth, Redis) no respondió o falló (ADR-0006). Nunca significa
 // "no está": eso es un resultado (`null`) de una consulta que salió bien.
 
-export type Dependency = 'supabase' | 'redis';
+export type Dependency = 'supabase' | 'auth' | 'redis';
 
 export class DependencyUnavailableError extends Error {
   constructor(

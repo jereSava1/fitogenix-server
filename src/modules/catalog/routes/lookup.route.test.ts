@@ -9,15 +9,20 @@ import type { LookupProduct } from '../application/lookupProduct';
 import { toProductDetail, type ProductDetail } from '../application/productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 import type { OnScan } from './lookup.route';
+import { simularSupabaseAuth, SUPABASE_URL, type SupabaseAuthSimulado } from '../../../testing/supabaseAuth';
 
 const productLookupService = {
   lookupProduct: vi.fn<LookupProduct>(async () => null),
 };
 let buildApp: (onScan?: OnScan) => Promise<ReturnType<typeof Fastify>>;
+let auth: SupabaseAuthSimulado;
+const USER_ID = '11111111-1111-4111-8111-111111111111';
 
 beforeAll(async () => {
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_SECRET_KEY = 'test';
+  auth = await simularSupabaseAuth();
+  vi.stubGlobal('fetch', auth.fetch);
 
   const { lookupRoutes } = await import('./lookup.route');
 
@@ -183,7 +188,7 @@ describe('POST /products/lookup — contrato de respuesta', () => {
 describe('POST /products/lookup — registro del escaneo (M-05)', () => {
   const encontrado = producto({ product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar' });
 
-  it('con Bearer y producto encontrado: onScan recibe el token y el id del producto', async () => {
+  it('con sesión válida y producto encontrado: onScan recibe el userId del token y el id del producto', async () => {
     productLookupService.lookupProduct.mockResolvedValue(encontrado);
     const onScan = vi.fn<OnScan>(async () => undefined);
 
@@ -191,13 +196,13 @@ describe('POST /products/lookup — registro del escaneo (M-05)', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/products/lookup',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: `Bearer ${await auth.token(USER_ID)}` },
       payload: { query: '7790895000123' },
     });
 
     expect(res.statusCode).toBe(200);
     await vi.waitFor(() =>
-      expect(onScan).toHaveBeenCalledWith({ token: 'token-123', productId: encontrado.id }),
+      expect(onScan).toHaveBeenCalledWith({ userId: USER_ID, productId: encontrado.id }),
     );
     await app.close();
   });
@@ -213,12 +218,65 @@ describe('POST /products/lookup — registro del escaneo (M-05)', () => {
     await app.inject({
       method: 'POST',
       url: '/products/lookup',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: `Bearer ${await auth.token(USER_ID)}` },
       payload: { query: 'x2' },
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(onScan).not.toHaveBeenCalled();
     await app.close();
+  });
+
+  // D-75: con un token que no sirve, el lookup busca igual como anónimo, sin error.
+  it.each([
+    ['token inválido', async () => 'Bearer no-es-un-jwt'],
+    ['token vencido', async () => `Bearer ${await auth.token(USER_ID, { exp: Math.floor(Date.now() / 1000) - 60 })}`],
+    ['header sin prefijo Bearer', async () => auth.token(USER_ID)],
+  ])('%s → 200 como anónimo y no se registra el escaneo', async (_caso, header) => {
+    productLookupService.lookupProduct.mockResolvedValue(encontrado);
+    const onScan = vi.fn<OnScan>(async () => undefined);
+    const app = await buildApp(onScan);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/products/lookup',
+      headers: { authorization: await header() },
+      payload: { query: '7790895000123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual(encontrado);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(onScan).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it('Auth caído y sin claves: 200 como anónimo y no se registra (ADR-0006)', async () => {
+    productLookupService.lookupProduct.mockResolvedValue(encontrado);
+    const onScan = vi.fn<OnScan>(async () => undefined);
+    auth.jwks('caido');
+    vi.resetModules(); // cache del JWKS vacía
+    const { lookupRoutes } = await import('./lookup.route');
+    const app = Fastify({ ajv: AJV_OPTIONS });
+    registerErrorHandling(app);
+    await app.register(lookupRoutes({ lookup: productLookupService.lookupProduct, onScan }));
+
+    try {
+      const antes = auth.pedidos;
+      const res = await app.inject({
+        method: 'POST',
+        url: '/products/lookup',
+        headers: { authorization: `Bearer ${await auth.token(USER_ID)}` },
+        payload: { query: '7790895000123' },
+      });
+      expect(res.statusCode).toBe(200);
+      await vi.waitFor(() => expect(auth.pedidos).toBeGreaterThan(antes));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(onScan).not.toHaveBeenCalled();
+    } finally {
+      auth.jwks('ok');
+      await app.close();
+    }
   });
 
   it('si onScan falla, la respuesta igual sale 200 (fire-and-forget)', async () => {
@@ -231,7 +289,7 @@ describe('POST /products/lookup — registro del escaneo (M-05)', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/products/lookup',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: `Bearer ${await auth.token(USER_ID)}` },
       payload: { query: '7790895000123' },
     });
 
