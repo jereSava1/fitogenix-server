@@ -1,18 +1,19 @@
 /* T-05 · Caracterización de las rutas privadas y del aislamiento entre
- * usuarios (docs/05-plan.md).
+ * usuarios (docs/05-plan.md) — parte de user-library (guardados e historial).
  *
- * Se registran los módulos de rutas reales (saved, history, deleteMe) como en
- * main.ts, con Supabase y los servicios simulados. Desde M-06 las rutas de
- * user-library reciben los casos de uso inyectados: en vez de simular los
- * módulos de servicios se les pasan fakes con los mismos nombres, así los
- * casos y las aserciones quedan idénticos. Dos usuarios, A y B, cada
+ * Se registran las rutas reales con Supabase Auth simulado y los casos de uso
+ * como fakes con los mismos nombres de antes (M-06). Dos usuarios, A y B, cada
  * uno con su token: el `userId` que llega a los servicios tiene que salir
  * SIEMPRE del token, nunca de lo que mande el cliente (body, query, headers).
+ *
+ * Hasta M-07 era un solo archivo (`src/routes/users/users.test.ts`) con
+ * `DELETE /users/me`; esa parte está en account/routes/deleteMe.route.test.ts,
+ * con los mismos nombres de casos.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import type { SavedProducts } from '../../modules/user-library/application/saved';
-import type { ScanHistory } from '../../modules/user-library/application/history';
+import type { SavedProducts } from '../application/saved';
+import type { ScanHistory } from '../application/history';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -20,7 +21,6 @@ const PRODUCT_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
 const supabaseAuth = vi.hoisted(() => ({
   getUser: vi.fn(),
-  admin: { deleteUser: vi.fn() },
 }));
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -45,12 +45,10 @@ beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
 
-  const { savedRoutes } = await import('../../modules/user-library/routes/saved.route');
-  const { historyRoutes } = await import('../../modules/user-library/routes/history.route');
-  const { deleteUserRoute } = await import('./deleteMe');
+  const { savedRoutes } = await import('./saved.route');
+  const { historyRoutes } = await import('./history.route');
 
   app = Fastify();
-  await app.register(deleteUserRoute);
   await app.register(savedRoutes({ saved }));
   await app.register(historyRoutes({ history }));
   await app.ready();
@@ -67,7 +65,6 @@ beforeEach(() => {
       ? { data: { user: { id: TOKENS[token] } }, error: null }
       : { data: { user: null }, error: { message: 'invalid JWT' } },
   );
-  supabaseAuth.admin.deleteUser.mockResolvedValue({ data: {}, error: null });
   vi.mocked(saved.listSavedProducts).mockResolvedValue([]);
   vi.mocked(saved.saveProduct).mockResolvedValue('ok');
   vi.mocked(saved.removeSavedProduct).mockResolvedValue(undefined);
@@ -80,7 +77,6 @@ describe('rutas privadas — sin sesión (T-05)', () => {
     ['POST', '/users/me/saved'],
     ['DELETE', `/users/me/saved/${PRODUCT_ID}`],
     ['GET', '/users/me/history'],
-    ['DELETE', '/users/me'],
   ] as const)('%s %s sin token → 401 sin llegar al servicio', async (method, url) => {
     const res = await app.inject({ method, url, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined });
     expect(res.statusCode).toBe(401);
@@ -89,7 +85,6 @@ describe('rutas privadas — sin sesión (T-05)', () => {
     expect(saved.saveProduct).not.toHaveBeenCalled();
     expect(saved.removeSavedProduct).not.toHaveBeenCalled();
     expect(history.listScanHistory).not.toHaveBeenCalled();
-    expect(supabaseAuth.admin.deleteUser).not.toHaveBeenCalled();
   });
 
   it('token de otro sistema → 401', async () => {
@@ -206,22 +201,6 @@ describe('GET /users/me/history (T-05)', () => {
   });
 });
 
-describe('DELETE /users/me (T-05)', () => {
-  it('200 { ok: true } y borra al usuario del token', async () => {
-    const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true });
-    expect(supabaseAuth.admin.deleteUser).toHaveBeenCalledWith(USER_A);
-  });
-
-  it('error de Supabase al borrar → 500 con mensaje', async () => {
-    supabaseAuth.admin.deleteUser.mockResolvedValue({ data: null, error: { message: 'boom' } });
-    const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
-    expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({ error: 'No se pudo eliminar la cuenta' });
-  });
-});
-
 /* Aislamiento (RNF-S03): el usuario A nunca opera sobre los datos del B.
  * Cada caso manda el id de B por todas las vías que controla el cliente y
  * verifica que al servicio le llega el id del token de A. */
@@ -258,11 +237,4 @@ describe('aislamiento entre usuarios (T-05)', () => {
     expect(history.listScanHistory).toHaveBeenCalledWith(USER_A, 20);
   });
 
-  it('DELETE /users/me: borra al dueño del token aunque se mande el id de otro', async () => {
-    await app.inject({
-      method: 'DELETE', url: `/users/me?userId=${USER_B}`, headers: { ...comoA, ...intentoDeB },
-    });
-    expect(supabaseAuth.admin.deleteUser).toHaveBeenCalledTimes(1);
-    expect(supabaseAuth.admin.deleteUser).toHaveBeenCalledWith(USER_A);
-  });
 });

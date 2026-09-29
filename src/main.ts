@@ -4,7 +4,7 @@ import { buildApp } from './platform/http/buildApp';
 import { resolveUserIdFromToken } from './platform/http/auth';
 import { registerCatalog } from './modules/catalog';
 import { recordScan, registerUserLibrary } from './modules/user-library';
-import { deleteUserRoute } from './routes/users/deleteMe';
+import { registerAccount } from './modules/account';
 
 // Composition root: arma la app base y le registra las rutas de cada módulo.
 async function start() {
@@ -19,7 +19,7 @@ async function start() {
       if (userId) await recordScan(userId, productId);
     },
   });
-  await app.register(deleteUserRoute);
+  await registerAccount(app);
   await registerUserLibrary(app);
 
   await app.listen({ port: config.port, host: '0.0.0.0' });
