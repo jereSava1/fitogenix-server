@@ -14,7 +14,7 @@ const getProductSchema = {
   params: Type.Object({ id: Type.String({ format: 'uuid' }) }),
   response: {
     200: Type.Ref(ProductDetailSchema),
-    ...errorResponses(400, 404, 429, 500),
+    ...errorResponses(400, 404, 429, 500, 503),
   },
 };
 

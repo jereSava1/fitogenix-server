@@ -36,7 +36,7 @@ export const listSavedSchema = {
   security: [{ bearerAuth: [] }],
   response: {
     200: Type.Object({ items: Type.Array(Type.Ref(SavedItemSchema)) }),
-    ...errorResponses(401, 429, 500),
+    ...errorResponses(401, 429, 500, 503),
   },
 };
 
@@ -45,7 +45,7 @@ export const saveProductSchema = {
   summary: 'Guardar un producto (idempotente)',
   security: [{ bearerAuth: [] }],
   body: Type.Object({ productId: ProductIdSchema }, { additionalProperties: false }),
-  response: { 200: Type.Ref(OkSchema), ...errorResponses(400, 401, 404, 429, 500) },
+  response: { 200: Type.Ref(OkSchema), ...errorResponses(400, 401, 404, 429, 500, 503) },
 };
 
 export const removeSavedSchema = {
@@ -53,7 +53,7 @@ export const removeSavedSchema = {
   summary: 'Quitar un producto de los guardados (idempotente)',
   security: [{ bearerAuth: [] }],
   params: Type.Object({ productId: ProductIdSchema }),
-  response: { 200: Type.Ref(OkSchema), ...errorResponses(400, 401, 429, 500) },
+  response: { 200: Type.Ref(OkSchema), ...errorResponses(400, 401, 429, 500, 503) },
 };
 
 export const listHistorySchema = {
@@ -66,7 +66,7 @@ export const listHistorySchema = {
   ),
   response: {
     200: Type.Object({ items: Type.Array(Type.Ref(HistoryItemSchema)) }),
-    ...errorResponses(400, 401, 429, 500),
+    ...errorResponses(400, 401, 429, 500, 503),
   },
 };
 

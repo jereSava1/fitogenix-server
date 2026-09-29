@@ -10,7 +10,11 @@ let deleteResult: { error: DbError } = { error: null };
 
 const order = vi.fn(async () => selectResult);
 const selectEq = vi.fn(() => ({ order }));
-const select = vi.fn(() => ({ eq: selectEq }));
+const retry = vi.fn();
+const select = vi.fn(() => {
+  const chain = { eq: selectEq, retry: retry.mockImplementation(() => chain) };
+  return chain;
+});
 const upsert = vi.fn(async () => upsertResult);
 const deleteEqProductId = vi.fn(async () => deleteResult);
 const deleteEqUser = vi.fn(() => ({ eq: deleteEqProductId }));
@@ -119,6 +123,7 @@ describe('listSavedProducts', () => {
     // Query correcto: embed de products + filtro por usuario + orden descendente.
     expect(from).toHaveBeenCalledWith('saved_products');
     expect(select).toHaveBeenCalledWith('product_id, created_at, products(*)');
+    expect(retry).toHaveBeenCalledWith(false);
     expect(selectEq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
   });

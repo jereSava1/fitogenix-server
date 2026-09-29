@@ -1,19 +1,22 @@
 // Tabla `scan_history`: cada escaneo autenticado referencia `products` por `product_id`.
 
-import { supabaseAdmin as admin } from '../../../platform/supabase';
+import { queryFailed, runQuery, supabaseAdmin as admin } from '../../../platform/supabase';
 import type { HistoryRepository } from '../application/ports';
 
 export const supabaseHistoryRepository: HistoryRepository = {
   async list(userId, limit) {
-    const { data, error } = await admin()
-      .from('scan_history')
-      // Embed habilitado por la FK scan_history.product_id → products.id.
-      .select('product_id, scanned_at, products(*)')
-      .eq('user_id', userId)
-      .order('scanned_at', { ascending: false })
-      .limit(limit);
+    const { data, error } = await runQuery('scan_history select', () =>
+      admin()
+        .from('scan_history')
+        // Embed habilitado por la FK scan_history.product_id → products.id.
+        .select('product_id, scanned_at, products(*)')
+        .retry(false)
+        .eq('user_id', userId)
+        .order('scanned_at', { ascending: false })
+        .limit(limit),
+    );
 
-    if (error) throw new Error(`scan_history select: ${error.message}`);
+    if (error) throw queryFailed('scan_history select', error);
 
     return Array.isArray(data) ? data : [];
   },

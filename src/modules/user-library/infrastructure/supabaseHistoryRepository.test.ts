@@ -9,7 +9,11 @@ let upsertResult: { error: DbError } = { error: null };
 const limitFn = vi.fn(async () => selectResult);
 const order = vi.fn(() => ({ limit: limitFn }));
 const selectEq = vi.fn(() => ({ order }));
-const select = vi.fn(() => ({ eq: selectEq }));
+const retry = vi.fn();
+const select = vi.fn(() => {
+  const chain = { eq: selectEq, retry: retry.mockImplementation(() => chain) };
+  return chain;
+});
 const upsert = vi.fn(async (_payload: unknown, _options: unknown) => upsertResult);
 const from = vi.fn(() => ({ select, upsert }));
 
@@ -148,6 +152,7 @@ describe('listScanHistory', () => {
     // Query correcto: embed de products + filtro por usuario + orden + límite.
     expect(from).toHaveBeenCalledWith('scan_history');
     expect(select).toHaveBeenCalledWith('product_id, scanned_at, products(*)');
+    expect(retry).toHaveBeenCalledWith(false);
     expect(selectEq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(order).toHaveBeenCalledWith('scanned_at', { ascending: false });
     expect(limitFn).toHaveBeenCalledWith(20);

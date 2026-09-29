@@ -3,6 +3,7 @@
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
 import { requireAuth } from '../../../platform/http/auth';
+import { DependencyUnavailableError } from '../../../platform/dependencyError';
 import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas } from '../../../platform/http/schemas';
 import type { SavedProducts } from '../application/saved';
@@ -25,6 +26,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
       const items = await listSavedProducts(request.userId);
       return reply.send({ items });
     } catch (err) {
+      if (err instanceof DependencyUnavailableError) throw err; // 503
       app.log.error(err, 'Error al listar productos guardados');
       return reply.status(500).send(apiError('INTERNAL', 'No se pudieron obtener los guardados'));
     }
@@ -39,6 +41,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
       }
       return reply.send({ ok: true });
     } catch (err) {
+      if (err instanceof DependencyUnavailableError) throw err; // 503
       app.log.error(err, 'Error al guardar producto');
       return reply.status(500).send(apiError('INTERNAL', 'No se pudo guardar el producto'));
     }
@@ -53,6 +56,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
         await removeSavedProduct(request.userId, request.params.productId);
         return reply.send({ ok: true });
       } catch (err) {
+        if (err instanceof DependencyUnavailableError) throw err; // 503
         app.log.error(err, 'Error al quitar producto guardado');
         return reply.status(500).send(apiError('INTERNAL', 'No se pudo quitar el producto guardado'));
       }

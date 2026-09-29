@@ -4,6 +4,13 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.4.0 — 2026-09-29 · H-01
+
+**Aditivo.** Nuevo código de error `DEPENDENCY_UNAVAILABLE` (503, con `Retry-After: 10`): la base no respondió o falló. Lo declaran `POST /v1/products/lookup`, `GET /v1/products/{id}`, `GET`/`POST /v1/users/me/saved`, `DELETE /v1/users/me/saved/{productId}` y `GET /v1/users/me/history`.
+
+- Antes, una caída de la base respondía `404` en el lookup y el detalle ("no está"), y `500` en guardados e historial. Ahora `404` es solo "la consulta salió bien y no hay nada".
+- La app ya trata cualquier error que no sea 404 como "reintentar", así que no necesita cambios.
+
 ## 0.3.0 — 2026-09-29 · K-04
 
 **Rompe.** Native se adapta en K-05 (tipos generados) y K-06 (pantallas); hasta entonces la integración de punta a punta no anda. Decisiones: D-32 a D-38, D-70, D-71.

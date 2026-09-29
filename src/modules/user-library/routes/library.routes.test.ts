@@ -115,6 +115,21 @@ describe('GET /users/me/saved (T-05)', () => {
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({ error: 'No se pudieron obtener los guardados', code: 'INTERNAL' });
   });
+  // H-01: una caída de la base no es un 500 propio de la ruta, es un 503 del manejador.
+  it.each([
+    ['GET', '/users/me/saved', () => vi.mocked(saved.listSavedProducts)],
+    ['POST', '/users/me/saved', () => vi.mocked(saved.saveProduct)],
+    ['DELETE', `/users/me/saved/${PRODUCT_ID}`, () => vi.mocked(saved.removeSavedProduct)],
+    ['GET', '/users/me/history', () => vi.mocked(history.listScanHistory)],
+  ] as const)('%s %s con la base caída → 503', async (method, url, servicio) => {
+    const { DependencyUnavailableError } = await import('../../../platform/dependencyError');
+    servicio().mockRejectedValue(new DependencyUnavailableError('supabase', 'boom'));
+    const res = await app.inject({
+      method, url, headers: comoA, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined,
+    });
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({ code: 'DEPENDENCY_UNAVAILABLE' });
+  });
 });
 
 describe('POST /users/me/saved (T-05)', () => {

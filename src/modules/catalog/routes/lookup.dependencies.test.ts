@@ -17,7 +17,9 @@ const redis = vi.hoisted(() => ({
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: supabase.maybeSingle }) }) }),
+    from: () => ({
+      select: () => ({ retry: () => ({ eq: () => ({ maybeSingle: supabase.maybeSingle }) }) }),
+    }),
     rpc: supabase.rpc,
   })),
 }));
@@ -43,6 +45,10 @@ const FILA = {
 const NO_ENCONTRADO = {
   error: 'Todavía no tenemos este producto en nuestro catálogo.',
   code: 'PRODUCT_NOT_IN_CATALOG',
+};
+const NO_DISPONIBLE = {
+  error: 'El servicio no está disponible en este momento. Intentá de nuevo en un rato.',
+  code: 'DEPENDENCY_UNAVAILABLE',
 };
 const BASE_CAIDA = { data: null, error: { message: 'TypeError: fetch failed', code: '' } };
 
@@ -79,32 +85,34 @@ function lookup(query: string) {
   return app.inject({ method: 'POST', url: '/products/lookup', payload: { query } });
 }
 
+// Cambiado a propósito en H-01: una caída de la base era "no está" (404) o un 500.
 describe('lookup — base de datos caída (T-06)', () => {
-  // CARACTERIZA: cambia en H-01. Un error de Supabase se trata como "no está" (404, no 503).
-  it('por barcode: Supabase devuelve error → 404 "no lo tenemos"', async () => {
+  function expectNoDisponible(res: Awaited<ReturnType<typeof lookup>>) {
+    expect(res.statusCode).toBe(503);
+    expect(res.headers['retry-after']).toBe('10');
+    expect(res.json()).toEqual(NO_DISPONIBLE);
+  }
+
+  it('por barcode: Supabase devuelve error → 503', async () => {
     supabase.maybeSingle.mockResolvedValue(BASE_CAIDA);
+    expectNoDisponible(await lookup('7790000000024'));
+  });
+
+  it('por nombre: la RPC devuelve error → 503', async () => {
+    supabase.rpc.mockResolvedValue(BASE_CAIDA);
+    expectNoDisponible(await lookup('yogur caido'));
+  });
+
+  it('por barcode: el cliente de Supabase lanza (red, timeout) → 503', async () => {
+    supabase.maybeSingle.mockRejectedValue(new Error('socket hang up'));
+    expectNoDisponible(await lookup('7790000000031'));
+  });
+
+  it('no estar sigue siendo 404: la consulta salió bien y no hay fila', async () => {
+    supabase.maybeSingle.mockResolvedValue({ data: null, error: null });
     const res = await lookup('7790000000024');
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual(NO_ENCONTRADO);
-  });
-
-  // CARACTERIZA: cambia en H-01.
-  it('por nombre: la RPC devuelve error → 404 "no lo tenemos"', async () => {
-    supabase.rpc.mockResolvedValue(BASE_CAIDA);
-    const res = await lookup('yogur caido');
-    expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual(NO_ENCONTRADO);
-  });
-
-  // CARACTERIZA: cambia en H-01. Si el cliente lanza, nadie lo atrapa: 500 INTERNAL.
-  it('por barcode: el cliente de Supabase lanza → 500', async () => {
-    supabase.maybeSingle.mockRejectedValue(new Error('socket hang up'));
-    const res = await lookup('7790000000031');
-    expect(res.statusCode).toBe(500);
-    expect(res.json()).toEqual({
-      error: 'Ocurrió un error inesperado. Intentá de nuevo en un momento.',
-      code: 'INTERNAL',
-    });
   });
 });
 
@@ -127,22 +135,16 @@ describe('lookup — Redis caído (T-06)', () => {
     expect(supabase.rpc).toHaveBeenCalledTimes(1);
   });
 
-  // CARACTERIZA: cambia en H-01 (Redis con timeout de 200 ms). Hoy espera sin límite.
-  it('por barcode: Redis colgado → la respuesta queda esperando (sin timeout)', async () => {
-    let liberar: (v: null) => void = () => {};
-    redis.get.mockImplementation(() => new Promise((resolve) => { liberar = resolve; }));
+  // Cambiado a propósito en H-01: antes esperaba sin límite.
+  it('por barcode: Redis colgado → a los 200 ms sigue sin él y responde 200 desde Supabase', async () => {
+    redis.get.mockImplementation(() => new Promise(() => {}));
+    redis.set.mockImplementation(() => new Promise(() => {}));
 
-    const pedido = lookup('7790000000055');
-    const primero = await Promise.race([
-      pedido.then(() => 'respondió'),
-      new Promise((resolve) => setTimeout(() => resolve('pendiente'), 300)),
-    ]);
-    expect(primero).toBe('pendiente');
-    expect(supabase.maybeSingle).not.toHaveBeenCalled();
-
-    liberar(null);
-    const res = await pedido;
+    const inicio = Date.now();
+    const res = await lookup('7790000000055');
     expect(res.statusCode).toBe(200);
+    expect(supabase.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(Date.now() - inicio).toBeLessThan(1000);
   });
 });
 
@@ -205,10 +207,11 @@ describe('GET /products/:id (K-04)', () => {
     expect(res.json()).toEqual({ error: 'Producto no encontrado en el catálogo', code: 'NOT_FOUND' });
   });
 
-  // CARACTERIZA: cambia en H-01.
-  it('Supabase devuelve error → 404 (como un miss)', async () => {
+  it('Supabase devuelve error → 503', async () => {
     supabase.maybeSingle.mockResolvedValue(BASE_CAIDA);
-    expect((await detalle(FILA.id)).statusCode).toBe(404);
+    const res = await detalle(FILA.id);
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toEqual(NO_DISPONIBLE);
   });
 
   it('id que no es uuid → 400 sin consultar la base', async () => {
