@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { config } from '../config';
+import { requireAnthropicApiKey } from '../config';
 import { ingredientCount } from '../domain/product/ftgEngine';
 import { findImplausibleNutrients } from '../domain/product/nutrientPlausibility';
 import type { RawOFFProduct } from '../types/fitogenix';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {
-  if (!_client) _client = new Anthropic({ apiKey: config.anthropicApiKey });
+  if (!_client) _client = new Anthropic({ apiKey: requireAnthropicApiKey() });
   return _client;
 };
 

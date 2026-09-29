@@ -30,10 +30,8 @@ type HistoryModule = typeof import('./scanHistoryService');
 let history: HistoryModule;
 
 beforeAll(async () => {
-  process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  process.env.SERPAPI_API_KEY = 'test';
   history = await import('./scanHistoryService');
 });
 

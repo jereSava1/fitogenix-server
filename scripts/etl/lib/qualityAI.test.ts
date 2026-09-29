@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-// config.ts exige ANTHROPIC_API_KEY/SUPABASE_* al importarse (throws si
+// config.ts exige SUPABASE_* al importarse (throws si
 // faltan) — mismo patrón que src/services/cacheService.test.ts: seteamos
 // env vars dummy ANTES de importar el módulo (import dinámico, no estático),
 // así el import no explota en un entorno sin .env real. Solo testeamos los
@@ -13,7 +13,6 @@ beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  process.env.SERPAPI_API_KEY = 'test';
   ({ parseIngredientsExtraction, parseBrandExtraction } = await import('./qualityAI'));
 });
 
