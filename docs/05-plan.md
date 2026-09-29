@@ -21,6 +21,8 @@ El orden de las etapas 1 a 5 es **obligatorio** (pedido del responsable del proy
 | 8 | Base de datos: limpieza y tablas nuevas (cuando el código ya no depende de lo que se borra) | ADR-0009 |
 | 9 | Previo a publicar en tiendas (no es limpieza; se lista para no perderlo) | D-18, D-24 |
 
+**Excepción al orden (D-67):** la etapa 5 avanza con C-05 (etapa 3) pendiente, porque no toca la base; C-05 es requisito antes de la primera migración nueva (etapa 7).
+
 **Carril paralelo "U" (urgentes), aprobado (D-56):** tres ítems que no tocan la estructura del código y corrigen seguridad o datos hoy, **fuera del orden obligatorio**.
 
 **Ramas (D-59):** en cada repo, una rama de integración `fitogenix/refactor-cleanup` que parte de `main`; cada ítem se hace en su rama y se mergea a la integración; al terminar el refactor, la integración se mergea a `main`.
@@ -126,7 +128,7 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | C-02 | ✅ Hecho en `docs/c02-readme`, mergeado a `fitogenix/refactor-cleanup`. README reescrito: apunta a `docs/`, variables y rutas reales, cómo resuelve un producto (incluido el 404 ante caídas, caracterizado), base de datos, ETL, deploy y ramas; sin la cascada retirada ni citas a `fitogenix-agents` |
 | C-06 | ✅ Hecho en `docs/c06-docs-config` (native), mergeado y pusheado. README del proyecto; `CLAUDE.md` sin el SSOT externo; `AGENTS.md` y `REFACTOR_PLAN` con docs de Expo v57; `.env.example` sin claves de servidor (las de Supabase marcadas como temporales hasta F-12); `eas.json` sin el Apple ID personal ni el `ascAppId` de ejemplo (siguen en el historial de git); comentarios de `api/client.ts`, `CleanProductImage` y `scanCopy` |
 | C-07 | ✅ Hecho en `docs/c07-refactor-plan` (native), mergeado y pusheado. `REFACTOR_PLAN.md`: B1-B3 respondidas, los 3 ajustes aplicados (servicios solo contra el server, tipos generados, imágenes directas) y estado de los bloqueantes B1-B4 |
-| C-05 | En curso en `chore/c05-baseline` (primer merge): las `001`–`014` y la `015` (D-09) movidas a `supabase/migrations/legacy/`, con su README; referencias corregidas (dos apuntaban a `010_manufacturer_info`, que es la `012`). Falta la baseline: procedimiento en [`sql/c05/`](sql/c05/README.md) (CLI, Docker y contraseña de la base, D-58) |
+| C-05 | En curso en `chore/c05-baseline` (primer merge): las `001`–`014` y la `015` (D-09) movidas a `supabase/migrations/legacy/`, con su README; referencias corregidas (dos apuntaban a `010_manufacturer_info`, que es la `012`). Falta la baseline: procedimiento en [`sql/c05/`](sql/c05/README.md) (CLI, Docker y contraseña de la base, D-58). **Requisito antes de la primera migración nueva (D-67)** |
 | C-08 | Pendiente: acción manual del responsable |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
@@ -275,6 +277,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | D-63 | Bandas: contrato, no endpoint | Reemplaza la parte de D-62 que proponía un endpoint: las bandas son parte del **contrato generado** (`contract/scoring-bands.json`, desde el motor) y cada repo lo refleja en su código |
 | D-65 | Escritura sin uso en catalog | Se eliminan `setCachedProduct` y `findUpgradableNameRow` con sus tests (M-04); lo que queda de `name_key` se limpia antes de B-01 |
 | D-66 | Código del ETL sin uso | Se eliminan `aiLookupProduct` (con sus 2 tests) y las funciones de a un barcode de `staging.ts` (M-10) |
+| D-67 | Etapa 5 sin C-05 | La etapa 5 avanza con C-05 pendiente (no toca la base); C-05 es requisito antes de la primera migración nueva (etapa 7) |
 
 1. ~~**Analítica (L-09):** pendiente de decisión~~ → resuelta por **D-61** (2026-09-28): se difiere como [DT-05](deuda-tecnica.md), con rumbo a un endpoint propio.
 2. ~~**Escritura sin uso en catalog (M-04):** ¿borrar `setCachedProduct` / `findUpgradableNameRow`?~~ → resuelta por **D-65** (2026-09-29): se borraron en M-04.
