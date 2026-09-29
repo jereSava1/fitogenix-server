@@ -1,5 +1,4 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FitogenixProduct } from '../application/productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 
 // ── Mock de Supabase ──
@@ -50,19 +49,6 @@ beforeEach(() => {
   mockRpcError = null;
 });
 
-// Producto mínimo para payloads/persistencia.
-const makeProduct = (overrides: Record<string, unknown> = {}): FitogenixProduct =>
-  ({
-    name: 'Galletitas',
-    brand: 'Marca',
-    category: 'Snacks',
-    imageUrl: 'http://img',
-    score: 42,
-    dataSource: 'off',
-    aiEnriched: true,
-    ...overrides,
-  }) as unknown as FitogenixProduct;
-
 const rawGalletitas: RawProduct = {
   product_name: 'Galletitas',
   ingredients_text: 'harina, azucar',
@@ -72,11 +58,13 @@ const rawGalletitas: RawProduct = {
   _aiEnriched: true,
 };
 
+/* Desde K-04 `buildCachePayload` recibe solo el crudo: calcula cada columna
+ * con el mismo código que el server, sin pasar por la respuesta de la API. La
+ * fila completa de los 200 productos de la muestra la fija
+ * supabaseProductWriter.test.ts. */
 describe('buildCachePayload', () => {
   it('con barcode: guarda los crudos, engine_version y SOLO la columna barcode', () => {
-    const payload = cache.buildCachePayload(makeProduct(), rawGalletitas, {
-      barcode: '7790001',
-    });
+    const payload = cache.buildCachePayload(rawGalletitas, { barcode: '7790001' });
 
     expect(payload.barcode).toBe('7790001');
     // La otra columna de búsqueda se OMITE (para no pisar un alias existente)
@@ -93,16 +81,8 @@ describe('buildCachePayload', () => {
 
   it('usa null para crudos ausentes', () => {
     const raw: RawProduct = { product_name: 'X' };
-    const product = makeProduct({
-      name: 'X',
-      brand: '',
-      category: '',
-      imageUrl: null,
-      score: 50,
-      aiEnriched: undefined,
-    });
 
-    const payload = cache.buildCachePayload(product, raw, { barcode: '111' });
+    const payload = cache.buildCachePayload(raw, { barcode: '111' });
     expect(payload.ingredients_text).toBeNull();
     expect(payload.nutriments).toBeNull();
     expect(payload.nova_group).toBeNull();
@@ -114,9 +94,14 @@ describe('buildCachePayload', () => {
     // lista no identificable). Ese null tiene que llegar a la DB COMO null —
     // si se coercionara a 0, la fila quedaría indistinguible del peor producto
     // del catálogo y los listados de guardados/historial mentirían.
-    const product = makeProduct({ score: null });
+    // Fuera de alcance (§1): el motor no emite puntaje.
+    const cerveza: RawProduct = {
+      product_name: 'Cerveza rubia',
+      categories: 'Bebidas alcohólicas, Cervezas',
+      ingredients_text: 'agua, malta de cebada, lúpulo',
+    };
 
-    const payload = cache.buildCachePayload(product, rawGalletitas, { barcode: '222' });
+    const payload = cache.buildCachePayload(cerveza, { barcode: '222' });
 
     expect(payload.score).toBeNull();
     expect(payload.score_label).toBe('SIN DATOS SUFICIENTES');
@@ -127,23 +112,36 @@ describe('buildCachePayload', () => {
     const raw: RawProduct = {
       product_name: 'Alfajor Artesanal',
       ingredients_text: 'dulce de leche',
+      _aiSource: true,
+      _aiEnriched: true,
     };
-    const product = makeProduct({
-      name: 'Alfajor Artesanal',
-      brand: '',
-      category: '',
-      imageUrl: null,
-      score: 30,
-      dataSource: 'ai',
-    });
 
-    const payload = cache.buildCachePayload(product, raw, { nameKey: 'alfajor artesanal' });
+    const payload = cache.buildCachePayload(raw, { nameKey: 'alfajor artesanal' });
     // name_key es el QUERY normalizado sin el prefijo 'name:' (ese prefijo es
     // solo de las claves internas de Redis/logs, no va a la DB).
     expect(payload.name_key).toBe('alfajor artesanal');
     expect('barcode' in payload).toBe(false);
     expect('cache_key' in payload).toBe(false);
+    expect(payload.data_source).toBe('ai');
     expect(payload.ai_enriched).toBe(true);
+  });
+
+  it('columnas denormalizadas desde el crudo: nombre limpio o de reemplazo, marca, categoría, imagen', () => {
+    const payload = cache.buildCachePayload(
+      { ...rawGalletitas, product_name: 'Galletitas (x3) 300 g', brands: 'Marca', categories: 'en:snacks', image_url: 'a.jpg', image_front_url: 'f.jpg' },
+      { barcode: '7790001' },
+    );
+    expect(payload).toMatchObject({
+      product_name: 'Galletitas',
+      brand: 'Marca',
+      category: 'Snacks',
+      image_url: 'f.jpg',
+      data_source: 'off',
+    });
+
+    const sinNada = cache.buildCachePayload({ ingredients_text: 'agua' }, { nameKey: 'agua mineral' });
+    expect(sinNada).toMatchObject({ product_name: 'agua mineral', brand: null, category: 'Alimento', image_url: null, ai_enriched: false });
+    expect(cache.buildCachePayload({ ingredients_text: 'agua' }, { barcode: '111' }).product_name).toBe('111');
   });
 });
 
@@ -389,6 +387,17 @@ describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
     expect(result).toEqual(cache.rowToCachedRaw(row));
   });
 
+  it('findById filtra por id y devuelve la fila reconstruida (K-04)', async () => {
+    mockRow = row;
+
+    const result = await cache.supabaseProductReader.findById('uuid-galletitas');
+
+    expect(from).toHaveBeenCalledWith('products');
+    expect(select).toHaveBeenCalledWith('*');
+    expect(eq).toHaveBeenCalledWith('id', 'uuid-galletitas');
+    expect(result).toEqual(cache.rowToCachedRaw(row));
+  });
+
   it('findByName normaliza el query y llama al RPC de búsqueda', async () => {
     mockRpcRows = [row];
 
@@ -405,6 +414,7 @@ describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
     mockError = { message: 'boom' };
     mockRpcError = { message: 'boom' };
 
+    await expect(cache.supabaseProductReader.findById('uuid-galletitas')).resolves.toBeNull();
     await expect(cache.supabaseProductReader.findByBarcode('7790001')).resolves.toBeNull();
     await expect(cache.supabaseProductReader.findByName('galletitas')).resolves.toBeNull();
   });

@@ -7,8 +7,8 @@
  * en M-04 por no tener consumidores (D-65).
  */
 
-import { ENGINE_VERSION, getScoreLabel, getSello } from '../../scoring';
-import type { FitogenixProduct } from '../application/productResponse';
+import { ENGINE_VERSION, getScoreLabel, getSello, scoreProduct } from '../../scoring';
+import { cleanName, extractCategory } from '../domain/productData';
 import type { RawProduct } from '../domain/rawProduct';
 
 // Referencia de búsqueda para escribir en el cache: un producto se upsertea
@@ -27,29 +27,31 @@ export type CacheKeyRef = { barcode: string } | { nameKey: string };
  * Solo incluye la columna de búsqueda que corresponde a la key (`barcode` o
  * `name_key`): la otra se OMITE para que un upsert/update no pise un alias
  * existente (p.ej. una fila que ya tiene name_key lo conserva al upsertear por barcode).
+ *
+ * Hasta K-04 recibía la respuesta de la API ya armada (`FitogenixProduct`) y
+ * copiaba de ahí; ahora calcula cada columna desde el crudo, así el contrato
+ * con la app puede cambiar sin mover la fila (lo fija
+ * `supabaseProductWriter.test.ts` con los 200 productos de la muestra).
  */
-export function buildCachePayload(
-  product: FitogenixProduct,
-  raw: RawProduct,
-  key: CacheKeyRef,
-): Record<string, unknown> {
+export function buildCachePayload(raw: RawProduct, key: CacheKeyRef): Record<string, unknown> {
+  const { score } = scoreProduct(raw);
   return {
     ...('barcode' in key ? { barcode: key.barcode } : { name_key: key.nameKey }),
     // ── denormalizados para listados ──
-    product_name: product.name,
-    brand: product.brand || null,
-    category: product.category || null,
-    image_url: product.imageUrl ?? null,
-    score: product.score,
-    score_label: getScoreLabel(product.score).label,
-    sello: getSello(product.score),
+    product_name: cleanName(raw.product_name, 'barcode' in key ? key.barcode : key.nameKey),
+    brand: raw.brands || null,
+    category: extractCategory(raw.categories) || null,
+    image_url: raw.image_front_url ?? raw.image_url ?? null,
+    score,
+    score_label: getScoreLabel(score).label,
+    sello: getSello(score),
     // ── CRUDOS para recomputar ──
     ingredients_text: raw.ingredients_text ?? null,
     nutriments: raw.nutriments ?? null,
     nova_group: raw.nova_group ?? null,
     additives_tags: raw.additives_tags ?? null,
-    data_source: product.dataSource,
-    ai_enriched: raw._aiEnriched === true || product.aiEnriched === true,
+    data_source: raw._aiSource ? 'ai' : 'off',
+    ai_enriched: raw._aiEnriched === true,
     engine_version: ENGINE_VERSION,
     updated_at: new Date().toISOString(),
   };

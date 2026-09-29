@@ -3,7 +3,8 @@ import type { FastifyPluginAsync } from 'fastify';
 import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas, ApiErrorSchema } from '../../../platform/http/schemas';
 import type { LookupProduct } from '../application/lookupProduct';
-import { lookupBodySchema, lookupResponseSchema, ProductSchema } from './lookup.schema';
+import { lookupBodySchema, lookupResponseSchema } from './lookup.schema';
+import { ProductDetailSchema } from './product.schema';
 
 /**
  * Registro del escaneo, inyectado desde `main.ts` (docs/02-arquitectura.md
@@ -21,7 +22,7 @@ export function lookupRoutes(deps: {
   const { lookup, onScan } = deps;
 
   return async (instance) => {
-    addSharedSchemas(instance, [ApiErrorSchema, ProductSchema]);
+    addSharedSchemas(instance, [ApiErrorSchema, ProductDetailSchema]);
     const app = instance.withTypeProvider<TypeBoxTypeProvider>();
 
     // Sin requireAuth a propósito: los anónimos también pueden buscar. Si la
@@ -32,10 +33,10 @@ export function lookupRoutes(deps: {
         tags: ['catalog'],
         summary: 'Buscar un producto por código de barras o por nombre',
         body: lookupBodySchema,
-        // Contrato de respuesta EXPLÍCITO (ver lookup.schema.ts). Fastify lo
+        // Contrato de respuesta EXPLÍCITO (ver product.schema.ts). Fastify lo
         // usa para serializar con fast-json-stringify; la contracara es que
         // todo campo no declarado se elimina de la respuesta, así que el
-        // schema está atado a `FitogenixProduct` en tiempo de compilación.
+        // schema está atado a `ProductDetail` en tiempo de compilación.
         // Desde K-01 es la fuente del OpenAPI (contract/openapi.json).
         response: lookupResponseSchema,
       },
@@ -57,12 +58,12 @@ export function lookupRoutes(deps: {
       // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no
       // espera nada de esto y ningún error acá la rompe (el catch cubre
       // cualquier imprevisto). El lookup solo lee del catálogo, así que el
-      // producto que devuelve ya existe en `products` y su productId sirve
+      // producto que devuelve ya existe en `products` y su id (uuid) sirve
       // como FK del historial.
       const authHeader = request.headers.authorization ?? '';
       const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-      if (onScan && token && product.productId) {
-        const productId = product.productId;
+      if (onScan && token && product.id) {
+        const productId = product.id;
         void (async () => {
           await onScan({ token, productId });
         })().catch((err: unknown) => {

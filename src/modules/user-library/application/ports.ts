@@ -3,8 +3,8 @@
  * Describen las tablas `saved_products` y `scan_history` TAL COMO SE USAN HOY
  * (M-06 es una mudanza, sin cambios de comportamiento). Las filas se devuelven
  * como las entrega PostgREST, con el producto embebido (`products(*)`); el
- * caso de uso las presenta con `catalog.productResponseFromRow`. Quedan para
- * más adelante: `savedAt` / `scannedAt` en los listados (K-04) y
+ * caso de uso las presenta con `catalog.productSummaryFromRow` más la fecha de
+ * la fila (`created_at` / `scanned_at`, K-04). Queda para más adelante
  * `HistoryRepository.remove` (F-01, RF-017).
  */
 

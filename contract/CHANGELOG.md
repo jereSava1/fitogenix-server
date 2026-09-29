@@ -4,6 +4,43 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.3.0 — 2026-09-29 · K-04
+
+**Rompe.** Native se adapta en K-05 (tipos generados) y K-06 (pantallas); hasta entonces la integración de punta a punta no anda. Decisiones: D-32 a D-38, D-70, D-71.
+
+**Producto: detalle y resumen.** El componente `Product` se reemplaza por dos:
+
+- **`ProductDetail`** (12 campos): lo responden `POST /v1/products/lookup` y el nuevo `GET /v1/products/{id}`. `id`, `name`, `brand`, `imageUrl`, `score`, `scoreLabel`, `scoreColor`, `noScore`, `fito`, `highlight`, `ingredients`, `nutrition`.
+- **`ProductSummary`** (7 campos, los primeros 7 del detalle): la base de cada ítem de los listados.
+
+| Campo | Cambio |
+|---|---|
+| `id` | **Siempre el uuid** de `products.id` (`format: uuid`). Antes, en el lookup era la query y en los listados el uuid |
+| `productId` | **Sale**: se unifica con `id` (el `productId` de `POST /v1/users/me/saved` es ese mismo `id`) |
+| `highlight` | **Nuevo** (`'cuestionables' \| 'beneficiosos' \| 'ninguno'`): qué grupo de ingredientes destacar. Corta en el borde de la banda Buena: `< 50` cuestionables, `≥ 50` beneficiosos; sin puntaje, `ninguno` (D-71). Lo calcula `scoring.presentScore` (ADR-0003); reemplaza a `flagged` y al `score < 50` que calculaba native |
+| `flagged` | **Sale** (cortaba en `< 40`, un corte que no era de ninguna banda: los productos de 40 a 49 no salían marcados y ahora destacan los cuestionables) |
+| `brand` | `string \| null` (antes `''` cuando faltaba) |
+| `subtitle`, `category`, `categoryEmoji`, `emoji`, `bgColor` | **Salen**: native no los usaba o eran constantes |
+| `scoreAvailable` | **Sale**: es `score !== null` |
+| `dataSource`, `aiEnriched` | **Salen** (D-33): dato interno del ETL |
+| `tagline` | **Sale** (D-38): el mensaje de la banda está en `scoring-bands.json` |
+| `scoreLabel` | `enum` con los labels de las bandas (sale de `scoringBands()`) |
+| `fito` | `enum` `'fito' \| 'nofito' \| 'none'` (antes `string`) |
+| `noScore` | `{ code, message }` con los dos campos requeridos; `code` es `enum` (`NoScoreCode`) |
+| `ingredients[]` | Solo `{ name, sev, desc }`, los tres requeridos; `sev` es `enum`. Salen `position`, `impact`, `delta`, `flag`, `marker`, `percent` y `detail` |
+| `nutrition` | Los 10 campos requeridos (`number \| null`), incluidos `transFat` y `cholesterol` (D-34) |
+
+**Endpoints**
+
+- **Nuevo `GET /v1/products/{id}`**: el detalle de un producto por su uuid (D-32). Sesión opcional; **no registra el escaneo**. `400` si el id no es uuid, `404 NOT_FOUND` ("Producto no encontrado en el catálogo") si no existe, `429`, `500`. Un error de la base responde `404` hasta H-01.
+- **`GET /v1/users/me/saved`** → `{ items: SavedItem[] }`, `SavedItem = ProductSummary + savedAt` (`date-time`, ISO UTC). Antes, el producto completo sin fecha.
+- **`GET /v1/users/me/history`** → `{ items: HistoryItem[] }`, `HistoryItem = ProductSummary + scannedAt` (`date-time`, ISO UTC). Antes, el producto completo sin fecha.
+- **Nombre de reemplazo** cuando el producto no trae nombre: en el lookup, la query (como antes); en los listados y en `GET /v1/products/{id}`, el **barcode** de la fila (antes los listados mostraban el uuid).
+
+**Campos de más → 400 (D-70).** El body de `POST /v1/products/lookup`, el de `POST /v1/users/me/saved` y el querystring de `GET /v1/users/me/history` declaran `additionalProperties: false` y el server valida con `removeAdditional: false`: un campo que no está en el contrato responde `400 VALIDATION_ERROR` (antes se borraba en silencio). En el OpenAPI se ve en los dos bodies; el del querystring no tiene dónde verse (OpenAPI describe cada parámetro por separado), pero rige igual.
+
+**Sin cambios:** los errores (`ApiError`), `Ok`, `DELETE /v1/users/me/saved/{productId}`, `DELETE /v1/users/me` y `scoring-bands.json`.
+
 ## 0.2.0 — 2026-09-29 · K-03
 
 **Rompe** (se coordina con native en el mismo release: D-57, sin alias). Native lo acompaña en la rama `feat/k03-v1`.

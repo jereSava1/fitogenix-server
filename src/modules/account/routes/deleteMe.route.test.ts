@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { AJV_OPTIONS } from '../../../platform/http/buildApp';
 import { registerErrorHandling } from '../../../platform/http/errors';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -33,7 +34,7 @@ beforeAll(async () => {
 
   const { registerAccount } = await import('../index');
 
-  app = Fastify();
+  app = Fastify({ ajv: AJV_OPTIONS });
   registerErrorHandling(app); // como en producción (buildApp)
   await registerAccount(app);
   await app.ready();

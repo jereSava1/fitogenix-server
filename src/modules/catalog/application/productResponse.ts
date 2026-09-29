@@ -1,137 +1,114 @@
-/* Producto crudo → la respuesta que recibe la app (`FitogenixProduct`).
+/* Producto crudo → lo que recibe la app: `ProductDetail` (lookup y
+ * `GET /v1/products/:id`) y `ProductSummary` (cada ítem de guardados e
+ * historial). K-04 (03-contratos §B.3.1 y §B.3.2).
  *
- * Antes era parte de `services/productLookupService.ts`; se mudó en M-05 sin
- * cambios (docs/02-arquitectura.md §5.2 #12). La presentación del puntaje
- * sale de `scoring`; `presentScore` la absorbe en K-04.
+ * Antes era `mapRawToProduct` → `FitogenixProduct`, con 23 campos: algunos
+ * constantes (`emoji`, `bgColor`, `categoryEmoji`), otros internos
+ * (`dataSource`, `aiEnriched`) y dos identidades (`id` era la query y
+ * `productId` el uuid). Ahora `id` es el uuid de `products` y la presentación
+ * del puntaje sale entera de `scoring.presentScore` (ADR-0003): acá no se
+ * recalcula ningún corte.
  */
 
 import {
-  getScoreLabel,
-  getScoreTagline,
-  resolveProductStatus,
+  presentScore,
   scoreProduct,
-  type AnalyzedIngredient,
+  type Fito,
+  type Highlight,
   type NoScoreCode,
   type NutritionFacts,
+  type Severity,
 } from '../../scoring';
-import { extractCategory, extractNutrition } from '../domain/productData';
+import { cleanName, extractNutrition } from '../domain/productData';
 import type { RawProduct } from '../domain/rawProduct';
+import type { CachedProductRow } from './ports';
 
-/** La respuesta de `POST /products/lookup` y de cada ítem de guardados e
- *  historial. Hasta M-09 vivía en `src/types/fitogenix.ts`; K-01 la deriva del
- *  schema del contrato y K-04 la reemplaza por `ProductDetail` / `ProductSummary`. */
-export type FitogenixProduct = {
+/** Un producto en un listado: lo justo para la fila de la lista. */
+export interface ProductSummary {
+  /** uuid de `products.id`: con esto se guarda, se quita y se pide el detalle. */
   id: string;
   name: string;
-  subtitle: string | null;
-  brand: string;
-  category: string;
-  categoryEmoji: string;
-
+  brand: string | null;
+  imageUrl: string | null;
   /**
    * `null` cuando §1 del motor dice que no se puntúa: fuera de alcance, sin
    * datos suficientes, o lista que no se pudo identificar. Es un estado de
-   * primera clase, no un error — la app muestra el mensaje de `noScore` en vez
-   * del número. Nunca se rellena con un valor conservador: "la ausencia de
-   * datos nunca mejora un puntaje".
+   * primera clase, no un error: nunca se rellena con un valor conservador
+   * ("la ausencia de datos nunca mejora un puntaje").
    */
   score: number | null;
-  scoreAvailable: boolean;
+  /** 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES' */
+  scoreLabel: string;
+  /** Color hex de la banda. */
+  scoreColor: string;
+}
+
+/** Un ingrediente como lo muestra la app (§7): nombre, severidad y por qué. */
+export interface ProductIngredient {
+  name: string;
+  sev: Severity;
+  desc: string;
+}
+
+/** La pantalla de resultado: el resumen más lo que explica el puntaje. */
+export interface ProductDetail extends ProductSummary {
+  /** Por qué no hay puntaje; `null` si lo hay. */
   noScore: { code: NoScoreCode; message: string } | null;
-
-  flagged: boolean;
-  emoji: string;
-  bgColor: string;
-  imageUrl: string | null;
-  ingredients: readonly AnalyzedIngredient[];
+  fito: Fito;
+  /** Qué grupo de ingredientes destacar (D-71). */
+  highlight: Highlight;
+  /** En el orden de la etiqueta. No se manda `breakdown` (decisión de
+   *  producto, 2026-08-18): la cuenta paso por paso es nuestra, no del
+   *  usuario B2C. */
+  ingredients: ProductIngredient[];
   nutrition: NutritionFacts;
-  // No se manda `breakdown` (decisión de producto, 2026-08-18): la cuenta
-  // paso por paso es información nuestra, no del usuario B2C — la lista de
-  // ingredientes con severidad ya cubre el "por qué". El motor lo sigue
-  // calculando internamente (ver `scoreProduct` en `modules/scoring` / scripts de ETL y
-  // auditoría), solo que ya no cruza la red.
-  dataSource: string;
-  aiEnriched?: boolean;
-  // Identidad del producto: uuid de la fila en `products` (migración 006).
-  // Es el identificador estable que el cliente usa para guardar/quitar el
-  // producto en favoritos (POST/DELETE /users/me/saved).
-  productId: string;
-  // ── Presentación derivada del score (calculada server-side, única fuente
-  // de verdad). El cliente solo renderiza estos campos, no recalcula umbrales.
-  scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES'
-  scoreColor: string;   // color hex del tier
-  tagline: string;      // 'Lo recomendamos', etc.
-  fito: 'fito' | 'nofito' | 'none';
-};
-
-// Presentación derivada del score — única fuente de verdad de los umbrales.
-// El cliente consume estos campos en vez de recalcularlos.
-//
-// `score: null` es un estado de primera clase desde v2.1: §1 del documento
-// enumera los casos en que NO se emite puntaje, y "la ausencia de datos nunca
-// mejora un puntaje".
-function scorePresentation(score: number | null): Pick<
-  FitogenixProduct,
-  'scoreLabel' | 'scoreColor' | 'tagline' | 'fito'
-> {
-  const { label, color } = getScoreLabel(score);
-  if (score == null) {
-    return { scoreLabel: label, scoreColor: color, tagline: getScoreTagline(score), fito: 'none' };
-  }
-  const status = resolveProductStatus(score);
-  const fito =
-    status.label === 'Fitogénico' ? 'fito' :
-    status.label === 'No fitogénico' ? 'nofito' : 'none';
-  return { scoreLabel: label, scoreColor: color, tagline: getScoreTagline(score), fito };
 }
 
-function cleanName(raw: string | undefined, fallback: string): string {
-  if (!raw) return fallback;
-  return raw
-    .replace(/\s*\([^)]*\)\s*/g, ' ')
-    .replace(/\s*\[[^\]]*\]\s*/g, ' ')
-    .replace(/\s+\d{8,14}\b/g, '')
-    .replace(/\s+\d+\s*(?:g|gr|kg|ml|l|lts?|cc|oz)\b/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-    .replace(/^./, (c) => c.toUpperCase());
+/** La identidad con la que se presenta un crudo: el uuid de la fila y el
+ *  nombre a mostrar si el producto no trae uno. */
+export interface ProductIdentity {
+  id: string;
+  fallbackName: string;
 }
 
-// Exportada para reutilizarla en `productResponseFromRow` (listados de
-// guardados e historial) y en el ETL: los productos guardados se recomputan
-// con el MISMO mapeo que un lookup.
-export function mapRawToProduct(off: RawProduct, query: string): FitogenixProduct {
-  const breakdown = scoreProduct(off);
-  // Los ingredientes salen del MISMO breakdown, no de una segunda pasada: en
-  // v2.1 la posición de cada ingrediente y su resta son parte del cálculo, así
-  // que recalcularlos aparte podría dar una lista que no corresponde al
-  // puntaje que se está mostrando.
-  const ingredients = breakdown.ingredients;
-  const nutrition = extractNutrition(off.nutriments);
+/** El nombre de reemplazo de una fila de `products` (listados y detalle): su
+ *  barcode, o la búsqueda que la originó. Antes los listados mostraban el
+ *  uuid. */
+export function rowFallbackName(row: Pick<CachedProductRow, 'barcode' | 'nameKey' | 'productId'>): string {
+  return row.barcode ?? row.nameKey ?? row.productId;
+}
 
+function summaryOf(raw: RawProduct, identity: ProductIdentity, score: number | null): ProductSummary {
+  const { label, color } = presentScore(score);
   return {
-    id: query,
-    name: cleanName(off.product_name, String(query)),
-    subtitle: off.quantity ?? null,
-    brand: off.brands ?? '',
-    category: extractCategory(off.categories),
-    categoryEmoji: '🍽️',
-    score: breakdown.score,
-    scoreAvailable: breakdown.scoreAvailable,
-    noScore: breakdown.noScore,
-    flagged: breakdown.score != null && breakdown.score < 40,
-    emoji: '📦',
-    bgColor: '#f8faf7',
-    imageUrl: off.image_front_url ?? off.image_url ?? null,
-    ingredients,
-    nutrition,
-    // `breakdown` NO se adjunta a la respuesta (decisión de producto,
-    // 2026-08-18) — ver la nota en el tipo FitogenixProduct, arriba.
-    dataSource: off._aiSource ? 'ai' : 'off',
-    // Default para tipar; los resolutores la pisan con el id real de la fila
-    // en `products` (del hit de cache o del catálogo).
-    productId: '',
-    aiEnriched: off._aiEnriched,
-    ...scorePresentation(breakdown.score),
+    id: identity.id,
+    name: cleanName(raw.product_name, identity.fallbackName),
+    brand: raw.brands || null,
+    imageUrl: raw.image_front_url ?? raw.image_url ?? null,
+    score,
+    scoreLabel: label,
+    scoreColor: color,
+  };
+}
+
+export function toProductSummary(raw: RawProduct, identity: ProductIdentity): ProductSummary {
+  return summaryOf(raw, identity, scoreProduct(raw).score);
+}
+
+export function toProductDetail(raw: RawProduct, identity: ProductIdentity): ProductDetail {
+  const breakdown = scoreProduct(raw);
+  const { fito, highlight } = presentScore(breakdown.score);
+  return {
+    ...summaryOf(raw, identity, breakdown.score),
+    noScore: breakdown.noScore
+      ? { code: breakdown.noScore.code, message: breakdown.noScore.message }
+      : null,
+    fito,
+    highlight,
+    // Del MISMO breakdown, no de una segunda pasada: la posición de cada
+    // ingrediente y su resta son parte del cálculo, así que la lista siempre
+    // le corresponde al puntaje que se muestra.
+    ingredients: breakdown.ingredients.map(({ name, sev, desc }) => ({ name, sev, desc })),
+    nutrition: extractNutrition(raw.nutriments),
   };
 }

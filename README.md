@@ -41,24 +41,25 @@ Todas las rutas del contrato llevan el prefijo **`/v1`** (D-44), sin alias de la
 
 | Ruta | Auth | Qué hace |
 |---|---|---|
-| `POST /v1/products/lookup` `{ query }` | opcional | Busca por barcode (8 a 14 dígitos) o por nombre. Con sesión, registra el escaneo en el historial. `404 PRODUCT_NOT_IN_CATALOG` si no está en el catálogo |
-| `GET /v1/users/me/saved` | sí | Guardados del usuario |
+| `POST /v1/products/lookup` `{ query }` | opcional | Busca por barcode (8 a 14 dígitos) o por nombre y responde el detalle (`ProductDetail`). Con sesión, registra el escaneo en el historial. `404 PRODUCT_NOT_IN_CATALOG` si no está en el catálogo |
+| `GET /v1/products/:id` | opcional | Detalle de un producto por su uuid (lo que abre la app desde un guardado o el historial). No registra el escaneo. `404 NOT_FOUND` si no existe |
+| `GET /v1/users/me/saved` | sí | Guardados del usuario: resumen del producto (`ProductSummary`) más `savedAt` |
 | `POST /v1/users/me/saved` `{ productId }` | sí | Guardar (idempotente). `404 NOT_FOUND` si el producto no existe |
 | `DELETE /v1/users/me/saved/:productId` | sí | Quitar un guardado (idempotente) |
-| `GET /v1/users/me/history?limit=` | sí | Historial de escaneos (`limit` entre 1 y 50, por defecto 20) |
+| `GET /v1/users/me/history?limit=` | sí | Historial de escaneos: resumen más `scannedAt` (`limit` entre 1 y 50, por defecto 20) |
 | `DELETE /v1/users/me` | sí | Eliminar la cuenta |
 | `GET /health` | no | Chequeo de vida |
 
-Todos los errores tienen la misma forma, `{ error, code }`: `error` es el mensaje para mostrar, en español, y `code` es estable para que la app decida qué hacer (`VALIDATION_ERROR` 400, `UNAUTHENTICATED` 401, `NOT_FOUND` / `PRODUCT_NOT_IN_CATALOG` 404, `RATE_LIMITED` 429, `INTERNAL` 500). Lo que no responde un handler (validación, rate limit, ruta inexistente, excepciones) lo arma `src/platform/http/errors.ts`; el detalle técnico va solo al log.
+Todos los errores tienen la misma forma, `{ error, code }`: `error` es el mensaje para mostrar, en español, y `code` es estable para que la app decida qué hacer (`VALIDATION_ERROR` 400, `UNAUTHENTICATED` 401, `NOT_FOUND` / `PRODUCT_NOT_IN_CATALOG` 404, `RATE_LIMITED` 429, `INTERNAL` 500). Lo que no responde un handler (validación, rate limit, ruta inexistente, excepciones) lo arma `src/platform/http/errors.ts`; el detalle técnico va solo al log. Un campo de más en un body o en el querystring del historial es un `400 VALIDATION_ERROR`: no se ignora en silencio (D-70).
 
-La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrato de estas rutas (request, respuestas y errores) está en [`contract/openapi.json`](contract/openapi.json), generado desde los schemas TypeBox de cada módulo, y las bandas del puntaje (cortes, colores, mensajes y sellos) en [`contract/scoring-bands.json`](contract/scoring-bands.json), generado desde el motor; sus cambios, en [`contract/CHANGELOG.md`](contract/CHANGELOG.md). El contrato objetivo (endpoints nuevos, detalle y resumen del producto) está en [`docs/03-contratos.md`](docs/03-contratos.md).
+La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrato de estas rutas (request, respuestas y errores) está en [`contract/openapi.json`](contract/openapi.json), generado desde los schemas TypeBox de cada módulo, y las bandas del puntaje (cortes, colores, mensajes y sellos) en [`contract/scoring-bands.json`](contract/scoring-bands.json), generado desde el motor; sus cambios, en [`contract/CHANGELOG.md`](contract/CHANGELOG.md). El contrato objetivo (endpoints que faltan: auth, perfil, feedback) está en [`docs/03-contratos.md`](docs/03-contratos.md).
 
 ## Cómo resuelve un producto
 
 `POST /v1/products/lookup` → `src/modules/catalog/` (caso de uso `application/lookupProduct.ts`), de **solo lectura**: Redis → Supabase. Redis guarda los datos crudos del producto y la respuesta se arma en cada lectura, así que un cambio del motor o del contrato no deja entradas viejas que invalidar. Si no está en el catálogo, responde `404`; no hay fallback a proveedores externos ni a IA durante la request.
 
 - En Supabase se guardan los **datos crudos** (`ingredients_text`, `nutriments`, `additives_tags`…) y el puntaje se **recalcula al leer**, así un cambio del motor no deja puntajes viejos. Una fila sin ingredientes ni nutrientes cuenta como "no está en el catálogo".
-- La identidad del producto es `products.id` (uuid), que viaja como `productId` y es lo que referencian guardados e historial.
+- La identidad del producto es `products.id` (uuid), que viaja como `id` en el detalle y en los listados, y es lo que referencian guardados e historial (el `productId` de `POST /v1/users/me/saved`).
 - Hoy una caída de Supabase también responde `404` y Redis no tiene timeout: está caracterizado en los tests y se corrige en H-01 (ver `docs/05-plan.md`).
 
 Cada lookup deja una línea de log:

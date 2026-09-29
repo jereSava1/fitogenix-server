@@ -120,7 +120,7 @@ describe('recordScan', () => {
 });
 
 describe('listScanHistory', () => {
-  it('mapea las filas embebidas a FitogenixProduct con productId y dataSource', async () => {
+  it('mapea las filas embebidas al resumen del producto con id y scannedAt (K-04)', async () => {
     selectResult = {
       data: [
         {
@@ -142,13 +142,15 @@ describe('listScanHistory', () => {
     expect(items).toHaveLength(2);
     // Preserva el orden del query (más reciente primero).
     expect(items[0].name).toBe('Galletitas');
-    expect(items[0].productId).toBe('uuid-galletitas');
-    expect(items[0].dataSource).toBe('off');
+    expect(items[0].id).toBe('uuid-galletitas');
+    expect(items[0].scannedAt).toBe('2026-07-14T12:00:00.000Z');
+    expect(items[0]).not.toHaveProperty('dataSource');
+    expect(items[0]).not.toHaveProperty('ingredients');
     expect(typeof items[0].score).toBe('number');
     expect(items[0].scoreLabel).toBeTruthy();
     expect(items[1].name).toBe('Alfajor Artesanal');
-    expect(items[1].productId).toBe('uuid-alfajor');
-    expect(items[1].dataSource).toBe('ai');
+    expect(items[1].id).toBe('uuid-alfajor');
+    expect(items[1].scannedAt).toBe('2026-07-13T12:00:00.000Z');
 
     // Query correcto: embed de products + filtro por usuario + orden + límite.
     expect(from).toHaveBeenCalledWith('scan_history');
@@ -167,13 +169,13 @@ describe('listScanHistory', () => {
   it('omite filas sin producto embebido y filas de products sin crudos', async () => {
     selectResult = {
       data: [
-        { product_id: 'uuid-galletitas', scanned_at: 'x', products: galletitasRow },
+        { product_id: 'uuid-galletitas', scanned_at: '2026-07-14T12:00:00Z', products: galletitasRow },
         // Producto embebido null (p.ej. fila purgada entre el join y la lectura).
-        { product_id: 'uuid-999', scanned_at: 'x', products: null },
+        { product_id: 'uuid-999', scanned_at: '2026-07-14T12:00:00Z', products: null },
         // Fila vieja sin ingredients_text ni nutriments → rowToCachedRaw null.
         {
           product_id: 'uuid-888',
-          scanned_at: 'x',
+          scanned_at: '2026-07-14T12:00:00Z',
           products: { id: 'uuid-888', product_name: 'Viejo', data_source: 'off' },
         },
       ],
@@ -183,12 +185,12 @@ describe('listScanHistory', () => {
     const items = await history.listScanHistory('user-1', 20);
 
     expect(items).toHaveLength(1);
-    expect(items[0].productId).toBe('uuid-galletitas');
+    expect(items[0].id).toBe('uuid-galletitas');
   });
 
   it('tolera el embed como array (forma to-many de PostgREST)', async () => {
     selectResult = {
-      data: [{ product_id: 'uuid-galletitas', scanned_at: 'x', products: [galletitasRow] }],
+      data: [{ product_id: 'uuid-galletitas', scanned_at: '2026-07-14T12:00:00Z', products: [galletitasRow] }],
       error: null,
     };
 

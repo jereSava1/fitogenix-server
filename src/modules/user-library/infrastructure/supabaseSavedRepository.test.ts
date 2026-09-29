@@ -89,7 +89,7 @@ const cervezaRow = {
 };
 
 describe('listSavedProducts', () => {
-  it('mapea las filas embebidas a FitogenixProduct con productId y dataSource', async () => {
+  it('mapea las filas embebidas al resumen del producto con id y savedAt (K-04)', async () => {
     selectResult = {
       data: [
         {
@@ -111,13 +111,15 @@ describe('listSavedProducts', () => {
     expect(items).toHaveLength(2);
     // Preserva el orden del query (más reciente primero).
     expect(items[0].name).toBe('Galletitas');
-    expect(items[0].productId).toBe('uuid-galletitas');
-    expect(items[0].dataSource).toBe('off');
+    expect(items[0].id).toBe('uuid-galletitas');
+    expect(items[0].savedAt).toBe('2026-07-08T12:00:00.000Z');
+    expect(items[0]).not.toHaveProperty('dataSource');
+    expect(items[0]).not.toHaveProperty('ingredients');
     expect(typeof items[0].score).toBe('number');
     expect(items[0].scoreLabel).toBeTruthy();
     expect(items[1].name).toBe('Alfajor Artesanal');
-    expect(items[1].productId).toBe('uuid-alfajor');
-    expect(items[1].dataSource).toBe('ai');
+    expect(items[1].id).toBe('uuid-alfajor');
+    expect(items[1].savedAt).toBe('2026-07-07T12:00:00.000Z');
 
     // Query correcto: embed de products + filtro por usuario + orden descendente.
     expect(from).toHaveBeenCalledWith('saved_products');
@@ -129,13 +131,13 @@ describe('listSavedProducts', () => {
   it('omite filas sin producto embebido y filas de products sin crudos', async () => {
     selectResult = {
       data: [
-        { product_id: 'uuid-galletitas', created_at: 'x', products: galletitasRow },
+        { product_id: 'uuid-galletitas', created_at: '2026-07-08T12:00:00Z', products: galletitasRow },
         // Producto embebido null (p.ej. fila purgada entre el join y la lectura).
-        { product_id: 'uuid-999', created_at: 'x', products: null },
+        { product_id: 'uuid-999', created_at: '2026-07-08T12:00:00Z', products: null },
         // Fila vieja sin ingredients_text ni nutriments → rowToCachedRaw null.
         {
           product_id: 'uuid-888',
-          created_at: 'x',
+          created_at: '2026-07-08T12:00:00Z',
           products: { id: 'uuid-888', product_name: 'Viejo', data_source: 'off' },
         },
       ],
@@ -145,12 +147,26 @@ describe('listSavedProducts', () => {
     const items = await saved.listSavedProducts('user-1');
 
     expect(items).toHaveLength(1);
-    expect(items[0].productId).toBe('uuid-galletitas');
+    expect(items[0].id).toBe('uuid-galletitas');
+  });
+
+  it('savedAt sale en ISO UTC aunque Postgres mande microsegundos u otro huso (K-04)', async () => {
+    selectResult = {
+      data: [
+        { product_id: 'uuid-galletitas', created_at: '2026-07-08T09:00:00.123456-03:00', products: galletitasRow },
+        // Defensivo: la columna es NOT NULL, pero una fecha ilegible no sale.
+        { product_id: 'uuid-alfajor', created_at: null, products: alfajorRow },
+      ],
+      error: null,
+    };
+
+    const items = await saved.listSavedProducts('user-1');
+    expect(items.map((i) => i.savedAt)).toEqual(['2026-07-08T12:00:00.123Z']);
   });
 
   it('tolera el embed como array (forma to-many de PostgREST)', async () => {
     selectResult = {
-      data: [{ product_id: 'uuid-galletitas', created_at: 'x', products: [galletitasRow] }],
+      data: [{ product_id: 'uuid-galletitas', created_at: '2026-07-08T12:00:00Z', products: [galletitasRow] }],
       error: null,
     };
 
@@ -174,7 +190,7 @@ describe('listSavedProducts — productos sin puntaje', () => {
   it('un guardado con score null se LISTA igual, con null y su motivo', async () => {
     // Regresión de v2.1: estos productos no se omiten del listado ni se
     // coercionan a 0. Se omiten solo las filas sin id o sin crudos
-    // (productResponseFromRow → null), que es otro caso.
+    // (productSummaryFromRow → null), que es otro caso.
     selectResult = {
       data: [
         { product_id: 'uuid-cerveza', created_at: '2026-08-15T12:00:00Z', products: cervezaRow },
@@ -188,14 +204,11 @@ describe('listSavedProducts — productos sin puntaje', () => {
     expect(items).toHaveLength(2);
     expect(items[0].name).toBe('Cerveza rubia');
     expect(items[0].score).toBeNull();
-    expect(items[0].scoreAvailable).toBe(false);
-    expect(items[0].noScore?.code).toBeTruthy();
     // La presentación viene igual resuelta del servidor: el cliente no tiene
-    // que decidir qué mostrar cuando no hay número.
+    // que decidir qué mostrar cuando no hay número. El motivo (`noScore`) y
+    // el resto viajan en el detalle (`GET /v1/products/:id`, K-04).
     expect(items[0].scoreLabel).toBe('SIN DATOS SUFICIENTES');
-    expect(items[0].fito).toBe('none');
-    // `flagged` no se prende sin puntaje: no sabemos si el producto es malo.
-    expect(items[0].flagged).toBe(false);
+    expect(items[0].scoreColor).toBe('#9ca3af');
     // El producto con puntaje del mismo listado no se ve afectado.
     expect(typeof items[1].score).toBe('number');
   });

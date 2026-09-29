@@ -1,7 +1,6 @@
 import type { CachedProduct, ProductCache, ProductReader } from './ports';
-import { mapRawToProduct } from './productResponse';
+import { toProductDetail, type ProductDetail } from './productResponse';
 import { isBarcode, nameKey } from '../domain/query';
-import type { FitogenixProduct } from './productResponse';
 
 /**
  * Búsqueda de productos — SOLO catálogo propio (decisión de producto,
@@ -28,7 +27,7 @@ import type { FitogenixProduct } from './productResponse';
  * vive en `modules/catalog/index.ts`.
  */
 
-export type LookupProduct = (query: string) => Promise<FitogenixProduct | null>;
+export type LookupProduct = (query: string) => Promise<ProductDetail | null>;
 
 type LookupSource = 'redis' | 'supabase' | 'catalog';
 
@@ -40,14 +39,18 @@ function logSource(cacheKey: string, source: LookupSource, dataSource: string): 
   console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
 }
 
-/** El crudo (de Redis o de la base) → la respuesta, con la identidad y el
- *  origen de la fila. Es el único armado del lookup: desde K-02 Redis guarda
- *  crudos, así que un hit de cache se presenta igual que uno de Supabase. */
-function present(cached: CachedProduct, query: string): FitogenixProduct {
-  const product = mapRawToProduct(cached.raw, query);
-  product.dataSource = cached.dataSource;
-  product.productId = cached.productId;
-  return product;
+/** El crudo (de Redis o de la base) → la respuesta, con el uuid de la fila
+ *  como `id` y la query como nombre de reemplazo. Es el único armado del
+ *  lookup: desde K-02 Redis guarda crudos, así que un hit de cache se presenta
+ *  igual que uno de Supabase. El origen (`dataSource`) ya no viaja (K-04):
+ *  queda para el log y el TTL. */
+function present(cached: CachedProduct, query: string): ProductDetail {
+  return toProductDetail(cached.raw, { id: cached.productId, fallbackName: query });
+}
+
+/** Los productos de origen IA se refrescan antes: el dato es menos confiable. */
+function ttlFor(dataSource: string): number {
+  return dataSource === 'ai' ? 259200 : 604800;
 }
 
 function toCached(cached: CachedProduct): CachedProduct {
@@ -63,12 +66,12 @@ export function makeLookupProduct(deps: {
   // Deduplicación in-flight (singleflight): si varias requests piden la misma
   // clave a la vez, comparten una sola resolución en curso. Keyed por la clave
   // interna de proceso (barcode o 'name:<...>').
-  const inFlight = new Map<string, Promise<FitogenixProduct | null>>();
+  const inFlight = new Map<string, Promise<ProductDetail | null>>();
 
   async function withSingleflight(
     cacheKey: string,
-    resolve: () => Promise<FitogenixProduct | null>,
-  ): Promise<FitogenixProduct | null> {
+    resolve: () => Promise<ProductDetail | null>,
+  ): Promise<ProductDetail | null> {
     const existing = inFlight.get(cacheKey);
     if (existing) return existing;
 
@@ -80,7 +83,7 @@ export function makeLookupProduct(deps: {
   async function resolveByBarcode(
     barcode: string,
     originalQuery: string,
-  ): Promise<FitogenixProduct | null> {
+  ): Promise<ProductDetail | null> {
     return withSingleflight(barcode, async () => {
       // Level 1 — Redis (fastest, in-memory cache). Guarda el crudo: se
       // recalcula con el motor y el contrato de hoy (K-02). Las entradas que
@@ -97,10 +100,9 @@ export function makeLookupProduct(deps: {
       if (!cached) return null;
 
       const product = present(cached, originalQuery);
-      logSource(barcode, 'supabase', product.dataSource);
+      logSource(barcode, 'supabase', cached.dataSource);
 
-      const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-      cache.set(barcode, toCached(cached), ttl).catch((err: unknown) =>
+      cache.set(barcode, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
         console.error('[productLookupService] setInRedis error:', err),
       );
 
@@ -108,7 +110,7 @@ export function makeLookupProduct(deps: {
     });
   }
 
-  async function resolveByName(trimmed: string): Promise<FitogenixProduct | null> {
+  async function resolveByName(trimmed: string): Promise<ProductDetail | null> {
     const cacheKey = nameKey(trimmed);
 
     return withSingleflight(cacheKey, async () => {
@@ -126,7 +128,7 @@ export function makeLookupProduct(deps: {
       if (!cached) return null;
 
       const product = present(cached, trimmed);
-      logSource(cacheKey, 'catalog', product.dataSource);
+      logSource(cacheKey, 'catalog', cached.dataSource);
 
       if (cached.barcode) {
         // La fila tiene barcode: la próxima vez que alguien busque este mismo
@@ -140,8 +142,7 @@ export function makeLookupProduct(deps: {
         // Fila solo-nombre (sin barcode, típicamente resuelta por IA en su
         // momento): la única forma de encontrarla rápido de nuevo es cachear
         // bajo la clave de ESTA query.
-        const ttl = product.dataSource === 'ai' ? 259200 : 604800;
-        cache.set(cacheKey, toCached(cached), ttl).catch((err: unknown) =>
+        cache.set(cacheKey, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
           console.error('[productLookupService] setInRedis error:', err),
         );
       }
@@ -150,7 +151,7 @@ export function makeLookupProduct(deps: {
     });
   }
 
-  return async function lookupProduct(query: string): Promise<FitogenixProduct | null> {
+  return async function lookupProduct(query: string): Promise<ProductDetail | null> {
     const trimmed = String(query).trim();
 
     if (isBarcode(trimmed)) {

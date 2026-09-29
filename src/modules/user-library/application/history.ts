@@ -10,9 +10,15 @@
  * de las funciones se conservan.
  */
 
-import { productResponseFromRow } from '../../catalog';
-import type { FitogenixProduct } from '../../catalog';
+import type { ProductSummary } from '../../catalog';
+import { summaryWithDate } from './listItem';
 import type { HistoryRepository } from './ports';
+
+/** Un escaneo: el resumen del producto y cuándo se escaneó por última vez
+ *  (K-04). */
+export interface HistoryItem extends ProductSummary {
+  scannedAt: string;
+}
 
 export function makeScanHistory(repo: HistoryRepository) {
   return {
@@ -23,19 +29,20 @@ export function makeScanHistory(repo: HistoryRepository) {
 
     /**
      * Lista el historial del usuario, escaneo más reciente primero, como
-     * FitogenixProduct completos (score recomputado desde los crudos).
+     * resumen del producto (puntaje recomputado desde los crudos) más
+     * `scannedAt`. El detalle se pide con `GET /v1/products/:id`.
      *
      * Filas cuyo producto embebido falta o no tiene crudos se OMITEN (mismo
      * criterio que listSavedProducts). Errores de DB se propagan como Error
      * (la ruta responde 500).
      */
-    async listScanHistory(userId: string, limit: number): Promise<FitogenixProduct[]> {
+    async listScanHistory(userId: string, limit: number): Promise<HistoryItem[]> {
       const rows = await repo.list(userId, limit);
-      const items: FitogenixProduct[] = [];
+      const items: HistoryItem[] = [];
 
       for (const rowUnknown of rows) {
-        const product = productResponseFromRow(rowUnknown);
-        if (product) items.push(product);
+        const item = summaryWithDate(rowUnknown, 'scanned_at');
+        if (item) items.push({ ...item.product, scannedAt: item.at });
       }
 
       return items;

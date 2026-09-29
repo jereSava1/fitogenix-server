@@ -1,8 +1,10 @@
 /* Datos crudos de un producto → la forma que consume la app.
  *
  * No son puntaje: parsean lo que traen las fuentes (panel nutricional,
- * categorías). Antes vivían en la fachada del motor (`ftgEngine.ts`); se
- * mudaron acá en M-03 (docs/02-arquitectura.md §5.1 #2).
+ * categorías, nombre). Antes vivían en la fachada del motor (`ftgEngine.ts`);
+ * se mudaron acá en M-03 (docs/02-arquitectura.md §5.1 #2). `cleanName` vino
+ * de application/productResponse.ts en K-04: la usan la respuesta y la fila
+ * que escribe el ETL.
  */
 
 import type { NutritionFacts } from '../../scoring';
@@ -51,4 +53,19 @@ export function extractCategory(categories?: string): string {
     .pop()!
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/** El nombre que traen las fuentes, sin paréntesis, corchetes, códigos de
+ *  barras ni gramajes. Sin nombre, `fallback` (K-04: la query en el lookup, el
+ *  barcode de la fila en listados y detalle). */
+export function cleanName(raw: string | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  return raw
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s*\[[^\]]*\]\s*/g, ' ')
+    .replace(/\s+\d{8,14}\b/g, '')
+    .replace(/\s+\d+\s*(?:g|gr|kg|ml|l|lts?|cc|oz)\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
 }

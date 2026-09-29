@@ -25,6 +25,25 @@ export function Nullable<T extends TSchema>(schema: T) {
 }
 
 /**
+ * Un `enum` de strings, con el mismo patrón que `code` en `ApiError` (así el
+ * OpenAPI y native lo leen como una unión de strings). Los valores llegan como
+ * las claves de un `Record<T, true>` para que tsc exija la unión COMPLETA, ni
+ * uno más ni uno menos: si el motor suma un valor, esto no compila hasta
+ * agregarlo al contrato.
+ */
+export function StringEnum<T extends string>(values: Record<T, true>) {
+  return Type.Unsafe<T>({ type: 'string', enum: Object.keys(values) });
+}
+
+/**
+ * `true` si `A` y `B` son asignables en los dos sentidos. Ata en compilación
+ * un tipo de `application/` con su schema de `routes/` (application no puede
+ * importar routes): `true satisfies SameShape<Static<typeof S>, T>` deja de
+ * compilar si al tipo le sobra o le falta un campo, o si cambia uno.
+ */
+export type SameShape<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+/**
  * Códigos de error del contrato (03-contratos §B.2). Solo los que el server
  * puede responder hoy: cada ítem que agrega un error nuevo suma su código acá
  * y en contract/CHANGELOG.md (`DEPENDENCY_UNAVAILABLE` con H-01, los de

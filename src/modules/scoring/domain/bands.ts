@@ -26,7 +26,8 @@ export interface ScoringBand {
   readonly from: number;
   readonly to: number;
   readonly color: string;
-  /** Lo que llega en `tagline`. */
+  /** El mensaje de la banda (hasta K-04 llegaba en el `tagline` de cada
+   *  producto; ahora solo viaja acá, D-38). */
   readonly message: string;
   /** El sello de la banda, o `null` en las del medio. */
   readonly sello: string | null;

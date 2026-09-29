@@ -24,7 +24,7 @@
      seals.ts      octógonos de la Ley 27.642 — dato oficial, paralelo
      explain.ts    §7 — el armado de la salida legible
      pipeline.ts   §2 — la orquestación, en el orden del documento
-     presentation.ts  puntaje → label, color, tagline, sello y estado
+     presentation.ts  puntaje → presentación (presentScore), sello y estado
 
    ── Las dos reglas que gobiernan todo lo demás ──
 
@@ -64,14 +64,16 @@ export {
   type ScoringBands,
 } from './domain/bands';
 
+/** La presentación del puntaje para la app (ADR-0003, K-04). `getScoreLabel`
+ *  y `getSello` quedan para las columnas denormalizadas que escribe el ETL
+ *  hasta B-01 (D-35). */
 export {
   getScoreLabel,
-  getScoreTagline,
   getSello,
-  resolveProductStatus,
-  type ProductStatus,
-  type ProductStatusTone,
-  type ScoreLabel,
+  presentScore,
+  type Fito,
+  type Highlight,
+  type ScorePresentation,
 } from './domain/presentation';
 
 /**

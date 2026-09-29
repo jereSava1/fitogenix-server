@@ -11,9 +11,9 @@ import type { CachedProductRow, ProductReader } from '../application/ports';
 import { normalizeQuery } from '../domain/query';
 import { rowToCachedRaw } from './productRow';
 
-// Lectura común: una fila por columna única (barcode o name_key).
+// Lectura común: una fila por columna única (id, barcode o name_key).
 async function getCachedBy(
-  column: 'barcode' | 'name_key',
+  column: 'id' | 'barcode' | 'name_key',
   value: string,
 ): Promise<CachedProductRow | null> {
   const { data, error } = await admin()
@@ -25,6 +25,13 @@ async function getCachedBy(
   if (error || !data) return null;
 
   return rowToCachedRaw(data as Record<string, unknown>);
+}
+
+/** Lee un producto por su identidad (uuid) y reconstruye su crudo (K-04). Un
+ *  error de Supabase se devuelve como `null`, igual que por barcode, hasta
+ *  H-01. */
+export async function getProductById(id: string): Promise<CachedProductRow | null> {
+  return getCachedBy('id', id);
 }
 
 /** Lee un producto cacheado por su barcode y reconstruye su crudo. */
@@ -71,6 +78,7 @@ export async function findCachedProductByName(
 }
 
 export const supabaseProductReader: ProductReader = {
+  findById: getProductById,
   findByBarcode: getCachedProductByBarcode,
   findByName: findCachedProductByName,
 };

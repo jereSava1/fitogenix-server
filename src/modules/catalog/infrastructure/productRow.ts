@@ -2,15 +2,19 @@
  *
  * Adaptador de la tabla `products`: lo comparten el lector del catálogo
  * (`supabaseProductReader.ts`) y los listados de guardados e historial
- * (`productResponseFromRow`, expuesta en el index del módulo). Antes vivía en
- * `services/cacheService.ts` (M-04); `productResponseFromRow` era
- * `services/productRowMapper.ts · joinedRowToProduct` (M-05).
+ * (`productSummaryFromRow`, expuesta en el index del módulo). Antes vivía en
+ * `services/cacheService.ts` (M-04); `productSummaryFromRow` era
+ * `services/productRowMapper.ts · joinedRowToProduct` (M-05) y hasta K-04
+ * armaba el producto completo (`productResponseFromRow`).
  */
 
-import type { FitogenixProduct } from '../application/productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 import type { CachedProductRow } from '../application/ports';
-import { mapRawToProduct } from '../application/productResponse';
+import {
+  rowFallbackName,
+  toProductSummary,
+  type ProductSummary,
+} from '../application/productResponse';
 
 // Type guards mínimos para leer columnas jsonb sin `any`.
 function asStringRecord(v: unknown): Record<string, unknown> | undefined {
@@ -26,7 +30,7 @@ function asStringArray(v: unknown): string[] | undefined {
 /**
  * Reconstruye el RawProduct crudo desde una fila de `products` (función PURA,
  * sin I/O). Compartida entre las lecturas del catálogo (supabaseProductReader) y
- * productResponseFromRow (listados de guardados/historial con productos embebidos
+ * productSummaryFromRow (listados de guardados/historial con productos embebidos
  * vía PostgREST) para que todos apliquen EXACTAMENTE el mismo mapeo.
  *
  * Filas sin `id` o sin datos crudos devuelven null: se tratan como cache miss /
@@ -76,21 +80,23 @@ function asRecord(v: unknown): Record<string, unknown> | null {
 }
 
 /**
- * Reconstruye un FitogenixProduct desde una fila join { product_id, products }.
+ * El resumen de un producto desde una fila join { product_id, products }.
  *
  * Tanto saved_products como scan_history referencian `products` vía
  * `product_id` (migración 006) y listan con un embed
  * (`<tabla>(product_id, ..., products(*))`). Esta función concentra la
  * reconstrucción del producto para que ambos listados apliquen EXACTAMENTE el
- * mismo pipeline que un hit de cache: rowToCachedRaw + mapRawToProduct +
- * preservar dataSource/productId.
+ * mismo pipeline que un hit de cache: rowToCachedRaw + puntaje recalculado.
+ * Desde K-04 los listados llevan el resumen (`ProductSummary`); el detalle se
+ * pide con `GET /v1/products/:id`. Sin nombre, se muestra el barcode de la
+ * fila (antes, el uuid).
  *
  * Devuelve null si la fila no tiene la forma esperada, si el producto
  * embebido falta (p.ej. purgado entre el join y la lectura) o si la fila de
  * `products` no tiene id o crudos (rowToCachedRaw → null): mejor omitir que
- * servir productos con breakdown incompleto.
+ * servir productos con puntaje incompleto.
  */
-export function productResponseFromRow(rowUnknown: unknown): FitogenixProduct | null {
+export function productSummaryFromRow(rowUnknown: unknown): ProductSummary | null {
   const row = asRecord(rowUnknown);
   if (!row) return null;
 
@@ -103,10 +109,8 @@ export function productResponseFromRow(rowUnknown: unknown): FitogenixProduct | 
   const cached = rowToCachedRaw(productRow);
   if (!cached) return null; // fila sin id o sin crudos → se omite
 
-  // Mismo tratamiento que el hit de Supabase en lookupProduct: recomputar con
-  // mapRawToProduct y preservar dataSource/productId.
-  const product = mapRawToProduct(cached.raw, cached.productId);
-  product.dataSource = cached.dataSource;
-  product.productId = cached.productId;
-  return product;
+  return toProductSummary(cached.raw, {
+    id: cached.productId,
+    fallbackName: rowFallbackName(cached),
+  });
 }
