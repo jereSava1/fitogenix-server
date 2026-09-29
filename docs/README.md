@@ -8,7 +8,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-60) |
+| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-61) |
 | Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
 | Saber qué tiene que hacer el sistema | [`01-requerimientos.md`](01-requerimientos.md) |
 | Ver cómo se va a organizar el server | [`02-arquitectura.md`](02-arquitectura.md) y [`adr/`](adr/README.md) |
@@ -27,6 +27,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
 | `borradores/dependency-cruiser.cjs` | Reglas de dependencias entre módulos, listas para copiar a la raíz |
 | `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |
+| `sql/u01/` | U-01: verificación, cambio, rollback y pruebas para cerrar el catálogo a la anon key |
 | `raw/` | Salidas crudas de herramientas (knip, madge, tsc, vitest, dependency-cruiser), schema real de Supabase, migración 015 aplicada en producción y el patch del arreglo de paginación del ETL |
 
 ## Regla de mantenimiento

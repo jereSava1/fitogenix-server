@@ -66,6 +66,7 @@
 | D-58 | Consultas y migraciones en Supabase | Se entregan las queries y las corre el responsable | [05-plan.md](05-plan.md) | Vigente |
 | D-59 | Estrategia de ramas | Integración `fitogenix/refactor-cleanup` desde `main` en ambos repos; features → integración → `main` al final | [05-plan.md](05-plan.md) | Vigente |
 | D-60 | Analítica (L-09, RF-047) | **Se difiere** la implementación a la etapa 9 ([DT-05](deuda-tecnica.md)), con la dirección ya elegida: **endpoint propio `POST /v1/events`** (lista cerrada de eventos, sin texto libre ni datos de salud) y tabla propia sin grants para `anon`. La tasa de "fuera de catálogo" (RNF-U04) se mide **del lado del server** con los 404 del lookup. **Sin SDK de terceros en la app**; PostHog queda solo como posible destino server-side | [deuda-tecnica.md](deuda-tecnica.md) | Vigente |
+| D-61 | Cómo se aplica U-01 | **Excepción puntual a la DoD §9.5**: U-01 es P0 y va antes de la baseline (C-05), así que se aplica pegando [`sql/u01/2-cambio.sql`](sql/u01/2-cambio.sql) en el SQL Editor, con verificación y rollback escritos. La baseline lo absorbe (el dump ya trae los revokes). Los **default privileges** de `public` (que le dan grants a `anon` en toda tabla o función nueva) **no se tocan en U-01**: pasan a C-05 | [05-plan.md](05-plan.md) | Propuesta, pendiente de OK |
 
 ## Decisiones de arquitectura (ADRs)
 
