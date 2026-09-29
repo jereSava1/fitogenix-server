@@ -1,7 +1,4 @@
-/* M-06 · Casos de uso de guardados con un repositorio falso (sin Supabase ni
- * mocks de módulos). El comportamiento contra la base lo fija
- * infrastructure/supabaseSavedRepository.test.ts.
- */
+// Casos de uso con un repositorio falso; contra la base: supabaseSavedRepository.test.ts.
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { SavedRepository } from './ports';
 

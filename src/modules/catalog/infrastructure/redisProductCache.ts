@@ -1,32 +1,6 @@
 /**
- * Cache Redis del catálogo (Upstash REST). Implementa `ProductCache`
- * (application/ports.ts). Antes era `services/redisService.ts` (M-04); su
- * `normalizeQuery` propia, distinta de `domain/query.ts`, se unifica en H-04.
- *
- * Todas las funciones son no-op cuando faltan UPSTASH_REDIS_REST_URL / TOKEN,
- * así el servidor corre sin Redis en desarrollo.
- *
- * TTLs (ver application/lookupProduct.ts):
- *   Producto normal : 7 días  (604800 s)
- *   Origen IA       : 3 días  (259200 s)
- *
- * ── Qué se guarda: los datos crudos (K-02, D-45) ──
- *
- * `ftg:product:<clave>` guarda lo mismo que devuelve la base: el producto
- * CRUDO (`raw`) con su identidad (`productId`) y su origen (`dataSource`). El
- * lookup lo pasa por `toProductDetail` en cada lectura, igual que un hit de
- * Supabase, así que el cache no depende ni del motor ni del contrato: un
- * cambio de puntaje o un campo nuevo en la respuesta no dejan entradas que
- * haya que invalidar.
- *
- * Hasta K-02 se guardaba la respuesta ya armada (`FitogenixProduct`) adentro
- * de un sobre `{ engineVersion, product }`, y toda entrada de otro motor era
- * miss. Con eso tampoco se cubría un campo requerido nuevo del contrato: la
- * entrada vieja no lo tenía y ese producto respondía 500 hasta que venciera
- * su TTL (03-contratos §B.4.1). Las entradas con el formato viejo (o
- * cualquier cosa que no sea un crudo) se leen como MISS, sin error, y el
- * nivel Supabase las pisa con el formato nuevo en la misma clave.
- */
+ * Cache Redis del catálogo (Upstash). Guarda el crudo con identidad y origen: la respuesta
+ * se arma al leer. Sin UPSTASH_REDIS_REST_* es no-op. TTL: 7 días; origen IA, 3. */
 
 import { getRedis } from '../../../platform/redis';
 import type { CachedProduct, ProductCache } from '../application/ports';
@@ -43,12 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/**
- * Lo que había en la clave → el producto crudo, o `null` (miss) si no tiene
- * la forma que escribe `setInRedis`. Función PURA, exportada para testear sin
- * levantar Redis. No mira la versión del motor ni los campos de la respuesta:
- * el crudo se recalcula al leer.
- */
+/** Lo que había en la clave → el crudo, o `null` (miss) si no tiene esa forma. */
 export function parseCachedProduct(value: unknown): CachedProduct | null {
   if (!isRecord(value)) return null;
   const { productId, dataSource, raw } = value;
@@ -68,9 +37,7 @@ export async function getFromRedis(key: string): Promise<CachedProduct | null> {
 
     const cached = parseCachedProduct(value);
     if (!cached) {
-      // Entrada con otro formato (la respuesta armada de antes de K-02). Se
-      // loguea como evento propio (no como error) porque el día del deploy va
-      // a pasar con TODO el catálogo: sirve para ver la curva de repoblado.
+      // Otro formato: evento propio y no error, para ver la curva de repoblado.
       console.info(JSON.stringify({ event: 'redis_stale_format', cacheKey: key }));
     }
     return cached;
@@ -100,13 +67,7 @@ export async function setInRedis(
   }
 }
 
-// ── Cache texto→barcode ──
-// Evita repetir la búsqueda por nombre en el catálogo cuando otro usuario ya
-// resolvió la misma query a un barcode.
-//
-// Este cache NO se versiona por motor a propósito: mapea query → código de
-// barras, un dato del mundo (qué producto es) que no depende de cómo lo
-// puntuamos.
+// Cache query → barcode: evita repetir la búsqueda por nombre. No depende del motor.
 
 export async function getSearchBarcode(query: string): Promise<string | null> {
   const redis = getRedis();

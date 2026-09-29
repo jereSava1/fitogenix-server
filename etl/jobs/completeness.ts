@@ -1,12 +1,5 @@
-// Uso: npm run etl:completeness
-//
-// Estado de los cinco campos que la app necesita para mostrar un producto
-// con cara seria: nombre, marca, ingredientes, información nutricional e
-// imagen. Solo lee; es seguro correrlo en cualquier momento.
-//
-// Existe porque veníamos midiendo esto con scripts efímeros en cada paso, y
-// lo que importa no es la foto sino la tendencia: si una corrida deja el
-// catálogo más completo o menos.
+// Uso: npm run etl:completeness (solo lee). Estado de nombre, marca, ingredientes,
+// nutrición e imagen: importa la tendencia entre corridas.
 import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 

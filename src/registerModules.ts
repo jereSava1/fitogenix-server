@@ -1,8 +1,5 @@
-/* Registra las rutas de todos los módulos en la app base. Lo usan `main.ts`
- * (el server) y `scripts/generate-contract.ts` (el OpenAPI), así los dos arman
- * exactamente la misma superficie HTTP (ADR-0011, K-01), toda bajo `/v1`
- * (K-03).
- */
+// Registra los módulos bajo /v1. Lo usan main.ts y el generador del OpenAPI, así los
+// dos arman la misma superficie HTTP.
 
 import type { FastifyInstance } from 'fastify';
 import { resolveUserIdFromToken } from './platform/http/auth';
@@ -10,9 +7,7 @@ import { registerCatalog } from './modules/catalog';
 import { recordScan, registerUserLibrary } from './modules/user-library';
 import { registerAccount } from './modules/account';
 
-/** Prefijo de versión de todas las rutas del contrato (D-44). `/health` queda
- *  afuera: la registra `buildApp` y no es parte del contrato con la app. Sin
- *  alias de las rutas viejas (D-57). */
+/** Prefijo de todas las rutas del contrato (D-44). `/health` queda afuera; sin alias. */
 export const API_PREFIX = '/v1';
 
 export async function registerModules(app: FastifyInstance): Promise<void> {

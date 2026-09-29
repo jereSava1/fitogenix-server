@@ -1,15 +1,5 @@
-/* T-05 · Caracterización de las rutas privadas y del aislamiento entre
- * usuarios (docs/05-plan.md) — parte de user-library (guardados e historial).
- *
- * Se registran las rutas reales con Supabase Auth simulado y los casos de uso
- * como fakes con los mismos nombres de antes (M-06). Dos usuarios, A y B, cada
- * uno con su token: el `userId` que llega a los servicios tiene que salir
- * SIEMPRE del token, nunca de lo que mande el cliente (body, query, headers).
- *
- * Hasta M-07 era un solo archivo (`src/routes/users/users.test.ts`) con
- * `DELETE /users/me`; esa parte está en account/routes/deleteMe.route.test.ts,
- * con los mismos nombres de casos.
- */
+// Aislamiento entre usuarios: el `userId` que llega a los servicios sale siempre del
+// token, nunca de lo que mande el cliente (body, query, headers).
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { AJV_OPTIONS } from '../../../platform/http/buildApp';
@@ -44,7 +34,6 @@ const comoA = { authorization: 'Bearer token-a' };
 const comoB = { authorization: 'Bearer token-b' };
 const VALIDATION = { error: 'La solicitud no es válida.', code: 'VALIDATION_ERROR' };
 
-// K-04: los listados llevan el resumen del producto más la fecha de la fila.
 const RESUMEN_YOGUR = {
   id: PRODUCT_ID,
   name: 'Yogur',
@@ -243,11 +232,7 @@ describe('aislamiento entre usuarios (T-05)', () => {
     expect(saved.listSavedProducts).toHaveBeenCalledWith(USER_A);
   });
 
-  // Cambiado A PROPÓSITO en K-04 (D-70): hasta acá el userId del body se
-  // borraba en silencio y se guardaba para A (200). Ahora el body rechaza los
-  // campos de más: la request se corta con 400 y nunca llega a guardar nada,
-  // ni para A ni para B. El aislamiento sigue probado: ningún camino le pasa
-  // al servicio el id de B.
+  // D-70: un campo de más corta la request con 400, así que no se guarda nada para nadie.
   it('POST saved: userId en el body → 400, no se guarda nada (D-70)', async () => {
     const res = await app.inject({
       method: 'POST', url: '/users/me/saved', headers: { ...comoA, ...intentoDeB },
@@ -272,8 +257,7 @@ describe('aislamiento entre usuarios (T-05)', () => {
     expect(saved.removeSavedProduct).toHaveBeenCalledWith(USER_A, PRODUCT_ID);
   });
 
-  // Cambiado A PROPÓSITO en K-04 (D-70), mismo motivo que el POST: el
-  // querystring del historial rechaza los parámetros de más.
+  // D-70: el querystring rechaza los parámetros de más.
   it('GET history: userId en query → 400, no se lista nada (D-70)', async () => {
     const res = await app.inject({ method: 'GET', url: `/users/me/history?userId=${USER_B}`, headers: { ...comoA, ...intentoDeB } });
     expect(res.statusCode).toBe(400);

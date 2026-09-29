@@ -1,13 +1,6 @@
-/* Errores HTTP con el formato único del contrato: `{ error, code }` (K-03,
- * 03-contratos §B.2).
- *
- * Los handlers responden sus errores con `apiError`. Lo que no responde un
- * handler —la validación de ajv, los 4xx propios de Fastify (JSON roto, body
- * demasiado grande, content-type no soportado), el rate limit, una ruta que no
- * existe y cualquier excepción— lo arma `registerErrorHandling`, que `buildApp`
- * instala en la raíz. Al cliente le llega un mensaje en español; el detalle
- * técnico va solo al log. El 503 ante una dependencia caída se suma en H-01.
- */
+// Errores con el formato único `{ error, code }`. Lo que no responde un handler (validación,
+// 4xx de Fastify, rate limit, ruta inexistente, excepciones) lo arma `registerErrorHandling`:
+// al cliente, un mensaje en español; el detalle, al log.
 
 import type { FastifyError, FastifyInstance } from 'fastify';
 import type { ApiError, ErrorCode } from './schemas';
@@ -21,11 +14,7 @@ export function apiError(code: ErrorCode, error: string): ApiError {
   return { error, code };
 }
 
-/**
- * Lo que tira `@fastify/rate-limit` al pasarse del límite (`errorResponseBuilder`).
- * Tiene que llevar `statusCode`: sin él, Fastify lo trataba como un error
- * interno y respondía 500 (caracterizado en M-02).
- */
+/** Para `errorResponseBuilder` del rate limit: sin `statusCode`, Fastify respondía 500. */
 export function rateLimitedError(statusCode: number): FastifyError {
   return Object.assign(new Error(RATE_LIMITED_MESSAGE), {
     statusCode,

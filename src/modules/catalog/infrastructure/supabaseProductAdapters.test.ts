@@ -1,11 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RawProduct } from '../domain/rawProduct';
 
-// ── Mock de Supabase ──
-// createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
-// en las variables de resultado. Cadenas cubiertas:
-//   .select('*').eq().maybeSingle()                  → mockRow (getCachedProductBy*)
-//   .rpc('search_products_by_name', {...})           → mockRpcRows (findCachedProductByName)
+// Supabase simulado: `.select().eq().maybeSingle()` → mockRow; `.rpc(...)` → mockRpcRows.
 let mockRow: Record<string, unknown> | null = null;
 let mockError: unknown = null;
 let mockRpcRows: Record<string, unknown>[] | null = null;
@@ -21,9 +17,6 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from, rpc })),
 }));
 
-// Portado de services/cacheService.test.ts (M-04): el módulo se partió en
-// productRow, supabaseProductReader y supabaseProductWriter, y los tests
-// siguen usándolos juntos bajo `cache`.
 type CacheModule = typeof import('./productRow') &
   typeof import('./supabaseProductReader') &
   typeof import('./supabaseProductWriter');
@@ -58,10 +51,7 @@ const rawGalletitas: RawProduct = {
   _aiEnriched: true,
 };
 
-/* Desde K-04 `buildCachePayload` recibe solo el crudo: calcula cada columna
- * con el mismo código que el server, sin pasar por la respuesta de la API. La
- * fila completa de los 200 productos de la muestra la fija
- * supabaseProductWriter.test.ts. */
+// La fila completa de los 200 productos de la muestra la fija supabaseProductWriter.test.ts.
 describe('buildCachePayload', () => {
   it('con barcode: guarda los crudos, engine_version y SOLO la columna barcode', () => {
     const payload = cache.buildCachePayload(rawGalletitas, { barcode: '7790001' });
@@ -90,11 +80,7 @@ describe('buildCachePayload', () => {
   });
 
   it('score null se persiste como null, con su label y sin sello', () => {
-    // v2.1: el motor no puntúa lo que cae en §1 (fuera de alcance, sin datos,
-    // lista no identificable). Ese null tiene que llegar a la DB COMO null —
-    // si se coercionara a 0, la fila quedaría indistinguible del peor producto
-    // del catálogo y los listados de guardados/historial mentirían.
-    // Fuera de alcance (§1): el motor no emite puntaje.
+    // Sin puntaje se guarda null, no 0: si no, quedaría igual que el peor producto.
     const cerveza: RawProduct = {
       product_name: 'Cerveza rubia',
       categories: 'Bebidas alcohólicas, Cervezas',

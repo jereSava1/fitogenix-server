@@ -1,9 +1,4 @@
-/**
- * Rutas de productos guardados por usuario (favoritos). Todas bajo requireAuth
- * (mismo patrón que account/routes/deleteMe.route.ts): `request.userId` viene del JWT de Supabase.
- * Los casos de uso (`application/saved.ts`) se inyectan desde el index del
- * módulo (M-06).
- */
+// Guardados del usuario. `request.userId` sale del JWT (requireAuth).
 
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
@@ -35,10 +30,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
     }
   });
 
-  // Guardar un producto por su productId (uuid de `products`, viene en el
-  // payload del lookup). Idempotente: re-guardar algo ya guardado responde
-  // { ok: true } igual. `format: 'uuid'` lo valida ajv (Fastify 5 trae
-  // ajv-formats vía @fastify/ajv-compiler).
+  // Idempotente. El uuid lo valida ajv (`format: 'uuid'`).
   app.post('/users/me/saved', { schema: saveProductSchema }, async (request, reply) => {
     try {
       const result = await saveProduct(request.userId, request.body.productId);

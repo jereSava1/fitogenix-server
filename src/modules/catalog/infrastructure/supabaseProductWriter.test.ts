@@ -1,21 +1,12 @@
-/* K-04 · Caracterización de lo que escribe el ETL en `products`.
- *
- * K-04 cambia la respuesta de la API (`ProductDetail` / `ProductSummary`) y el
- * ETL armaba su fila a partir de esa respuesta (`mapRawToProduct` +
- * `buildCachePayload`). Este test fija la fila que se escribe para los 200
- * productos de la muestra del catálogo, así el cambio de contrato no mueve ni
- * una columna. Las columnas derivadas (nombre limpio, categoría, puntaje,
- * label, sello, origen) van al snapshot; los crudos se verifican aparte
- * porque pasan tal cual. Las columnas denormalizadas se van en B-01 (D-35).
- */
+// Fija la fila que escribe el ETL para los 200 productos de la muestra: las columnas
+// derivadas van al snapshot; los crudos se verifican aparte.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { RawProduct } from '../domain/rawProduct';
 import { buildCachePayload } from './supabaseProductWriter';
 
-/** Cómo arman su fila los jobs del ETL (`runMerge`, `enrichCencosud`). Hasta
- *  K-04 pasaban antes por `mapRawToProduct`; el snapshot es el de esa época. */
+/** Cómo arman su fila los jobs del ETL (`runMerge`, `enrichCencosud`). */
 function etlRowFor(raw: RawProduct, barcode: string): Record<string, unknown> {
   return buildCachePayload(raw, { barcode });
 }

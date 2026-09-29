@@ -64,10 +64,7 @@ describe('adaptVtexProduct', () => {
   });
 });
 
-// ── Cencosud (Jumbo/Disco/Vea) publica ingredientes y tabla nutricional ──
-// La versión anterior del adapter daba por sentado que "un retailer nunca
-// trae ingredientes". Es cierto para Carrefour, falso para Cencosud — y por
-// esa suposición estábamos descartando datos reales.
+// Cencosud (Jumbo/Disco/Vea) sí publica ingredientes y tabla nutricional.
 describe('campos nutricionales de Cencosud', () => {
   it('normaliza la lista de ingredientes del repr de Python al formato de OFF', () => {
     expect(parseVtexIngredients(["'harina de trigo 0000', 'manteca', 'azúcar'"]))

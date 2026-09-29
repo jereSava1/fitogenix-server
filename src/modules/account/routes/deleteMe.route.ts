@@ -1,8 +1,4 @@
-/**
- * DELETE /v1/users/me: elimina la cuenta del usuario del token (RF-029). Bajo
- * requireAuth: `request.userId` viene del JWT de Supabase, nunca del cliente.
- * El caso de uso se inyecta desde el index del módulo (M-07).
- */
+// DELETE /v1/users/me: borra la cuenta del usuario del token (requireAuth).
 
 import { Type } from '@sinclair/typebox';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
@@ -18,9 +14,7 @@ import {
 import type { DeleteAccount } from '../application/deleteAccount';
 import { DeleteUserError } from '../application/ports';
 
-/** Contrato (ADR-0011). El 500 es `ApiError` tanto si lo responde el handler
- *  como si el cliente de Supabase lanza (lo arma el manejador de errores, K-03;
- *  antes salía el genérico de Fastify, caracterizado en M-07). */
+/** El 500 es `ApiError` también si el cliente de Supabase lanza. */
 const deleteMeSchema = {
   tags: ['account'],
   summary: 'Eliminar la cuenta del usuario',

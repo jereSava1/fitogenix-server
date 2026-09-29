@@ -2,19 +2,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CachedProductRow, ProductCache, ProductReader } from './ports';
 import type { RawProduct } from '../domain/rawProduct';
 
-/**
- * Búsqueda SOLO catálogo propio (decisión de producto, 2026-08-18): sin
- * cascada a OFF/OBF/Edamam/Claude. Si Redis y Supabase no tienen el
- * producto, `lookupProduct` devuelve `null` — no hay proveedores externos
- * que mockear acá.
- *
- * Portado de services/productLookupService.test.ts en M-05: el caso de uso
- * recibe los puertos, así que en vez de simular los módulos de los adaptadores
- * se le pasan fakes. Los fakes conservan los nombres de las funciones de antes
- * (`cacheService.getCachedProductByBarcode`, `redisService.setInRedis`…) para
- * que cada caso y cada aserción queden idénticos a los que caracterizaban el
- * servicio.
- */
+// Solo catálogo propio: sin proveedores externos que simular. Los puertos se reemplazan
+// por fakes.
 const cacheService = {
   getProductById: vi.fn<ProductReader['findById']>(async () => null),
   getCachedProductByBarcode: vi.fn<ProductReader['findByBarcode']>(async () => null),
@@ -65,8 +54,7 @@ beforeAll(async () => {
   });
 });
 
-/** El `dataSource` que se logueó en la última resolución: desde K-04 no viaja
- *  en la respuesta, queda para el log (y para el TTL). */
+/** El `dataSource` logueado en la última resolución (no viaja en la respuesta). */
 function loggedDataSource(): string | undefined {
   const calls = vi.mocked(console.info).mock.calls;
   const last = calls[calls.length - 1]?.[0];
@@ -141,10 +129,6 @@ describe('lookupProduct — barcode', () => {
   });
 });
 
-/* K-02 · Redis guarda crudos (`{ productId, dataSource, raw }`) y el lookup
- * los recalcula. Antes: la respuesta armada se servía tal cual, y una entrada
- * sin productId (pre-006) era miss acá; ese chequeo pasó al adaptador
- * (`parseCachedProduct`, redisProductCache.test.ts). */
 describe('lookupProduct — Redis', () => {
   it('entrada cruda: se recalcula y se sirve sin tocar Supabase (K-02)', async () => {
     vi.mocked(redisService.getFromRedis).mockResolvedValue({

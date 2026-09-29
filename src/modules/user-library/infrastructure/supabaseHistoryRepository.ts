@@ -1,16 +1,4 @@
-/**
- * Historial de escaneos por usuario: tabla `scan_history`.
- *
- * Persiste en la tabla `scan_history` (migraciones 005 + 006): cada escaneo
- * autenticado referencia la fila cacheada en `products` vía `product_id`
- * (uuid, la identidad del producto). El listado se sirve con el mismo embed
- * que los guardados.
- *
- * Implementa `HistoryRepository` (application/ports.ts). Antes era
- * `services/scanHistoryService.ts`; se partió en M-06 sin cambios.
- * `resolveUserIdFromToken`, que también vivía ahí, pasó a
- * `platform/http/auth.ts`.
- */
+// Tabla `scan_history`: cada escaneo autenticado referencia `products` por `product_id`.
 
 import { supabaseAdmin as admin } from '../../../platform/supabase';
 import type { HistoryRepository } from '../application/ports';
@@ -30,16 +18,8 @@ export const supabaseHistoryRepository: HistoryRepository = {
     return Array.isArray(data) ? data : [];
   },
 
-  /**
-   * Upsert sobre (user_id, product_id): si ya existía la fila, ACTUALIZA
-   * scanned_at — por eso NO usa ignoreDuplicates, a diferencia del upsert de
-   * guardados.
-   *
-   * Nunca lanza: es un side-effect fire-and-forget del lookup. El lookup solo
-   * lee del catálogo, así que la violación de FK (23503) solo puede pasar si el
-   * producto se borró de `products` entre el lookup y este upsert; no es
-   * crítico — el próximo escaneo lo registra — así que solo se loguea.
-   */
+  /** Upsert que actualiza `scanned_at` (sin ignoreDuplicates). Nunca lanza: una FK rota
+   *  (producto borrado en el medio) solo se loguea. */
   async upsert(userId, productId, at) {
     try {
       const { error } = await admin()

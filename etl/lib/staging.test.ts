@@ -1,10 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Mock de Supabase ──
-// Query builder encadenable donde todo devuelve `this` menos `.range()`, que
-// resuelve la página. `pages` es la cola de respuestas: una por request, en
-// orden. `rangesSeen` registra los rangos pedidos para poder afirmar que la
-// paginación avanzó (y que cortó cuando tenía que cortar).
+// Supabase simulado: todo devuelve `this` menos `.range()`, que responde de `pages` (una
+// por request). `rangesSeen` registra los rangos pedidos.
 let pages: Record<string, unknown>[][] = [];
 let pageError: { message: string } | null = null;
 let rangesSeen: [number, number][] = [];

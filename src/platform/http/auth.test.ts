@@ -1,15 +1,5 @@
-/* T-04 · Caracterización de requireAuth (docs/05-plan.md).
- *
- * Fija el comportamiento ACTUAL del hook, incluido lo que está mal: hoy la
- * sesión se valida con `supabase.auth.getUser(token)` en cada request, y
- * cualquier error de Supabase Auth (también una caída) se responde 401. H-02
- * lo reemplaza por validación local del JWT (ADR-0008) y cambia esos casos a
- * propósito. Supabase se simula: nada sale a la red.
- *
- * K-03 cambió a propósito solo el CUERPO del 401: suma `code: 'UNAUTHENTICATED'`
- * (formato único de errores, 03-contratos §B.2). Status, mensajes y cuándo se
- * consulta a Supabase quedan igual.
- */
+// requireAuth valida con `getUser(token)` en cada request (H-02 lo pasa a JWT local).
+// Supabase se simula.
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
 
@@ -104,9 +94,7 @@ describe('requireAuth — token rechazado (T-04)', () => {
     expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-02. Una caída de Supabase
-  // Auth se le informa al usuario como sesión inválida (401), no como servicio
-  // no disponible (RNF-D03 pide 503).
+  // CARACTERIZA: cambia en H-02. Una caída de Supabase Auth responde 401, no 503.
   it('Supabase Auth caído (error de red) → 401', async () => {
     getUser.mockResolvedValue({
       data: { user: null },
@@ -117,17 +105,15 @@ describe('requireAuth — token rechazado (T-04)', () => {
     expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-02. Si getUser lanza en vez
-  // de devolver el error, el hook no lo atrapa y Fastify responde 500.
+  // CARACTERIZA: cambia en H-02. Si getUser lanza, el hook no lo atrapa: 500.
   it('getUser lanza → 500', async () => {
     getUser.mockRejectedValue(new Error('boom'));
     const res = await pedir('Bearer jwt');
     expect(res.statusCode).toBe(500);
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-02. "Bearer" sin espacio
-  // no se reconoce como prefijo: se manda la palabra "Bearer" como token y
-  // la rechaza Supabase, en vez de cortar antes con "Falta el token".
+  // CARACTERIZA: cambia en H-02. "Bearer" sin espacio se manda como token en vez de
+  // cortar con "Falta el token".
   it('header "Bearer" sin espacio → se manda "Bearer" a Supabase como token', async () => {
     errorDeAuth('invalid JWT: unable to parse or verify signature', 403);
     const res = await pedir('Bearer');
@@ -153,8 +139,7 @@ describe('requireAuth — token aceptado (T-04)', () => {
     expect(getUser).toHaveBeenCalledWith('jwt-valido');
   });
 
-  // CARACTERIZA: comportamiento actual, cambia en H-02. Sin el prefijo Bearer,
-  // el header entero se toma como token.
+  // CARACTERIZA: cambia en H-02. Sin prefijo Bearer, el header entero es el token.
   it('header sin prefijo Bearer → se usa el header entero como token', async () => {
     usuarioValido();
     const res = await pedir('jwt-valido');

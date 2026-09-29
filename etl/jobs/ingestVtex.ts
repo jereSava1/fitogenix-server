@@ -1,22 +1,6 @@
-// Uso: npm run etl:vtex -- --domain www.carrefour.com.ar --source carrefour [--pages 5] [--pageSize 50]
-//      npm run etl:vtex -- --domain ... --source ... --categories [--all-categories]
-//
-// MODO CATEGORÍAS (--categories): el endpoint genérico corta en el ítem 2500
-// —VTEX responde "Parameter _from can't be greater than 2500"— así que sin
-// filtro no se puede pasar de ahí por más páginas que se pidan. Filtrando por
-// categoría, en cambio, CADA una tiene su propia ventana de 2500, y el árbol
-// de Carrefour tiene 449 hojas. Ese es el único camino para bajar el catálogo
-// completo de un retailer.
-//
-// Pagina la API pública de catálogo VTEX (catalog_system/pub/products/search,
-// sin auth) — confirmada en vivo contra Jumbo, Disco, Vea y Carrefour el
-// 2026-08-06. Adapta cada producto a RawProduct e inserta en
-// products_staging. NUNCA escribe en `products`.
-//
-// Dominios ya confirmados VTEX: www.jumbo.com.ar, www.disco.com.ar,
-// www.vea.com.ar, www.carrefour.com.ar. Antes de sumar un retailer nuevo,
-// verificar que responde en ese mismo endpoint (si no, no es VTEX y necesita
-// Crawlee en vez de este job — ver Fase 5 del documento del agente).
+// Uso: npm run etl:vtex -- --domain www.carrefour.com.ar --source carrefour [--pages 5] [--categories]
+// API pública de catálogo VTEX → products_staging. El endpoint corta en el ítem 2500:
+// con --categories cada categoría tiene su propia ventana. Nunca escribe en `products`.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { randomUUID } from 'node:crypto';
 import { adaptVtexProduct } from '../adapters/vtexAdapter';
@@ -41,12 +25,7 @@ function parseArgs() {
 // Tope duro de la API: `_from` no puede pasar de 2500, en ninguna consulta.
 const VTEX_MAX_OFFSET = 2500;
 
-/**
- * Categorías que valen la pena para Fitogenix. El árbol de un supermercado
- * incluye electro, hogar, perfumería y limpieza; sin este filtro terminamos
- * puntuando detergentes con un motor de alimentos (en el catálogo ya hay un
- * "Ayudin" y un "V05"). Con --all-categories se baja todo igual.
- */
+/** Categorías de alimentos: sin filtro se bajan limpieza y perfumería. --all-categories baja todo. */
 const RELEVANT_CATEGORY = /almac[eé]n|desayuno|merienda|bebida|l[aá]cteo|fresco|carne|pescado|frutas|verdura|panader|congelad|kiosco|golosina|snack|dietetic|diet[eé]tic|sin tacc|infusion|infusi[oó]n|aceite|conserva|pastas|galletit|cereal/i;
 
 type CategoryNode = { id: number; name: string; children?: CategoryNode[] };

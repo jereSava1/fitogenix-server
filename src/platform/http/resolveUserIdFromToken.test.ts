@@ -1,7 +1,3 @@
-/* resolveUserIdFromToken (platform/http/auth.ts). Los dos casos se mudaron
- * sin cambios desde services/scanHistoryService.test.ts en M-06, junto con la
- * función. auth.test.ts (T-04, requireAuth) no se toca.
- */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type DbError = { message: string; code?: string } | null;

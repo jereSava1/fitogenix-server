@@ -1,23 +1,6 @@
-// Uso: npm run etl:check-dupes
-//
-// Validación de "¿hay algún producto guardado dos veces?" — rerunnable,
-// pensado para correr después de cada etl:merge grande (o cuando quieras).
-// Solo lee `products`, no escribe nada.
-//
-// Tres chequeos, de más a menos "esto no debería pasar nunca":
-//
-//  1. Barcode exacto repetido — estructuralmente imposible (UNIQUE(barcode)
-//     en la DB, migración 001). Se incluye igual como sanity check barato:
-//     si esto alguna vez tira algo, hay un problema de infraestructura, no
-//     de datos (constraint caída, RLS bypaseado raro, etc.).
-//  2. Mismo barcode en dos formatos (EAN-13 = '0' + UPC-A de 12 dígitos) —
-//     el caso que normalizeBarcode (etl/lib/barcode.ts) previene
-//     desde 2026-08-06 para filas NUEVAS del ETL. Si aparece acá es data
-//     vieja (pre-normalización) o algo que entró por el lookup en vivo
-//     (que no normaliza — ver barcode.ts).
-//  3. Mismo product_name + brand con barcodes distintos — señal más débil
-//     (puede ser una presentación distinta legítima: 500g vs 1kg), pero
-//     vale la pena mirar a mano cuando el volumen crece.
+// Uso: npm run etl:check-dupes (solo lee). Busca: barcode repetido (no debería pasar:
+// UNIQUE), el mismo barcode en EAN-13 y UPC-A, y mismo nombre + marca con barcodes
+// distintos (señal débil: puede ser otra presentación).
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 

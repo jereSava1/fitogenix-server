@@ -1,8 +1,4 @@
-/**
- * Ruta de historial de escaneos por usuario. Bajo requireAuth (mismo patrón
- * que saved.route.ts): `request.userId` viene del JWT de Supabase. El caso de
- * uso (`application/history.ts`) se inyecta desde el index del módulo (M-06).
- */
+// Historial del usuario. `request.userId` sale del JWT (requireAuth).
 
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';

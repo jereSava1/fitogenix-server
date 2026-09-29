@@ -1,12 +1,5 @@
-/**
- * Fitogenix auth plugin — JWT validation via Supabase getUser().
- *
- * Usage: register this plugin on a scoped Fastify sub-instance, then every
- * handler underneath it has access to `request.userId: string`.
- *
- * Public routes (health, POST /products/lookup) must NOT be registered under
- * this plugin — register them directly on the root app.
- */
+// requireAuth: valida el JWT con Supabase `getUser()` y deja `request.userId`. Se registra
+// en un sub-contexto; las rutas públicas van afuera.
 
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
@@ -45,15 +38,8 @@ export const requireAuth = fp(authPlugin, {
   fastify: '5.x',
 });
 
-/**
- * Resuelve el userId desde un access token de Supabase. Devuelve null si el
- * token es inválido o expiró — SIN loguear error: un token vencido en un
- * lookup (que degrada a anónimo) es un caso normal, no una falla.
- *
- * Lo usa el registro del escaneo del lookup (el `onScan` de main.ts). Vivía en
- * `services/scanHistoryService.ts`; se mudó acá en M-06 sin cambios. H-02 lo
- * reemplaza por `optionalAuth` (docs/02-arquitectura.md §5.2 #25).
- */
+/** userId desde un access token, o null si es inválido o venció (sin loguear: en el lookup
+ *  es normal y degrada a anónimo). H-02 lo reemplaza por `optionalAuth`. */
 export async function resolveUserIdFromToken(token: string): Promise<string | null> {
   try {
     const { data, error } = await supabaseAdmin().auth.getUser(token);

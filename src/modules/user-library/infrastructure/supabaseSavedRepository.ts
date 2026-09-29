@@ -1,16 +1,5 @@
-/**
- * Productos guardados por usuario (favoritos): tabla `saved_products`.
- *
- * Persiste en la tabla `saved_products` (migraciones 004 + 006): cada guardado
- * referencia la fila cacheada en `products` vía `product_id` (uuid, la
- * identidad del producto). El listado se sirve con un embed de PostgREST
- * (saved_products → products, habilitado por la FK a products.id); el caso de
- * uso (`application/saved.ts`) recomputa cada producto con el MISMO pipeline
- * que un hit de cache.
- *
- * Implementa `SavedRepository` (application/ports.ts). Antes era
- * `services/savedProductsService.ts`; se partió en M-06 sin cambios.
- */
+// Tabla `saved_products`: cada guardado referencia `products` por `product_id`; se lista
+// con un embed de PostgREST.
 
 import { supabaseAdmin as admin } from '../../../platform/supabase';
 import type { SavedRepository } from '../application/ports';
@@ -29,12 +18,7 @@ export const supabaseSavedRepository: SavedRepository = {
     return Array.isArray(data) ? data : [];
   },
 
-  /**
-   * Idempotente: si ya estaba guardado, el upsert con ignoreDuplicates lo deja
-   * como está y devuelve 'ok'. Devuelve 'not_found' si el productId no existe
-   * en `products` (violación de FK, código PostgreSQL 23503). Otros errores de
-   * DB se propagan como Error.
-   */
+  /** Idempotente. `not_found` si el producto no existe (FK, 23503); otro error lanza. */
   async add(userId, productId) {
     const { error } = await admin()
       .from('saved_products')

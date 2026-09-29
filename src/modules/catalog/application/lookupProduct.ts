@@ -3,47 +3,20 @@ import { toProductDetail, type ProductDetail } from './productResponse';
 import { isBarcode, nameKey } from '../domain/query';
 
 /**
- * Búsqueda de productos — SOLO catálogo propio (decisión de producto,
- * 2026-08-18).
- *
- * Hasta acá había una cascada completa (OFF search → OFF por código → Open
- * Beauty Facts → Edamam → Claude) para cuando el catálogo no tenía el
- * producto. Con el catálogo ahora poblado por el ETL a un volumen mucho
- * mayor, esa cascada dejó de ser necesaria como camino de resolución en vivo:
- * agregaba varios round-trips de red secuenciales (era la causa principal de
- * que una búsqueda "en frío" tardara segundos) y duplicaba trabajo que el ETL
- * ya hace en batch, con curaduría y sin la presión de una request HTTP
- * esperando la respuesta.
- *
- * El resultado: este caso de uso es un camino de SOLO LECTURA contra el
- * catálogo (`ProductReader`, Supabase) con Redis (`ProductCache`) como capa
- * caliente adelante. Si un producto no está en el catálogo, `lookup` devuelve
- * `null` — la ruta responde que todavía no lo tenemos, sin intentar
- * resolverlo con proveedores externos. El catálogo crece por el ETL
- * (`etl/`), no por el tráfico de búsqueda.
- *
- * Antes era `services/productLookupService.ts`, que importaba los adaptadores
- * directo; desde M-05 los recibe como puertos (ADR-0002) y el cableado real
- * vive en `modules/catalog/index.ts`.
- */
+ * Solo lectura del catálogo propio (Redis adelante, Supabase atrás). Si no está, `null`:
+ * el catálogo crece por el ETL, no por las búsquedas. */
 
 export type LookupProduct = (query: string) => Promise<ProductDetail | null>;
 
 type LookupSource = 'redis' | 'supabase' | 'catalog';
 
-// `source` = nivel que sirvió ESTA request (redis/supabase = barcode exacto;
-// catalog = búsqueda por nombre). `dataSource` = proveedor ORIGINAL del dato
-// (off/obf/edamam/ai), preservado desde que el ETL lo cargó — sigue siendo
-// útil para analítica de origen aunque ya no se resuelva en vivo.
+// `source`: el nivel que sirvió esta request. `dataSource`: el proveedor original del dato.
 function logSource(cacheKey: string, source: LookupSource, dataSource: string): void {
   console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
 }
 
-/** El crudo (de Redis o de la base) → la respuesta, con el uuid de la fila
- *  como `id` y la query como nombre de reemplazo. Es el único armado del
- *  lookup: desde K-02 Redis guarda crudos, así que un hit de cache se presenta
- *  igual que uno de Supabase. El origen (`dataSource`) ya no viaja (K-04):
- *  queda para el log y el TTL. */
+/** Redis y la base guardan crudos: los dos se presentan igual. `id` = uuid de la fila;
+ *  la query es el nombre de reemplazo. */
 function present(cached: CachedProduct, query: string): ProductDetail {
   return toProductDetail(cached.raw, { id: cached.productId, fallbackName: query });
 }
@@ -85,9 +58,7 @@ export function makeLookupProduct(deps: {
     originalQuery: string,
   ): Promise<ProductDetail | null> {
     return withSingleflight(barcode, async () => {
-      // Level 1 — Redis (fastest, in-memory cache). Guarda el crudo: se
-      // recalcula con el motor y el contrato de hoy (K-02). Las entradas que
-      // no tienen ese formato (o sin productId) el adaptador las da como miss.
+      // Nivel 1: Redis (crudos; otro formato es miss).
       const redisHit = await cache.get(barcode);
       if (redisHit) {
         logSource(barcode, 'redis', redisHit.dataSource);
@@ -114,7 +85,7 @@ export function makeLookupProduct(deps: {
     const cacheKey = nameKey(trimmed);
 
     return withSingleflight(cacheKey, async () => {
-      // Level 1 — Redis, bajo la clave de ESTA query textual (crudo, K-02).
+      // Nivel 1: Redis, bajo la clave de esta query.
       const redisHit = await cache.get(cacheKey);
       if (redisHit) {
         logSource(cacheKey, 'redis', redisHit.dataSource);
@@ -131,10 +102,7 @@ export function makeLookupProduct(deps: {
       logSource(cacheKey, 'catalog', cached.dataSource);
 
       if (cached.barcode) {
-        // La fila tiene barcode: la próxima vez que alguien busque este mismo
-        // texto, resolveByBarcode la sirve directo desde Redis/Supabase por
-        // barcode — no hace falta cachear el producto bajo la clave de texto
-        // también (sería una segunda copia que nadie vuelve a leer).
+        // Con barcode alcanza con recordar query → barcode: la próxima vez se resuelve por barcode.
         cache.setBarcodeForQuery(trimmed, cached.barcode).catch((err: unknown) =>
           console.error('[productLookupService] setSearchBarcode error:', err),
         );

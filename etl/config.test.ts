@@ -1,7 +1,4 @@
-/* C-03 · El ETL falla con un mensaje claro si necesita ANTHROPIC_API_KEY y no
- * está (D-05). Los dos casos estaban en src/platform/config.test.ts; se
- * mudaron sin cambios en M-08, cuando la key pasó a la config propia del ETL.
- */
+// El ETL falla con un mensaje claro si necesita ANTHROPIC_API_KEY y no está.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function cargarConfig() {

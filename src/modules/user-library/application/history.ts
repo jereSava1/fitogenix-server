@@ -1,21 +1,11 @@
-/* Historial de escaneos por usuario: casos de uso.
- *
- * Re-escanear un producto NO agrega fila: el upsert actualiza scanned_at, así
- * la tabla queda acotada a productos distintos por usuario.
- *
- * El registro se dispara fire-and-forget desde POST /products/lookup
- * (catalog, vía el onScan que arma main.ts): NUNCA debe demorar ni romper la
- * respuesta del lookup, por eso el repositorio loguea errores en vez de
- * propagarlos. Antes era `services/scanHistoryService.ts` (M-06); los nombres
- * de las funciones se conservan.
- */
+// Historial por usuario. Re-escanear actualiza `scanned_at` (una fila por producto).
+// El registro es fire-and-forget desde el lookup: nunca lo demora ni lo rompe.
 
 import type { ProductSummary } from '../../catalog';
 import { summaryWithDate } from './listItem';
 import type { HistoryRepository } from './ports';
 
-/** Un escaneo: el resumen del producto y cuándo se escaneó por última vez
- *  (K-04). */
+/** Un escaneo: el resumen del producto y cuándo se escaneó por última vez. */
 export interface HistoryItem extends ProductSummary {
   scannedAt: string;
 }
@@ -27,15 +17,8 @@ export function makeScanHistory(repo: HistoryRepository) {
       return repo.upsert(userId, productId, new Date());
     },
 
-    /**
-     * Lista el historial del usuario, escaneo más reciente primero, como
-     * resumen del producto (puntaje recomputado desde los crudos) más
-     * `scannedAt`. El detalle se pide con `GET /v1/products/:id`.
-     *
-     * Filas cuyo producto embebido falta o no tiene crudos se OMITEN (mismo
-     * criterio que listSavedProducts). Errores de DB se propagan como Error
-     * (la ruta responde 500).
-     */
+    /** Más reciente primero. Omite filas sin producto o sin crudos; un error de base se
+     *  propaga (500). */
     async listScanHistory(userId: string, limit: number): Promise<HistoryItem[]> {
       const rows = await repo.list(userId, limit);
       const items: HistoryItem[] = [];

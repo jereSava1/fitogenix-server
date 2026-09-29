@@ -1,11 +1,5 @@
-/* C-03 · El server exige solo lo que usa (D-05, docs/05-plan.md).
- *
- * ANTHROPIC_API_KEY solo la usa el enriquecimiento con IA del ETL: el server
- * tiene que poder arrancar sin ella. Desde M-08 el server ni siquiera la lee;
- * que el ETL falle con un mensaje claro si la necesita lo fija
- * etl/config.test.ts. Cada caso importa config de cero (`vi.resetModules`)
- * porque se lee al importar el módulo.
- */
+// El server arranca sin ANTHROPIC_API_KEY (solo la usa el ETL). La config se lee al
+// importar: cada caso la importa de cero.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function cargarConfig() {
@@ -28,7 +22,6 @@ describe('config (C-03)', () => {
     vi.stubEnv('SERPAPI_API_KEY', '');
     const { config } = await cargarConfig();
     expect(config.supabaseUrl).toBe('https://test.supabase.co');
-    // Desde M-08 el server ni siquiera la lee (antes: `anthropicApiKey` falsy).
     expect('anthropicApiKey' in config).toBe(false);
   });
 

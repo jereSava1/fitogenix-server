@@ -1,10 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-// config.ts exige SUPABASE_* al importarse (throws si
-// faltan) — mismo patrón que supabaseProductAdapters.test.ts (catalog): seteamos
-// env vars dummy ANTES de importar el módulo (import dinámico, no estático),
-// así el import no explota en un entorno sin .env real. Solo testeamos los
-// parsers puros, nunca se llega a instanciar el cliente de Anthropic.
+// config.ts exige SUPABASE_* al importarse: variables de relleno y import dinámico.
 type QualityAIModule = typeof import('./qualityAI');
 let parseIngredientsExtraction: QualityAIModule['parseIngredientsExtraction'];
 let parseBrandExtraction: QualityAIModule['parseBrandExtraction'];

@@ -1,12 +1,4 @@
-/* Puertos de account (docs/02-arquitectura.md §8.5, ADR-0002).
- *
- * Hoy el módulo solo elimina la cuenta (M-07). `ProfileRepository` y
- * `OnboardingRepository` llegan con F-05 y F-06.
- */
-
-/** Supabase Auth respondió con un error al borrar (no una excepción de red:
- *  esas se propagan tal cual y Fastify responde su 500 genérico, como antes
- *  de M-07; H-01 unifica los errores). */
+/** Supabase Auth respondió con error. Una excepción de red se propaga (500). */
 export class DeleteUserError extends Error {}
 
 export interface AuthAdmin {

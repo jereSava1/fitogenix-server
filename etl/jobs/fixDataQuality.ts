@@ -1,29 +1,6 @@
 // Uso: npm run etl:fix-quality -- [--limit 200] [--apply]
-//
-// Corrige (o, sin --apply, solo PROPONE) los hallazgos de etl:audit-quality:
-//
-//   - brand vacío con marca embebida en product_name: primero intenta el
-//     diccionario de marcas conocidas de la propia tabla (determinístico,
-//     gratis, exige >=2 apariciones para filtrar ruido — ver
-//     lib/qualityHeuristics.ts). Si no matchea ahí (marca nunca vista antes,
-//     típico de un producto con un solo SKU en la tabla), le pide a Claude
-//     que la EXTRAIGA del texto del nombre — nunca que la invente.
-//
-//   - ingredients_text con pinta de boilerplate/dirección: le pide a Claude
-//     que separe, del mismo texto, la porción real de ingredientes de la de
-//     fabricante/dirección/RNE-RNPA. La porción real de ingredientes queda
-//     en ingredients_text; la de fabricante se MUEVE a
-//     `manufacturer_info` (requiere supabase/migrations/legacy/012_manufacturer_info.sql
-//     aplicada) en vez de perderse. Si no hay nada rescatable, se anula
-//     ingredients_text — la fila vuelve a pasar por el gate de completitud +
-//     runMerge.ts que ya existe, en vez de quedar con un dato inventado.
-//
-// Por default es DRY RUN: imprime lo que HARÍA, no escribe nada — ni
-// siquiera en dry-run se ahorran las llamadas a Claude (hacen falta para
-// saber qué proponer), así que el costo en tokens es el mismo con o sin
-// --apply. Es barato de todos modos (~$0.001-0.002 por fila tocada).
-//
-// Nunca corras --apply sin haber revisado antes el resultado del dry-run.
+// Corrige lo que marca etl:audit-quality: marca embebida en el nombre (diccionario, si no
+// Claude la extrae) e ingredientes con boilerplate (Claude separa; nunca inventa). Dry-run por defecto.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 import { checkIngredientsText, findBrandInName } from '../lib/qualityHeuristics';

@@ -26,7 +26,6 @@ function setBaseEnv() {
 
 const PRODUCT_KEY = 'ftg:product:7790895000123';
 
-// Lo que se guarda desde K-02: el crudo de la fila, con identidad y origen.
 function crudo(overrides: Partial<CachedProduct> = {}): CachedProduct {
   return {
     productId: 'uuid-galletitas',
@@ -36,8 +35,7 @@ function crudo(overrides: Partial<CachedProduct> = {}): CachedProduct {
   };
 }
 
-// Lo que escribía el server antes de K-02: la respuesta armada adentro de un
-// sobre con la versión del motor.
+// El formato anterior: la respuesta armada dentro de un sobre con la versión del motor.
 function sobreViejo(): unknown {
   return {
     engineVersion: 'ftg-rubric-v2.3',
@@ -85,9 +83,6 @@ describe('redisService sin Redis configurado', () => {
   });
 });
 
-/* K-02 · Reemplaza a `unwrapCachedProduct` (sobre versionado por motor): el
- * formato ya no depende ni del motor ni del contrato, solo tiene que ser un
- * crudo con identidad. */
 describe('parseCachedProduct — qué entradas se aceptan (K-02)', () => {
   let parse: typeof import('./redisProductCache').parseCachedProduct;
 

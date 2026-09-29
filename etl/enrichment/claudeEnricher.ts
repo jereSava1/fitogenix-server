@@ -12,21 +12,12 @@ const client = (): Anthropic => {
 const SYSTEM_PROMPT =
   'Sos una base de datos nutricional experta en productos alimenticios argentinos y latinoamericanos. Respondés SOLO con JSON válido, sin texto adicional. Si no tenés información del producto o no lo reconocés con certeza, respondé con {}.';
 
-// Lo usa enrichWithAI (hasta D-66 también aiLookupProduct): el shape y el
-// aclarado de unidad. Encontramos en producción que Claude confundía
-// sodium_100g con miligramos (etiquetas reales suelen reportar sodio en mg,
-// el resto de los campos en g) y devolvía valores como 400-1200, rechazados
-// por el gate de plausibilidad (nutrientPlausibility.ts) — se perdía el
-// dato en vez de guardarse bien. La aclaración explícita + el ejemplo de
-// conversión apunta a bajar esa tasa de rechazo en el origen, no solo
-// filtrarla después.
+// Claude confundía `sodium_100g` con miligramos y el gate de plausibilidad descartaba el
+// dato: el prompt aclara la unidad con un ejemplo de conversión.
 const NUTRIMENT_FIELDS_SPEC =
   '"nutriments": {"energy-kcal_100g":N,"proteins_100g":N,"carbohydrates_100g":N,"sugars_100g":N,"fat_100g":N,"saturated-fat_100g":N,"fiber_100g":N,"sodium_100g":N} — TODOS los valores en GRAMOS por 100g/100ml, incluido sodium_100g (si la etiqueta real dice "500 mg de sodio" acá va 0.5, no 500 — el sodio de un alimento real casi nunca supera 2-3g/100g salvo casos extremos como caldo concentrado o sal de mesa)';
 
-/** Cuenta rápida de ingredientes declarados. Sirve para decidir si vale la
- *  pena pedir más datos, no para puntuar. Vivía en la fachada del motor
- *  (`ftgEngine.ts`); se mudó acá en M-03 porque este es su único uso, y se
- *  va con este archivo al ETL en M-08. */
+/** Cuenta rápida de ingredientes declarados: para decidir si pedir más datos, no para puntuar. */
 export function ingredientCount(text?: string): number {
   if (!text || text.trim().length < 3) return 0;
   return text.split(/[,;]/).filter((part) => part.trim().length > 1).length;
@@ -84,11 +75,7 @@ export async function enrichWithAI(off: RawProduct): Promise<RawProduct> {
     const ai = JSON.parse(raw);
     if (missingIng && isNonEmptyString(ai.ingredients_text)) off.ingredients_text = ai.ingredients_text;
     if (missingNut && hasValidNumericField(ai.nutriments)) {
-      // Gate de plausibilidad — mismo rango físico que usa la auditoría de
-      // calidad del ETL (nutrientPlausibility.ts, compartido). Un valor que
-      // Claude alucina fuera de rango (ej. 1300 kcal/100g) es el mismo tipo
-      // de error que uno corrupto de una fuente externa: se descarta ese
-      // campo puntual en vez de guardarlo como si fuera un dato real.
+      // Gate de plausibilidad (el mismo de la auditoría): un valor fuera de rango se descarta.
       const implausible = findImplausibleNutrients(ai.nutriments);
       if (implausible.length > 0) {
         for (const { field } of implausible) delete (ai.nutriments as Record<string, unknown>)[field];

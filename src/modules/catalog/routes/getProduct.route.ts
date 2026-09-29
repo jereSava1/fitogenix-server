@@ -1,11 +1,4 @@
-/**
- * `GET /v1/products/:id`: el detalle de un producto por su uuid (K-04,
- * 03-contratos §B.3.2). Lo pide la app al abrir un guardado o un ítem del
- * historial, que llegan como `ProductSummary`.
- *
- * Sin requireAuth, como el lookup: el catálogo es público. A diferencia del
- * lookup, NO registra el escaneo: abrir algo de la lista no es escanearlo.
- */
+// `GET /v1/products/:id`. Público, como el lookup, pero no registra el escaneo.
 
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';

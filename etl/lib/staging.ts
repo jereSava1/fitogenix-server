@@ -12,25 +12,13 @@ export type StagingInsert = {
 
 const BATCH_SIZE = 500;
 
-// Tope de filas que PostgREST devuelve por request (`max-rows` de Supabase,
-// 1000 por default). NO es un error cuando se supera: la respuesta viene
-// truncada en silencio. Cualquier lectura que pueda tocar más de 1000 filas
-// tiene que paginar con `.range()` — ver paginateRows.
+// Tope de filas por request de PostgREST: pasarlo trunca la respuesta EN SILENCIO. Toda
+// lectura que pueda superar 1000 filas pagina (paginateRows).
 const PAGE_SIZE = 1000;
 
-/**
- * Recorre una query paginando con `.range()` hasta agotar las filas (o hasta
- * que `onPage` diga basta), porque un `.select()` pelado se corta en PAGE_SIZE
- * sin avisar.
- *
- * `buildQuery(from, to)` tiene que devolver la MISMA query en cada llamada,
- * variando solo el rango, y con un `.order()` estable: sin orden explícito
- * Postgres no garantiza el mismo orden entre requests, y la paginación podría
- * repetir o saltear filas.
- *
- * `onPage` devuelve `false` para cortar antes de tiempo (ya juntamos lo que
- * necesitábamos y no tiene sentido seguir trayendo páginas).
- */
+/** Pagina con `.range()` hasta agotar las filas o hasta que `onPage` devuelva false.
+ *  `buildQuery` tiene que devolver la misma query con un `.order()` estable: sin orden,
+ *  la paginación puede repetir o saltear filas. */
 async function paginateRows<T>(
   label: string,
   buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
@@ -51,13 +39,8 @@ async function paginateRows<T>(
 }
 
 /** Inserta filas crudas en products_staging en lotes de BATCH_SIZE. */
-/**
- * Filas que NO llegaron a staging por lotes fallidos, acumuladas durante toda
- * la corrida. Existe porque un fallo de lote solo se logueaba y se seguía de
- * largo: una ingesta podía perder 500 filas de 3000 y el resumen final igual
- * decía que había salido todo bien. Con los logs pasando por un pipe, la
- * pérdida quedaba invisible.
- */
+/** Filas que no llegaron a staging por lotes fallidos, para que el resumen final no diga
+ *  que salió todo bien. */
 let droppedRows = 0;
 let failedBatches = 0;
 
@@ -95,28 +78,14 @@ export async function insertStagingRows(rows: StagingInsert[]): Promise<number> 
   return inserted;
 }
 
-// `discarded_incomplete` NO es un estado terminal — es un "soft fail"
-// reintentable, y desde la migración 010 lo es SIEMPRE, no solo con --enrich.
-//
-// Antes, reintentar un descarte sin IA daba el mismo resultado: la fila no
-// pasaba el gate y se volvía a descartar. Ahora la falta de ingredientes ya
-// no descarta nada —el producto entra marcado `merged_incomplete`—, así que
-// esas filas históricas son productos recuperables sin gastar un token. El
-// caller lo pide con `includeDiscarded`.
+// `discarded_incomplete` es reintentable: sin ingredientes el producto ya entra como
+// `merged_incomplete`. El caller lo pide con `includeDiscarded`.
 function statusesFor(includeDiscarded: boolean): string[] {
   return includeDiscarded ? ['pending', 'discarded_incomplete'] : ['pending'];
 }
 
-/**
- * Barcodes distintos con al menos una fila `pending` (o `discarded_incomplete`
- * si `includeDiscarded`), hasta `limit`.
- *
- * Pagina de a PAGE_SIZE: como puede haber varias filas por barcode, para
- * juntar `limit` barcodes distintos hay que leer bastante más que `limit`
- * filas. Un `.limit(limit * 5)` no alcanza — PostgREST lo recorta a PAGE_SIZE
- * igual, así que con `--merge-limit` > ~1000 el merge procesaba muchísimo
- * menos de lo pedido, en silencio.
- */
+/** Barcodes distintos con filas `pending` (o `discarded_incomplete` si se pide), hasta
+ *  `limit`. Pagina: hay varias filas por barcode y `.limit()` lo recorta PostgREST. */
 export async function fetchPendingBarcodes(limit: number, includeDiscarded = false): Promise<string[]> {
   const unique = new Set<string>();
 
@@ -151,37 +120,15 @@ export type StagingRowFull = {
   raw: RawProduct;
 };
 
-/**
- * Todas las filas de staging de un LOTE de barcodes, en una sola consulta.
- *
- * El merge original pedía las filas de a un barcode por vez: cuatro round
- * trips por producto. Con 70.000 barcodes pendientes eso son ~7 horas. Acá se
- * traen de a 500 barcodes, lo que baja el mismo trabajo a minutos. La
- * semántica no cambia: siguen viniendo TODAS las filas del barcode (cualquier
- * estado), que es lo que evita que una fila ya mergeada quede huérfana.
- *
- * Por qué importa: si un retailer trajo un barcode que quedó
- * `discarded_incomplete` y una corrida POSTERIOR de OFF trae el mismo barcode
- * completo, mirar solo las filas `pending` armaría el producto sin la data del
- * retailer (ej. la imagen) y dejaría esa fila sin `merged_into`. Peor: con
- * `--enrich`, la fila huérfana se vuelve a levantar sola y Claude le inventa
- * datos que PISAN, vía upsert por barcode, el producto que ya tenía datos
- * reales de OFF. (Lo explicaba la versión de a un barcode,
- * `fetchAllRowsForBarcode`, que se borró por no tener uso: D-66.)
- */
+/** Todas las filas (cualquier estado) de un lote de barcodes. Traer solo `pending` dejaría
+ *  filas huérfanas sin `merged_into` y, con --enrich, Claude las re-levantaría pisando datos
+ *  reales. */
 export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<string, StagingRowFull[]>> {
   const byBarcode = new Map<string, StagingRowFull[]>();
   if (barcodes.length === 0) return byBarcode;
 
-  // Pagina, como manda el comentario de PAGE_SIZE: un lote de BATCH_SIZE
-  // barcodes toca ~3 filas por barcode (OFF + los cuatro retailers), o sea muy
-  // por encima de las 1000 que PostgREST devuelve por request.
-  //
-  // Sin paginar, la respuesta se cortaba EN SILENCIO y los barcodes de la cola
-  // del lote volvían con cero filas: `runMerge` hacía `continue` y los dejaba en
-  // `pending`. No se perdía estado —se reintentaban en la corrida siguiente— pero
-  // cada corrida procesaba ~64 % de lo que decía procesar, sin un solo error.
-  // Medido el 2026-09-03: `--limit 5000` escribió 3.209 barcodes y salteó 1.791.
+  // Pagina: un lote toca varias filas por barcode, bastante más que las 1000 por request.
+  // Sin paginar, la cola del lote volvía vacía y quedaba sin procesar sin ningún error.
   await paginateRows<StagingRowFull & { raw_payload: RawProduct }>(
     'fetchRowsForBarcodes',
     (from, to) =>
@@ -206,15 +153,8 @@ export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<stri
   return byBarcode;
 }
 
-/**
- * Marca muchas filas de una, con estado y `merged_into` propios de cada una.
- *
- * PostgREST no tiene UPDATE masivo con valores distintos por fila, y hacer un
- * UPDATE por producto era el cuello de botella real del merge: 427 round
- * trips por lote, 88 segundos cada 500 barcodes. Un upsert por clave primaria
- * hace lo mismo en una sola llamada, pero exige reenviar las columnas NOT NULL
- * (source, raw_payload, run_id) — por eso `fetchRowsForBarcodes` las trae.
- */
+/** Marca muchas filas de una con estado y `merged_into` propios: upsert por clave primaria
+ *  (PostgREST no tiene UPDATE masivo). Exige reenviar las columnas NOT NULL. */
 export async function markStagingRowsBulk(
   rows: {
     row: StagingRowFull;
@@ -246,15 +186,8 @@ export async function markStagingRowsBulk(
 
 export type StagingStatusRow = { source: string; merge_status: string };
 
-/**
- * Todas las filas de staging reducidas a (fuente, estado) — para los conteos
- * de `etl:stats`. Pagina, porque el `.select()` pelado que había antes hacía
- * que stats reportara siempre un máximo de 1000 filas.
- *
- * Trae una fila por registro de staging: alcanza de sobra para el volumen de
- * validación (decenas de miles), pero si staging llega a millones conviene
- * moverlo a una vista con `group by` en Postgres en vez de contar en memoria.
- */
+/** (fuente, estado) de cada fila de staging, para `etl:stats`. Si staging llega a millones,
+ *  conviene una vista con `group by`. */
 export async function fetchStagingStatusRows(): Promise<StagingStatusRow[]> {
   const all: StagingStatusRow[] = [];
 

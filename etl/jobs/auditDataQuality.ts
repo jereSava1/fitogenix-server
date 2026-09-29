@@ -1,20 +1,6 @@
 // Uso: npm run etl:audit-quality
-//
-// Auditoría de calidad de `products` — SOLO LECTURA, no escribe nada. Junta
-// candidatos por heurística (etl/lib/qualityHeuristics.ts) para tres
-// patrones de corrupción conocidos:
-//   1. ingredients_text con pinta de dirección/boilerplate legal en vez de
-//      una lista de ingredientes real (típico de datos comunitarios de OFF).
-//   2. brand vacío con la marca embebida en product_name (típico de scrapes
-//      de retailer sin ese campo tageado).
-//   3. nutrientes fuera de rango físico plausible (típico error de unidad,
-//      mg en vez de g).
-//
-// Es el paso 1 (barato, determinístico, sin gastar un token de IA) del plan
-// de auditoría de datos. Reporta
-// para revisión humana; la corrección (anular el campo y re-pasar la fila
-// por el gate de completitud + merge existente) es un paso APARTE y
-// deliberado, después de mirar la muestra acá. No se auto-aplica nada.
+// Auditoría de `products`, solo lectura: ingredientes con pinta de boilerplate, marca vacía
+// embebida en el nombre y nutrientes fuera de rango. Reporta para revisión; no corrige.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 import { checkIngredientsText, findBrandInName, findImplausibleNutrients } from '../lib/qualityHeuristics';
@@ -71,13 +57,8 @@ async function main() {
   const products = await fetchAllProducts();
   console.log(`[auditDataQuality] ${products.length} productos escaneados`);
 
-  // Diccionario de marcas conocidas construido desde la propia tabla — no
-  // hace falta una lista externa. OJO: la columna `brand` tiene sus propios
-  // datos corruptos (es justo lo que estamos auditando), así que un valor
-  // que aparece UNA sola vez puede ser basura (ej. "Vainilla" — un sabor,
-  // no una marca, que quedó cargado mal en alguna fila) y contaminar el
-  // diccionario con falsos positivos. Exigir >=2 apariciones DISTINTAS no
-  // elimina el riesgo del todo, pero baja mucho el ruido sin costo.
+  // Diccionario de marcas desde la propia tabla. `brand` también tiene basura: se exigen
+  // al menos 2 apariciones para bajar los falsos positivos.
   const MIN_BRAND_OCCURRENCES = 2;
   const brandCounts = new Map<string, number>();
   for (const p of products) {

@@ -1,16 +1,6 @@
 // Uso: npx tsx scripts/score-histogram.ts [--limit 20000]
-//
-// Complementa a audit-scores.ts. Aquel arma una cola de revisión por reglas;
-// éste responde tres preguntas que las reglas no contestan:
-//
-//   1. ¿Cómo se distribuyen los puntajes? En particular, ¿cuántos productos
-//      caen en 70-74? (define si mover el sello de 75 a 70 cambia algo real)
-//   2. ¿Por qué el motor no puntúa el 28.7% del catálogo? Desglose por código.
-//   3. ¿Qué términos no identificados aparecen más? audit-scores.ts ya los
-//      cuenta en CURATION_QUEUE pero nunca los imprime — es la cola de
-//      curaduría, y es la palanca para recuperar catálogo sin tocar el motor.
-//
-// No escribe en la base. Seguro de correr con el ETL en curso.
+// Distribución de puntajes, motivos de "sin puntaje" y los términos no identificados más
+// frecuentes (la cola de curaduría). No escribe en la base.
 import 'dotenv/config';
 import { admin } from '../etl/lib/supabaseAdmin';
 import { scoreProduct, type ProductInput } from '../src/modules/scoring';

@@ -1,21 +1,9 @@
-/* T-02 · respuesta completa del producto (docs/05-plan.md).
- * Estaba al final de services/productLookupService.test.ts; se mudó en M-05
- * junto con la función. En K-04 `mapRawToProduct` pasó a ser
- * `toProductDetail` y el snapshot se regeneró a propósito (`vitest -u`).
- */
 import { describe, expect, it } from 'vitest';
 import { toProductDetail, toProductSummary } from './productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 
-/* T-02 · Caracterización de la respuesta completa (docs/05-plan.md).
- *
- * Snapshot de `toProductDetail` para 10 productos de
- * `modules/scoring/domain/regression.test.ts` (copiados tal cual: ese archivo
- * no exporta sus goldens). Cubre las cuatro bandas y los dos lados del corte
- * de `highlight` (50, el borde de la banda Buena). Cualquier cambio en un
- * campo de la respuesta aparece en el diff del snapshot, que se revisa y se
- * actualiza a propósito (`vitest -u`) en el PR del ítem que lo cambia.
- */
+// Snapshot de la respuesta para 10 goldens del motor: cubre las cuatro bandas y los dos
+// lados del corte de `highlight`. Un cambio de campo aparece en el diff del snapshot.
 const IDENTIDAD = { id: '6f1e2c3d-0000-4000-8000-000000000001', fallbackName: '7790000000000' };
 
 describe('caracterización — respuesta completa de toProductDetail (T-02)', () => {
