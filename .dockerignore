@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.claude
+.env
+.env.*
+*.log
+docs
+etl
+scripts
+contract
+supabase

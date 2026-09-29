@@ -1,6 +1,6 @@
 # ADR-0007 · Portabilidad de hosting
 
-- **Estado:** Propuesto
+- **Estado:** Propuesto. Hecho: `engines.node` + `.nvmrc` y el `Dockerfile` multi-stage, construido y probado en el CI (H-05)
 - **Fecha:** 2026-09-28
 - **Relacionado:** D-11, D-18, RNF-P05, [00-inventario.md §2.2](../00-inventario.md)
 

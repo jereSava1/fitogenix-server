@@ -82,6 +82,13 @@ El ETL (`etl/`, scripts `etl:*` de `package.json`, con su propia config en `etl/
 
 Render (plan free), desde `main`: build `npm install && npm run build`, start `node dist/main.js`. La configuración vive en el dashboard de Render.
 
+Forma portable ([ADR-0007](docs/adr/0007-portabilidad-de-hosting.md)): el `Dockerfile` construye una imagen con solo dependencias de producción, configurable por variables de entorno (las de `.env.example`). El CI la construye, la levanta y le pide `/health`.
+
+```bash
+docker build -t fitogenix-server .
+docker run -p 3000:3000 --env-file .env fitogenix-server
+```
+
 ## Ramas
 
 Una rama por tarea. Durante el refactor todo se integra en `fitogenix/refactor-cleanup` y recién al final pasa a `main` (D-59).
