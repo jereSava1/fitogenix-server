@@ -215,6 +215,8 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 
 ### 7.1 Etapa 6 — Endurecimiento del server
 
+**Etapa 6 COMPLETA (2026-09-29):** H-01 a H-05 hechos.
+
 | ID | Estado |
 |---|---|
 | H-04 | ✅ Hecho en `fix/h04-normalizacion-unica`. El cache `query → barcode` de Redis usa `domain/query.ts · normalizeQuery` (antes solo minúsculas y recorte): una query con acentos o espacios de más comparte clave con la equivalente. Las claves viejas con acentos quedan como miss una vez (cache, sin costo). Test nuevo; mutación (volver a la normalización propia) detectada |
