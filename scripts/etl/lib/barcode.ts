@@ -12,10 +12,10 @@
 //
 // ALCANCE — esto es interno al pipeline ETL (products_staging → merge →
 // products), NO toca el lookup en vivo por scan. `productLookupService.
-// lookupProduct` usa el string tal cual lo manda el celular, sin normalizar
-// (ver 06-agente-etl-data.md). Si un producto ETL queda guardado en un
-// formato que el scan en vivo nunca produce para ESE código, simplemente no
-// se encuentra por barcode ahí (cae al cold path normal — no rompe nada),
+// lookupProduct` usa el string tal cual lo manda el celular, sin normalizar.
+// Si un producto ETL queda guardado en un formato que el scan en vivo nunca
+// produce para ESE código, simplemente no se encuentra por barcode ahí (el
+// lookup responde "no está en el catálogo" — no rompe nada),
 // pero no cierra el círculo completo. Normalizar también el lookup en vivo
 // es un cambio aparte en código hot-path, que requiere ok explícito.
 export function normalizeBarcode(raw: string): string | null {

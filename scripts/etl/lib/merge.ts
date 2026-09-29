@@ -2,8 +2,7 @@ import type { RawOFFProduct } from '../../../src/types/fitogenix';
 
 export type StagingEntry = { source: string; raw: RawOFFProduct };
 
-// Prioridad de fuente para el merge campo a campo — Fase 3b de
-// 06-agente-etl-data.md. Dato real (OFF/OBF/Edamam) siempre gana sobre
+// Prioridad de fuente para el merge campo a campo. Dato real (OFF/OBF/Edamam) siempre gana sobre
 // scraper de retailer; scraper siempre gana sobre sintético/IA. Cualquier
 // fuente no listada (carrefour, jumbo, disco, vea, ...) cae en
 // DEFAULT_SCRAPER_PRIORITY — no hace falta declarar cada retailer acá.

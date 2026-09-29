@@ -41,10 +41,9 @@ export async function productLookupRoute(app: FastifyInstance) {
 
     // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no
     // espera nada de esto y ningún error acá la rompe (recordScan no lanza y
-    // el catch cubre cualquier imprevisto). Como el cold path AWAITEA el
-    // upsert al cache (migración 006), a esta altura la fila de `products` ya
-    // existe: el viejo race de FK entre recordScan y setCachedProduct no
-    // aplica más. productId puede venir vacío solo si ese upsert falló.
+    // el catch cubre cualquier imprevisto). El lookup solo lee del catálogo,
+    // así que el producto que devuelve ya existe en `products` y su productId
+    // sirve como FK del historial.
     const authHeader = request.headers.authorization ?? '';
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
     if (token && product.productId) {

@@ -105,8 +105,7 @@ function isInternalPluCode(ean: string): boolean {
 
 /** "/Almacén/Galletitas Dulces/" → "Almacén > Galletitas Dulces". Mapeo a la
  * taxonomía interna de Fitogenix (equivalente a extractCategory() para OFF)
- * queda pendiente — ver Fase 3 de 06-agente-etl-data.md, "lo que no se
- * resuelve automáticamente". Por ahora se preserva el string crudo del
+ * queda pendiente. Por ahora se preserva el string crudo del
  * retailer, legible pero sin normalizar contra las categorías de Fitogenix. */
 function cleanCategory(categories?: string[]): string | undefined {
   const first = categories?.[0];

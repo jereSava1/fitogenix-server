@@ -2,10 +2,8 @@
 //
 // Lee filas `pending` de products_staging, las mergea por barcode (Fase 3b),
 // aplica el gate de completitud (3c), opcionalmente enriquece gaps con Claude
-// (--enrich, GASTA TOKENS — no correr sin límite sin el ok del Agente de
-// Datos, ver 05-agente-datos.md), y upsertea a `products` reusando
-// buildCachePayload (mismo contrato que un lookup online). Ver
-// 06-agente-etl-data.md, Fases 3 y 4.
+// (--enrich, GASTA TOKENS — no correr sin límite sin el ok del responsable
+// del proyecto), y upsertea a `products` reusando buildCachePayload.
 //
 // v2: procesa de a lotes de barcodes. La versión anterior hacía cuatro round
 // trips por producto, lo que servía para el volumen de validación (cientos o

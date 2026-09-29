@@ -3,7 +3,7 @@
 // Streamea el dump de OFF (fs.createReadStream + readline, nunca todo en
 // memoria), filtra LATAM/Argentina, adapta a RawOFFProduct, e inserta en
 // products_staging en lotes. NUNCA escribe en `products` — eso lo hace
-// runMerge.ts después. Ver 06-agente-etl-data.md, Fases 1 y 3.
+// runMerge.ts después.
 //
 // El dump completo no se descarga desde acá (es de varios GB) — bajalo antes
 // con algo como:

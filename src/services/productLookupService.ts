@@ -16,7 +16,7 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 /**
  * Búsqueda de productos — SOLO catálogo propio (decisión de producto,
- * 2026-08-18, ver BITACORA_DECISIONES.md).
+ * 2026-08-18).
  *
  * Hasta acá había una cascada completa (OFF search → OFF por código → Open
  * Beauty Facts → Edamam → Claude) para cuando el catálogo no tenía el

@@ -32,12 +32,10 @@ const admin = (): ReturnType<typeof createClient<any>> => {
  * (user_id, product_id): si ya existía la fila, ACTUALIZA scanned_at — por eso
  * NO usa ignoreDuplicates, a diferencia del upsert de guardados.
  *
- * Nunca lanza: es un side-effect fire-and-forget del lookup. La violación de
- * FK (23503) hoy solo puede pasar si el producto se purgó del cache entre el
- * lookup y este upsert (el cold path AWAITEA setCachedProduct desde la
- * migración 006, así que el viejo race "producto todavía no cacheado" ya no
- * existe); no es crítico — el próximo escaneo lo registra — así que solo se
- * loguea.
+ * Nunca lanza: es un side-effect fire-and-forget del lookup. El lookup solo
+ * lee del catálogo, así que la violación de FK (23503) solo puede pasar si el
+ * producto se borró de `products` entre el lookup y este upsert; no es
+ * crítico — el próximo escaneo lo registra — así que solo se loguea.
  */
 export async function recordScan(userId: string, productId: string): Promise<void> {
   try {

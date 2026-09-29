@@ -21,7 +21,7 @@
  * generó, y toda entrada cuya versión no coincida con ENGINE_VERSION se trata
  * como MISS — el nivel Supabase la repuebla con la forma nueva. Es el mismo
  * precedente que las entradas pre-migración 006 sin `productId`
- * (productLookupService.doResolveWithImages), pero el chequeo vive acá porque
+ * (productLookupService · resolveByBarcode), pero el chequeo vive acá porque
  * es un problema de SERIALIZACIÓN, no de la cascada.
  *
  * Por qué el sobre y NO versionar la clave (`ftg:product:v2.1:<barcode>`):
@@ -159,13 +159,13 @@ export async function setInRedis(
   }
 }
 
-// ── Cache texto→barcode (Fase 3) ──
-// Evita el OFF search (~500ms) cuando otro usuario ya resolvió la misma query.
+// ── Cache texto→barcode ──
+// Evita repetir la búsqueda por nombre en el catálogo cuando otro usuario ya
+// resolvió la misma query a un barcode.
 //
 // Este cache NO se versiona por motor a propósito: mapea query → código de
 // barras, un dato del mundo (qué producto es) que no depende de cómo lo
-// puntuamos. Invalidarlo en cada bump del motor tiraría a la basura resoluciones
-// caras de OFF sin ganar nada de consistencia.
+// puntuamos.
 
 export async function getSearchBarcode(query: string): Promise<string | null> {
   const redis = getRedis();

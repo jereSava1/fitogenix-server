@@ -11,8 +11,7 @@
 // Pagina la API pública de catálogo VTEX (catalog_system/pub/products/search,
 // sin auth) — confirmada en vivo contra Jumbo, Disco, Vea y Carrefour el
 // 2026-08-06. Adapta cada producto a RawOFFProduct e inserta en
-// products_staging. NUNCA escribe en `products`. Ver 06-agente-etl-data.md,
-// Fases 3 y 5.
+// products_staging. NUNCA escribe en `products`.
 //
 // Dominios ya confirmados VTEX: www.jumbo.com.ar, www.disco.com.ar,
 // www.vea.com.ar, www.carrefour.com.ar. Antes de sumar un retailer nuevo,
@@ -134,7 +133,7 @@ async function ingestRange(
     await insertStagingRows(batch);
 
     // Rate limit conservador — nunca a la velocidad máxima que el servidor
-    // técnicamente tolera. Ver 06-agente-etl-data.md, sección scrapers.
+    // técnicamente tolera.
     await new Promise((r) => setTimeout(r, 500));
   }
 

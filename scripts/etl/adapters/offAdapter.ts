@@ -1,7 +1,7 @@
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 import { normalizeBarcode } from '../lib/barcode';
 
-// Países soportados y su tag de OFF — Fase 1 de 06-agente-etl-data.md. Mapa
+// Países soportados y su tag de OFF. Mapa
 // completo disponible para cuando se expanda a más LATAM, pero el DEFAULT
 // activo es SOLO Argentina (ver DEFAULT_COUNTRY_TAGS abajo): Fitogenix hoy
 // solo escanea productos argentinos, así que no tiene sentido gastar tiempo
