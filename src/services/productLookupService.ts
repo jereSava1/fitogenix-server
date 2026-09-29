@@ -5,14 +5,17 @@ import {
   resolveProductStatus,
   scoreProduct,
 } from '../modules/scoring';
-import { findCachedProductByName, getCachedProductByBarcode } from './cacheService';
-import { normalizeQuery } from './queryNormalization';
+import { normalizeQuery } from '../modules/catalog/domain/query';
+import {
+  findCachedProductByName,
+  getCachedProductByBarcode,
+} from '../modules/catalog/infrastructure/supabaseProductReader';
 import {
   getFromRedis,
   getSearchBarcode,
   setInRedis,
   setSearchBarcode,
-} from './redisService';
+} from '../modules/catalog/infrastructure/redisProductCache';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 /**

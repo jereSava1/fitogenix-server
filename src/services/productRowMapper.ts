@@ -8,12 +8,12 @@
  * mismo pipeline que un hit de cache: rowToCachedRaw + mapRawToProduct +
  * preservar dataSource/productId.
  *
- * Vive aparte (y no en cacheService) porque necesita mapRawToProduct de
- * productLookupService, que a su vez importa cacheService: meterlo ahí
- * crearía un import circular.
+ * Vive aparte (y no en productRow) porque necesita mapRawToProduct de
+ * productLookupService, que a su vez importa el lector del catálogo: meterlo
+ * ahí crearía un import circular. Se reemplaza en M-05.
  */
 
-import { rowToCachedRaw } from './cacheService';
+import { rowToCachedRaw } from '../modules/catalog/infrastructure/productRow';
 import { mapRawToProduct } from './productLookupService';
 import type { FitogenixProduct } from '../types/fitogenix';
 

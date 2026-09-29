@@ -29,7 +29,7 @@ import { mergeRawProducts, primarySourceOf } from '../lib/merge';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 import { isComplete } from '../lib/completeness';
 import { mapRawToProduct } from '../../../src/services/productLookupService';
-import { buildCachePayload } from '../../../src/services/cacheService';
+import { buildCachePayload } from '../../../src/modules/catalog/infrastructure/supabaseProductWriter';
 import { enrichWithAI } from '../../../src/services/claudeService';
 
 function parseArgs() {

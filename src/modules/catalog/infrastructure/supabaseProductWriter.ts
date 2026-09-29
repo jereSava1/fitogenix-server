@@ -1,152 +1,24 @@
-import { supabaseAdmin as admin } from '../platform/supabase';
-import { ENGINE_VERSION } from '../modules/scoring';
-import { getScoreLabel, getSello } from '../modules/scoring';
-import { normalizeQuery } from './queryNormalization';
-import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
+/* Escritura en `products` (lo que persiste el catálogo).
+ *
+ * Antes vivía en `services/cacheService.ts`; se mudó en M-04 sin cambios. El
+ * ETL usa `buildCachePayload` (hoy lo importa directo; pasa a la API pública
+ * de catalog en M-08/M-09).
+ */
 
-
-// Lo que devuelve la lectura del cache: los datos CRUDOS reconstruidos como
-// un RawOFFProduct (para que pasen por el MISMO mapRawToProduct que un lookup
-// fresco) más el dataSource de la fila. El score NO se guarda: se recomputa.
-export type CachedRaw = {
-  raw: RawOFFProduct;
-  dataSource: string;
-};
-
-// Fila de `products` reconstruida con su identidad y atributos de búsqueda.
-// `productId` = products.id (uuid, la identidad — migración 006); `barcode` y
-// `nameKey` son los atributos de búsqueda (ambos nullable).
-export type CachedProductRow = CachedRaw & {
-  productId: string;
-  barcode: string | null;
-  nameKey: string | null;
-};
+import { supabaseAdmin as admin } from '../../../platform/supabase';
+import { ENGINE_VERSION, getScoreLabel, getSello } from '../../scoring';
+import { normalizeQuery } from '../domain/query';
+import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
 
 // Referencia de búsqueda para escribir en el cache: un producto se upsertea
 // por su barcode, o por su name_key (query normalizado SIN prefijo) cuando fue
 // resuelto solo por IA. La identidad (id) la asigna/devuelve la DB.
 export type CacheKeyRef = { barcode: string } | { nameKey: string };
 
-// Type guards mínimos para leer columnas jsonb sin `any`.
-function asStringRecord(v: unknown): Record<string, unknown> | undefined {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-    ? (v as Record<string, unknown>)
-    : undefined;
-}
-
-function asStringArray(v: unknown): string[] | undefined {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined;
-}
-
-/**
- * Reconstruye el RawOFFProduct crudo desde una fila de `products` (función PURA,
- * sin I/O). Compartida entre las lecturas de cache (getCachedProductBy*) y
- * productRowMapper (listados de guardados/historial con productos embebidos
- * vía PostgREST) para que todos apliquen EXACTAMENTE el mismo mapeo.
- *
- * Filas sin `id` o sin datos crudos devuelven null: se tratan como cache miss /
- * se omiten de listados. Un `nutriments` VACÍO ({}) cuenta como AUSENTE — una
- * fila con `{}` y sin ingredients_text no alcanza para recomputar un score con
- * sentido, así que también es miss (se recachea con datos frescos).
- */
-export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow | null {
-  // Sin id no hay identidad: la fila no sirve para el payload ni para FKs.
-  const productId = typeof data.id === 'string' ? data.id : null;
-  if (!productId) return null;
-
-  const ingredientsText =
-    typeof data.ingredients_text === 'string' ? data.ingredients_text : undefined;
-  const nutriments = asStringRecord(data.nutriments);
-  const hasNutriments = nutriments !== undefined && Object.keys(nutriments).length > 0;
-
-  // Fila sin datos crudos (o con nutriments vacío) → tratar como miss.
-  if (!ingredientsText && !hasNutriments) return null;
-
-  const raw: RawOFFProduct = {
-    product_name: typeof data.product_name === 'string' ? data.product_name : undefined,
-    brands: typeof data.brand === 'string' ? data.brand : undefined,
-    image_url: typeof data.image_url === 'string' ? data.image_url : undefined,
-    ingredients_text: ingredientsText,
-    nutriments,
-    nova_group: typeof data.nova_group === 'number' ? data.nova_group : undefined,
-    additives_tags: asStringArray(data.additives_tags),
-    categories: typeof data.category === 'string' ? data.category : undefined,
-    _aiEnriched: data.ai_enriched === true,
-    _aiSource: data.data_source === 'ai',
-  };
-
-  return {
-    raw,
-    dataSource: typeof data.data_source === 'string' ? data.data_source : 'off',
-    productId,
-    barcode: typeof data.barcode === 'string' ? data.barcode : null,
-    nameKey: typeof data.name_key === 'string' ? data.name_key : null,
-  };
-}
-
-// Lectura común: una fila por columna única (barcode o name_key).
-async function getCachedBy(
-  column: 'barcode' | 'name_key',
-  value: string,
-): Promise<CachedProductRow | null> {
-  const { data, error } = await admin()
-    .from('products')
-    .select('*')
-    .eq(column, value)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  return rowToCachedRaw(data as Record<string, unknown>);
-}
-
-/** Lee un producto cacheado por su barcode y reconstruye su crudo. */
-export async function getCachedProductByBarcode(
-  barcode: string,
-): Promise<CachedProductRow | null> {
-  return getCachedBy('barcode', barcode);
-}
-
 // Escapa los metacaracteres de LIKE/ILIKE (`%`, `_`) y el propio backslash para
 // que un token del usuario se matchee literal dentro del patrón.
 function escapeLikeToken(token: string): string {
   return token.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
-
-/**
- * Busca en NUESTRO catálogo (`products`) el producto cuyo nombre mejor
- * matchee el query de texto. Desde 2026-08-18 es el ÚNICO mecanismo de
- * resolución por nombre — no hay cascada a OFF ni a la IA: si no aparece acá,
- * el producto todavía no está en el catálogo.
- *
- * La búsqueda y el ranking corren en Postgres (RPC `search_products_by_name`,
- * migración 014): índice GIN trigram sobre `product_name` en vez de un
- * sequential scan, y orden por similitud real en vez de `updated_at`. Ver el
- * comentario de la migración para el porqué.
- */
-export async function findCachedProductByName(
-  query: string,
-): Promise<CachedProductRow | null> {
-  const normalized = normalizeQuery(query);
-  // Guard: queries demasiado cortos matchearían medio catálogo ("a", "co").
-  if (normalized.length < 3) return null;
-
-  const { data, error } = await admin().rpc('search_products_by_name', {
-    search_query: normalized,
-    match_limit: 5,
-  });
-
-  if (error || !data || data.length === 0) return null;
-
-  // Candidatas = filas con crudos reconstruibles; el resto son cache miss.
-  // El RPC ya devuelve las filas ordenadas por similitud (mejor match primero),
-  // así que la primera candidata reconstruible es la respuesta.
-  for (const row of data as Record<string, unknown>[]) {
-    const cached = rowToCachedRaw(row);
-    if (cached) return cached;
-  }
-
-  return null;
 }
 
 /**

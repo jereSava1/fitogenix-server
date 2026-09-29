@@ -1,5 +1,8 @@
 /**
- * Redis cache service (Upstash REST).
+ * Cache Redis del catálogo (Upstash REST). Implementa `ProductCache`
+ * (application/ports.ts). Antes era `services/redisService.ts`; se mudó en M-04
+ * sin cambios (su `normalizeQuery` propia, distinta de `domain/query.ts`, se
+ * unifica en H-04; el sobre versionado se va en K-02).
  *
  * Todas las funciones son no-op cuando faltan UPSTASH_REDIS_REST_URL / TOKEN,
  * así el servidor corre sin Redis en desarrollo.
@@ -35,9 +38,10 @@
  * por un motivo que no sea un bump de versión.
  */
 
-import { getRedis } from '../platform/redis';
-import { ENGINE_VERSION } from '../modules/scoring';
-import type { FitogenixProduct } from '../types/fitogenix';
+import { getRedis } from '../../../platform/redis';
+import { ENGINE_VERSION } from '../../scoring';
+import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { ProductCache } from '../application/ports';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';
 const SEARCH_KEY_PREFIX = 'ftg:search:';
@@ -173,3 +177,10 @@ export async function setSearchBarcode(query: string, barcode: string): Promise<
     console.error('[redisService] setSearchBarcode error:', err);
   }
 }
+
+export const redisProductCache: ProductCache = {
+  get: getFromRedis,
+  set: setInRedis,
+  getBarcodeForQuery: getSearchBarcode,
+  setBarcodeForQuery: setSearchBarcode,
+};
