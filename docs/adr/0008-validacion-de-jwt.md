@@ -1,6 +1,6 @@
 # ADR-0008 · Validación del JWT: local con JWKS vs. `getUser`
 
-- **Estado:** **Aceptado** (D-29, 2026-09-28): opción A, validación local con JWKS + `getUser` extra en `DELETE /users/me`. Requisito verificado: la clave vigente del proyecto es **ECC (P-256)**
+- **Estado:** **Aceptado** (D-29, 2026-09-28): opción A, validación local con JWKS + `getUser` extra en `DELETE /users/me`. Requisito verificado: la clave vigente del proyecto es **ECC (P-256)**. **Implementado en H-02** (2026-09-29, D-75): `platform/http/auth.ts` con `jose` 6; el JWKS se cachea en memoria y `jose` lo refresca cada 10 min; si Auth no responde se siguen usando las últimas claves y, sin ninguna, 503. Algoritmos admitidos: ES256 y RS256; `exp` y `sub` obligatorios
 - **Fecha:** 2026-09-28
 - **Relacionado:** RNF-D03, RNF-P01, RNF-S02, ADR-0006
 - **Riesgo:** ALTO (auth). Todo cambio requiere los tests de caracterización del paso 1 del plan.

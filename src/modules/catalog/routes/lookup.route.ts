@@ -1,14 +1,15 @@
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
+import { optionalAuth } from '../../../platform/http/auth';
 import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas, ApiErrorSchema } from '../../../platform/http/schemas';
 import type { LookupProduct } from '../application/lookupProduct';
 import { lookupBodySchema, lookupResponseSchema } from './lookup.schema';
 import { ProductDetailSchema } from './product.schema';
 
-/** Registro del escaneo, inyectado (catalog no conoce a user-library). Recibe el token
- *  crudo: el usuario se resuelve aparte, en segundo plano (pasa a `userId` con H-02). */
-export type OnScan = (scan: { token: string; productId: string }) => Promise<void>;
+/** Registro del escaneo, inyectado (catalog no conoce a user-library). Recibe el usuario
+ *  ya verificado. */
+export type OnScan = (scan: { userId: string; productId: string }) => Promise<void>;
 
 export function lookupRoutes(deps: {
   lookup: LookupProduct;
@@ -20,9 +21,8 @@ export function lookupRoutes(deps: {
     addSharedSchemas(instance, [ApiErrorSchema, ProductDetailSchema]);
     const app = instance.withTypeProvider<TypeBoxTypeProvider>();
 
-    // Sin requireAuth a propósito: los anónimos también pueden buscar. Si la
-    // request trae un Bearer token, el escaneo se registra en el historial del
-    // usuario en background (ver abajo).
+    // Sin requireAuth a propósito: los anónimos también pueden buscar. Con una sesión
+    // válida, el escaneo se registra en el historial del usuario (ver abajo).
     app.post('/products/lookup', {
       schema: {
         tags: ['catalog'],
@@ -43,13 +43,13 @@ export function lookupRoutes(deps: {
         );
       }
 
-      // Fire-and-forget: la respuesta no espera el registro y un error ahí no la rompe.
-      const authHeader = request.headers.authorization ?? '';
-      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-      if (onScan && token && product.id) {
+      // En segundo plano: la respuesta no espera ni la verificación del token ni el registro,
+      // y un error ahí no la rompe. Token inválido o vencido → anónimo, sin registrar (D-75).
+      if (onScan && product.id) {
         const productId = product.id;
         void (async () => {
-          await onScan({ token, productId });
+          const userId = await optionalAuth(request);
+          if (userId) await onScan({ userId, productId });
         })().catch((err: unknown) => {
           app.log.error(err, 'Error al registrar escaneo en el historial');
         });

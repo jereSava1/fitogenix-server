@@ -4,6 +4,16 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.5.0 — 2026-09-29 · H-02
+
+**Aditivo.** `DELETE /v1/users/me` declara `503 DEPENDENCY_UNAVAILABLE` (con `Retry-After: 10`). Guardados e historial ya lo declaraban desde 0.4.0; ahora también lo responden por Auth. Decisiones: D-29, D-75.
+
+- **El server verifica el JWT localmente** (firma con el JWKS del proyecto, `exp`, `iss`, `aud`): Supabase Auth caído ya no da `401` en las rutas con sesión. Solo si no hay claves para verificar el token responden `503`.
+- `DELETE /v1/users/me` además confirma la sesión con Supabase Auth: una sesión revocada → `401`; si Auth no responde → `503` (antes `500`).
+- Se exige `Authorization: Bearer <token>`: `Bearer` sin token o un header sin el prefijo → `401 "Falta el token de sesión"`. La app ya manda siempre `Bearer <token>`.
+- El lookup con un token inválido o vencido sigue respondiendo como anónimo y no registra el escaneo (sin cambios para la app).
+- La app ya trata cualquier error que no sea 401/404 como "reintentar", así que no necesita cambios.
+
 ## 0.4.0 — 2026-09-29 · H-01
 
 **Aditivo.** Nuevo código de error `DEPENDENCY_UNAVAILABLE` (503, con `Retry-After: 10`): la base no respondió o falló. Lo declaran `POST /v1/products/lookup`, `GET /v1/products/{id}`, `GET`/`POST /v1/users/me/saved`, `DELETE /v1/users/me/saved/{productId}` y `GET /v1/users/me/history`.

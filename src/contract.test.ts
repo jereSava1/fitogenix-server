@@ -6,12 +6,14 @@ import { join } from 'node:path';
 import Ajv from 'ajv';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { simularSupabaseAuth, SUPABASE_URL, type SupabaseAuthSimulado } from './testing/supabaseAuth';
 
 
 // ── Supabase simulado: un query builder encadenable que resuelve a lo que
 // diga `db[tabla]` (o `db.rpc`). Cada test ajusta lo que necesita.
 const db = vi.hoisted(() => ({
   results: {} as Record<string, unknown>,
+  upserts: [] as { table: string; row: unknown }[],
   getUser: undefined as unknown as (token: string) => Promise<unknown>,
   deleteUser: undefined as unknown as (id: string) => Promise<unknown>,
 }));
@@ -20,9 +22,13 @@ vi.mock('@supabase/supabase-js', () => {
   const builder = (table: string) => {
     const result = () => Promise.resolve(db.results[table] ?? { data: null, error: null });
     const b: Record<string, unknown> = {};
-    for (const m of ['select', 'retry', 'eq', 'order', 'limit', 'upsert', 'delete', 'in', 'is', 'ilike']) {
+    for (const m of ['select', 'retry', 'eq', 'order', 'limit', 'delete', 'in', 'is', 'ilike']) {
       b[m] = () => b;
     }
+    b.upsert = (row: unknown) => {
+      db.upserts.push({ table, row });
+      return b;
+    };
     b.maybeSingle = result;
     b.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
       result().then(resolve, reject);
@@ -49,7 +55,9 @@ vi.mock('@upstash/redis', () => ({
 
 const USER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PRODUCT_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-const comoUsuario = { authorization: 'Bearer token-ok' };
+let auth: SupabaseAuthSimulado;
+let tokenOk: string;
+let comoUsuario: { authorization: string };
 
 const VALIDATION = { error: 'La solicitud no es válida.', code: 'VALIDATION_ERROR' };
 const INTERNAL = {
@@ -96,8 +104,12 @@ function expectMatchesContract(path: string, method: string, status: number, bod
 let app: FastifyInstance;
 
 beforeAll(async () => {
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
+  auth = await simularSupabaseAuth();
+  vi.stubGlobal('fetch', auth.fetch);
+  tokenOk = await auth.token(USER);
+  comoUsuario = { authorization: `Bearer ${tokenOk}` };
   process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
 
@@ -120,8 +132,10 @@ beforeEach(() => {
     saved_products: { data: [GUARDADO], error: null },
     scan_history: { data: [ESCANEO], error: null },
   };
+  db.upserts = [];
+  auth.jwks('ok');
   db.getUser = async (token) =>
-    token === 'token-ok'
+    token === tokenOk
       ? { data: { user: { id: USER } }, error: null }
       : { data: { user: null }, error: { message: 'invalid JWT' } };
   db.deleteUser = async () => ({ data: {}, error: null });
@@ -229,7 +243,7 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expectMatchesContract('/v1/users/me/history', 'get', 503, falla.json());
   });
 
-  it('DELETE /users/me → 200, 401 y 500 (del handler y de una excepción)', async () => {
+  it('DELETE /users/me → 200, 401, 500 (del handler y de una excepción) y 503', async () => {
     const ok = await call('DELETE', '/v1/users/me', { auth: true });
     expect(ok.statusCode).toBe(200);
     expectMatchesContract('/v1/users/me', 'delete', 200, ok.json());
@@ -250,6 +264,14 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expect(lanza.statusCode).toBe(500);
     expect(lanza.json()).toEqual(INTERNAL);
     expectMatchesContract('/v1/users/me', 'delete', 500, lanza.json());
+
+    // Supabase Auth no confirma la sesión (D-75).
+    db.getUser = async () => {
+      throw new TypeError('fetch failed');
+    };
+    const authCaido = await call('DELETE', '/v1/users/me', { auth: true });
+    expect(authCaido.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me', 'delete', 503, authCaido.json());
   });
 });
 
@@ -352,13 +374,13 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
   });
 
   it('500 INTERNAL cuando una excepción no la atrapa nadie, sin el mensaje interno', async () => {
-    db.getUser = async () => {
+    db.deleteUser = async () => {
       throw new Error('detalle interno que no tiene que salir');
     };
-    const res = await call('GET', '/v1/users/me/saved', { auth: true });
+    const res = await call('DELETE', '/v1/users/me', { auth: true });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual(INTERNAL);
-    expectMatchesContract('/v1/users/me/saved', 'get', 500, res.json());
+    expectMatchesContract('/v1/users/me', 'delete', 500, res.json());
   });
 
   it('429 RATE_LIMITED con retry-after: la request 61 del minuto', async () => {
@@ -405,22 +427,15 @@ describe('contrato — forma del producto y campos de más (K-04, D-70)', () => 
   });
 
   it('GET /products/:id no registra el escaneo, aunque venga con sesión', async () => {
-    // Registrar el escaneo empieza por resolver el usuario del token
-    // (`onScan` → getUser): el lookup lo hace, el detalle no.
-    const tokens: string[] = [];
-    const getUser = db.getUser;
-    db.getUser = async (token) => {
-      tokens.push(token);
-      return getUser(token);
-    };
-
+    // El lookup con sesión registra el escaneo del usuario del token; el detalle no.
+    const escaneo = { table: 'scan_history', row: expect.objectContaining({ user_id: USER, product_id: PRODUCT_ID }) };
     await call('POST', '/v1/products/lookup', { auth: true, payload: { query: FILA.barcode } });
-    await vi.waitFor(() => expect(tokens).toEqual(['token-ok']));
+    await vi.waitFor(() => expect(db.upserts).toEqual([escaneo]));
 
     const res = await call('GET', `/v1/products/${PRODUCT_ID}`, { auth: true });
     expect(res.statusCode).toBe(200);
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(tokens).toEqual(['token-ok']);
+    expect(db.upserts).toEqual([escaneo]);
   });
 
   it('campos de más en el body o en la query → 400 VALIDATION_ERROR (D-70)', async () => {
@@ -462,6 +477,65 @@ describe('contrato — caídas de la base (H-01)', () => {
       for (const op of Object.values(contract.paths[ruta]!)) {
         expect(Object.keys(op.responses), ruta).toContain('503');
       }
+    }
+  });
+});
+
+describe('contrato — Supabase Auth caído (H-02)', () => {
+  const conSesion = [
+    ['GET', '/v1/users/me/saved', '/v1/users/me/saved', 'get'],
+    ['POST', '/v1/users/me/saved', '/v1/users/me/saved', 'post'],
+    ['DELETE', `/v1/users/me/saved/${PRODUCT_ID}`, '/v1/users/me/saved/{productId}', 'delete'],
+    ['GET', '/v1/users/me/history', '/v1/users/me/history', 'get'],
+    ['DELETE', '/v1/users/me', '/v1/users/me', 'delete'],
+  ] as const;
+
+  /** La app completa con el módulo de auth recién importado: sin claves en cache. */
+  async function appSinClaves(): Promise<FastifyInstance> {
+    vi.resetModules();
+    const { buildApp } = await import('./platform/http/buildApp');
+    const { registerModules } = await import('./registerModules');
+    const fria = await buildApp();
+    await registerModules(fria);
+    return fria;
+  }
+
+  it('las rutas con sesión declaran 503', () => {
+    for (const [, , ruta, method] of conSesion) {
+      expect(Object.keys(contract.paths[ruta]![method]!.responses), `${method} ${ruta}`).toContain('503');
+    }
+  });
+
+  it('sin claves para verificar el token, las rutas con sesión → 503 con retry-after', async () => {
+    auth.jwks('caido');
+    const fria = await appSinClaves();
+    try {
+      for (const [method, url, ruta, op] of conSesion) {
+        const res = await fria.inject({
+          method, url, headers: comoUsuario, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined,
+        });
+        expect(res.statusCode, `${method} ${url}`).toBe(503);
+        expect(res.headers['retry-after']).toBe('10');
+        expectMatchesContract(ruta, op, 503, res.json());
+      }
+    } finally {
+      await fria.close();
+    }
+  });
+
+  it('el lookup con Auth caído responde 200 como anónimo y no registra el escaneo', async () => {
+    auth.jwks('caido');
+    const fria = await appSinClaves();
+    try {
+      const res = await fria.inject({
+        method: 'POST', url: '/v1/products/lookup', headers: comoUsuario, payload: { query: FILA.barcode },
+      });
+      expect(res.statusCode).toBe(200);
+      expectMatchesContract('/v1/products/lookup', 'post', 200, res.json());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(db.upserts).toEqual([]);
+    } finally {
+      await fria.close();
     }
   });
 });

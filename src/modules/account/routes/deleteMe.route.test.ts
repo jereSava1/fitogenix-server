@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import Fastify, { type FastifyInstance } from 'fastify';
 import { AJV_OPTIONS } from '../../../platform/http/buildApp';
 import { registerErrorHandling } from '../../../platform/http/errors';
+import { simularSupabaseAuth, SUPABASE_URL } from '../../../testing/supabaseAuth';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -17,12 +18,19 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 let app: FastifyInstance;
 
-const TOKENS: Record<string, string> = { 'token-a': USER_A, 'token-b': USER_B };
-const comoA = { authorization: 'Bearer token-a' };
+/** Token → usuario, para el `getUser` simulado. */
+const TOKENS: Record<string, string> = {};
+let comoA: { authorization: string };
 
 beforeAll(async () => {
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
+  const auth = await simularSupabaseAuth();
+  vi.stubGlobal('fetch', auth.fetch);
+  const tokenA = await auth.token(USER_A);
+  const tokenB = await auth.token(USER_B);
+  Object.assign(TOKENS, { [tokenA]: USER_A, [tokenB]: USER_B });
+  comoA = { authorization: `Bearer ${tokenA}` };
 
   const { registerAccount } = await import('../index');
 
@@ -63,6 +71,37 @@ describe('DELETE /users/me (T-05)', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
     expect(supabaseAuth.admin.deleteUser).toHaveBeenCalledWith(USER_A);
+  });
+
+  it('confirma la sesión con Supabase Auth antes de borrar (ADR-0008)', async () => {
+    await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
+    expect(supabaseAuth.getUser).toHaveBeenCalledWith(comoA.authorization.slice('Bearer '.length));
+  });
+
+  it('sesión revocada (JWT vigente, getUser 403) → 401 y no borra nada', async () => {
+    supabaseAuth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { name: 'AuthApiError', message: 'Session from session_id claim in JWT does not exist', status: 403 },
+    });
+    const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
+    expect(supabaseAuth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  // D-75: getUser que lanza o no responde → 503, y no se borra nada.
+  it.each([
+    ['getUser lanza', () => supabaseAuth.getUser.mockRejectedValue(new TypeError('fetch failed'))],
+    ['Auth no responde', () => supabaseAuth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: { name: 'AuthRetryableFetchError', message: 'fetch failed', status: 0 },
+    })],
+  ])('%s → 503 y no borra nada', async (_caso, simular) => {
+    simular();
+    const res = await app.inject({ method: 'DELETE', url: '/users/me', headers: comoA });
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({ code: 'DEPENDENCY_UNAVAILABLE' });
+    expect(supabaseAuth.admin.deleteUser).not.toHaveBeenCalled();
   });
 
   it('error de Supabase al borrar → 500 con mensaje', async () => {
