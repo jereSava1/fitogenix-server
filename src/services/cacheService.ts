@@ -115,16 +115,6 @@ export async function getCachedProductByBarcode(
   return getCachedBy('barcode', barcode);
 }
 
-/**
- * Lee un producto cacheado por su name_key (el query normalizado SIN prefijo
- * que originó una fila resuelta por IA) y reconstruye su crudo.
- */
-export async function getCachedProductByNameKey(
-  nameKey: string,
-): Promise<CachedProductRow | null> {
-  return getCachedBy('name_key', nameKey);
-}
-
 // Escapa los metacaracteres de LIKE/ILIKE (`%`, `_`) y el propio backslash para
 // que un token del usuario se matchee literal dentro del patrón.
 function escapeLikeToken(token: string): string {

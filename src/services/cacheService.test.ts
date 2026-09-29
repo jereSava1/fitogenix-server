@@ -261,7 +261,7 @@ describe('rowToCachedRaw', () => {
   });
 });
 
-describe('getCachedProductByBarcode / getCachedProductByNameKey', () => {
+describe('getCachedProductByBarcode', () => {
   const row: Record<string, unknown> = {
     id: 'uuid-galletitas',
     barcode: '7790001',
@@ -281,23 +281,6 @@ describe('getCachedProductByBarcode / getCachedProductByNameKey', () => {
     expect(result?.raw.product_name).toBe('Galletitas');
   });
 
-  it('por nameKey: filtra por la columna name_key (query normalizado SIN prefijo)', async () => {
-    mockRow = {
-      ...row,
-      id: 'uuid-alfajor',
-      barcode: null,
-      name_key: 'alfajor artesanal',
-      data_source: 'ai',
-    };
-
-    const result = await cache.getCachedProductByNameKey('alfajor artesanal');
-
-    expect(eq).toHaveBeenCalledWith('name_key', 'alfajor artesanal');
-    expect(result?.productId).toBe('uuid-alfajor');
-    expect(result?.nameKey).toBe('alfajor artesanal');
-    expect(result?.barcode).toBeNull();
-  });
-
   it('fila vieja sin crudos → cache miss (null)', async () => {
     mockRow = { id: 'uuid-1', barcode: '7790001', product_name: 'Galletitas' };
     await expect(cache.getCachedProductByBarcode('7790001')).resolves.toBeNull();
@@ -306,7 +289,6 @@ describe('getCachedProductByBarcode / getCachedProductByNameKey', () => {
   it('devuelve null cuando Supabase da error', async () => {
     mockError = { message: 'boom' };
     await expect(cache.getCachedProductByBarcode('7790001')).resolves.toBeNull();
-    await expect(cache.getCachedProductByNameKey('alfajor')).resolves.toBeNull();
   });
 });
 
