@@ -8,6 +8,7 @@
 | DT-02 | **Cobertura de puntaje ≥ 95%** de los productos del catálogo | D-12, D-19 | Hay que medirla después de limpiar los datos (hoy ~28,7% sin puntaje según la última corrida conocida de `score-histogram.ts`) | DT-01 | Publicación en tiendas |
 | DT-03 | **Contenido neto y nutrición por envase** (RF-063) | D-37, D-43 | El dato existe en ~5% del catálogo (OFF) y hasta ~16% en el nombre del producto | DT-01 | — |
 | DT-04 | **Hosting propio de imágenes, servidas por HTTPS** | D-49 (pedido del 2026-09-28) | Hoy la app carga las imágenes directo de los hosts de VTEX y Open Food Facts; alcanza para avanzar | Decidir el servicio; se puede hacer junto con DT-01 | — |
+| DT-05 | **Destino de la analítica** (RF-047, L-09): hoy los eventos `scan_failed` se descartan | D-61 | La app no está publicada: sin uso real no hay nada que medir, y construirlo ahora es trabajo sin retorno | Tener usuarios reales (beta cerrada o antes de publicar) y F-07 hecho (reusa su rate limit y antispam) | Medir RNF-U04 (tasa de fuera de catálogo) y RNF-P03 (p95 del lado de la app) |
 
 ---
 
@@ -46,3 +47,31 @@ Copiar las imágenes a un **servicio externo de almacenamiento y CDN**, que las 
 ### Criterio para priorizarlo
 
 Pasa a prioridad alta si la consulta 8 muestra muchas imágenes `http://`, o si en pruebas con la app aparecen imágenes rotas por cambios en los hosts de origen.
+
+---
+
+## DT-05 · Destino de la analítica
+
+### Situación
+
+native ya emite `scan_failed {query, queryKind, reason, source, scannedAt}` desde `useScanFlow` y `useProductSearch`, a través de un módulo único (`src/analytics/index.ts · track, trackScanFailed`) que respeta el consentimiento (`setAnalyticsEnabled(false)` lo vuelve no-op). Falta el destino: `setAnalyticsSink` nunca se llama, así que los eventos se descartan.
+
+### Decisión (D-61)
+
+Se difiere. Cuando se retome, el destino es un **endpoint propio del server**, no un SDK de terceros:
+
+| Opción | Por qué sí / por qué no |
+|---|---|
+| **Endpoint propio `POST /v1/events`** (elegida como rumbo) | La app sigue hablando solo con el server (D-28, ADR-0010); los datos quedan en nuestra base; sin claves de terceros en el bundle. Costo: el tablero son consultas SQL, sin embudos ni retención listos |
+| PostHog / Firebase / Amplitude / Mixpanel | Tableros listos, pero suman un destino externo y una clave en la app, y mandan datos del usuario a un tercero (revisar con la política de privacidad, L-07). Se reconsidera solo si hacen falta embudos o retención que no convenga armar a mano |
+
+### Diseño preliminar (a validar cuando se retome)
+
+1. **native:** un sink que junta eventos en memoria y los manda en lote a `POST /v1/events` (cada N eventos o al pasar la app a segundo plano); si falla, se descartan (la analítica nunca rompe un flujo). Sin consentimiento no se manda nada (ya es la regla del módulo).
+2. **server:** acepta anónimos y usuarios, como el feedback (D-21): rate limit propio y antispam, lote con tamaño máximo, validación estricta del evento. El `user_id` sale del token, nunca del body.
+3. **base:** tabla `analytics_events` con RLS activo y sin grants para `anon` (checklist del ADR-0009), retención acotada (por ejemplo 90 días).
+4. **tablero:** consultas SQL (o vistas) para RNF-U04: tasa semanal de `scan_failed{reason:out_of_catalog}` sobre el total de escaneos. Para el total hace falta emitir también `scan_completed` (el tipo ya existe en `analytics-events.ts`).
+
+### Mientras tanto
+
+La tasa de "fuera de catálogo" se puede aproximar del lado del server sin tocar la app: cada `404` de `POST /products/lookup` es un producto que no está en el catálogo. Si hace falta antes, se agrega a la medición desde logs de L-08. Los errores de red, en cambio, solo los ve la app.

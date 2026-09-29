@@ -90,7 +90,7 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | E-02 | P1 | ELIMINAR | server | `imageService.ts` completo (`fetchRetailerImage`, `fetchSearchImageUrl`, `removeBackground`); `routes/products/image.ts` y su registro en `main.ts`; `config.ts · serpApiKey, removeBgApiKey`; `.env.example` | D-49, RF-007, RNF-S05, D-05 | Bajo (native cae a la foto original ante error: `CleanProductImage.tsx · onError`) | Antes: CI verde. Después: CI verde; `GET /products/image` → 404 | `PR-08 chore: eliminar remove.bg y el proxy de imágenes` |
 | E-03 | P1 | ELIMINAR | server | `domain/product/productService.ts`; `cacheService.ts · getCachedProductByNameKey`; `ftgEngine.ts · ftgScore`; `scripts/test-search-rpc.ts`; `MOTOR_V21_INFORME.md`; hook `prestart` de `package.json` | D-31, D-54, 04-analisis §2.1 | Bajo | Antes/después: CI verde; `knip` | `PR-09 chore: eliminar restos sin uso` |
 | E-04 | P2 | ELIMINAR | server | `domain/product/scoring/index.ts`: re-exports sin consumidores (lista de `knip --production`) | ADR-0003 | Medio (scoring) | Antes/después: T-02 y T-03 idénticos | `PR-10 chore(scoring): achicar el barrel` |
-| E-05 | P1 | ELIMINAR | native | `src/domain/product/ftgEngine.ts`; `src/presentation/hooks/useUserInitial.ts` (confirmar con knip); `@expo/ngrok`; `design_handoff_scan_home/`, `Fitogenix onboarding flow design.zip`, `database/openfoodfacts_export.csv`, `fitogenix_scoring_*.md`; `scanResultStore.tsx · migrateLocalSavedIfNeeded` y `SAVED_MIGRATED_KEY` (RF-016) | 04-analisis §2.1 N1-N3, N8 | Bajo | Antes: T-07 verde. Después: T-07 verde; `knip` | `PR-N02 chore(native): eliminar código y archivos sin uso` |
+| E-05 | P1 | ELIMINAR | native | `src/domain/product/ftgEngine.ts`; `src/presentation/hooks/useUserInitial.ts` (confirmar con knip); `@expo/ngrok`; `design_handoff_scan_home/`, `Fitogenix onboarding flow design.zip`, `database/openfoodfacts_export.csv`, `fitogenix_scoring_*.md`; `scanResultStore.tsx · migrateLocalSavedIfNeeded` y `SAVED_MIGRATED_KEY` (RF-016). **No** se borra `src/analytics/` aunque knip marque tipos sin uso: es el punto de enchufe de DT-05 (D-61) | 04-analisis §2.1 N1-N3, N8 | Bajo | Antes: T-07 verde. Después: T-07 verde; `knip` | `PR-N02 chore(native): eliminar código y archivos sin uso` |
 | E-06 | P1 | ELIMINAR | native | `src/screens/LocationScreen.tsx`, `app/location.tsx`, filas "Ubicación" y "Accesibilidad" de `ProfileScreen.tsx`; enlace a `/terms` de `HelpScreen.tsx` | D-23, RF-046, RF-042 | Bajo | Después: `tsc` verde | `PR-N03 chore(native): quitar pantallas sin función` |
 | E-07 | P2 | ELIMINAR | native | `vercel.json`, script `build` web, `app.json · web`. **`react-native-web` se queda como `devDependency`**: `vitest.config.ts` lo usa para simular `react-native` en los tests | 04-analisis §2.1 N4 | Medio | Después: build de EAS (development) OK en iOS y Android | `PR-N04 chore(native): quitar el target web` |
 
@@ -195,7 +195,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | L-06 | Catálogo limpio y cobertura de puntaje ≥ 95% | DT-01, DT-02 |
 | L-07 | Política de privacidad actualizada (datos de salud, flujos por el server) | RF-045, RNF-S10 |
 | L-08 | Medir el p95 desde los logs y monitoreo externo de disponibilidad | RNF-P01–P04, RNF-D07 |
-| L-09 | Destino de la analítica | RF-047 |
+| L-09 | Destino de la analítica: **diferido** (D-61). Cuando se retome, endpoint propio `POST /v1/events` ([DT-05](deuda-tecnica.md)) | RF-047, D-61 |
 | L-10 | Hosting propio de imágenes por HTTPS | DT-04 |
 
 ### 7.5 Tamaño del backlog
@@ -224,8 +224,9 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | D-58 | Consultas y migraciones en Supabase | Se entregan las queries al responsable, que las corre y devuelve los resultados (aplica a U-01, C-05 y la etapa 8) |
 | D-59 | Estrategia de ramas | Rama de integración `fitogenix/refactor-cleanup` desde `main` en los dos repos; cada ítem en su rama, mergeada a la integración; al terminar, integración → `main` |
 | D-60 | Default privileges de `public` | U-01 **no los cambia**: solo los muestra (consulta 1E). Cambiarlos afecta a todo objeto futuro, así que va con la baseline de migraciones (C-05) y el checklist del ADR-0009 |
+| D-61 | Analítica (L-09) | Se difiere como DT-05; rumbo: endpoint propio `POST /v1/events` en el server |
 
-1. **Analítica (L-09):** pendiente de decisión (ver la explicación en la conversación del 2026-09-28; opciones: endpoint propio `POST /v1/events`, PostHog, Firebase/Amplitude/Mixpanel, o diferir como DT-05).
+1. ~~**Analítica (L-09):** pendiente de decisión~~ → resuelta por **D-61** (2026-09-28): se difiere como [DT-05](deuda-tecnica.md), con rumbo a un endpoint propio.
 
 ## 9. Definition of Done
 

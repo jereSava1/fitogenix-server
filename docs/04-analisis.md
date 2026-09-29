@@ -55,7 +55,7 @@ Estados de la matriz de requisitos:
 | RF-044 | Reportar problema | **INCONSISTENTE** | Simulado (`ProductIssueModal.tsx`) |
 | RF-045 | Política de privacidad | PARCIAL | Tiene que informar el tratamiento de datos de salud del onboarding (RNF-S10) |
 | RF-046 | Ubicación | **ELIMINAR** (D-23) | `LocationScreen.tsx` (maqueta) + fila "Accesibilidad" en `ProfileScreen.tsx` |
-| RF-047 | Analítica de escaneos fallidos | **INCONSISTENTE** | Sin destino: `setAnalyticsSink` nunca se llama, los eventos se descartan |
+| RF-047 | Analítica de escaneos fallidos | **INCONSISTENTE** | Sin destino: `setAnalyticsSink` nunca se llama, los eventos se descartan. Diferido por D-61 ([DT-05](deuda-tecnica.md)) |
 | RF-048 | Guardar onboarding al crear cuenta | NO IMPLEMENTADO | — |
 | RF-050 | Health check | PARCIAL | Sin readiness (`/health` siempre 200) |
 | RF-051 | ETL: ingesta | IMPLEMENTADO | VTEX no trae contenido neto (DT-03) |
