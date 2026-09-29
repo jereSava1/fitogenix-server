@@ -35,7 +35,6 @@ vi.mock('@anthropic-ai/sdk', () => ({
 
 type ClaudeServiceModule = typeof import('./claudeEnricher');
 let enrichWithAI: ClaudeServiceModule['enrichWithAI'];
-let aiLookupProduct: ClaudeServiceModule['aiLookupProduct'];
 let ingredientCount: ClaudeServiceModule['ingredientCount'];
 
 beforeAll(async () => {
@@ -44,7 +43,7 @@ beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  ({ enrichWithAI, aiLookupProduct, ingredientCount } = await import('./claudeEnricher'));
+  ({ enrichWithAI, ingredientCount } = await import('./claudeEnricher'));
 });
 
 beforeEach(() => {
@@ -128,25 +127,6 @@ describe('enrichWithAI', () => {
     const result = await enrichWithAI(off);
     expect(messagesCreate).not.toHaveBeenCalled();
     expect(result).toBe(off);
-  });
-});
-
-describe('aiLookupProduct', () => {
-  it('descarta nutrientes implausibles igual que enrichWithAI', async () => {
-    setClaudeResponse({
-      product_name: 'Chimichurri Test',
-      brands: 'Marca',
-      nutriments: { 'energy-kcal_100g': 300, sodium_100g: 1200 },
-    });
-    const result = await aiLookupProduct('chimichurri test');
-    expect(result?.nutriments?.sodium_100g).toBeUndefined();
-    expect(result?.nutriments?.['energy-kcal_100g']).toBe(300);
-  });
-
-  it('devuelve null si Claude no reconoce el producto ({})', async () => {
-    setClaudeResponse({});
-    const result = await aiLookupProduct('producto inexistente xyz');
-    expect(result).toBeNull();
   });
 });
 

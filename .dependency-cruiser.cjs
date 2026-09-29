@@ -2,10 +2,9 @@
  * Reglas de dependencias entre módulos y capas (docs/02-arquitectura.md §6,
  * ADR-0001, ADR-0002). Se corre con `npm run lint:deps` y en CI.
  *
- * Durante la etapa 4 del plan (docs/05-plan.md) las reglas de módulos, capas y
- * SDKs están en `warn`: la estructura de src/modules/ se arma de a un módulo
- * por PR. M-10 las pasa todas a `error`. Ya son `error` las generales (ciclos,
- * importar tests), `scoring-es-puro` (M-03) y `etl-solo-apis-publicas` (M-08).
+ * Todas las reglas están en `error` desde M-10 (docs/05-plan.md): durante la
+ * etapa 4 estuvieron en `warn` mientras se armaba src/modules/ de a un módulo
+ * por PR. Una violación nueva rompe el CI.
  */
 
 /** Módulos de negocio bajo src/modules/. */
@@ -26,7 +25,7 @@ module.exports = {
     },
     {
       name: 'no-orphans',
-      severity: 'warn',
+      severity: 'error',
       comment: 'Archivos que nadie importa: candidatos a código muerto.',
       from: {
         orphan: true,
@@ -53,14 +52,14 @@ module.exports = {
     /* ── Fronteras de módulos (ADR-0001) ──────────────────────────────── */
     ...MODULES.map((mod) => ({
       name: `modulo-solo-por-index:${mod}`,
-      severity: 'warn',
+      severity: 'error',
       comment: `Desde afuera de "${mod}" solo se importa src/modules/${mod}/index.ts.`,
       from: { pathNot: `^src/modules/${mod}/` },
       to: { path: insideOf(mod) },
     })),
     {
-      // En `error` desde M-03. Los tests del motor quedan afuera: usan vitest
-      // y leen su fixture con node:fs, y no son parte del runtime.
+      // Los tests del motor quedan afuera: usan vitest y leen su fixture con
+      // node:fs, y no son parte del runtime.
       name: 'scoring-es-puro',
       severity: 'error',
       comment:
@@ -72,7 +71,7 @@ module.exports = {
     },
     {
       name: 'catalog-no-conoce-consumidores',
-      severity: 'warn',
+      severity: 'error',
       comment:
         'catalog no importa user-library, account ni feedback. El registro del escaneo se inyecta desde main.ts (02-arquitectura.md §3.3).',
       from: { path: '^src/modules/catalog/' },
@@ -80,14 +79,14 @@ module.exports = {
     },
     {
       name: 'account-auth-feedback-aislados',
-      severity: 'warn',
+      severity: 'error',
       comment: 'account, auth y feedback no dependen de otros módulos de negocio (feedback puede usar catalog).',
       from: { path: '^src/modules/(account|auth|feedback)/' },
       to: { path: '^src/modules/(user-library|account|auth|feedback)/', pathNot: '^src/modules/$1/' },
     },
     {
       name: 'platform-no-importa-modulos',
-      severity: 'warn',
+      severity: 'error',
       comment: 'La infraestructura compartida no conoce el negocio.',
       from: { path: '^src/platform/' },
       to: { path: '^src/modules/' },
@@ -96,7 +95,7 @@ module.exports = {
     /* ── Capas dentro de cada módulo (ADR-0002) ───────────────────────── */
     {
       name: 'domain-puro',
-      severity: 'warn',
+      severity: 'error',
       comment: 'domain/ no importa application, infrastructure, routes ni platform.',
       from: { path: '^src/modules/([^/]+)/domain/' },
       to: {
@@ -108,14 +107,14 @@ module.exports = {
     },
     {
       name: 'application-sin-infra',
-      severity: 'warn',
+      severity: 'error',
       comment: 'application/ define puertos: no importa infrastructure ni routes.',
       from: { path: '^src/modules/([^/]+)/application/' },
       to: { path: '^src/modules/[^/]+/(infrastructure|routes)/' },
     },
     {
       name: 'routes-sin-infra',
-      severity: 'warn',
+      severity: 'error',
       comment: 'routes/ habla con application/, nunca con los adaptadores.',
       from: { path: '^src/modules/([^/]+)/routes/' },
       to: { path: '^src/modules/[^/]+/infrastructure/' },
@@ -124,7 +123,7 @@ module.exports = {
     /* ── Dependencias externas por capa ───────────────────────────────── */
     {
       name: 'supabase-redis-solo-en-infra',
-      severity: 'warn',
+      severity: 'error',
       comment: 'Los SDK de datos solo en infrastructure/ y platform/.',
       from: {
         path: '^src/',
@@ -134,14 +133,14 @@ module.exports = {
     },
     {
       name: 'fastify-fuera-de-domain-y-application',
-      severity: 'warn',
+      severity: 'error',
       comment: 'El framework HTTP no entra al dominio ni a los casos de uso.',
       from: { path: '^src/modules/[^/]+/(domain|application)/' },
       to: { path: 'node_modules/(fastify|@fastify/)' },
     },
     {
       name: 'anthropic-solo-en-etl',
-      severity: 'warn',
+      severity: 'error',
       comment: 'La IA es solo del ETL (ADR-0004, D-05).',
       from: { pathNot: '^etl/' },
       to: { path: 'node_modules/@anthropic-ai/' },
@@ -150,13 +149,12 @@ module.exports = {
     /* ── Runtime vs. ETL y scripts (ADR-0004) ─────────────────────────── */
     {
       name: 'src-no-importa-etl-ni-scripts',
-      severity: 'warn',
+      severity: 'error',
       comment: 'El server nunca carga código del ETL ni de scripts.',
       from: { path: '^src/' },
       to: { path: '^(etl|scripts)/' },
     },
     {
-      // En `error` desde M-08, cuando el ETL se mudó a etl/ con su config.
       name: 'etl-solo-apis-publicas',
       severity: 'error',
       comment: 'El ETL usa solo las APIs públicas de catalog y scoring.',
@@ -168,7 +166,7 @@ module.exports = {
     },
     {
       name: 'scripts-solo-apis-publicas',
-      severity: 'warn',
+      severity: 'error',
       comment: 'Los scripts de análisis usan solo las APIs públicas de catalog y scoring.',
       from: { path: '^scripts/' },
       to: {

@@ -12,7 +12,7 @@ const client = (): Anthropic => {
 const SYSTEM_PROMPT =
   'Sos una base de datos nutricional experta en productos alimenticios argentinos y latinoamericanos. Respondés SOLO con JSON válido, sin texto adicional. Si no tenés información del producto o no lo reconocés con certeza, respondé con {}.';
 
-// Compartido entre enrichWithAI y aiLookupProduct — mismo shape, mismo
+// Lo usa enrichWithAI (hasta D-66 también aiLookupProduct): el shape y el
 // aclarado de unidad. Encontramos en producción que Claude confundía
 // sodium_100g con miligramos (etiquetas reales suelen reportar sodio en mg,
 // el resto de los campos en g) y devolvía valores como 400-1200, rechazados
@@ -108,42 +108,4 @@ export async function enrichWithAI(off: RawProduct): Promise<RawProduct> {
   }
 
   return off;
-}
-
-export async function aiLookupProduct(query: string): Promise<RawProduct | null> {
-  const isBarcode = /^\d{8,14}$/.test(String(query).trim());
-  const hint = isBarcode
-    ? `código de barras ${query} (producto argentino o latinoamericano)`
-    : `"${query}"`;
-
-  const prompt = `Identificá el producto con ${hint} y devolvé un JSON con:\n"product_name": nombre del producto\n"brands": marca\n"ingredients_text": lista de ingredientes separados por coma\n"nova_group": número NOVA (1-4)\n${NUTRIMENT_FIELDS_SPEC}\n\nSi no conocés el producto con certeza, respondé con {}.`;
-
-  try {
-    const raw = await callClaude(prompt, 400);
-    if (!raw || raw === '{}') return null;
-    const ai = JSON.parse(raw);
-    if (!isNonEmptyString(ai.product_name) && !isNonEmptyString(ai.brands)) return null;
-    if (!isNonEmptyString(ai.ingredients_text)) ai.ingredients_text = '';
-
-    // Mismo gate de plausibilidad que enrichWithAI — acá TODO el producto es
-    // resuelto por IA (no hay ningún dato real de base), así que el riesgo
-    // de un valor alucinado es al menos igual, no menor.
-    if (hasValidNumericField(ai.nutriments)) {
-      const implausible = findImplausibleNutrients(ai.nutriments);
-      if (implausible.length > 0) {
-        for (const { field } of implausible) delete (ai.nutriments as Record<string, unknown>)[field];
-        console.warn(
-          `[claudeService] aiLookupProduct: descartado(s) nutriente(s) implausible(s) para "${query}": ${implausible
-            .map((i) => `${i.field}=${i.value}`)
-            .join(', ')}`,
-        );
-      }
-    }
-
-    ai._aiEnriched = true;
-    ai._aiSource = true;
-    return ai;
-  } catch {
-    return null;
-  }
 }

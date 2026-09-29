@@ -95,8 +95,6 @@ export async function insertStagingRows(rows: StagingInsert[]): Promise<number> 
   return inserted;
 }
 
-export type PendingStagingRow = { id: string; source: string; raw: RawProduct };
-
 // `discarded_incomplete` NO es un estado terminal — es un "soft fail"
 // reintentable, y desde la migración 010 lo es SIEMPRE, no solo con --enrich.
 //
@@ -161,6 +159,15 @@ export type StagingRowFull = {
  * traen de a 500 barcodes, lo que baja el mismo trabajo a minutos. La
  * semántica no cambia: siguen viniendo TODAS las filas del barcode (cualquier
  * estado), que es lo que evita que una fila ya mergeada quede huérfana.
+ *
+ * Por qué importa: si un retailer trajo un barcode que quedó
+ * `discarded_incomplete` y una corrida POSTERIOR de OFF trae el mismo barcode
+ * completo, mirar solo las filas `pending` armaría el producto sin la data del
+ * retailer (ej. la imagen) y dejaría esa fila sin `merged_into`. Peor: con
+ * `--enrich`, la fila huérfana se vuelve a levantar sola y Claude le inventa
+ * datos que PISAN, vía upsert por barcode, el producto que ya tenía datos
+ * reales de OFF. (Lo explicaba la versión de a un barcode,
+ * `fetchAllRowsForBarcode`, que se borró por no tener uso: D-66.)
  */
 export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<string, StagingRowFull[]>> {
   const byBarcode = new Map<string, StagingRowFull[]>();
@@ -262,89 +269,4 @@ export async function fetchStagingStatusRows(): Promise<StagingStatusRow[]> {
   );
 
   return all;
-}
-
-/** Filas `pending` (o `discarded_incomplete` si `includeDiscarded`) de un
- * barcode dado — son las que DISPARAN un pase de merge en esta corrida y las
- * que el caller debe marcar (merged/enriched/discarded_incomplete) al
- * terminar. NO uses esto para construir el merge en sí — ver
- * `fetchAllRowsForBarcode`. */
-export async function fetchPendingRowsForBarcode(
-  barcode: string,
-  includeDiscarded = false,
-): Promise<PendingStagingRow[]> {
-  const { data, error } = await admin()
-    .from('products_staging')
-    .select('id, source, raw_payload')
-    .eq('barcode', barcode)
-    .in('merge_status', statusesFor(includeDiscarded));
-
-  if (error || !data) {
-    console.error(`[staging] fetchPendingRowsForBarcode(${barcode}) error:`, error?.message);
-    return [];
-  }
-  return (data as { id: string; source: string; raw_payload: RawProduct }[]).map((r) => ({
-    id: r.id,
-    source: r.source,
-    raw: r.raw_payload,
-  }));
-}
-
-/**
- * TODAS las filas de un barcode dado, sin importar `merge_status` — para
- * construir el resultado del merge en sí (mergeRawProducts). A propósito NO
- * filtra por estado: si una corrida anterior dejó una fila `merged` o
- * `discarded_incomplete` para este barcode, su data igual tiene que entrar
- * en la combinación de esta corrida.
- *
- * Por qué importa: si un retailer trajo un barcode que quedó
- * `discarded_incomplete` (sin ingredients/nutriments) y una corrida
- * POSTERIOR de OFF trae el mismo barcode completo, el merge de esa corrida
- * solo ve la fila `pending` de OFF (fetchPendingRowsForBarcode) y arma el
- * producto sin la data del retailer (ej. la imagen) — la fila del retailer
- * queda huérfana, sin `merged_into`. Peor: si más adelante corrés
- * `--enrich`, esa fila huérfana se vuelve a levantar SOLA (su hermana de OFF
- * ya está `merged`, excluida) y Claude le inventa datos que después
- * PISAN, vía upsert por barcode, el producto que ya tenía datos reales de
- * OFF. Usar `fetchAllRowsForBarcode` para el merge evita ambos problemas: el
- * resultado siempre es la combinación completa de todo lo que se scrapeó
- * alguna vez para ese barcode, y las filas viejas nunca se re-procesan solas.
- */
-export async function fetchAllRowsForBarcode(barcode: string): Promise<PendingStagingRow[]> {
-  const { data, error } = await admin()
-    .from('products_staging')
-    .select('id, source, raw_payload')
-    .eq('barcode', barcode);
-
-  if (error || !data) {
-    console.error(`[staging] fetchAllRowsForBarcode(${barcode}) error:`, error?.message);
-    return [];
-  }
-  return (data as { id: string; source: string; raw_payload: RawProduct }[]).map((r) => ({
-    id: r.id,
-    source: r.source,
-    raw: r.raw_payload,
-  }));
-}
-
-/** Marca el resultado del merge sobre las filas de staging que contribuyeron. */
-export async function markStagingRows(
-  ids: string[],
-  // 'merged_incomplete' (migración 010): llegó a `products` pero sin datos
-  // para puntuar. Distinto de 'discarded_incomplete', que era "no se escribió".
-  status: 'merged' | 'merged_incomplete' | 'enriched' | 'discarded_incomplete',
-  opts: { mergedInto?: string; discardReason?: string } = {},
-): Promise<void> {
-  if (ids.length === 0) return;
-  const { error } = await admin()
-    .from('products_staging')
-    .update({
-      merge_status: status,
-      merged_at: new Date().toISOString(),
-      merged_into: opts.mergedInto ?? null,
-      discard_reason: opts.discardReason ?? null,
-    })
-    .in('id', ids);
-
-  if (error) console.error('[staging] markStagingRows error:', error.message);
 }
