@@ -260,7 +260,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 34 | `routes/products/lookupSchema.ts` | `catalog/routes/lookup.schema.ts` | MOVER | La Fase 3 decide la fuente única del contrato. Hecho en M-05 |
 | 35 | `routes/products/image.ts` | — | ELIMINAR | D-49; native pasa a usar `imageUrl` directo |
 | 36 | `routes/users/saved.ts`, `history.ts` | `user-library/routes/*` | MOVER | + `DELETE /users/me/history/:productId`. **M-06:** `savedRoutes({ saved })` y `historyRoutes({ history })`; el borrado del historial es F-01 |
-| 37 | `routes/users/deleteMe.ts` | `account/routes/deleteMe.route.ts` + `application/deleteAccount.ts` + `infrastructure/supabaseAuthAdmin.ts` | PARTIR | Deja de crear un cliente Supabase por request |
+| 37 | `routes/users/deleteMe.ts` | `account/routes/deleteMe.route.ts` + `application/deleteAccount.ts` + `infrastructure/supabaseAuthAdmin.ts` | PARTIR | Deja de crear un cliente Supabase por request. **Hecho en M-07:** usa `platform/supabase.ts · supabaseAdmin()` (misma URL y key) |
 | 38 | `types/fitogenix.ts` · `FitogenixProduct` | `catalog` · tipo `ProductResponse` (derivado del schema, Fase 3) | MOVER | — |
 | 39 | `types/fitogenix.ts` · `RawOFFProduct` | `catalog` · `domain/rawProduct.ts` (`RawProduct`) | MOVER | El ETL lo importa desde `catalog/index.ts` |
 

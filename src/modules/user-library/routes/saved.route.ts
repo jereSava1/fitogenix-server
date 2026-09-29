@@ -1,6 +1,6 @@
 /**
  * Rutas de productos guardados por usuario (favoritos). Todas bajo requireAuth
- * (mismo patrón que deleteMe.ts): `request.userId` viene del JWT de Supabase.
+ * (mismo patrón que account/routes/deleteMe.route.ts): `request.userId` viene del JWT de Supabase.
  * Los casos de uso (`application/saved.ts`) se inyectan desde el index del
  * módulo (M-06).
  */
