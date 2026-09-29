@@ -23,11 +23,11 @@ vi.mock('../modules/scoring', async (importOriginal) => {
   };
 });
 
-vi.mock('./cacheService', () => ({
+vi.mock('../modules/catalog/infrastructure/supabaseProductReader', () => ({
   getCachedProductByBarcode: vi.fn(async () => null),
   findCachedProductByName: vi.fn(async () => null),
 }));
-vi.mock('./redisService', () => ({
+vi.mock('../modules/catalog/infrastructure/redisProductCache', () => ({
   getFromRedis: vi.fn(async () => null),
   setInRedis: vi.fn(async () => undefined),
   getSearchBarcode: vi.fn(async () => null),

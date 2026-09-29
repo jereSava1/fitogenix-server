@@ -2,7 +2,7 @@
  * (docs/05-plan.md).
  *
  * A diferencia de lookup.test.ts (que simula el servicio entero), acá corre el
- * camino real ruta → productLookupService → cacheService / redisService, y
+ * camino real ruta → productLookupService → adaptadores de catalog (Supabase y Redis), y
  * solo se simulan los clientes externos: Supabase (`createClient`) y Upstash
  * (`Redis`). Así se ve qué le llega al usuario cuando se cae cada uno.
  */

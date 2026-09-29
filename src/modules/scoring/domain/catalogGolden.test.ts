@@ -4,7 +4,7 @@
  * `fixtures/catalog-sample.json`: 200 filas de `products` con datos crudos
  * (las primeras 200 con ingredientes o nutrientes, en orden de `id`, tomadas
  * el 2026-09-29), sin id, barcode, marca ni imagen: solo lo que usa el motor.
- * Se mapean igual que `cacheService.rowToCachedRaw` (`category` →
+ * Se mapean igual que `rowToCachedRaw` de catalog (`category` →
  * `categories`).
  *
  * El snapshot guarda una línea por producto con puntaje, banda y motivo de

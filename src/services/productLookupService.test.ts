@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CachedProductRow } from './cacheService';
+import type { CachedProductRow } from '../modules/catalog/application/ports';
 import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
 
 /**
@@ -8,11 +8,11 @@ import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
  * producto, `lookupProduct` devuelve `null` — no hay proveedores externos
  * que mockear acá.
  */
-vi.mock('./cacheService', () => ({
+vi.mock('../modules/catalog/infrastructure/supabaseProductReader', () => ({
   getCachedProductByBarcode: vi.fn(async () => null),
   findCachedProductByName: vi.fn(async () => null),
 }));
-vi.mock('./redisService', () => ({
+vi.mock('../modules/catalog/infrastructure/redisProductCache', () => ({
   getFromRedis: vi.fn(async () => null),
   setInRedis: vi.fn(async () => undefined),
   getSearchBarcode: vi.fn(async () => null),
@@ -22,8 +22,8 @@ vi.mock('./redisService', () => ({
 type LookupModule = typeof import('./productLookupService');
 let lookupProduct: LookupModule['lookupProduct'];
 let mapRawToProduct: LookupModule['mapRawToProduct'];
-let cacheService: typeof import('./cacheService');
-let redisService: typeof import('./redisService');
+let cacheService: typeof import('../modules/catalog/infrastructure/supabaseProductReader');
+let redisService: typeof import('../modules/catalog/infrastructure/redisProductCache');
 
 const rawProduct: RawOFFProduct = {
   product_name: 'Galletitas',
@@ -45,8 +45,8 @@ const cachedHit = (overrides: Partial<CachedProductRow> = {}): CachedProductRow 
 
 beforeAll(async () => {
   ({ lookupProduct, mapRawToProduct } = await import('./productLookupService'));
-  cacheService = await import('./cacheService');
-  redisService = await import('./redisService');
+  cacheService = await import('../modules/catalog/infrastructure/supabaseProductReader');
+  redisService = await import('../modules/catalog/infrastructure/redisProductCache');
 });
 
 beforeEach(() => {

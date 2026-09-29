@@ -2,7 +2,7 @@ import type { RawOFFProduct } from '../../../src/types/fitogenix';
 
 /**
  * Gate de completitud. MISMO criterio que
- * `cacheService.rowToCachedRaw` (src/services/cacheService.ts): sin
+ * `rowToCachedRaw` (src/modules/catalog/infrastructure/productRow.ts): sin
  * `ingredients_text` NI `nutriments` con contenido real, no alcanza para
  * recomputar un score con sentido. No es un criterio nuevo, es el mismo
  * aplicado antes de escribir a `products` en vez de al leer.

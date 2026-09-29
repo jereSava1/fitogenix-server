@@ -40,7 +40,7 @@ let ingredientCount: ClaudeServiceModule['ingredientCount'];
 
 beforeAll(async () => {
   // config.ts exige estas env vars al importarse — mismo patrón que
-  // cacheService.test.ts: seteo dummy + import dinámico DESPUÉS de setearlas.
+  // supabaseProductAdapters.test.ts: seteo dummy + import dinámico DESPUÉS de setearlas.
   process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';

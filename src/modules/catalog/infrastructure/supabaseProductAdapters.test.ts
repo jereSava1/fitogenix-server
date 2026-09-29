@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
+import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
 
 // ── Mock de Supabase ──
 // createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
@@ -39,15 +39,24 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from, rpc })),
 }));
 
-type CacheModule = typeof import('./cacheService');
+// Portado de services/cacheService.test.ts (M-04): el módulo se partió en
+// productRow, supabaseProductReader y supabaseProductWriter, y los tests
+// siguen usándolos juntos bajo `cache`.
+type CacheModule = typeof import('./productRow') &
+  typeof import('./supabaseProductReader') &
+  typeof import('./supabaseProductWriter');
 let cache: CacheModule;
 let ENGINE_VERSION: string;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  cache = await import('./cacheService');
-  ({ ENGINE_VERSION } = await import('../modules/scoring'));
+  cache = {
+    ...(await import('./productRow')),
+    ...(await import('./supabaseProductReader')),
+    ...(await import('./supabaseProductWriter')),
+  };
+  ({ ENGINE_VERSION } = await import('../../scoring'));
 });
 
 beforeEach(() => {
@@ -499,5 +508,46 @@ describe('setCachedProduct', () => {
     expect(id).toBe('uuid-nuevo');
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+});
+
+describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
+  const row: Record<string, unknown> = {
+    id: 'uuid-galletitas',
+    barcode: '7790001',
+    name_key: null,
+    product_name: 'Galletitas',
+    ingredients_text: 'harina, azucar',
+    nutriments: { sugars_100g: 20 },
+    data_source: 'off',
+  };
+
+  it('findByBarcode filtra por barcode y devuelve la fila reconstruida', async () => {
+    mockRow = row;
+
+    const result = await cache.supabaseProductReader.findByBarcode('7790001');
+
+    expect(eq).toHaveBeenCalledWith('barcode', '7790001');
+    expect(result).toEqual(cache.rowToCachedRaw(row));
+  });
+
+  it('findByName normaliza el query y llama al RPC de búsqueda', async () => {
+    mockRpcRows = [row];
+
+    const result = await cache.supabaseProductReader.findByName('  GALLETÍTAS ');
+
+    expect(rpc).toHaveBeenCalledWith('search_products_by_name', {
+      search_query: 'galletitas',
+      match_limit: 5,
+    });
+    expect(result?.productId).toBe('uuid-galletitas');
+  });
+
+  it('un error de Supabase sigue siendo miss (null) — CARACTERIZA: cambia en H-01', async () => {
+    mockError = { message: 'boom' };
+    mockRpcError = { message: 'boom' };
+
+    await expect(cache.supabaseProductReader.findByBarcode('7790001')).resolves.toBeNull();
+    await expect(cache.supabaseProductReader.findByName('galletitas')).resolves.toBeNull();
   });
 });

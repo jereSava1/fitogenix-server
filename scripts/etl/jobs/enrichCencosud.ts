@@ -20,7 +20,7 @@ import 'dotenv/config';
 import { admin } from '../lib/supabaseAdmin';
 import { parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from '../adapters/vtexAdapter';
 import { mapRawToProduct } from '../../../src/services/productLookupService';
-import { buildCachePayload } from '../../../src/services/cacheService';
+import { buildCachePayload } from '../../../src/modules/catalog/infrastructure/supabaseProductWriter';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 
 const UA = { 'User-Agent': 'Fitogenix-ETL/0.1 (contacto: soporte@fitogenix.com)' };

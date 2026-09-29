@@ -1,5 +1,5 @@
 // Cliente Supabase con service role, compartido por todo el pipeline ETL.
-// Mismo patrón lazy-singleton que cacheService.ts (src/services/cacheService.ts)
+// Mismo patrón lazy-singleton que el server (src/platform/supabase.ts)
 // — no lo reimplementamos distinto, solo vive acá porque scripts/etl/ está
 // fuera de src/ (no se compila con el server, ver README de la carpeta).
 import { createClient } from '@supabase/supabase-js';

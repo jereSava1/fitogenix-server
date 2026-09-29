@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ENGINE_VERSION } from '../modules/scoring';
-import type { FitogenixProduct } from '../types/fitogenix';
+import { ENGINE_VERSION } from '../../scoring';
+import type { FitogenixProduct } from '../../../types/fitogenix';
 
 // ── Fake de Upstash ──
 // Un Map hace de servidor: alcanza para fijar el contrato de este módulo (qué
@@ -56,14 +56,14 @@ function productoV2(): unknown {
 }
 
 describe('redisService sin Redis configurado', () => {
-  let redis: typeof import('./redisService');
+  let redis: typeof import('./redisProductCache');
 
   beforeAll(async () => {
     vi.resetModules();
     setBaseEnv();
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
-    redis = await import('./redisService');
+    redis = await import('./redisProductCache');
   });
 
   it('getFromRedis devuelve null (no-op)', async () => {
@@ -84,12 +84,12 @@ describe('redisService sin Redis configurado', () => {
 });
 
 describe('unwrapCachedProduct — invalidación por versión de motor', () => {
-  let unwrap: typeof import('./redisService').unwrapCachedProduct;
+  let unwrap: typeof import('./redisProductCache').unwrapCachedProduct;
 
   beforeAll(async () => {
     vi.resetModules();
     setBaseEnv();
-    ({ unwrapCachedProduct: unwrap } = await import('./redisService'));
+    ({ unwrapCachedProduct: unwrap } = await import('./redisProductCache'));
   });
 
   it('sobre con la versión actual → devuelve el producto', () => {
@@ -122,14 +122,14 @@ describe('unwrapCachedProduct — invalidación por versión de motor', () => {
 });
 
 describe('redisService con Redis configurado — entrada vieja → miss → se repuebla', () => {
-  let redis: typeof import('./redisService');
+  let redis: typeof import('./redisProductCache');
 
   beforeAll(async () => {
     vi.resetModules();
     setBaseEnv();
     process.env.UPSTASH_REDIS_REST_URL = 'https://fake.upstash.io';
     process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token';
-    redis = await import('./redisService');
+    redis = await import('./redisProductCache');
   });
 
   beforeEach(() => {
@@ -192,5 +192,38 @@ describe('redisService con Redis configurado — entrada vieja → miss → se r
     await redis.setSearchBarcode('  Coca Cola  ', '7790895000123');
     expect(store.get('ftg:search:coca cola')).toBe('7790895000123');
     await expect(redis.getSearchBarcode('COCA COLA')).resolves.toBe('7790895000123');
+  });
+});
+
+describe('redisProductCache — el puerto ProductCache (M-04)', () => {
+  let redis: typeof import('./redisProductCache');
+
+  beforeAll(async () => {
+    vi.resetModules();
+    setBaseEnv();
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token';
+    redis = await import('./redisProductCache');
+  });
+
+  beforeEach(() => {
+    store.clear();
+  });
+
+  it('get / set pasan por el mismo sobre versionado que getFromRedis / setInRedis', async () => {
+    const product = productoV21();
+    await redis.redisProductCache.set('7790895000123', product, 604800);
+
+    expect(store.get(PRODUCT_KEY)).toEqual({ engineVersion: ENGINE_VERSION, product });
+    await expect(redis.redisProductCache.get('7790895000123')).resolves.toEqual(product);
+  });
+
+  it('getBarcodeForQuery / setBarcodeForQuery usan las claves ftg:search:*', async () => {
+    await redis.redisProductCache.setBarcodeForQuery('  Coca Cola  ', '7790895000123');
+
+    expect(store.get('ftg:search:coca cola')).toBe('7790895000123');
+    await expect(redis.redisProductCache.getBarcodeForQuery('COCA COLA')).resolves.toBe(
+      '7790895000123',
+    );
   });
 });

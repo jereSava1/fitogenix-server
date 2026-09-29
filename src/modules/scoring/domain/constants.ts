@@ -34,7 +34,7 @@ import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types
  * que ganan un octógono y otros que lo pierden. En los dos casos cambia el
  * puntaje vía `sealPenalty`.
  *
- * El bump NO es cosmético: `redisService` trata como MISS toda entrada cuyo
+ * El bump NO es cosmético: el cache Redis del catálogo trata como MISS toda entrada cuyo
  * sobre no coincida con esta constante, así que sin bumpear, Redis seguiría
  * sirviendo hasta 7 días los octógonos viejos.
  *
