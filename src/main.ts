@@ -2,7 +2,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { config } from './config';
+import { config } from './platform/config';
 import { productLookupRoute } from './routes/products/lookup';
 import { deleteUserRoute } from './routes/users/deleteMe';
 import { savedProductsRoutes } from './routes/users/saved';

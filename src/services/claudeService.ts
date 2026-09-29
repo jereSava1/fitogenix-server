@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAnthropicApiKey } from '../config';
+import { requireAnthropicApiKey } from '../platform/config';
 import { ingredientCount } from '../domain/product/ftgEngine';
 import { findImplausibleNutrients } from '../domain/product/nutrientPlausibility';
 import type { RawOFFProduct } from '../types/fitogenix';

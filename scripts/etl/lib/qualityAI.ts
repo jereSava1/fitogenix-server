@@ -11,7 +11,7 @@
 // EXTRAIGA texto que ya está en la fila — mucho menor riesgo de alucinación
 // que "completá los nutrientes de este producto que no conocés".
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAnthropicApiKey } from '../../../src/config';
+import { requireAnthropicApiKey } from '../../../src/platform/config';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {

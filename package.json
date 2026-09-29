@@ -10,6 +10,7 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json",
+    "lint:deps": "depcruise src scripts --config .dependency-cruiser.cjs",
     "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "dependency-cruiser": "^18.4.0",
     "tsx": "^4.19.2",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
