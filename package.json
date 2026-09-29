@@ -1,7 +1,7 @@
 {
   "name": "fitogenix-server",
   "version": "1.0.0",
-  "description": "Fitogenix backend — product lookup, scoring pipeline, image proxy",
+  "description": "Fitogenix backend — lookup de productos, puntaje y datos de usuario",
   "main": "dist/main.js",
   "engines": {
     "node": "22.x"

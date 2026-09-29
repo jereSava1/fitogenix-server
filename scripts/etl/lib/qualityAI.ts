@@ -11,11 +11,11 @@
 // EXTRAIGA texto que ya está en la fila — mucho menor riesgo de alucinación
 // que "completá los nutrientes de este producto que no conocés".
 import Anthropic from '@anthropic-ai/sdk';
-import { config } from '../../../src/config';
+import { requireAnthropicApiKey } from '../../../src/config';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {
-  if (!_client) _client = new Anthropic({ apiKey: config.anthropicApiKey });
+  if (!_client) _client = new Anthropic({ apiKey: requireAnthropicApiKey() });
   return _client;
 };
 

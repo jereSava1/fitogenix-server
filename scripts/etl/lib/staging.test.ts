@@ -35,10 +35,8 @@ function rowsWithBarcodes(count: number, offset = 0): Record<string, unknown>[] 
 }
 
 beforeAll(async () => {
-  process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  process.env.SERPAPI_API_KEY = 'test';
   staging = await import('./staging');
 });
 

@@ -50,10 +50,8 @@ const BASE_CAIDA = { data: null, error: { message: 'TypeError: fetch failed', co
 let app: FastifyInstance;
 
 beforeAll(async () => {
-  process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
-  process.env.SERPAPI_API_KEY = 'test';
   process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
 

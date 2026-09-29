@@ -39,10 +39,8 @@ const comoA = { authorization: 'Bearer token-a' };
 const comoB = { authorization: 'Bearer token-b' };
 
 beforeAll(async () => {
-  process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
-  process.env.SERPAPI_API_KEY = 'test';
 
   saved = await import('../../services/savedProductsService');
   history = await import('../../services/scanHistoryService');

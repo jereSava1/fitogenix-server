@@ -21,10 +21,8 @@ vi.mock('@upstash/redis', () => ({
 
 // config.ts valida env vars requeridas al importarse.
 function setBaseEnv() {
-  process.env.ANTHROPIC_API_KEY = 'test';
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  process.env.SERPAPI_API_KEY = 'test';
 }
 
 const PRODUCT_KEY = 'ftg:product:7790895000123';

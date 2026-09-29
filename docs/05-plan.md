@@ -118,6 +118,12 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 
 ## 4. Etapa 3 — Corregir docs y config desactualizadas
 
+| ID | Estado |
+|---|---|
+| C-01 | ✅ Hecho en `fix/c01-compilar-onboarding` (native), mergeado y pusheado. `expo-apple-authentication` (~57.0.2) agregado a `package.json`; `absoluteFillObject` → `absoluteFill`; íconos `mci:` tipados (y `SourceRow` ya no le pasa un `mci:` a Ionicons); `onboardingGate` vuelve a persistir, con 5 tests (mutación verificada). Los errores de rutas tipadas venían de `.expo/types` generado y viejo (local, no está en CI): se regeneró. **`tsc`: 0 errores** (el CI de native deja de estar en rojo); tests 96 → 101. `expo config` y `expo export` iOS/Android OK: E-07 verificado a nivel bundle (el build nativo de EAS sigue sin probar) |
+| C-03 | ✅ Hecho en `chore/c03-config`, mergeado a `fitogenix/refactor-cleanup`. `ANTHROPIC_API_KEY` pasa a opcional en `config.ts`; `claudeService` y `qualityAI` la piden con `requireAnthropicApiKey()`, que falla con un mensaje claro. `.env.example` la marca como solo del ETL; `package.json · description` al día; los tests dejan de setear `SERPAPI_API_KEY` (y `ANTHROPIC_API_KEY` donde no la usan). `src/config.test.ts`: 5 tests (el server carga sin la key; mutación verificada). En Render, `ANTHROPIC_API_KEY` también queda sin uso |
+| C-02, C-04 a C-08 | Pendientes |
+
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
 | C-01 | P0 | REFACTOR (config) | native | `package.json` (+ `expo-apple-authentication`); corregir los 6 errores de `tsc` (rutas tipadas, `absoluteFillObject` → `absoluteFill`, nombre de ícono); `lib/onboardingGate.ts` (restaurar la persistencia) | RF-024, RF-040, RNF-U08 | Bajo | Después: CI de native verde (`tsc` + tests); test de `onboardingGate` (el segundo arranque no muestra el onboarding) | `PR-N05 fix(native): compilar y persistir el onboarding` |
