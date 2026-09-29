@@ -23,7 +23,7 @@ En un Postgres 15 local con los roles de Supabase simulados (`anon`, `authentica
 | Un chequeo que falla | Aborta con `U-01: …`; la policy y los permisos de `anon` quedan como estaban |
 | Rollback | La verificación 1A a 1E da **idéntica** a la de antes |
 
-Lo que no se pudo probar acá: PostgREST real (códigos HTTP), Postgres 17 (producción es 17.6) y el server en Render. Para eso están las pruebas P y S de abajo.
+Lo que no se pudo probar acá: PostgREST real (códigos HTTP), Postgres 17 (producción es 17.6; el privilegio `MAINTAIN` solo existe desde la 17, así que las líneas que lo nombran se ajustaron después de la verificación de producción sin probarlas localmente) y el server en Render. Para eso están las pruebas P y S de abajo.
 
 ## Procedimiento
 
@@ -48,14 +48,14 @@ Cada consulta o script se pega **solo**, en una pestaña nueva del SQL Editor, y
 
 | Consulta | Antes (paso 1) | Después (paso 5) |
 |---|---|---|
-| 1A · permisos | `rls = true` en todas las filas; `anon` y `authenticated` con los 7 privilegios en las dos tablas; `service_role` con al menos `DELETE,INSERT,SELECT,UPDATE`; ninguna fila `PUBLIC` | Sin filas de `anon`, `authenticated` ni `PUBLIC`; `service_role` igual que antes; `rls = true` |
+| 1A · permisos | `rls = true` en todas las filas; `anon` y `authenticated` con los 8 privilegios en las dos tablas (en Postgres 17 incluye `MAINTAIN`); `service_role` con al menos `DELETE,INSERT,SELECT,UPDATE`; ninguna fila `PUBLIC` | Sin filas de `anon`, `authenticated` ni `PUBLIC`; `service_role` igual que antes; `rls = true` |
 | 1B · policies | 1 fila: `Anyone can read products`, `SELECT`, `{anon,authenticated}`, `true` | 0 filas |
 | 1C · funciones | **1 sola** fila: `search_products_by_name(text,integer)`, `security_definer = false`, el resto `true` | `public_exec`, `anon` y `authenticated` en `false`; `service_role` en `true` |
 | 1D · vistas | 0 filas | 0 filas |
 | 1E · default privileges | Informativo (se usa en C-05) | Igual que antes |
 | 1F · muestra | 4 productos | No hace falta |
 
-**Motivos para parar en el paso 1:** más de una fila en la 1C (otra firma de la RPC u otra función que lee el catálogo), alguna fila en la 1D, `service_role` sin alguno de sus 4 privilegios en la 1A, o `MAINTAIN` entre los privilegios de `anon` o `authenticated` (el rollback tendría que incluirlo). Si en la 1C `public_exec` da `false`, hay que borrar la línea marcada `-- PUBLIC` de `3-rollback.sql` antes de usarlo.
+**Motivos para parar en el paso 1:** más de una fila en la 1C (otra firma de la RPC u otra función que lee el catálogo), alguna fila en la 1D, `service_role` sin alguno de sus 4 privilegios en la 1A, o privilegios distintos de los 8 de la tabla de resultados de abajo (el rollback los reproduce tal cual).
 
 ## Pruebas HTTP (desde una terminal)
 
@@ -82,7 +82,7 @@ Opcional, si hay un usuario de prueba con sesión: `GET $API/users/me/saved` y `
 | Paso | Resultado | OK |
 |---|---|---|
 | 0 · V-03 y ETL parado | | |
-| 1 · verificación antes | | |
+| 1 · verificación antes | 2026-09-29. **1A:** 8 filas, `rls = true`; `anon`, `authenticated`, `postgres` y `service_role` con `DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE` en las dos tablas; sin `PUBLIC`. `MAINTAIN` no estaba previsto: se agregó al rollback y al chequeo del cambio. **1B:** la policy pública, como se esperaba. **1C:** 1 fila, `security_definer = false`, todo `true` (incluido `public_exec`: la línea PUBLIC del rollback va). **1D:** a confirmar (0 filas). **1E:** defaults de `postgres` y `supabase_admin` que dan todo a `anon`/`authenticated` en tablas (`arwdDxtm`), funciones y secuencias → insumo de C-05 (D-60). **1F:** `7791708000081` · Langostino Pelado Crudo · `7790080032055` · Huevos Color Yemalinda Maple Map 20 Un. | ✅ salvo 1D |
 | 2 · P-01 / P-02 / P-03 antes | | |
 | 3 · S-01 / S-02 antes | | |
 | 4 · cambio | | |
