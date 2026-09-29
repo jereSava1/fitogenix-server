@@ -42,27 +42,12 @@
 
 export { analyzeIngredients, scoreProduct } from './pipeline';
 
-export {
-  BASE_SCORE,
-  CEILINGS,
-  DEDUCTIONS,
-  DISCLAIMER,
-  DOMINANCE,
-  ENGINE_VERSION,
-  HEAD_POSITIONS,
-  NO_DATA_TIER,
-  PROCESSING,
-  TIERS,
-  EXCELLENT_FROM,
-  BAD_BELOW,
-} from './constants';
+export { CEILINGS, DEDUCTIONS, ENGINE_VERSION } from './constants';
 
-export { indexOfPhrase, matchesPhrase, normalizeText } from './text';
-export { anchorScore, matchAnchor, resolveLabelAbbreviation, rubricImpact, rubricMatches } from './matching';
-export { cleanIngredientList } from './cleaning';
-export { classifyIngredient, resolvesToSomething, severityOf } from './classify';
-export { computeWarningSeals, sealPenalty, type SealInput } from './seals';
-export { tierFor } from './explain';
+export { matchesPhrase, normalizeText } from './text';
+export { resolveLabelAbbreviation } from './matching';
+export { resolvesToSomething } from './classify';
+export { computeWarningSeals, type SealInput } from './seals';
 export {
   getScoreLabel,
   getScoreTagline,
@@ -72,7 +57,6 @@ export {
   type ProductStatusTone,
   type ScoreLabel,
 } from './presentation';
-export { ScoreLedger } from './ledger';
 
 export type {
   AnalyzedIngredient,
