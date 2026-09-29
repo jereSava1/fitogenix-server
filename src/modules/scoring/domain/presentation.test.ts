@@ -7,7 +7,7 @@
  * producto con una anulación de §5.
  */
 import { describe, expect, it } from 'vitest';
-import { getScoreLabel, getScoreTagline, getSello, resolveProductStatus } from './presentation';
+import { getScoreLabel, getScoreTagline, getSello, presentScore, resolveProductStatus } from './presentation';
 
 describe('umbrales de banda', () => {
   it('75+ es EXCELENTE', () => {
@@ -128,5 +128,39 @@ describe('caracterización — bordes de banda (T-02)', () => {
     expect(getScoreTagline(score)).toBe(esperado.tagline);
     expect(getSello(score)).toBe(esperado.sello);
     expect(resolveProductStatus(score).label).toBe(esperado.estado);
+  });
+});
+
+/* K-04 · `presentScore`: lo que recibe la app (ADR-0003). Cada borde de banda
+ * que exige el ADR (0, 24, 25, 49, 50, 74, 75, 100 y `null`), más el 39/40 del
+ * `flagged` que reemplaza `highlight`. */
+describe('presentScore — bordes de banda (K-04)', () => {
+  const BORDES: ReadonlyArray<[number | null, ReturnType<typeof presentScore>]> = [
+    [0, { label: 'MALO', color: '#dc2626', fito: 'nofito', highlight: 'cuestionables' }],
+    [24, { label: 'MALO', color: '#dc2626', fito: 'nofito', highlight: 'cuestionables' }],
+    [25, { label: 'MODERADO', color: '#f97316', fito: 'none', highlight: 'cuestionables' }],
+    [39, { label: 'MODERADO', color: '#f97316', fito: 'none', highlight: 'cuestionables' }],
+    [40, { label: 'MODERADO', color: '#f97316', fito: 'none', highlight: 'cuestionables' }],
+    [49, { label: 'MODERADO', color: '#f97316', fito: 'none', highlight: 'cuestionables' }],
+    [50, { label: 'BUENO', color: '#84cc16', fito: 'none', highlight: 'beneficiosos' }],
+    [74, { label: 'BUENO', color: '#84cc16', fito: 'none', highlight: 'beneficiosos' }],
+    [75, { label: 'EXCELENTE', color: '#16a34a', fito: 'fito', highlight: 'beneficiosos' }],
+    [100, { label: 'EXCELENTE', color: '#16a34a', fito: 'fito', highlight: 'beneficiosos' }],
+    [null, { label: 'SIN DATOS SUFICIENTES', color: '#9ca3af', fito: 'none', highlight: 'ninguno' }],
+  ];
+
+  it.each(BORDES)('puntaje %s', (score, esperado) => {
+    expect(presentScore(score)).toEqual(esperado);
+  });
+
+  it('fito coincide con el sello y el estado en toda la escala', () => {
+    for (let score = 0; score <= 100; score++) {
+      const { fito } = presentScore(score);
+      const sello = getSello(score);
+      expect(fito, `score ${score}`).toBe(
+        sello === 'FITOGÉNICO' ? 'fito' : sello === 'NO FITOGÉNICO' ? 'nofito' : 'none',
+      );
+      expect(resolveProductStatus(score).label === 'Fitogénico', `score ${score}`).toBe(fito === 'fito');
+    }
   });
 });

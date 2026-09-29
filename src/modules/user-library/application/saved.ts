@@ -5,28 +5,33 @@
  * Los nombres de las funciones se conservan.
  */
 
-import { productResponseFromRow } from '../../catalog';
-import type { FitogenixProduct } from '../../catalog';
+import type { ProductSummary } from '../../catalog';
+import { summaryWithDate } from './listItem';
 import type { SavedRepository, SaveResult } from './ports';
+
+/** Un guardado: el resumen del producto y cuándo se guardó (K-04). */
+export interface SavedItem extends ProductSummary {
+  savedAt: string;
+}
 
 export function makeSavedProducts(repo: SavedRepository) {
   return {
     /**
-     * Lista los guardados del usuario, más reciente primero, como
-     * FitogenixProduct completos (score recomputado desde los crudos).
+     * Lista los guardados del usuario, más reciente primero, como resumen del
+     * producto (puntaje recomputado desde los crudos) más `savedAt`. El
+     * detalle se pide con `GET /v1/products/:id`.
      *
-     * Filas cuyo producto embebido no tiene crudos o falta (productResponseFromRow →
-     * null) se OMITEN del listado: mejor una lista corta que productos con
-     * breakdown incompleto. Errores de DB se propagan como Error (la ruta
-     * responde 500).
+     * Filas cuyo producto embebido no tiene crudos o falta se OMITEN del
+     * listado: mejor una lista corta que productos a medias. Errores de DB se
+     * propagan como Error (la ruta responde 500).
      */
-    async listSavedProducts(userId: string): Promise<FitogenixProduct[]> {
+    async listSavedProducts(userId: string): Promise<SavedItem[]> {
       const rows = await repo.list(userId);
-      const items: FitogenixProduct[] = [];
+      const items: SavedItem[] = [];
 
       for (const rowUnknown of rows) {
-        const product = productResponseFromRow(rowUnknown);
-        if (product) items.push(product);
+        const item = summaryWithDate(rowUnknown, 'created_at');
+        if (item) items.push({ ...item.product, savedAt: item.at });
       }
 
       return items;

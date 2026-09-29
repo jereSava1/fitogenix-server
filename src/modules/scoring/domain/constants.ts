@@ -198,6 +198,9 @@ export const NO_DATA_TIER = {
 
 /** Umbral de la banda alta: el sello Fitogénico y el estado "positivo". */
 export const EXCELLENT_FROM = TIERS[0].min;
+/** Umbral de la banda Buena: desde acá se destacan los ingredientes
+ *  beneficiosos; por debajo, los cuestionables (`presentScore`, K-04). */
+export const GOOD_FROM = TIERS[1].min;
 /** Umbral de la banda baja: el sello contrario y el estado "negativo". */
 export const BAD_BELOW = TIERS[2].min;
 

@@ -28,7 +28,6 @@ import {
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
 import type { RawProduct } from '../../src/modules/catalog';
 import { isComplete } from '../lib/completeness';
-import { mapRawToProduct } from '../../src/modules/catalog';
 import { buildCachePayload } from '../../src/modules/catalog';
 import { enrichWithAI } from '../enrichment/claudeEnricher';
 
@@ -138,9 +137,11 @@ async function main() {
         incomplete = !isComplete(combined);
       }
 
-      const product = mapRawToProduct(combined, barcode);
-      if (!combined._aiSource) product.dataSource = primarySourceOf(entries);
-      payloads.push(buildCachePayload(product, combined, { barcode }) as Record<string, unknown>);
+      const payload = buildCachePayload(combined, { barcode });
+      // El origen es la fuente de más prioridad del merge (off, vtex…), salvo
+      // que lo haya resuelto la IA.
+      if (!combined._aiSource) payload.data_source = primarySourceOf(entries);
+      payloads.push(payload);
       pending.push({ barcode, rows: trigger, incomplete, wasEnriched });
     }
 

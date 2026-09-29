@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -37,52 +37,93 @@
           }
         }
       },
-      "Product": {
+      "ProductSummary": {
         "type": "object",
         "required": [
           "id",
           "name",
-          "subtitle",
           "brand",
-          "category",
-          "categoryEmoji",
-          "score",
-          "scoreAvailable",
-          "noScore",
-          "flagged",
-          "emoji",
-          "bgColor",
           "imageUrl",
-          "ingredients",
-          "nutrition",
-          "dataSource",
-          "productId",
+          "score",
           "scoreLabel",
-          "scoreColor",
-          "tagline",
-          "fito"
+          "scoreColor"
         ],
         "properties": {
           "id": {
+            "format": "uuid",
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "subtitle": {
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "scoreLabel": {
+            "type": "string",
+            "enum": [
+              "EXCELENTE",
+              "BUENO",
+              "MODERADO",
+              "MALO",
+              "SIN DATOS SUFICIENTES"
+            ]
+          },
+          "scoreColor": {
+            "type": "string"
+          }
+        }
+      },
+      "ProductDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "brand",
+          "imageUrl",
+          "score",
+          "scoreLabel",
+          "scoreColor",
+          "noScore",
+          "fito",
+          "highlight",
+          "ingredients",
+          "nutrition"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "brand": {
             "type": [
               "null",
               "string"
             ]
           },
-          "brand": {
-            "type": "string"
-          },
-          "category": {
-            "type": "string"
-          },
-          "categoryEmoji": {
-            "type": "string"
+          "imageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "score": {
             "type": [
@@ -90,13 +131,35 @@
               "number"
             ]
           },
-          "scoreAvailable": {
-            "type": "boolean"
+          "scoreLabel": {
+            "type": "string",
+            "enum": [
+              "EXCELENTE",
+              "BUENO",
+              "MODERADO",
+              "MALO",
+              "SIN DATOS SUFICIENTES"
+            ]
+          },
+          "scoreColor": {
+            "type": "string"
           },
           "noScore": {
+            "required": [
+              "code",
+              "message"
+            ],
             "properties": {
               "code": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "fuera-de-alcance",
+                  "no-alimentario",
+                  "sin-ingredientes",
+                  "solo-categorias",
+                  "sin-identificar",
+                  "solo-certificaciones"
+                ]
               },
               "message": {
                 "type": "string"
@@ -107,54 +170,46 @@
               "object"
             ]
           },
-          "flagged": {
-            "type": "boolean"
+          "fito": {
+            "type": "string",
+            "enum": [
+              "fito",
+              "nofito",
+              "none"
+            ]
           },
-          "emoji": {
-            "type": "string"
-          },
-          "bgColor": {
-            "type": "string"
-          },
-          "imageUrl": {
-            "type": [
-              "null",
-              "string"
+          "highlight": {
+            "type": "string",
+            "enum": [
+              "cuestionables",
+              "beneficiosos",
+              "ninguno"
             ]
           },
           "ingredients": {
             "type": "array",
             "items": {
               "type": "object",
+              "required": [
+                "name",
+                "sev",
+                "desc"
+              ],
               "properties": {
                 "name": {
                   "type": "string"
                 },
-                "position": {
-                  "type": "number"
-                },
-                "impact": {
-                  "type": "string"
-                },
-                "delta": {
-                  "type": "number"
-                },
                 "sev": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": [
+                    "red",
+                    "orange",
+                    "yellow",
+                    "green",
+                    "gray"
+                  ]
                 },
                 "desc": {
-                  "type": "string"
-                },
-                "flag": {
-                  "type": "boolean"
-                },
-                "marker": {
-                  "type": "boolean"
-                },
-                "percent": {
-                  "type": "number"
-                },
-                "detail": {
                   "type": "string"
                 }
               }
@@ -162,6 +217,18 @@
           },
           "nutrition": {
             "type": "object",
+            "required": [
+              "calories",
+              "protein",
+              "carbs",
+              "sugars",
+              "fats",
+              "satFats",
+              "sodium",
+              "fiber",
+              "transFat",
+              "cholesterol"
+            ],
             "properties": {
               "calories": {
                 "type": [
@@ -224,27 +291,6 @@
                 ]
               }
             }
-          },
-          "dataSource": {
-            "type": "string"
-          },
-          "aiEnriched": {
-            "type": "boolean"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "scoreLabel": {
-            "type": "string"
-          },
-          "scoreColor": {
-            "type": "string"
-          },
-          "tagline": {
-            "type": "string"
-          },
-          "fito": {
-            "type": "string"
           }
         }
       },
@@ -259,6 +305,120 @@
             "enum": [
               true
             ]
+          }
+        }
+      },
+      "SavedItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "brand",
+          "imageUrl",
+          "score",
+          "scoreLabel",
+          "scoreColor",
+          "savedAt"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "brand": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "imageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "scoreLabel": {
+            "type": "string",
+            "enum": [
+              "EXCELENTE",
+              "BUENO",
+              "MODERADO",
+              "MALO",
+              "SIN DATOS SUFICIENTES"
+            ]
+          },
+          "scoreColor": {
+            "type": "string"
+          },
+          "savedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "HistoryItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "brand",
+          "imageUrl",
+          "score",
+          "scoreLabel",
+          "scoreColor",
+          "scannedAt"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "brand": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "imageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "score": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "scoreLabel": {
+            "type": "string",
+            "enum": [
+              "EXCELENTE",
+              "BUENO",
+              "MODERADO",
+              "MALO",
+              "SIN DATOS SUFICIENTES"
+            ]
+          },
+          "scoreColor": {
+            "type": "string"
+          },
+          "scannedAt": {
+            "format": "date-time",
+            "type": "string"
           }
         }
       }
@@ -276,6 +436,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "additionalProperties": false,
                 "type": "object",
                 "required": [
                   "query"
@@ -297,7 +458,78 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Product"
+                  "$ref": "#/components/schemas/ProductDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products/{id}": {
+      "get": {
+        "summary": "Detalle de un producto por su id",
+        "tags": [
+          "catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetail"
                 }
               }
             }
@@ -425,7 +657,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Product"
+                        "$ref": "#/components/schemas/SavedItem"
                       }
                     }
                   }
@@ -475,6 +707,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "additionalProperties": false,
                 "type": "object",
                 "required": [
                   "productId"
@@ -670,7 +903,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Product"
+                        "$ref": "#/components/schemas/HistoryItem"
                       }
                     }
                   }

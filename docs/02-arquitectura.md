@@ -230,7 +230,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | # | Archivo actual · símbolo | Destino (módulo · capa) | Acción | Nota |
 |---|---|---|---|---|
 | 11 | `productLookupService.ts` · `lookupProduct`, `resolveByBarcode`, `resolveByName`, `withSingleflight`, `logSource` | `catalog` · `application/lookupProduct.ts` | PARTIR | Depende de puertos `ProductReader` y `ProductCache`. **Hecho en M-05:** `makeLookupProduct({ reader, cache })`; el singleflight queda por instancia (hay una sola, la de `registerCatalog`) |
-| 12 | `productLookupService.ts` · `mapRawToProduct`, `cleanName`, `scorePresentation` | `catalog` · `application/productResponse.ts` (usa `scoring.presentScore`) | PARTIR | `id` = `productId` siempre (se define en la Fase 3). **M-05:** mudado sin cambios; el `id` = query sigue hasta K-04 |
+| 12 | `productLookupService.ts` · `mapRawToProduct`, `cleanName`, `scorePresentation` | `catalog` · `application/productResponse.ts` (usa `scoring.presentScore`) | PARTIR | `id` = `productId` siempre (se define en la Fase 3). **M-05:** mudado sin cambios. **K-04:** `mapRawToProduct` → `toProductDetail` / `toProductSummary` (`id` = uuid siempre), `scorePresentation` → `scoring.presentScore`, `cleanName` → `domain/productData.ts`; `buildCachePayload` ya no recibe el DTO |
 | 13 | `productLookupService.ts` · `nameKey` | `catalog` · `domain/query.ts` | PARTIR | Junto con `isBarcode` (hoy regex inline). Hecho en M-05 |
 | 14 | `cacheService.ts` · `getCachedProductByBarcode`, `findCachedProductByName`, `getCachedBy`, `escapeLikeToken` | `catalog` · `infrastructure/supabaseProductReader.ts` | PARTIR | Deja de tragarse los errores: lanza `DependencyUnavailableError` (ADR-0006). **M-04:** mudado sin cambios (sigue tragándose los errores hasta H-01) |
 | 15 | `cacheService.ts` · `rowToCachedRaw`, `asStringRecord`, `asStringArray` | `catalog` · `infrastructure/productRow.ts` | PARTIR | Mapper fila → `RawProduct`; lo reusa `productResponseFromRow`. Hecho en M-04 |
@@ -355,8 +355,8 @@ export function presentScore(score: number | null): {
   label: 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES';
   color: string;
   fito: 'fito' | 'nofito' | 'none';
-  highlight: 'cuestionables' | 'beneficiosos';   // reemplaza flagged (<40) y el <50 del cliente
-};
+  highlight: 'cuestionables' | 'beneficiosos' | 'ninguno';   // reemplaza flagged (<40) y el <50 del cliente; 'ninguno' sin puntaje (D-71)
+};  // hecho en K-04
 ```
 
 ### 8.2 `catalog`
@@ -370,7 +370,9 @@ export type { RawProduct, ProductSummary, ProductDetail };
 
 export type OnScan = (userId: string, productId: string) => void;
 
-// Puertos (application/ports.ts)
+// Puertos (application/ports.ts). Hoy (K-04): findById, findByBarcode y findByName
+// (el RPC devuelve el mejor match); un error de Supabase es null hasta H-01, y
+// ProductCache guarda crudos (CachedProduct, K-02), no el DTO.
 export interface ProductReader {
   findByBarcode(barcode: string): Promise<ProductRecord | null>;     // null = no existe; falla técnica = DependencyUnavailableError
   searchByName(normalizedQuery: string, limit: number): Promise<ProductRecord[]>;

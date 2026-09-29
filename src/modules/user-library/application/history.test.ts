@@ -38,6 +38,7 @@ describe('makeScanHistory', () => {
     const repo = fakeRepo([
       {
         product_id: 'uuid-galletitas',
+        scanned_at: '2026-07-14T12:00:00+00:00',
         products: { id: 'uuid-galletitas', product_name: 'Galletitas', ingredients_text: 'harina', data_source: 'off' },
       },
       { product_id: 'uuid-purgado', products: null },
@@ -46,6 +47,7 @@ describe('makeScanHistory', () => {
     const items = await makeScanHistory(repo).listScanHistory('user-1', 5);
 
     expect(repo.list).toHaveBeenCalledWith('user-1', 5);
-    expect(items.map((p) => p.productId)).toEqual(['uuid-galletitas']);
+    expect(items.map((p) => p.id)).toEqual(['uuid-galletitas']);
+    expect(items[0].scannedAt).toBe('2026-07-14T12:00:00.000Z');
   });
 });

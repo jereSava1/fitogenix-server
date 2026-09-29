@@ -11,13 +11,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mapRawToProduct } from '../application/productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 import { buildCachePayload } from './supabaseProductWriter';
 
-/** Cómo arman su fila los jobs del ETL (`runMerge`, `enrichCencosud`). */
+/** Cómo arman su fila los jobs del ETL (`runMerge`, `enrichCencosud`). Hasta
+ *  K-04 pasaban antes por `mapRawToProduct`; el snapshot es el de esa época. */
 function etlRowFor(raw: RawProduct, barcode: string): Record<string, unknown> {
-  return buildCachePayload(mapRawToProduct(raw, barcode), raw, { barcode });
+  return buildCachePayload(raw, { barcode });
 }
 
 const muestra = JSON.parse(

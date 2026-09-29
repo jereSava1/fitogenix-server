@@ -7,10 +7,13 @@
  *   2. el schema de respuesta no recorta nada: los listados devuelven los 200
  *      productos de la muestra del catálogo exactamente como los arma el
  *      código (antes de K-01 esas rutas no tenían schema y Fastify serializaba
- *      con JSON.stringify).
+ *      con JSON.stringify). Desde K-04, como resumen más la fecha de la fila.
  *   3. `contract/scoring-bands.json` es lo que arma el motor (K-08);
  *   4. todas las rutas están bajo `/v1`, sin alias de las viejas, y todo error
- *      —400, 401, 404, 429, 500— sale como `{ error, code }` (K-03).
+ *      —400, 401, 404, 429, 500— sale como `{ error, code }` (K-03);
+ *   5. el producto tiene la forma de K-04 (detalle en el lookup y en
+ *      `GET /v1/products/:id`, resumen con fecha en los listados) y los
+ *      campos de más en bodies y querystrings se rechazan con 400 (D-70).
  * Que `contract/openapi.json` esté al día con los schemas lo verifica
  * `npm run contract:check` en el CI (que chequea también las bandas).
  */
@@ -80,6 +83,12 @@ const FILA = {
   nutriments: { sugars_100g: 4.7, 'energy-kcal_100g': 45 },
   data_source: 'off',
 };
+const GUARDADO = { product_id: PRODUCT_ID, created_at: '2026-07-08T12:00:00.123456+00:00', products: FILA };
+const ESCANEO = { product_id: PRODUCT_ID, scanned_at: '2026-07-14T12:00:00+00:00', products: FILA };
+
+/** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary` (K-04). */
+const CAMPOS_RESUMEN = ['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor'];
+const CAMPOS_DETALLE = [...CAMPOS_RESUMEN, 'noScore', 'fito', 'highlight', 'ingredients', 'nutrition'];
 
 const contract = JSON.parse(
   readFileSync(join(__dirname, '../contract/openapi.json'), 'utf8'),
@@ -124,8 +133,8 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   db.results = {
     products: { data: FILA, error: null },
-    saved_products: { data: [{ product_id: PRODUCT_ID, products: FILA }], error: null },
-    scan_history: { data: [{ product_id: PRODUCT_ID, products: FILA }], error: null },
+    saved_products: { data: [GUARDADO], error: null },
+    scan_history: { data: [ESCANEO], error: null },
   };
   db.getUser = async (token) =>
     token === 'token-ok'
@@ -148,6 +157,23 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     const notFound = await call('POST', '/v1/products/lookup', { payload: { query: '7790000000024' } });
     expect(notFound.statusCode).toBe(404);
     expectMatchesContract('/v1/products/lookup', 'post', 404, notFound.json());
+  });
+
+  it('GET /products/:id → 200, 400 y 404 (K-04)', async () => {
+    const ok = await call('GET', `/v1/products/${PRODUCT_ID}`);
+    expect(ok.statusCode).toBe(200);
+    expectMatchesContract('/v1/products/{id}', 'get', 200, ok.json());
+
+    const noEsUuid = await call('GET', '/v1/products/7790000000017');
+    expect(noEsUuid.statusCode).toBe(400);
+    expect(noEsUuid.json()).toEqual(VALIDATION);
+    expectMatchesContract('/v1/products/{id}', 'get', 400, noEsUuid.json());
+
+    db.results.products = { data: null, error: null };
+    const noExiste = await call('GET', `/v1/products/${PRODUCT_ID}`);
+    expect(noExiste.statusCode).toBe(404);
+    expect(noExiste.json()).toEqual({ error: 'Producto no encontrado en el catálogo', code: 'NOT_FOUND' });
+    expectMatchesContract('/v1/products/{id}', 'get', 404, noExiste.json());
   });
 
   it('GET /users/me/saved → 200, 401 y 500', async () => {
@@ -266,6 +292,7 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
   it('sin alias (D-57): las rutas sin /v1 responden 404 NOT_FOUND', async () => {
     for (const [method, url] of [
       ['POST', '/products/lookup'],
+      ['GET', `/products/${PRODUCT_ID}`],
       ['GET', '/users/me/saved'],
       ['GET', '/users/me/history'],
       ['DELETE', '/users/me'],
@@ -298,6 +325,7 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
       { path: '/v1/users/me/saved', method: 'post', res: await call('POST', '/v1/users/me/saved', { auth: true, payload: { productId: 'no-es-uuid' } }) },
       { path: '/v1/users/me/saved/{productId}', method: 'delete', res: await call('DELETE', '/v1/users/me/saved/no-es-uuid', { auth: true }) },
       { path: '/v1/users/me/history', method: 'get', res: await call('GET', '/v1/users/me/history?limit=abc', { auth: true }) },
+      { path: '/v1/products/{id}', method: 'get', res: await call('GET', '/v1/products/no-es-uuid') },
     ];
     for (const { path, method, res } of casos) {
       expect(res.statusCode, `${method} ${path}`).toBe(400);
@@ -375,6 +403,58 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
   });
 });
 
+describe('contrato — forma del producto y campos de más (K-04, D-70)', () => {
+  it('el lookup y GET /products/:id responden los 12 campos del detalle, el mismo objeto', async () => {
+    const lookup = (await call('POST', '/v1/products/lookup', { payload: { query: FILA.barcode } })).json();
+    const detalle = (await call('GET', `/v1/products/${PRODUCT_ID}`)).json();
+    expect(Object.keys(lookup).sort()).toEqual([...CAMPOS_DETALLE].sort());
+    expect(lookup.id).toBe(PRODUCT_ID);
+    expect(detalle).toStrictEqual(lookup);
+  });
+
+  it('los listados responden el resumen más la fecha de la fila, en ISO', async () => {
+    const saved = (await call('GET', '/v1/users/me/saved', { auth: true })).json();
+    expect(Object.keys(saved.items[0]).sort()).toEqual([...CAMPOS_RESUMEN, 'savedAt'].sort());
+    expect(saved.items[0]).toMatchObject({ id: PRODUCT_ID, savedAt: '2026-07-08T12:00:00.123Z' });
+
+    const history = (await call('GET', '/v1/users/me/history', { auth: true })).json();
+    expect(Object.keys(history.items[0]).sort()).toEqual([...CAMPOS_RESUMEN, 'scannedAt'].sort());
+    expect(history.items[0]).toMatchObject({ id: PRODUCT_ID, scannedAt: '2026-07-14T12:00:00.000Z' });
+  });
+
+  it('GET /products/:id no registra el escaneo, aunque venga con sesión', async () => {
+    // Registrar el escaneo empieza por resolver el usuario del token
+    // (`onScan` → getUser): el lookup lo hace, el detalle no.
+    const tokens: string[] = [];
+    const getUser = db.getUser;
+    db.getUser = async (token) => {
+      tokens.push(token);
+      return getUser(token);
+    };
+
+    await call('POST', '/v1/products/lookup', { auth: true, payload: { query: FILA.barcode } });
+    await vi.waitFor(() => expect(tokens).toEqual(['token-ok']));
+
+    const res = await call('GET', `/v1/products/${PRODUCT_ID}`, { auth: true });
+    expect(res.statusCode).toBe(200);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(tokens).toEqual(['token-ok']);
+  });
+
+  it('campos de más en el body o en la query → 400 VALIDATION_ERROR (D-70)', async () => {
+    const casos = [
+      { path: '/v1/products/lookup', method: 'post', res: await call('POST', '/v1/products/lookup', { payload: { query: 'yogur', userId: USER } }) },
+      { path: '/v1/users/me/saved', method: 'post', res: await call('POST', '/v1/users/me/saved', { auth: true, payload: { productId: PRODUCT_ID, userId: USER } }) },
+      { path: '/v1/users/me/history', method: 'get', res: await call('GET', `/v1/users/me/history?limit=5&userId=${USER}`, { auth: true }) },
+    ];
+    for (const { path, method, res } of casos) {
+      expect(res.statusCode, `${method} ${path}`).toBe(400);
+      expect(res.json()).toEqual(VALIDATION);
+      expectMatchesContract(path, method, 400, res.json());
+    }
+  });
+});
+
 describe('contrato — bandas del puntaje (K-08, D-63)', () => {
   it('contract/scoring-bands.json es exactamente lo que arma el motor', async () => {
     const { scoringBands } = await import('./modules/scoring');
@@ -390,25 +470,41 @@ describe('contrato — el schema de los listados no recorta nada (K-01)', () => 
     const muestra = JSON.parse(
       readFileSync(join(__dirname, 'modules/scoring/domain/fixtures/catalog-sample.json'), 'utf8'),
     ) as Record<string, unknown>[];
+    // uuid válido por fila (el schema declara `format: 'uuid'`) y, cada tanto,
+    // una sin nombre, para cubrir el nombre de reemplazo (el barcode).
+    const uuid = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`;
+    const AT = '2026-07-08T12:00:00+00:00';
     const filas = muestra.map((row, i) => ({
-      product_id: `id-${i}`,
-      products: { ...row, id: `id-${i}` },
+      product_id: uuid(i),
+      created_at: AT,
+      scanned_at: AT,
+      products: {
+        ...row,
+        id: uuid(i),
+        barcode: String(7790000000000 + i),
+        ...(i % 10 === 0 ? { product_name: null } : {}),
+      },
     }));
     db.results.saved_products = { data: filas, error: null };
     db.results.scan_history = { data: filas, error: null };
 
-    const { productResponseFromRow } = await import('./modules/catalog');
-    const esperados = filas.map(productResponseFromRow).filter((p) => p !== null);
-    expect(esperados.length).toBeGreaterThan(50);
-    // Lo que respondía Fastify antes de K-01, sin schema: JSON.stringify.
-    const sinSchema = JSON.parse(JSON.stringify({ items: esperados }));
+    const { productSummaryFromRow } = await import('./modules/catalog');
+    const resumenes = filas.map(productSummaryFromRow).filter((p) => p !== null);
+    expect(resumenes.length).toBeGreaterThan(50);
+    expect(resumenes.some((p) => /^779\d{10}$/.test(p.name))).toBe(true);
+    // Lo que respondería Fastify sin schema: JSON.stringify.
+    const iso = new Date(AT).toISOString();
+    const sinSchema = (campo: string) =>
+      JSON.parse(JSON.stringify({ items: resumenes.map((p) => ({ ...p, [campo]: iso })) }));
 
     const saved = await call('GET', '/v1/users/me/saved', { auth: true });
     expect(saved.statusCode).toBe(200);
-    expect(saved.json()).toStrictEqual(sinSchema);
+    expect(saved.json()).toStrictEqual(sinSchema('savedAt'));
+    expectMatchesContract('/v1/users/me/saved', 'get', 200, saved.json());
 
     const history = await call('GET', '/v1/users/me/history?limit=50', { auth: true });
     expect(history.statusCode).toBe(200);
-    expect(history.json()).toStrictEqual(sinSchema);
+    expect(history.json()).toStrictEqual(sinSchema('scannedAt'));
+    expectMatchesContract('/v1/users/me/history', 'get', 200, history.json());
   });
 });

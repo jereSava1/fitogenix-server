@@ -35,6 +35,8 @@ Veredictos:
 
 La devuelven `POST /products/lookup`, `GET /users/me/saved` y `GET /users/me/history`. Tipo: `src/types/fitogenix.ts · FitogenixProduct`; schema de serialización: `routes/products/lookupSchema.ts`; espejo en native: `src/lib/contracts/product.ts`.
 
+> **Estado (K-04, 2026-09-29, contrato `0.3.0`):** los veredictos de esta tabla están aplicados. `FitogenixProduct` ya no existe: el lookup y `GET /v1/products/:id` responden `ProductDetail` y los listados `SavedItem` / `HistoryItem` (resumen + fecha), con la forma de §B.2 (`catalog/application/productResponse.ts`, schemas en `catalog/routes/product.schema.ts`). Salieron `productId` (unificado con `id`), `subtitle`, `category`, `categoryEmoji`, `scoreAvailable`, `flagged`, `emoji`, `bgColor`, `dataSource`, `aiEnriched` y `tagline`; `ingredients[]` quedó en `{ name, sev, desc }`. Pendiente: `isSaved` (D-47, diferido hasta después de H-02, D-71). La tabla queda como registro de la auditoría.
+
 | # | Campo | Qué es / de dónde sale | ¿Lo lee native? (evidencia) | Veredicto |
 |---|---|---|---|---|
 | 1 | `id` | **En el lookup = la query** (`mapRawToProduct(off, query)`); **en los listados = el uuid** (`joinedRowToProduct`) | Sí: `key` de listas, `isSaved(result.id)`, `removeFromHistory(p.id)`, dedup del historial | **CORREGIR**: tiene dos significados según el endpoint y rompe el ícono de guardado (RNF-U06). Pasa a ser **siempre el uuid** y se unifica con `productId` |
@@ -106,11 +108,11 @@ Resultado: cada ingrediente pasa de 10 campos a 3. En un producto con 30 ingredi
 
 | Endpoint | Entrada | Schema | Observación |
 |---|---|---|---|
-| `POST /products/lookup` | body `{ query }` | ✅ string 1..200 | Sin `additionalProperties: false` (se aceptan campos de más en silencio) |
+| `POST /products/lookup` | body `{ query }` | ✅ string 1..200 | Sin `additionalProperties: false` (se aceptan campos de más en silencio). **K-04 (D-70):** ahora un campo de más → `400` |
 | ~~`GET /products/image`~~ | query `url` | — | **Eliminado en E-02** (D-49) |
 | `DELETE /users/me` | — | — | — |
 | `GET /users/me/saved` | — | — | Sin paginación |
-| `POST /users/me/saved` | body `{ productId }` | ✅ uuid | Sin `additionalProperties: false` |
+| `POST /users/me/saved` | body `{ productId }` | ✅ uuid | Sin `additionalProperties: false`. **K-04 (D-70):** ahora un campo de más → `400` |
 | `DELETE /users/me/saved/:productId` | param | ✅ uuid | — |
 | `GET /users/me/history` | query `limit` | ✅ integer, default 20 | El rango 1..50 se ajusta en el handler en vez de declararse en el schema (`minimum`/`maximum`) |
 | `GET /health` | — | — | — |
@@ -368,10 +370,10 @@ type ProductSummary = {
 type ProductDetail = ProductSummary & {
   noScore: { code: NoScoreCode; message: string } | null;  // la app lo MUESTRA (A.1 fila 10)
   fito: 'fito' | 'nofito' | 'none';
-  highlight: 'cuestionables' | 'beneficiosos';             // reemplaza flagged y el <50 del cliente
+  highlight: 'cuestionables' | 'beneficiosos' | 'ninguno'; // reemplaza flagged y el <50 del cliente; 'ninguno' sin puntaje (D-71)
   ingredients: Ingredient[];                               // en orden de etiqueta
   nutrition: Nutrition;                                    // por 100 g/ml hasta RF-063
-  isSaved?: boolean;                                       // PROPUESTA: solo si la request trae sesión
+  // isSaved?: boolean — D-47, diferido hasta después de H-02 (D-71)
 };
 type Ingredient = {
   name: string;
@@ -399,6 +401,8 @@ type OnboardingAnswers = {   // claves ESTABLES (hoy diets y allergies usan el t
   source: 'instagram' | 'tiktok' | 'friend' | 'podcast' | 'doctor' | 'appstore' | 'other' | null;
 };
 ```
+
+**Estado de los tipos de producto (K-04, 2026-09-29, D-70, D-71):** `ProductSummary`, `ProductDetail`, `SavedItem` y `HistoryItem` implementados tal como están arriba (sin `isSaved`). Los tipos viven en `catalog/application/productResponse.ts` y `user-library/application/{saved,history}.ts`; los schemas TypeBox en `catalog/routes/product.schema.ts` y `user-library/routes/library.schema.ts`, atados a los tipos en compilación (`SameShape`). Los enums (`sev`, `NoScoreCode`, `fito`, `highlight`) exigen la unión completa del motor (`StringEnum`) y `ScoreLabel` sale de `scoring.scoringBands()`. `highlight` corta en el borde de la banda Buena (50) y lo calcula `scoring.presentScore` (ADR-0003). Todos los campos de los objetos anidados son requeridos. En el OpenAPI, `ProductSummary` y `ProductDetail` son componentes; `SavedItem` / `HistoryItem` repiten los campos del resumen (aplanados) más la fecha.
 
 Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOALS`, `SYMPTOMS`, `DIETS`, `ALLERGIES`, `AVOID` y las fuentes). `diets` y `allergies` hoy se identifican por su **texto** ("Sin Gluten", "Maní"): el contrato usa claves estables y la app mapea.
 
@@ -428,18 +432,18 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 
 | # | Endpoint | Auth | Request | 2xx | Errores | Hoy |
 |---|---|---|---|---|---|---|
-| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Con `/v1` y los errores `400`/`404`/`429`/`500` declarados (K-03); le faltan `additionalProperties:false` y el 503 (hoy responde 404 si la base falla, H-01) |
-| 2 | `GET /products/:id` | Opcional | params `{ id: Uuid }` | `200 ProductDetail` | `400`, `404 NOT_FOUND`, `503` | **Nuevo** (D-32) |
+| 1 | `POST /products/lookup` | Opcional | body `{ query: string (1..200, trim) }` | `200 ProductDetail` | `400`, `404 PRODUCT_NOT_IN_CATALOG`, `429`, `503` | Con `/v1` y los errores `400`/`404`/`429`/`500` declarados (K-03); responde `ProductDetail` y rechaza campos de más (K-04, D-70); le falta el 503 (hoy responde 404 si la base falla, H-01) |
+| 2 | `GET /products/:id` | Opcional | params `{ id: Uuid }` | `200 ProductDetail` | `400`, `404 NOT_FOUND`, `503` | **Hecho en K-04** (D-32): no registra el escaneo; sin nombre, el de reemplazo es el barcode de la fila; le falta el 503 (un error de base responde 404, H-01) |
 | 3 | ~~`GET /products/image`~~ | — | — | — | — | **Se elimina (D-49)**: la app muestra `imageUrl` directo |
 
 ### B.3.2 `user-library`
 
 | # | Endpoint | Auth | Request | 2xx | Errores | Hoy |
 |---|---|---|---|---|---|---|
-| 4 | `GET /users/me/saved` | Sí | — | `200 { items: SavedItem[] }` | `401`, `503` | Sin schema de response; devuelve el detalle completo sin fecha |
-| 5 | `POST /users/me/saved` | Sí | body `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `404 NOT_FOUND`, `503` | Schema de request OK |
+| 4 | `GET /users/me/saved` | Sí | — | `200 { items: SavedItem[] }` | `401`, `503` | **K-04:** resumen + `savedAt` (ISO); sin nombre, el barcode de la fila (antes, el uuid). Le falta el 503 (H-01) |
+| 5 | `POST /users/me/saved` | Sí | body `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `404 NOT_FOUND`, `503` | Schema de request OK; campos de más → 400 (K-04, D-70) |
 | 6 | `DELETE /users/me/saved/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | Schema de params OK |
-| 7 | `GET /users/me/history` | Sí | query `{ limit?: integer 1..50 (default 20) }` | `200 { items: HistoryItem[] }` | `400`, `401`, `503` | El rango se ajusta en el handler en vez del schema; sin schema de response |
+| 7 | `GET /users/me/history` | Sí | query `{ limit?: integer 1..50 (default 20) }` | `200 { items: HistoryItem[] }` | `400`, `401`, `503` | **K-04:** resumen + `scannedAt` (ISO); parámetros de más → 400 (D-70). El rango se sigue ajustando en el handler en vez del schema |
 | 8 | `DELETE /users/me/history/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | **Nuevo** (RF-017) |
 
 ### B.3.3 `auth` (ADR-0010)
@@ -557,7 +561,7 @@ DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, 
 
 ## B.5 Fuente única del contrato: TypeBox → OpenAPI → tipos del cliente
 
-Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01 y K-03, 2026-09-29):** pasos 1 a 3 hechos: schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. Desde K-03 el contrato es `/v1` con el formato único de errores (`0.2.0`). El paso 4 es K-05 (native). Resumen del pipeline:
+Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01, K-03 y K-04, 2026-09-29):** pasos 1 a 3 hechos: schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. Desde K-03 el contrato es `/v1` con el formato único de errores (`0.2.0`); desde K-04, detalle y resumen del producto y campos de más rechazados (`0.3.0`). El paso 4 es K-05 (native). Resumen del pipeline:
 
 ```mermaid
 flowchart LR

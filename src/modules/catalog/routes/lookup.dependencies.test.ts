@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { AJV_OPTIONS } from '../../../platform/http/buildApp';
 import { registerErrorHandling } from '../../../platform/http/errors';
 
 const supabase = vi.hoisted(() => ({
@@ -61,7 +62,7 @@ beforeAll(async () => {
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
 
   const { registerCatalog } = await import('../index');
-  app = Fastify();
+  app = Fastify({ ajv: AJV_OPTIONS });
   registerErrorHandling(app); // como en producción (buildApp)
   await registerCatalog(app);
   await app.ready();
@@ -123,7 +124,7 @@ describe('lookup — Redis caído (T-06)', () => {
     redis.set.mockRejectedValue(new Error('ECONNREFUSED'));
     const res = await lookup('7790000000048');
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ productId: FILA.id, name: 'Yogur natural', dataSource: 'off' });
+    expect(res.json()).toMatchObject({ id: FILA.id, name: 'Yogur natural' });
     expect(supabase.maybeSingle).toHaveBeenCalledTimes(1);
   });
 
@@ -132,7 +133,7 @@ describe('lookup — Redis caído (T-06)', () => {
     redis.set.mockRejectedValue(new Error('ECONNREFUSED'));
     const res = await lookup('yogur natural redis caido');
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ productId: FILA.id });
+    expect(res.json()).toMatchObject({ id: FILA.id });
     expect(supabase.rpc).toHaveBeenCalledTimes(1);
   });
 
@@ -169,7 +170,7 @@ describe('lookup — formato del cache Redis (K-02)', () => {
     const res = await lookup('7790000000062');
 
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ productId: FILA.id, name: 'Yogur natural' });
+    expect(res.json()).toMatchObject({ id: FILA.id, name: 'Yogur natural' });
     expect(supabase.maybeSingle).toHaveBeenCalledTimes(1);
     expect(redis.set).toHaveBeenCalledWith(
       'ftg:product:7790000000062',
@@ -189,5 +190,47 @@ describe('lookup — formato del cache Redis (K-02)', () => {
     expect(desdeRedis.statusCode).toBe(200);
     expect(supabase.maybeSingle).not.toHaveBeenCalled();
     expect(desdeRedis.json()).toStrictEqual(desdeSupabase.json());
+  });
+});
+
+/* K-04 · GET /products/:id con el cableado real: lee `products` por id, sin
+ * Redis, y presenta con el mismo código que el lookup. */
+describe('GET /products/:id (K-04)', () => {
+  const detalle = (id: string) => app.inject({ method: 'GET', url: `/products/${id}` });
+
+  it('200 con el detalle, igual al del lookup del mismo producto', async () => {
+    const res = await detalle(FILA.id);
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ id: FILA.id, name: 'Yogur natural', highlight: expect.any(String) });
+    expect(redis.get).not.toHaveBeenCalled();
+    // El nombre de reemplazo es lo único que puede cambiar (query vs barcode):
+    // con nombre en la fila, el detalle y el lookup son el mismo objeto.
+    expect(res.json()).toStrictEqual((await lookup(FILA.barcode)).json());
+  });
+
+  it('sin nombre en la fila, el nombre de reemplazo es su barcode (antes, el uuid)', async () => {
+    supabase.maybeSingle.mockResolvedValue({ data: { ...FILA, product_name: null }, error: null });
+    const res = await detalle(FILA.id);
+    expect(res.json().name).toBe(FILA.barcode);
+  });
+
+  it('no existe → 404 NOT_FOUND', async () => {
+    supabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+    const res = await detalle(FILA.id);
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: 'Producto no encontrado en el catálogo', code: 'NOT_FOUND' });
+  });
+
+  // CARACTERIZA: igual que por barcode, cambia en H-01.
+  it('Supabase devuelve error → 404 (como un miss)', async () => {
+    supabase.maybeSingle.mockResolvedValue(BASE_CAIDA);
+    expect((await detalle(FILA.id)).statusCode).toBe(404);
+  });
+
+  it('id que no es uuid → 400 sin consultar la base', async () => {
+    const res = await detalle('7790000000017');
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({ error: 'La solicitud no es válida.', code: 'VALIDATION_ERROR' });
+    expect(supabase.maybeSingle).not.toHaveBeenCalled();
   });
 });

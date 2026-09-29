@@ -1,6 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CachedProductRow, ProductCache, ProductReader } from './ports';
-import type { FitogenixProduct } from './productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 
 /**
@@ -17,6 +16,7 @@ import type { RawProduct } from '../domain/rawProduct';
  * servicio.
  */
 const cacheService = {
+  getProductById: vi.fn<ProductReader['findById']>(async () => null),
   getCachedProductByBarcode: vi.fn<ProductReader['findByBarcode']>(async () => null),
   findCachedProductByName: vi.fn<ProductReader['findByName']>(async () => null),
 };
@@ -52,6 +52,7 @@ beforeAll(async () => {
   const { makeLookupProduct } = await import('./lookupProduct');
   lookupProduct = makeLookupProduct({
     reader: {
+      findById: cacheService.getProductById,
       findByBarcode: cacheService.getCachedProductByBarcode,
       findByName: cacheService.findCachedProductByName,
     },
@@ -64,8 +65,17 @@ beforeAll(async () => {
   });
 });
 
+/** El `dataSource` que se logueó en la última resolución: desde K-04 no viaja
+ *  en la respuesta, queda para el log (y para el TTL). */
+function loggedDataSource(): string | undefined {
+  const calls = vi.mocked(console.info).mock.calls;
+  const last = calls[calls.length - 1]?.[0];
+  return typeof last === 'string' ? (JSON.parse(last) as { dataSource?: string }).dataSource : undefined;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.mocked(redisService.getFromRedis).mockResolvedValue(null);
   vi.mocked(redisService.getSearchBarcode).mockResolvedValue(null);
   vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(null);
@@ -80,14 +90,33 @@ describe('lookupProduct — barcode', () => {
 
     expect(product).not.toBeNull();
     expect(product?.name).toBe('Galletitas');
-    expect(product?.dataSource).toBe('off');
-    expect(product?.productId).toBe('uuid-galletitas');
+    expect(loggedDataSource()).toBe('off');
+    expect(product?.id).toBe('uuid-galletitas');
     expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
     expect(redisService.setInRedis).toHaveBeenCalledWith(
       '7790895000123',
       expect.objectContaining({ productId: 'uuid-galletitas' }),
       604800,
     );
+  });
+
+  it('K-04: id es el uuid de la fila, sin dataSource ni productId en la respuesta', async () => {
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(cachedHit());
+
+    const product = await lookupProduct('7790895000123');
+
+    expect(product?.id).toBe('uuid-galletitas');
+    expect(product).not.toHaveProperty('productId');
+    expect(product).not.toHaveProperty('dataSource');
+    expect(product).not.toHaveProperty('aiEnriched');
+  });
+
+  it('K-04: sin nombre en la fila, el nombre de reemplazo es la query', async () => {
+    vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(
+      cachedHit({ raw: { ...rawProduct, product_name: undefined } }),
+    );
+
+    expect((await lookupProduct('7790895000123'))?.name).toBe('7790895000123');
   });
 
   it('miss en Redis y Supabase: null, sin ningún proveedor externo que consultar', async () => {
@@ -126,7 +155,7 @@ describe('lookupProduct — Redis', () => {
 
     const product = await lookupProduct('7790895000123');
 
-    expect(product?.productId).toBe('uuid-redis');
+    expect(product?.id).toBe('uuid-redis');
     expect(product?.name).toBe('Galletitas');
     expect(cacheService.getCachedProductByBarcode).not.toHaveBeenCalled();
   });
@@ -169,7 +198,7 @@ describe('lookupProduct — búsqueda por texto con search-cache hit', () => {
     const product = await lookupProduct('galletitas marca');
 
     expect(product?.name).toBe('Galletitas');
-    expect(product?.productId).toBe('uuid-galletitas');
+    expect(product?.id).toBe('uuid-galletitas');
     expect(cacheService.findCachedProductByName).not.toHaveBeenCalled();
     expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
   });
@@ -184,8 +213,8 @@ describe('lookupProduct — búsqueda por texto contra el catálogo', () => {
     const product = await lookupProduct('galletitas marca');
 
     expect(product?.name).toBe('Galletitas');
-    expect(product?.productId).toBe('uuid-coca');
-    expect(product?.dataSource).toBe('off');
+    expect(product?.id).toBe('uuid-coca');
+    expect(loggedDataSource()).toBe('off');
     expect(redisService.setSearchBarcode).toHaveBeenCalledWith('galletitas marca', '57045399');
     // La próxima vez entra por el camino de barcode: no hace falta cachear
     // el producto bajo 'name:...' también.
@@ -205,8 +234,8 @@ describe('lookupProduct — búsqueda por texto contra el catálogo', () => {
 
     const product = await lookupProduct('galletitas marca');
 
-    expect(product?.productId).toBe('uuid-name');
-    expect(product?.dataSource).toBe('ai');
+    expect(product?.id).toBe('uuid-name');
+    expect(loggedDataSource()).toBe('ai');
     expect(redisService.setSearchBarcode).not.toHaveBeenCalled();
     expect(redisService.setInRedis).toHaveBeenCalledWith(
       'name:galletitas marca',

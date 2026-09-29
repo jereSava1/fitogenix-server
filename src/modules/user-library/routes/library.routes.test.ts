@@ -12,8 +12,10 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import type { SavedProducts } from '../application/saved';
-import type { ScanHistory } from '../application/history';
+import { AJV_OPTIONS } from '../../../platform/http/buildApp';
+import { registerErrorHandling } from '../../../platform/http/errors';
+import type { SavedItem, SavedProducts } from '../application/saved';
+import type { HistoryItem, ScanHistory } from '../application/history';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -40,7 +42,20 @@ let app: FastifyInstance;
 const TOKENS: Record<string, string> = { 'token-a': USER_A, 'token-b': USER_B };
 const comoA = { authorization: 'Bearer token-a' };
 const comoB = { authorization: 'Bearer token-b' };
-let YOGUR: unknown;
+const VALIDATION = { error: 'La solicitud no es válida.', code: 'VALIDATION_ERROR' };
+
+// K-04: los listados llevan el resumen del producto más la fecha de la fila.
+const RESUMEN_YOGUR = {
+  id: PRODUCT_ID,
+  name: 'Yogur',
+  brand: null,
+  imageUrl: null,
+  score: 80,
+  scoreLabel: 'EXCELENTE',
+  scoreColor: '#16a34a',
+};
+const YOGUR_GUARDADO: SavedItem = { ...RESUMEN_YOGUR, savedAt: '2026-07-08T12:00:00.000Z' };
+const YOGUR_ESCANEADO: HistoryItem = { ...RESUMEN_YOGUR, scannedAt: '2026-07-14T12:00:00.000Z' };
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -48,15 +63,9 @@ beforeAll(async () => {
 
   const { savedRoutes } = await import('./saved.route');
   const { historyRoutes } = await import('./history.route');
-  const { mapRawToProduct } = await import('../../catalog');
-  // K-01: desde que estas respuestas tienen schema, un ítem tiene que ser un
-  // producto completo (antes pasaba cualquier objeto: `{ productId, name }`).
-  YOGUR = {
-    ...mapRawToProduct({ product_name: 'Yogur', ingredients_text: 'leche, fermentos lácticos' }, PRODUCT_ID),
-    productId: PRODUCT_ID,
-  };
 
-  app = Fastify();
+  app = Fastify({ ajv: AJV_OPTIONS });
+  registerErrorHandling(app); // como en producción (buildApp)
   await app.register(savedRoutes({ saved }));
   await app.register(historyRoutes({ history }));
   await app.ready();
@@ -104,8 +113,8 @@ describe('rutas privadas — sin sesión (T-05)', () => {
 
 describe('GET /users/me/saved (T-05)', () => {
   it('200 con { items } tal como los devuelve el servicio', async () => {
-    const items = [YOGUR];
-    vi.mocked(saved.listSavedProducts).mockResolvedValue(items as never);
+    const items = [YOGUR_GUARDADO];
+    vi.mocked(saved.listSavedProducts).mockResolvedValue(items);
     const res = await app.inject({ method: 'GET', url: '/users/me/saved', headers: comoA });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ items });
@@ -137,6 +146,7 @@ describe('POST /users/me/saved (T-05)', () => {
     ['sin body', undefined],
     ['sin productId', {}],
     ['productId que no es uuid', { productId: '7790000000000' }],
+    ['campos de más en el body (D-70)', { productId: PRODUCT_ID, nota: 'x' }],
   ])('%s → 400 sin llegar al servicio', async (_caso, payload) => {
     const res = await app.inject({ method: 'POST', url: '/users/me/saved', headers: comoA, payload });
     expect(res.statusCode).toBe(400);
@@ -174,8 +184,8 @@ describe('DELETE /users/me/saved/:productId (T-05)', () => {
 
 describe('GET /users/me/history (T-05)', () => {
   it('200 con { items }; sin limit pide 20', async () => {
-    const items = [YOGUR];
-    vi.mocked(history.listScanHistory).mockResolvedValue(items as never);
+    const items = [YOGUR_ESCANEADO];
+    vi.mocked(history.listScanHistory).mockResolvedValue(items);
     const res = await app.inject({ method: 'GET', url: '/users/me/history', headers: comoA });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ items });
@@ -193,6 +203,13 @@ describe('GET /users/me/history (T-05)', () => {
     const res = await app.inject({ method: 'GET', url: `/users/me/history?limit=${limit}`, headers: comoA });
     expect(res.statusCode).toBe(200);
     expect(history.listScanHistory).toHaveBeenCalledWith(USER_A, esperado);
+  });
+
+  it('parámetros de más en la query → 400 (D-70)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/users/me/history?limit=5&orden=asc', headers: comoA });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual(VALIDATION);
+    expect(history.listScanHistory).not.toHaveBeenCalled();
   });
 
   it('limit que no es entero → 400', async () => {
@@ -226,10 +243,25 @@ describe('aislamiento entre usuarios (T-05)', () => {
     expect(saved.listSavedProducts).toHaveBeenCalledWith(USER_A);
   });
 
-  it('POST saved: userId en el body se ignora', async () => {
+  // Cambiado A PROPÓSITO en K-04 (D-70): hasta acá el userId del body se
+  // borraba en silencio y se guardaba para A (200). Ahora el body rechaza los
+  // campos de más: la request se corta con 400 y nunca llega a guardar nada,
+  // ni para A ni para B. El aislamiento sigue probado: ningún camino le pasa
+  // al servicio el id de B.
+  it('POST saved: userId en el body → 400, no se guarda nada (D-70)', async () => {
     const res = await app.inject({
       method: 'POST', url: '/users/me/saved', headers: { ...comoA, ...intentoDeB },
       payload: { productId: PRODUCT_ID, userId: USER_B, user_id: USER_B },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual(VALIDATION);
+    expect(saved.saveProduct).not.toHaveBeenCalled();
+  });
+
+  it('POST saved: userId en headers se ignora', async () => {
+    const res = await app.inject({
+      method: 'POST', url: '/users/me/saved', headers: { ...comoA, ...intentoDeB },
+      payload: { productId: PRODUCT_ID },
     });
     expect(res.statusCode).toBe(200);
     expect(saved.saveProduct).toHaveBeenCalledWith(USER_A, PRODUCT_ID);
@@ -240,8 +272,17 @@ describe('aislamiento entre usuarios (T-05)', () => {
     expect(saved.removeSavedProduct).toHaveBeenCalledWith(USER_A, PRODUCT_ID);
   });
 
-  it('GET history: userId en query y headers se ignora', async () => {
-    await app.inject({ method: 'GET', url: `/users/me/history?userId=${USER_B}`, headers: { ...comoA, ...intentoDeB } });
+  // Cambiado A PROPÓSITO en K-04 (D-70), mismo motivo que el POST: el
+  // querystring del historial rechaza los parámetros de más.
+  it('GET history: userId en query → 400, no se lista nada (D-70)', async () => {
+    const res = await app.inject({ method: 'GET', url: `/users/me/history?userId=${USER_B}`, headers: { ...comoA, ...intentoDeB } });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual(VALIDATION);
+    expect(history.listScanHistory).not.toHaveBeenCalled();
+  });
+
+  it('GET history: userId en headers se ignora', async () => {
+    await app.inject({ method: 'GET', url: '/users/me/history', headers: { ...comoA, ...intentoDeB } });
     expect(history.listScanHistory).toHaveBeenCalledWith(USER_A, 20);
   });
 

@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════
    FITOGENIX — Presentación derivada del puntaje
 
-   Label, color, tagline, sello y estado. Todo sale de `TIERS`, que es la
-   ÚNICA fuente de los umbrales en el sistema.
+   Label, color, tagline, sello, estado y qué ingredientes destacar. Todo
+   sale de `TIERS`, que es la ÚNICA fuente de los umbrales en el sistema.
+   Lo que ve la app sale de `presentScore` (ADR-0003, K-04).
 
    Antes no era así, y el síntoma se veía en el payload: había tres criterios
    distintos para la misma decisión —75/50/25 en las bandas, 70/50 en el
@@ -16,7 +17,7 @@
    como "el peor producto posible".
 ═══════════════════════════════════════════════════════════ */
 
-import { BAD_BELOW, EXCELLENT_FROM, NO_DATA_TIER } from './constants';
+import { BAD_BELOW, EXCELLENT_FROM, GOOD_FROM, NO_DATA_TIER } from './constants';
 import { tierFor } from './explain';
 
 export interface ScoreLabel {
@@ -66,4 +67,45 @@ export function resolveProductStatus(score: number | null): ProductStatus {
   if (score >= EXCELLENT_FROM) return { label: 'Fitogénico', tone: 'positive' };
   if (score < BAD_BELOW) return { label: 'No fitogénico', tone: 'negative' };
   return { label: 'Consumo consciente', tone: 'neutral' };
+}
+
+/** Sello del producto en la app: el mismo criterio que `getSello`. */
+export type Fito = 'fito' | 'nofito' | 'none';
+
+/** `fito` sale del tono del estado: así el sello de la app, el estado y
+ *  `getSello` no pueden decir cosas distintas. */
+const FITO_BY_TONE: Record<ProductStatusTone, Fito> = {
+  positive: 'fito',
+  negative: 'nofito',
+  neutral: 'none',
+};
+
+/**
+ * Qué grupo de ingredientes destaca la pantalla de resultado. Reemplaza al
+ * `flagged` (< 40) que se armaba en catalog y al `score < 50` de native: el
+ * corte es el de la banda Buena (`GOOD_FROM`). Sin puntaje no se destaca
+ * ninguno: si el producto no se pudo medir, no se puede decir que sus
+ * ingredientes sean beneficiosos ni cuestionables (D-71).
+ */
+export type Highlight = 'cuestionables' | 'beneficiosos' | 'ninguno';
+
+export interface ScorePresentation {
+  readonly label: string;
+  readonly color: string;
+  readonly fito: Fito;
+  readonly highlight: Highlight;
+}
+
+/**
+ * La presentación del puntaje que recibe la app (ADR-0003): ÚNICA fuente, así
+ * ni catalog ni native recalculan cortes. Sin `tagline` (D-38) ni `sello`
+ * (equivale a `fito`; el sello escrito solo alimenta la columna que se borra
+ * en B-01, D-35).
+ */
+export function presentScore(score: number | null): ScorePresentation {
+  const { label, color } = getScoreLabel(score);
+  const fito = FITO_BY_TONE[resolveProductStatus(score).tone];
+  if (score == null) return { label, color, fito, highlight: 'ninguno' };
+  const highlight: Highlight = score < GOOD_FROM ? 'cuestionables' : 'beneficiosos';
+  return { label, color, fito, highlight };
 }

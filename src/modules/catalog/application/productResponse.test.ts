@@ -1,22 +1,24 @@
-/* T-02 · respuesta completa de `mapRawToProduct` (docs/05-plan.md).
+/* T-02 · respuesta completa del producto (docs/05-plan.md).
  * Estaba al final de services/productLookupService.test.ts; se mudó en M-05
- * junto con la función, sin cambios (el snapshot conserva sus claves).
+ * junto con la función. En K-04 `mapRawToProduct` pasó a ser
+ * `toProductDetail` y el snapshot se regeneró a propósito (`vitest -u`).
  */
 import { describe, expect, it } from 'vitest';
-import { mapRawToProduct } from './productResponse';
+import { toProductDetail, toProductSummary } from './productResponse';
 import type { RawProduct } from '../domain/rawProduct';
 
 /* T-02 · Caracterización de la respuesta completa (docs/05-plan.md).
  *
- * Snapshot de `mapRawToProduct` para 10 productos de
+ * Snapshot de `toProductDetail` para 10 productos de
  * `modules/scoring/domain/regression.test.ts` (copiados tal cual: ese archivo
  * no exporta sus goldens). Cubre las cuatro bandas y los dos lados del corte
- * de `flagged` (< 40): Mayonesa 38 y Nutella 28 salen marcadas, Coca-Cola Zero
- * 47 no. Cualquier cambio en un campo de la respuesta aparece en el diff del
- * snapshot, que se revisa y se actualiza a propósito (`vitest -u`) en el PR
- * del ítem que lo cambia.
+ * de `highlight` (50, el borde de la banda Buena). Cualquier cambio en un
+ * campo de la respuesta aparece en el diff del snapshot, que se revisa y se
+ * actualiza a propósito (`vitest -u`) en el PR del ítem que lo cambia.
  */
-describe('caracterización — respuesta completa de mapRawToProduct (T-02)', () => {
+const IDENTIDAD = { id: '6f1e2c3d-0000-4000-8000-000000000001', fallbackName: '7790000000000' };
+
+describe('caracterización — respuesta completa de toProductDetail (T-02)', () => {
   const PRODUCTOS: ReadonlyArray<[string, RawProduct]> = [
     ['Coca-Cola', {
       product_name: 'Coca-Cola', categories: 'Bebidas, Gaseosas',
@@ -68,6 +70,47 @@ describe('caracterización — respuesta completa de mapRawToProduct (T-02)', ()
   ];
 
   it.each(PRODUCTOS)('%s', (_label, raw) => {
-    expect(mapRawToProduct(raw, '7790000000000')).toMatchSnapshot();
+    expect(toProductDetail(raw, IDENTIDAD)).toMatchSnapshot();
+  });
+
+  it.each(PRODUCTOS)('%s: el resumen es exactamente la parte común del detalle (K-04)', (_label, raw) => {
+    const detalle = toProductDetail(raw, IDENTIDAD);
+    const resumen = toProductSummary(raw, IDENTIDAD);
+    expect(Object.keys(resumen)).toEqual(['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor']);
+    for (const [campo, valor] of Object.entries(resumen)) {
+      expect(detalle[campo as keyof typeof detalle], campo).toEqual(valor);
+    }
+  });
+});
+
+describe('identidad, nombre, marca e imagen (K-04)', () => {
+  const base: RawProduct = { product_name: 'Yogur natural (1 kg)', ingredients_text: 'leche, fermentos' };
+
+  it('los 12 campos del detalle, ni uno más', () => {
+    expect(Object.keys(toProductDetail(base, IDENTIDAD)).sort()).toEqual([
+      'brand', 'fito', 'highlight', 'id', 'imageUrl', 'ingredients', 'name', 'noScore',
+      'nutrition', 'score', 'scoreColor', 'scoreLabel',
+    ]);
+  });
+
+  it('id es el de la identidad; el nombre se limpia y, si falta, se usa el de reemplazo', () => {
+    expect(toProductDetail(base, IDENTIDAD)).toMatchObject({ id: IDENTIDAD.id, name: 'Yogur natural' });
+    expect(toProductSummary({ ...base, product_name: undefined }, IDENTIDAD).name).toBe('7790000000000');
+  });
+
+  it('brand vacía → null; imageUrl prefiere la foto del frente', () => {
+    expect(toProductSummary({ ...base, brands: '' }, IDENTIDAD).brand).toBeNull();
+    expect(toProductSummary({ ...base, brands: 'La Serenísima' }, IDENTIDAD).brand).toBe('La Serenísima');
+    expect(toProductSummary(base, IDENTIDAD).imageUrl).toBeNull();
+    expect(toProductSummary({ ...base, image_url: 'a.jpg' }, IDENTIDAD).imageUrl).toBe('a.jpg');
+    expect(toProductSummary({ ...base, image_url: 'a.jpg', image_front_url: 'f.jpg' }, IDENTIDAD).imageUrl).toBe('f.jpg');
+  });
+
+  it('cada ingrediente lleva solo nombre, severidad y descripción', () => {
+    const { ingredients } = toProductDetail(base, IDENTIDAD);
+    expect(ingredients.length).toBeGreaterThan(0);
+    for (const ingrediente of ingredients) {
+      expect(Object.keys(ingrediente)).toEqual(['name', 'sev', 'desc']);
+    }
   });
 });

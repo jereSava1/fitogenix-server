@@ -14,7 +14,7 @@
  *
  * `ftg:product:<clave>` guarda lo mismo que devuelve la base: el producto
  * CRUDO (`raw`) con su identidad (`productId`) y su origen (`dataSource`). El
- * lookup lo pasa por `mapRawToProduct` en cada lectura, igual que un hit de
+ * lookup lo pasa por `toProductDetail` en cada lectura, igual que un hit de
  * Supabase, así que el cache no depende ni del motor ni del contrato: un
  * cambio de puntaje o un campo nuevo en la respuesta no dejan entradas que
  * haya que invalidar.

@@ -7,6 +7,7 @@ import type { SavedRepository } from './ports';
 
 const filaValida = {
   product_id: 'uuid-galletitas',
+  created_at: '2026-07-08T12:00:00+00:00',
   products: {
     id: 'uuid-galletitas',
     product_name: 'Galletitas',
@@ -39,8 +40,9 @@ describe('makeSavedProducts', () => {
     const items = await makeSavedProducts(repo).listSavedProducts('user-1');
 
     expect(repo.list).toHaveBeenCalledWith('user-1');
-    expect(items.map((p) => p.productId)).toEqual(['uuid-galletitas']);
+    expect(items.map((p) => p.id)).toEqual(['uuid-galletitas']);
     expect(items[0].name).toBe('Galletitas');
+    expect(items[0].savedAt).toBe('2026-07-08T12:00:00.000Z');
   });
 
   it('saveProduct y removeSavedProduct delegan en el repositorio', async () => {
