@@ -65,7 +65,6 @@
 | D-57 | Transición a `/v1` | Sin alias: todo a `/v1` de una vez | [05-plan.md](05-plan.md) | Vigente |
 | D-58 | Consultas y migraciones en Supabase | Se entregan las queries y las corre el responsable | [05-plan.md](05-plan.md) | Vigente |
 | D-59 | Estrategia de ramas | Integración `fitogenix/refactor-cleanup` desde `main` en ambos repos; features → integración → `main` al final | [05-plan.md](05-plan.md) | Vigente |
-| D-60 | Analítica (L-09, RF-047) | **Se difiere** la implementación a la etapa 9 ([DT-05](deuda-tecnica.md)), con la dirección ya elegida: **endpoint propio `POST /v1/events`** (lista cerrada de eventos, sin texto libre ni datos de salud) y tabla propia sin grants para `anon`. La tasa de "fuera de catálogo" (RNF-U04) se mide **del lado del server** con los 404 del lookup. **Sin SDK de terceros en la app**; PostHog queda solo como posible destino server-side | [deuda-tecnica.md](deuda-tecnica.md) | Vigente |
 
 ## Decisiones de arquitectura (ADRs)
 
