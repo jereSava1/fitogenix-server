@@ -218,6 +218,7 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 | ID | Estado |
 |---|---|
 | H-04 | ✅ Hecho en `fix/h04-normalizacion-unica`. El cache `query → barcode` de Redis usa `domain/query.ts · normalizeQuery` (antes solo minúsculas y recorte): una query con acentos o espacios de más comparte clave con la equivalente. Las claves viejas con acentos quedan como miss una vez (cache, sin costo). Test nuevo; mutación (volver a la normalización propia) detectada |
+| H-05 | ✅ Hecho en `chore/h05-dockerfile`. `Dockerfile` multi-stage (build con dependencias de desarrollo → runtime `node:22-alpine` con `npm ci --omit=dev`, usuario `node`, `HEALTHCHECK` sobre `/health`) y `.dockerignore`. Job `docker` en el CI: construye la imagen, la levanta con variables de relleno y exige `/health` 200. Verificado local simulando el runtime (solo dependencias de producción + `dist/`): arranca y `/health` responde 200 |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
@@ -225,7 +226,7 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 | H-02 | P1 | REFACTOR | server | JWT local con JWKS (`jose`); `optionalAuth` reemplaza a `resolveUserIdFromToken`; `getUser` extra en `DELETE /v1/users/me` | ADR-0008 (aceptado), RNF-D03 | **Alto (auth)** | Antes: T-04 y T-05. Después: T-04 actualizado a propósito (**Auth caído → 503**; y decidir los otros tres `CARACTERIZA` de `auth.test.ts`: `getUser` que lanza, `Bearer` sin espacio, header sin prefijo) + `iss` / `aud` incorrectos → 401 | `PR-31 feat(auth): validación local del JWT` |
 | H-03 | P1 | REFACTOR | server | CORS con lista explícita (o deshabilitado: la app nativa no lo necesita); límites por ruta (D-48); `logger.redact`. (El 429 en vez de 500 ya se arregló en K-03, D-69) | RNF-S04, RNF-S06, D-48 | Bajo | Antes: `buildApp.test.ts` (M-02). Después: tests de 429 por ruta | `PR-32 feat: CORS, límites y redact` |
 | H-04 | P2 | REFACTOR | server | ✅ Una sola `normalizeQuery`, también para las claves de Redis | 03-contratos §B.4.9 | Bajo | Después: test de normalización con acentos | `PR-33 fix(catalog): normalización única` |
-| H-05 | P2 | AGREGAR | server | `Dockerfile` multi-stage | ADR-0007 | Bajo | Después: build de la imagen en CI | `PR-34 chore: Dockerfile portable` |
+| H-05 | P2 | AGREGAR | server | ✅ `Dockerfile` multi-stage | ADR-0007 | Bajo | Después: build de la imagen en CI | `PR-34 chore: Dockerfile portable` |
 
 ### 7.2 Etapa 7 — Funcionalidad nueva y native "todo por el server"
 

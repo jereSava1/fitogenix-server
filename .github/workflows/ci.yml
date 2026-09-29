@@ -19,3 +19,21 @@ jobs:
       - run: npm run lint:unused
       - run: npm run contract:check
       - run: npm test
+
+  # La imagen de ADR-0007 construye, arranca y responde /health (valores de relleno:
+  # /health no toca la base).
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t fitogenix-server .
+      - run: |
+          docker run -d --name server -p 3000:3000 \
+            -e SUPABASE_URL=https://example.supabase.co -e SUPABASE_SECRET_KEY=ci \
+            fitogenix-server
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:3000/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs server
+          exit 1
