@@ -147,7 +147,8 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | ID | Estado |
 |---|---|
 | M-01 | ✅ Hecho en `refactor/m01-platform`, mergeado a `fitogenix/refactor-cleanup`. `src/platform/config.ts` (con su test), `platform/supabase.ts · supabaseAdmin()` (un solo cliente admin: antes había uno por servicio y otro en auth) y `platform/redis.ts · getRedis()`. `deleteMe` sigue creando su cliente por request hasta M-07. `.dependency-cruiser.cjs` desde el borrador, con las reglas de módulos, capas y SDKs en `warn` y las generales (ciclos, importar tests) en `error`; `npm run lint:deps` en CI: 0 errores, 24 avisos (los que resuelven M-02 a M-09). Sin cambios de comportamiento: 508 tests y snapshots idénticos |
-| M-02 a M-10 | Pendientes |
+| M-02 | ✅ Hecho en `refactor/m02-http-auth`, mergeado a `fitogenix/refactor-cleanup`. `plugins/auth.ts` → `platform/http/auth.ts` (**T-04 idéntico**: el test se movió sin cambios; T-05 pasa sin tocarse). `platform/http/buildApp.ts` arma la app base (CORS, rate limit, `/health`) sin rutas de negocio, para no romper la regla "platform no conoce el negocio"; `main.ts` queda como composition root y registra las rutas. `errors.ts` no se crea acá: el manejador central de errores cambia comportamiento y es H-01. `buildApp.test.ts` (4 tests) encontró un bug: **pasado el rate limit, la respuesta es 500 y no 429** (caracterizado, se corrige en H-03) |
+| M-03 a M-10 | Pendientes |
 
 Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 2 pasan **sin tocarlos** (solo cambian los imports); un módulo por PR; cada PR revertible por sí solo. Mapa archivo por archivo: [02-arquitectura.md §5](02-arquitectura.md).
 
@@ -190,7 +191,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 |---|---|---|---|---|---|---|---|---|
 | H-01 | P0 | REFACTOR | server | `DependencyUnavailableError`, manejador de errores central, timeouts (Redis 200 ms sin reintentos; Supabase 2 s), `/health/ready` | ADR-0006, RNF-D01/D02/D05, RNF-U01 | Medio | Antes: T-06. Después: T-06 actualizado a propósito (**base caída → 503**, también cuando el cliente lanza; Redis caído o colgado → 200 rápido) | `PR-30 fix: 503 ante caídas, nunca 404` |
 | H-02 | P1 | REFACTOR | server | JWT local con JWKS (`jose`); `optionalAuth` reemplaza a `resolveUserIdFromToken`; `getUser` extra en `DELETE /v1/users/me` | ADR-0008 (aceptado), RNF-D03 | **Alto (auth)** | Antes: T-04 y T-05. Después: T-04 actualizado a propósito (**Auth caído → 503**; y decidir los otros tres `CARACTERIZA` de `auth.test.ts`: `getUser` que lanza, `Bearer` sin espacio, header sin prefijo) + `iss` / `aud` incorrectos → 401 | `PR-31 feat(auth): validación local del JWT` |
-| H-03 | P1 | REFACTOR | server | CORS con lista explícita (o deshabilitado: la app nativa no lo necesita); límites por ruta (D-48); `logger.redact` | RNF-S04, RNF-S06, D-48 | Bajo | Después: tests de 429 por ruta | `PR-32 feat: CORS, límites y redact` |
+| H-03 | P1 | REFACTOR | server | CORS con lista explícita (o deshabilitado: la app nativa no lo necesita); límites por ruta (D-48); `logger.redact`; **el límite responde 429 y no 500** (hoy `errorResponseBuilder` no pone `statusCode`: caracterizado en M-02) | RNF-S04, RNF-S06, D-48 | Bajo | Antes: `buildApp.test.ts` (M-02). Después: tests de 429 por ruta | `PR-32 feat: CORS, límites y redact` |
 | H-04 | P2 | REFACTOR | server | Una sola `normalizeQuery`, también para las claves de Redis | 03-contratos §B.4.9 | Bajo | Después: test de normalización con acentos | `PR-33 fix(catalog): normalización única` |
 | H-05 | P2 | AGREGAR | server | `Dockerfile` multi-stage | ADR-0007 | Bajo | Después: build de la imagen en CI | `PR-34 chore: Dockerfile portable` |
 

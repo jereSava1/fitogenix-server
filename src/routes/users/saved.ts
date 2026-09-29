@@ -5,7 +5,7 @@
  */
 
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../../plugins/auth';
+import { requireAuth } from '../../platform/http/auth';
 import {
   listSavedProducts,
   removeSavedProduct,
