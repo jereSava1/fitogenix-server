@@ -33,11 +33,11 @@
      Sodio mg/100g   10    <300
      Calorías        21    <25    N/A
 
-   Detalle y fuentes: `fitogenix-agents/nutricion/NUTRICION.md` §N3 y §N6.
+   Detalle y fuentes: `docs/dominio-scoring.md` §S4 y §S6.
 
    Que NO haya octógono de grasas trans es correcto y está verificado: la ley
    no la incluye entre los nutrientes críticos, a diferencia de OPS que sí la
-   contempla (≥1% de la energía). Ver NUTRICION.md §N3.
+   contempla (≥1% de la energía). Ver `docs/dominio-scoring.md` §S4.
 
    La excepción del art. 7 —alimentos in natura e ingredientes culinarios sin
    nutrientes críticos añadidos— NO se implementa acá sino en `steps.ts`
@@ -75,7 +75,7 @@ const SODIUM_PER_100G = 300;
  * 🟡 Acá se aproxima con ≤4 kcal/100 ml, porque el motor no conoce el tamaño de
  * porción: solo tiene el panel por 100. Una porción de bebida suele ser 200 ml,
  * así que el criterio real sería ≈2 kcal/100 ml — esta aproximación es más
- * inclusiva y puede marcar alguna bebida de más. Ver NUTRICION.md §N6.
+ * inclusiva y puede marcar alguna bebida de más. Ver `docs/dominio-scoring.md` §S4.
  */
 const SODIUM_PER_100ML_NO_ENERGY = 40;
 const NO_ENERGY_KCAL = 4;
