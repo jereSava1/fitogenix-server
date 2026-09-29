@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json",
     "lint:deps": "depcruise src scripts etl --config .dependency-cruiser.cjs",
     "lint:unused": "knip --production",
+    "contract:generate": "tsx scripts/generate-contract.ts",
+    "contract:check": "tsx scripts/generate-contract.ts --check",
     "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -31,6 +33,8 @@
   "dependencies": {
     "@fastify/cors": "^10.0.2",
     "@fastify/rate-limit": "^10.2.2",
+    "@fastify/type-provider-typebox": "^5.2.0",
+    "@sinclair/typebox": "^0.34.52",
     "@supabase/supabase-js": "^2.108.2",
     "@upstash/redis": "^1.38.0",
     "dotenv": "^17.4.2",
@@ -39,7 +43,9 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.55.0",
+    "@fastify/swagger": "^9.9.0",
     "@types/node": "^22.0.0",
+    "ajv": "^8.20.0",
     "dependency-cruiser": "^18.4.0",
     "knip": "^5.88.1",
     "tsx": "^4.19.2",

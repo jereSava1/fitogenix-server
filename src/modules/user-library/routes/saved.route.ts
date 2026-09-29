@@ -5,16 +5,26 @@
  * módulo (M-06).
  */
 
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
 import { requireAuth } from '../../../platform/http/auth';
+import { addSharedSchemas } from '../../../platform/http/schemas';
 import type { SavedProducts } from '../application/saved';
+import {
+  librarySharedSchemas,
+  listSavedSchema,
+  removeSavedSchema,
+  saveProductSchema,
+} from './library.schema';
 
-export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync => async (app) => {
+export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync => async (instance) => {
   const { listSavedProducts, removeSavedProduct, saveProduct } = deps.saved;
+  addSharedSchemas(instance, librarySharedSchemas);
+  const app = instance.withTypeProvider<TypeBoxTypeProvider>();
   await app.register(requireAuth);
 
   // Listado de guardados, más reciente primero.
-  app.get('/users/me/saved', async (request, reply) => {
+  app.get('/users/me/saved', { schema: listSavedSchema }, async (request, reply) => {
     try {
       const items = await listSavedProducts(request.userId);
       return reply.send({ items });
@@ -28,17 +38,7 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
   // payload del lookup). Idempotente: re-guardar algo ya guardado responde
   // { ok: true } igual. `format: 'uuid'` lo valida ajv (Fastify 5 trae
   // ajv-formats vía @fastify/ajv-compiler).
-  app.post<{ Body: { productId: string } }>('/users/me/saved', {
-    schema: {
-      body: {
-        type: 'object',
-        required: ['productId'],
-        properties: {
-          productId: { type: 'string', format: 'uuid' },
-        },
-      },
-    },
-  }, async (request, reply) => {
+  app.post('/users/me/saved', { schema: saveProductSchema }, async (request, reply) => {
     try {
       const result = await saveProduct(request.userId, request.body.productId);
       if (result === 'not_found') {
@@ -52,19 +52,9 @@ export const savedRoutes = (deps: { saved: SavedProducts }): FastifyPluginAsync 
   });
 
   // Quitar un guardado por productId. Idempotente.
-  app.delete<{ Params: { productId: string } }>(
+  app.delete(
     '/users/me/saved/:productId',
-    {
-      schema: {
-        params: {
-          type: 'object',
-          required: ['productId'],
-          properties: {
-            productId: { type: 'string', format: 'uuid' },
-          },
-        },
-      },
-    },
+    { schema: removeSavedSchema },
     async (request, reply) => {
       try {
         await removeSavedProduct(request.userId, request.params.productId);

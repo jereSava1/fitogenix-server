@@ -29,6 +29,7 @@ npm run dev             # tsx watch src/main.ts, puerto 3000
 npm run typecheck    # tsc de src/, etl/ y scripts/ (tsconfig.scripts.json)
 npm run lint:deps    # reglas de dependencias entre módulos (dependency-cruiser); cualquier violación falla
 npm run lint:unused  # código, exports y dependencias sin uso (knip --production, config en knip.json)
+npm run contract:check  # contract/openapi.json al día con los schemas (si falla: npm run contract:generate)
 npm test             # vitest
 ```
 
@@ -46,7 +47,7 @@ El CI (`.github/workflows/ci.yml`) corre lo mismo en cada push y PR. Los tests v
 | `DELETE /users/me` | sí | Eliminar la cuenta |
 | `GET /health` | no | Chequeo de vida |
 
-La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrato objetivo (prefijo `/v1`, errores uniformes, endpoints nuevos) está en [`docs/03-contratos.md`](docs/03-contratos.md).
+La sesión es el JWT de Supabase Auth en `Authorization: Bearer …`. El contrato de estas rutas (request, respuestas y errores) está en [`contract/openapi.json`](contract/openapi.json), generado desde los schemas TypeBox de cada módulo; sus cambios, en [`contract/CHANGELOG.md`](contract/CHANGELOG.md). El contrato objetivo (prefijo `/v1`, errores uniformes, endpoints nuevos) está en [`docs/03-contratos.md`](docs/03-contratos.md).
 
 ## Cómo resuelve un producto
 

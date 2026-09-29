@@ -1,6 +1,8 @@
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
+import { addSharedSchemas, ApiErrorSchema } from '../../../platform/http/schemas';
 import type { LookupProduct } from '../application/lookupProduct';
-import { lookupResponseSchema } from './lookup.schema';
+import { lookupBodySchema, lookupResponseSchema, ProductSchema } from './lookup.schema';
 
 /**
  * Registro del escaneo, inyectado desde `main.ts` (docs/02-arquitectura.md
@@ -17,26 +19,23 @@ export function lookupRoutes(deps: {
 }): FastifyPluginAsync {
   const { lookup, onScan } = deps;
 
-  return async (app) => {
+  return async (instance) => {
+    addSharedSchemas(instance, [ApiErrorSchema, ProductSchema]);
+    const app = instance.withTypeProvider<TypeBoxTypeProvider>();
+
     // Sin requireAuth a propósito: los anónimos también pueden buscar. Si la
     // request trae un Bearer token, el escaneo se registra en el historial del
     // usuario en background (ver abajo).
-    app.post<{ Body: { query: string } }>('/products/lookup', {
+    app.post('/products/lookup', {
       schema: {
-        body: {
-          type: 'object',
-          required: ['query'],
-          properties: {
-            query: { type: 'string', minLength: 1, maxLength: 200 },
-          },
-        },
+        tags: ['catalog'],
+        summary: 'Buscar un producto por código de barras o por nombre',
+        body: lookupBodySchema,
         // Contrato de respuesta EXPLÍCITO (ver lookup.schema.ts). Fastify lo
         // usa para serializar con fast-json-stringify; la contracara es que
         // todo campo no declarado se elimina de la respuesta, así que el
         // schema está atado a `FitogenixProduct` en tiempo de compilación.
-        // La fuente de verdad del contrato es el tipo `FitogenixProduct`
-        // (application/productResponse.ts); el espejo
-        // del cliente vive en fitogenix-native/src/lib/contracts/.
+        // Desde K-01 es la fuente del OpenAPI (contract/openapi.json).
         response: lookupResponseSchema,
       },
     }, async (request, reply) => {
