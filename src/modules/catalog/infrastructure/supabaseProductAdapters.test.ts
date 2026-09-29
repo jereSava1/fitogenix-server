@@ -6,34 +6,16 @@ import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
 // en las variables de resultado. Cadenas cubiertas:
 //   .select('*').eq().maybeSingle()                  → mockRow (getCachedProductBy*)
 //   .rpc('search_products_by_name', {...})           → mockRpcRows (findCachedProductByName)
-//   .select('id, product_name').is().ilike().limit() → upgradeRows (upgrade name→barcode)
-//   .upsert().select('id').single()                  → upsertResult (setCachedProduct)
-//   .update().eq().select('id').single()             → updateResult (upgrade update)
 let mockRow: Record<string, unknown> | null = null;
 let mockError: unknown = null;
 let mockRpcRows: Record<string, unknown>[] | null = null;
 let mockRpcError: unknown = null;
-let upgradeRows: Record<string, unknown>[] | null = [];
-let upgradeError: unknown = null;
-type SingleResult = { data: Record<string, unknown> | null; error: { message: string } | null };
-let upsertResult: SingleResult = { data: null, error: null };
-let updateResult: SingleResult = { data: null, error: null };
 
 const maybeSingle = vi.fn(async () => ({ data: mockRow, error: mockError }));
 const eq = vi.fn(() => ({ maybeSingle }));
-const isLimit = vi.fn(async () => ({ data: upgradeRows, error: upgradeError }));
-const isIlike = vi.fn(() => ({ limit: isLimit }));
-const isFn = vi.fn(() => ({ ilike: isIlike }));
-const select = vi.fn(() => ({ eq, is: isFn }));
+const select = vi.fn(() => ({ eq }));
 const rpc = vi.fn(async () => ({ data: mockRpcRows, error: mockRpcError }));
-const upsertSingle = vi.fn(async () => upsertResult);
-const upsertSelect = vi.fn(() => ({ single: upsertSingle }));
-const upsert = vi.fn(() => ({ select: upsertSelect }));
-const updateSingle = vi.fn(async () => updateResult);
-const updateSelect = vi.fn(() => ({ single: updateSingle }));
-const updateEq = vi.fn(() => ({ select: updateSelect }));
-const update = vi.fn((_payload: Record<string, unknown>) => ({ eq: updateEq }));
-const from = vi.fn(() => ({ select, upsert, update }));
+const from = vi.fn(() => ({ select }));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from, rpc })),
@@ -65,10 +47,6 @@ beforeEach(() => {
   mockError = null;
   mockRpcRows = null;
   mockRpcError = null;
-  upgradeRows = [];
-  upgradeError = null;
-  upsertResult = { data: null, error: null };
-  updateResult = { data: null, error: null };
 });
 
 // Producto mínimo para payloads/persistencia.
@@ -387,127 +365,6 @@ describe('findCachedProductByName', () => {
     mockRpcRows = null;
     mockRpcError = { message: 'boom' };
     await expect(cache.findCachedProductByName('coca cola')).resolves.toBeNull();
-  });
-});
-
-describe('setCachedProduct', () => {
-  it('upsert por barcode: onConflict barcode, awaiteado, devuelve el id de la fila', async () => {
-    upsertResult = { data: { id: 'uuid-nuevo' }, error: null };
-
-    const id = await cache.setCachedProduct(makeProduct(), rawGalletitas, {
-      barcode: '7790001',
-    });
-
-    expect(id).toBe('uuid-nuevo');
-    expect(upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ barcode: '7790001', product_name: 'Galletitas' }),
-      { onConflict: 'barcode' },
-    );
-    expect(upsertSelect).toHaveBeenCalledWith('id');
-    // Con barcode SIEMPRE se intenta primero el upgrade name→barcode.
-    expect(isFn).toHaveBeenCalledWith('barcode', null);
-    // Sin fila upgradeable no hay update.
-    expect(update).not.toHaveBeenCalled();
-  });
-
-  it('upsert por nameKey: onConflict name_key y SIN lookup de upgrade', async () => {
-    upsertResult = { data: { id: 'uuid-alfajor' }, error: null };
-
-    const id = await cache.setCachedProduct(
-      makeProduct({ name: 'Alfajor Artesanal', dataSource: 'ai' }),
-      rawGalletitas,
-      { nameKey: 'alfajor artesanal' },
-    );
-
-    expect(id).toBe('uuid-alfajor');
-    expect(upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ name_key: 'alfajor artesanal' }),
-      { onConflict: 'name_key' },
-    );
-    // El upgrade aplica solo al camino con barcode.
-    expect(isFn).not.toHaveBeenCalled();
-  });
-
-  it('upgrade name→barcode: UPDATE de la fila existente, id conservado, sin duplicar', async () => {
-    // Fila vieja solo-IA (barcode null) con el mismo nombre normalizado.
-    upgradeRows = [{ id: 'uuid-viejo', product_name: 'galletitas' }];
-    updateResult = { data: { id: 'uuid-viejo' }, error: null };
-
-    const id = await cache.setCachedProduct(
-      makeProduct({ name: 'Galletitas' }),
-      rawGalletitas,
-      { barcode: '7790001' },
-    );
-
-    // Devuelve el id de la fila EXISTENTE (los guardados sobreviven).
-    expect(id).toBe('uuid-viejo');
-    expect(updateEq).toHaveBeenCalledWith('id', 'uuid-viejo');
-    // El update setea el barcode pero NO trae name_key → el alias se conserva.
-    const updatePayload = update.mock.calls[0][0];
-    expect(updatePayload.barcode).toBe('7790001');
-    expect('name_key' in updatePayload).toBe(false);
-    // No se creó otra fila.
-    expect(upsert).not.toHaveBeenCalled();
-  });
-
-  it('upgrade matchea por nombre NORMALIZADO (acentos, mayúsculas, espacios)', async () => {
-    upgradeRows = [{ id: 'uuid-viejo', product_name: '  Galletítas   Dulces ' }];
-    updateResult = { data: { id: 'uuid-viejo' }, error: null };
-
-    const id = await cache.setCachedProduct(
-      makeProduct({ name: 'galletitas dulces' }),
-      rawGalletitas,
-      { barcode: '7790001' },
-    );
-
-    expect(id).toBe('uuid-viejo');
-    expect(upsert).not.toHaveBeenCalled();
-  });
-
-  it('upgrade exige igualdad EXACTA del nombre normalizado: si difiere, upsert normal', async () => {
-    // El prefiltro ILIKE la trae como candidata, pero no es el mismo producto.
-    upgradeRows = [{ id: 'uuid-otro', product_name: 'Galletitas Chocolate' }];
-    upsertResult = { data: { id: 'uuid-nuevo' }, error: null };
-
-    const id = await cache.setCachedProduct(
-      makeProduct({ name: 'Galletitas' }),
-      rawGalletitas,
-      { barcode: '7790001' },
-    );
-
-    expect(id).toBe('uuid-nuevo');
-    expect(update).not.toHaveBeenCalled();
-    expect(upsert).toHaveBeenCalled();
-  });
-
-  it('error de upsert → null y se loguea (el lookup responde igual, sin productId)', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    upsertResult = { data: null, error: { message: 'boom' } };
-
-    const id = await cache.setCachedProduct(makeProduct(), rawGalletitas, {
-      barcode: '7790001',
-    });
-
-    expect(id).toBeNull();
-    expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-
-  it('si el update del upgrade falla, cae al upsert como último recurso', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    upgradeRows = [{ id: 'uuid-viejo', product_name: 'Galletitas' }];
-    updateResult = { data: null, error: { message: 'boom' } };
-    upsertResult = { data: { id: 'uuid-nuevo' }, error: null };
-
-    const id = await cache.setCachedProduct(
-      makeProduct({ name: 'Galletitas' }),
-      rawGalletitas,
-      { barcode: '7790001' },
-    );
-
-    expect(id).toBe('uuid-nuevo');
-    expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
   });
 });
 
