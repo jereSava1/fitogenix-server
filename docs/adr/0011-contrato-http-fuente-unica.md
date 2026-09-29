@@ -1,6 +1,6 @@
 # ADR-0011 · El contrato HTTP como fuente única: TypeBox → OpenAPI → tipos del cliente
 
-- **Estado:** **Aceptado** (D-68, 2026-09-29): implementado en K-01 para el contrato actual (pasos 1 a 3: schemas TypeBox con `@sinclair/typebox` 0.34, `contract/openapi.json` generado y verificado en CI, tests de contrato). El formato único de errores y `/v1` llegaron con K-03 (contrato `0.2.0`), y los tipos generados de native (paso 4) llegan con K-05
+- **Estado:** **Aceptado** (D-68, 2026-09-29): implementado en K-01 para el contrato actual (pasos 1 a 3: schemas TypeBox con `@sinclair/typebox` 0.34, `contract/openapi.json` generado y verificado en CI, tests de contrato). El formato único de errores y `/v1` llegaron con K-03 (contrato `0.2.0`), y los tipos generados de native (paso 4) llegaron con K-05 (2026-09-29, D-72: `npm run contract:sync` / `contract:check` en native, `openapi-typescript` 7.13 con un `overrides` para usar TS 6, `openapi-fetch` 0.17). Límite conocido: `tsc` no detecta un campo **de más** en un body enviado con `openapi-fetch`; lo cubren los tests de native, que comparan cada body
 - **Fecha:** 2026-09-28
 - **Relacionado:** [03-contratos.md §B.4.9 y §B.5](../03-contratos.md), ADR-0003, ADR-0010
 

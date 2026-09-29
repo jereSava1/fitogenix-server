@@ -561,7 +561,7 @@ DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, 
 
 ## B.5 Fuente única del contrato: TypeBox → OpenAPI → tipos del cliente
 
-Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01, K-03 y K-04, 2026-09-29):** pasos 1 a 3 hechos: schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. Desde K-03 el contrato es `/v1` con el formato único de errores (`0.2.0`); desde K-04, detalle y resumen del producto y campos de más rechazados (`0.3.0`). El paso 4 es K-05 (native). Resumen del pipeline:
+Decisión en [ADR-0011](adr/0011-contrato-http-fuente-unica.md). **Estado (K-01, K-03 y K-04, 2026-09-29):** pasos 1 a 3 hechos: schemas TypeBox, `contract/openapi.json` generado y verificado en CI, tests de contrato en `src/contract.test.ts`. Desde K-03 el contrato es `/v1` con el formato único de errores (`0.2.0`); desde K-04, detalle y resumen del producto y campos de más rechazados (`0.3.0`). **Paso 4 hecho en K-05** (native): `src/api/schema.d.ts` generado con `openapi-typescript` y cliente sobre `openapi-fetch`; se borraron el espejo manual y el reexport. El paso 4 es K-05 (native). Resumen del pipeline:
 
 ```mermaid
 flowchart LR
