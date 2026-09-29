@@ -8,14 +8,15 @@
  * distintos por usuario.
  *
  * El registro se dispara fire-and-forget desde POST /products/lookup
- * (src/routes/products/lookup.ts): NUNCA debe demorar ni romper la respuesta
+ * (modules/catalog/routes/lookup.route.ts, vía el onScan que arma main.ts):
+ * NUNCA debe demorar ni romper la respuesta
  * del lookup, por eso recordScan loguea errores en vez de propagarlos.
  * El listado se sirve en GET /users/me/history (src/routes/users/history.ts)
- * con el mismo embed + mapeo que los guardados (productRowMapper).
+ * con el mismo embed + mapeo que los guardados (productResponseFromRow de catalog).
  */
 
 import { supabaseAdmin as admin } from '../platform/supabase';
-import { joinedRowToProduct } from './productRowMapper';
+import { productResponseFromRow } from '../modules/catalog';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 
@@ -87,7 +88,7 @@ export async function listScanHistory(
   const items: FitogenixProduct[] = [];
 
   for (const rowUnknown of rows) {
-    const product = joinedRowToProduct(rowUnknown);
+    const product = productResponseFromRow(rowUnknown);
     if (product) items.push(product);
   }
 

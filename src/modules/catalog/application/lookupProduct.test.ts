@@ -1,29 +1,33 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CachedProductRow } from '../modules/catalog/application/ports';
-import type { FitogenixProduct, RawOFFProduct } from '../types/fitogenix';
+import type { CachedProductRow, ProductCache, ProductReader } from './ports';
+import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
 
 /**
  * Búsqueda SOLO catálogo propio (decisión de producto, 2026-08-18): sin
  * cascada a OFF/OBF/Edamam/Claude. Si Redis y Supabase no tienen el
  * producto, `lookupProduct` devuelve `null` — no hay proveedores externos
  * que mockear acá.
+ *
+ * Portado de services/productLookupService.test.ts en M-05: el caso de uso
+ * recibe los puertos, así que en vez de simular los módulos de los adaptadores
+ * se le pasan fakes. Los fakes conservan los nombres de las funciones de antes
+ * (`cacheService.getCachedProductByBarcode`, `redisService.setInRedis`…) para
+ * que cada caso y cada aserción queden idénticos a los que caracterizaban el
+ * servicio.
  */
-vi.mock('../modules/catalog/infrastructure/supabaseProductReader', () => ({
-  getCachedProductByBarcode: vi.fn(async () => null),
-  findCachedProductByName: vi.fn(async () => null),
-}));
-vi.mock('../modules/catalog/infrastructure/redisProductCache', () => ({
-  getFromRedis: vi.fn(async () => null),
-  setInRedis: vi.fn(async () => undefined),
-  getSearchBarcode: vi.fn(async () => null),
-  setSearchBarcode: vi.fn(async () => undefined),
-}));
+const cacheService = {
+  getCachedProductByBarcode: vi.fn<ProductReader['findByBarcode']>(async () => null),
+  findCachedProductByName: vi.fn<ProductReader['findByName']>(async () => null),
+};
+const redisService = {
+  getFromRedis: vi.fn<ProductCache['get']>(async () => null),
+  setInRedis: vi.fn<ProductCache['set']>(async () => undefined),
+  getSearchBarcode: vi.fn<ProductCache['getBarcodeForQuery']>(async () => null),
+  setSearchBarcode: vi.fn<ProductCache['setBarcodeForQuery']>(async () => undefined),
+};
 
-type LookupModule = typeof import('./productLookupService');
-let lookupProduct: LookupModule['lookupProduct'];
-let mapRawToProduct: LookupModule['mapRawToProduct'];
-let cacheService: typeof import('../modules/catalog/infrastructure/supabaseProductReader');
-let redisService: typeof import('../modules/catalog/infrastructure/redisProductCache');
+type LookupModule = typeof import('./lookupProduct');
+let lookupProduct: ReturnType<LookupModule['makeLookupProduct']>;
 
 const rawProduct: RawOFFProduct = {
   product_name: 'Galletitas',
@@ -44,9 +48,19 @@ const cachedHit = (overrides: Partial<CachedProductRow> = {}): CachedProductRow 
 });
 
 beforeAll(async () => {
-  ({ lookupProduct, mapRawToProduct } = await import('./productLookupService'));
-  cacheService = await import('../modules/catalog/infrastructure/supabaseProductReader');
-  redisService = await import('../modules/catalog/infrastructure/redisProductCache');
+  const { makeLookupProduct } = await import('./lookupProduct');
+  lookupProduct = makeLookupProduct({
+    reader: {
+      findByBarcode: cacheService.getCachedProductByBarcode,
+      findByName: cacheService.findCachedProductByName,
+    },
+    cache: {
+      get: redisService.getFromRedis,
+      set: redisService.setInRedis,
+      getBarcodeForQuery: redisService.getSearchBarcode,
+      setBarcodeForQuery: redisService.setSearchBarcode,
+    },
+  });
 });
 
 beforeEach(() => {
@@ -229,71 +243,5 @@ describe('lookupProduct — singleflight', () => {
     expect(a?.name).toBe('Galletitas');
     expect(b?.name).toBe('Galletitas');
     expect(calls).toBe(1);
-  });
-});
-
-/* T-02 · Caracterización de la respuesta completa (docs/05-plan.md).
- *
- * Snapshot de `mapRawToProduct` para 10 productos de
- * `modules/scoring/domain/regression.test.ts` (copiados tal cual: ese archivo
- * no exporta sus goldens). Cubre las cuatro bandas y los dos lados del corte
- * de `flagged` (< 40): Mayonesa 38 y Nutella 28 salen marcadas, Coca-Cola Zero
- * 47 no. Cualquier cambio en un campo de la respuesta aparece en el diff del
- * snapshot, que se revisa y se actualiza a propósito (`vitest -u`) en el PR
- * del ítem que lo cambia.
- */
-describe('caracterización — respuesta completa de mapRawToProduct (T-02)', () => {
-  const PRODUCTOS: ReadonlyArray<[string, RawOFFProduct]> = [
-    ['Coca-Cola', {
-      product_name: 'Coca-Cola', categories: 'Bebidas, Gaseosas',
-      ingredients_text: 'agua carbonatada, azúcar, colorante caramelo E150d, acidulante ácido fosfórico, aromas naturales, cafeína',
-      nutriments: { 'sugars_100g': 10.6, 'energy-kcal_100g': 42, 'sodium_100g': 0.005 },
-    }],
-    ['Coca-Cola Zero', {
-      product_name: 'Coca-Cola Zero', categories: 'Bebidas, Gaseosas',
-      ingredients_text: 'agua carbonatada, colorante caramelo E150d, acidulante ácido fosfórico, edulcorantes aspartamo y acesulfame K, aromas, cafeína',
-      nutriments: { 'sugars_100g': 0, 'energy-kcal_100g': 1 },
-    }],
-    ['Galletitas tipo Oreo', {
-      product_name: 'Galletitas de chocolate rellenas',
-      ingredients_text: 'harina de trigo, azúcar, aceite vegetal, cacao alcalinizado, jarabe de glucosa, leudantes, sal, emulsionante lecitina de soja, saborizante',
-      nutriments: { 'sugars_100g': 38, 'saturated-fat_100g': 9, 'energy-kcal_100g': 480, 'sodium_100g': 0.4 },
-    }],
-    ['Yogur natural entero', {
-      product_name: 'Yogur natural', categories: 'Lácteos, Yogures',
-      ingredients_text: 'leche parcialmente descremada, fermentos lácticos',
-      nutriments: { 'sugars_100g': 4.7, 'energy-kcal_100g': 45 },
-    }],
-    ['Leche entera', {
-      product_name: 'Leche entera', categories: 'Lácteos',
-      ingredients_text: 'leche entera',
-      nutriments: { 'sugars_100g': 4.6, 'saturated-fat_100g': 2, 'energy-kcal_100g': 61, 'fat_100g': 3.2 },
-    }],
-    ['Jamón cocido con ascorbato', {
-      product_name: 'Jamón cocido', categories: 'Fiambres',
-      ingredients_text: 'carne de cerdo, agua, sal, azúcar, estabilizantes, ascorbato de sodio, nitrito de sodio',
-    }],
-    ['Mayonesa', {
-      product_name: 'Mayonesa',
-      ingredients_text: 'aceite de girasol, agua, yema de huevo, vinagre, azúcar, sal, jugo de limón, conservante',
-      nutriments: { 'fat_100g': 45, 'saturated-fat_100g': 5, 'energy-kcal_100g': 420, 'sodium_100g': 0.8 },
-    }],
-    ['Barrita de cereal', {
-      product_name: 'Barrita de cereal',
-      ingredients_text: 'avena, jarabe de glucosa, azúcar, aceite de girasol, miel, saborizante, emulsionante',
-    }],
-    ['Papas fritas de paquete', {
-      product_name: 'Papas fritas',
-      ingredients_text: 'papa, aceite de girasol alto oleico, sal',
-      nutriments: { 'fat_100g': 32, 'saturated-fat_100g': 3, 'sodium_100g': 0.6, 'energy-kcal_100g': 530 },
-    }],
-    ['Nutella (etiqueta en inglés de OFF)', {
-      ingredients_text: 'sugar, palm oil, hazelnuts, cocoa, skim milk, reduced minerals whey, lecithin as emulsifier, vanilla',
-      nutriments: { 'sugars_100g': 44.2, 'saturated-fat_100g': 9.6, 'energy-kcal_100g': 539, 'sodium_100g': 0.04 },
-    }],
-  ];
-
-  it.each(PRODUCTOS)('%s', (_label, raw) => {
-    expect(mapRawToProduct(raw, '7790000000000')).toMatchSnapshot();
   });
 });

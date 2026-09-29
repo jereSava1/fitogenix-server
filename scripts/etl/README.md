@@ -89,8 +89,8 @@ npm run etl:check-dupes
 de 12 dígitos → EAN-13 con un `0` adelante) ANTES de insertarlo en staging.
 Con eso, el merge por barcode (Fase 3b) agrupa correctamente el mismo
 producto físico aunque una fuente lo dé en un formato y otra en otro. Ojo:
-esto es interno al ETL — el lookup en vivo por scan (`productLookupService.
-lookupProduct`) usa el string tal cual lo manda el celular, sin normalizar
+esto es interno al ETL — el lookup en vivo por scan (`modules/catalog/application/
+lookupProduct.ts`) usa el string tal cual lo manda el celular, sin normalizar
 (cambiarlo es un cambio aparte, en código hot-path, que no se tocó acá).
 
 `npm run etl:check-dupes` es el chequeo rerunnable — leé `products` y flaggea

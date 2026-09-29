@@ -229,16 +229,16 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 
 | # | Archivo actual · símbolo | Destino (módulo · capa) | Acción | Nota |
 |---|---|---|---|---|
-| 11 | `productLookupService.ts` · `lookupProduct`, `resolveByBarcode`, `resolveByName`, `withSingleflight`, `logSource` | `catalog` · `application/lookupProduct.ts` | PARTIR | Depende de puertos `ProductReader` y `ProductCache` |
-| 12 | `productLookupService.ts` · `mapRawToProduct`, `cleanName`, `scorePresentation` | `catalog` · `application/productResponse.ts` (usa `scoring.presentScore`) | PARTIR | `id` = `productId` siempre (se define en la Fase 3) |
-| 13 | `productLookupService.ts` · `nameKey` | `catalog` · `domain/query.ts` | PARTIR | Junto con `isBarcode` (hoy regex inline) |
+| 11 | `productLookupService.ts` · `lookupProduct`, `resolveByBarcode`, `resolveByName`, `withSingleflight`, `logSource` | `catalog` · `application/lookupProduct.ts` | PARTIR | Depende de puertos `ProductReader` y `ProductCache`. **Hecho en M-05:** `makeLookupProduct({ reader, cache })`; el singleflight queda por instancia (hay una sola, la de `registerCatalog`) |
+| 12 | `productLookupService.ts` · `mapRawToProduct`, `cleanName`, `scorePresentation` | `catalog` · `application/productResponse.ts` (usa `scoring.presentScore`) | PARTIR | `id` = `productId` siempre (se define en la Fase 3). **M-05:** mudado sin cambios; el `id` = query sigue hasta K-04 |
+| 13 | `productLookupService.ts` · `nameKey` | `catalog` · `domain/query.ts` | PARTIR | Junto con `isBarcode` (hoy regex inline). Hecho en M-05 |
 | 14 | `cacheService.ts` · `getCachedProductByBarcode`, `findCachedProductByName`, `getCachedBy`, `escapeLikeToken` | `catalog` · `infrastructure/supabaseProductReader.ts` | PARTIR | Deja de tragarse los errores: lanza `DependencyUnavailableError` (ADR-0006). **M-04:** mudado sin cambios (sigue tragándose los errores hasta H-01) |
 | 15 | `cacheService.ts` · `rowToCachedRaw`, `asStringRecord`, `asStringArray` | `catalog` · `infrastructure/productRow.ts` | PARTIR | Mapper fila → `RawProduct`; lo reusa `productResponseFromRow`. Hecho en M-04 |
 | 16 | `cacheService.ts` · `buildCachePayload`, `setCachedProduct`, `findUpgradableNameRow` | `catalog` · `infrastructure/supabaseProductWriter.ts`, expuesto como `createProductWriter()` | PARTIR | Solo lo usa el ETL (ADR-0004). **M-04:** mudado `buildCachePayload`, lo único que usa el ETL; `setCachedProduct` y `findUpgradableNameRow` se eliminaron por no tener consumidores (D-65) |
 | 17 | `cacheService.ts` · `getCachedProductByNameKey` | — | ELIMINAR | Sin uso |
 | 18 | `redisService.ts` · `getFromRedis`, `setInRedis`, `get/setSearchBarcode`, `unwrapCachedProduct` | `catalog` · `infrastructure/redisProductCache.ts` | MOVER | El cliente pasa a `platform/redis.ts`; se elimina su `normalizeQuery` duplicada. **M-04:** mudado; la `normalizeQuery` duplicada sigue hasta H-04 (unificarla cambia las claves) |
 | 19 | `queryNormalization.ts` · `normalizeQuery` | `catalog` · `domain/query.ts` | MOVER | Única normalización (DRY). Hecho en M-04 |
-| 20 | `productRowMapper.ts` · `joinedRowToProduct` | `catalog` · `index.ts` como `productResponseFromRow` | MOVER | Lo consume `user-library` para presentar productos embebidos |
+| 20 | `productRowMapper.ts` · `joinedRowToProduct` | `catalog` · `index.ts` como `productResponseFromRow` | MOVER | Lo consume `user-library` para presentar productos embebidos. **Hecho en M-05:** vive en `infrastructure/productRow.ts` (usa el mapper de filas, y `application/` no puede importar infraestructura) y se expone en el `index.ts` |
 | 21 | `imageService.ts` · `removeBackground` | — | ELIMINAR | Se elimina remove.bg (D-49); se lleva `REMOVE_BG_API_KEY` |
 | 22 | `imageService.ts` · `fetchRetailerImage`, `fetchSearchImageUrl` | — | ELIMINAR | Sin uso; se lleva `SERPAPI_API_KEY` |
 | 23 | `savedProductsService.ts` · `listSavedProducts`, `saveProduct`, `removeSavedProduct` | `user-library` · `application/saved.ts` + `infrastructure/supabaseSavedRepository.ts` | PARTIR | — |
@@ -256,8 +256,8 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 30 | `main.ts` | `main.ts` (composition root) + `platform/http/buildApp.ts` | PARTIR | `buildApp` separado para testear con `inject()` |
 | 31 | `config.ts` | `platform/config.ts` (server) + `etl/config.ts` (ETL) | PARTIR | Cada proceso exige solo lo suyo (D-05) |
 | 32 | `plugins/auth.ts` · `requireAuth` | `platform/http/auth.ts` | MOVER | ⚠ alto riesgo; su propio cliente Supabase pasa a `platform/supabase.ts` |
-| 33 | `routes/products/lookup.ts` | `catalog/routes/lookup.route.ts` | MOVER | Sin `import` de `user-library` (§3.3) |
-| 34 | `routes/products/lookupSchema.ts` | `catalog/routes/lookup.schema.ts` | MOVER | La Fase 3 decide la fuente única del contrato |
+| 33 | `routes/products/lookup.ts` | `catalog/routes/lookup.route.ts` | MOVER | Sin `import` de `user-library` (§3.3). **Hecho en M-05:** `lookupRoutes({ lookup, onScan })`; `main.ts` arma `onScan` con `resolveUserIdFromToken` + `recordScan`. Mientras no exista `optionalAuth` (H-02), `onScan` recibe `{ token, productId }` en vez del `(userId, productId)` de §8.2 |
+| 34 | `routes/products/lookupSchema.ts` | `catalog/routes/lookup.schema.ts` | MOVER | La Fase 3 decide la fuente única del contrato. Hecho en M-05 |
 | 35 | `routes/products/image.ts` | — | ELIMINAR | D-49; native pasa a usar `imageUrl` directo |
 | 36 | `routes/users/saved.ts`, `history.ts` | `user-library/routes/*` | MOVER | + `DELETE /users/me/history/:productId` |
 | 37 | `routes/users/deleteMe.ts` | `account/routes/deleteMe.route.ts` + `application/deleteAccount.ts` + `infrastructure/supabaseAuthAdmin.ts` | PARTIR | Deja de crear un cliente Supabase por request |

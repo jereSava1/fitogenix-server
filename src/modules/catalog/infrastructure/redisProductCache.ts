@@ -7,7 +7,7 @@
  * Todas las funciones son no-op cuando faltan UPSTASH_REDIS_REST_URL / TOKEN,
  * así el servidor corre sin Redis en desarrollo.
  *
- * TTLs (ver productLookupService.ts):
+ * TTLs (ver application/lookupProduct.ts):
  *   Producto normal : 7 días  (604800 s)
  *   Origen IA       : 3 días  (259200 s)
  *
@@ -24,7 +24,7 @@
  * generó, y toda entrada cuya versión no coincida con ENGINE_VERSION se trata
  * como MISS — el nivel Supabase la repuebla con la forma nueva. Es el mismo
  * precedente que las entradas pre-migración 006 sin `productId`
- * (productLookupService · resolveByBarcode), pero el chequeo vive acá porque
+ * (application/lookupProduct.ts · resolveByBarcode), pero el chequeo vive acá porque
  * es un problema de SERIALIZACIÓN, no de la cascada.
  *
  * Por qué el sobre y NO versionar la clave (`ftg:product:v2.1:<barcode>`):

@@ -28,7 +28,7 @@ import {
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 import { isComplete } from '../lib/completeness';
-import { mapRawToProduct } from '../../../src/services/productLookupService';
+import { mapRawToProduct } from '../../../src/modules/catalog/application/productResponse';
 import { buildCachePayload } from '../../../src/modules/catalog/infrastructure/supabaseProductWriter';
 import { enrichWithAI } from '../../../src/services/claudeService';
 

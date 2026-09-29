@@ -170,7 +170,7 @@ describe('listSavedProducts — productos sin puntaje', () => {
   it('un guardado con score null se LISTA igual, con null y su motivo', async () => {
     // Regresión de v2.1: estos productos no se omiten del listado ni se
     // coercionan a 0. Se omiten solo las filas sin id o sin crudos
-    // (joinedRowToProduct → null), que es otro caso.
+    // (productResponseFromRow → null), que es otro caso.
     selectResult = {
       data: [
         { product_id: 'uuid-cerveza', created_at: '2026-08-15T12:00:00Z', products: cervezaRow },

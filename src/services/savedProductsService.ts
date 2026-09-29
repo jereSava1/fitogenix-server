@@ -13,7 +13,7 @@
  */
 
 import { supabaseAdmin as admin } from '../platform/supabase';
-import { joinedRowToProduct } from './productRowMapper';
+import { productResponseFromRow } from '../modules/catalog';
 import type { FitogenixProduct } from '../types/fitogenix';
 
 
@@ -23,7 +23,7 @@ export type SaveResult = 'ok' | 'not_found';
  * Lista los guardados del usuario, más reciente primero, como
  * FitogenixProduct completos (score recomputado desde los crudos).
  *
- * Filas cuyo producto embebido no tiene crudos o falta (joinedRowToProduct →
+ * Filas cuyo producto embebido no tiene crudos o falta (productResponseFromRow →
  * null) se OMITEN del listado: mejor una lista corta que productos con
  * breakdown incompleto. Errores de DB se propagan como Error (la ruta
  * responde 500).
@@ -42,7 +42,7 @@ export async function listSavedProducts(userId: string): Promise<FitogenixProduc
   const items: FitogenixProduct[] = [];
 
   for (const rowUnknown of rows) {
-    const product = joinedRowToProduct(rowUnknown);
+    const product = productResponseFromRow(rowUnknown);
     if (product) items.push(product);
   }
 
