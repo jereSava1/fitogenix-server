@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -968,6 +968,92 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/history/{productId}": {
+      "delete": {
+        "summary": "Borrar un producto del historial (idempotente)",
+        "tags": [
+          "user-library"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "productId",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
                 }
               }
             }

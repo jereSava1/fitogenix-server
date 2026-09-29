@@ -15,6 +15,7 @@ function fakeRepo(rows: unknown[] = []): HistoryRepository {
   return {
     list: vi.fn(async () => rows),
     upsert: vi.fn(async () => undefined),
+    remove: vi.fn(async () => undefined),
   };
 }
 
@@ -29,6 +30,12 @@ describe('makeScanHistory', () => {
     const at = vi.mocked(repo.upsert).mock.calls[0][2];
     expect(at.getTime()).toBeGreaterThanOrEqual(antes);
     expect(at.getTime()).toBeLessThanOrEqual(Date.now());
+  });
+
+  it('removeFromHistory delega en el repositorio (RF-017)', async () => {
+    const repo = fakeRepo();
+    await makeScanHistory(repo).removeFromHistory('user-1', 'uuid-galletitas');
+    expect(repo.remove).toHaveBeenCalledWith('user-1', 'uuid-galletitas');
   });
 
   it('listScanHistory pasa el límite y omite las filas sin producto', async () => {

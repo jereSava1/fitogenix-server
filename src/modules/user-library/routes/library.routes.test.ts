@@ -27,6 +27,7 @@ const saved = {
 const history = {
   listScanHistory: vi.fn<ScanHistory['listScanHistory']>(),
   recordScan: vi.fn<ScanHistory['recordScan']>(),
+  removeFromHistory: vi.fn<ScanHistory['removeFromHistory']>(),
 };
 let app: FastifyInstance;
 
@@ -74,6 +75,7 @@ beforeEach(() => {
   vi.mocked(saved.saveProduct).mockResolvedValue('ok');
   vi.mocked(saved.removeSavedProduct).mockResolvedValue(undefined);
   vi.mocked(history.listScanHistory).mockResolvedValue([]);
+  vi.mocked(history.removeFromHistory).mockResolvedValue(undefined);
 });
 
 describe('rutas privadas — sin sesión (T-05)', () => {
@@ -82,6 +84,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
     ['POST', '/users/me/saved'],
     ['DELETE', `/users/me/saved/${PRODUCT_ID}`],
     ['GET', '/users/me/history'],
+    ['DELETE', `/users/me/history/${PRODUCT_ID}`],
   ] as const)('%s %s sin token → 401 sin llegar al servicio', async (method, url) => {
     const res = await app.inject({ method, url, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined });
     expect(res.statusCode).toBe(401);
@@ -90,6 +93,7 @@ describe('rutas privadas — sin sesión (T-05)', () => {
     expect(saved.saveProduct).not.toHaveBeenCalled();
     expect(saved.removeSavedProduct).not.toHaveBeenCalled();
     expect(history.listScanHistory).not.toHaveBeenCalled();
+    expect(history.removeFromHistory).not.toHaveBeenCalled();
   });
 
   it('token de otro sistema → 401', async () => {
@@ -126,6 +130,7 @@ describe('GET /users/me/saved (T-05)', () => {
     ['POST', '/users/me/saved', () => vi.mocked(saved.saveProduct)],
     ['DELETE', `/users/me/saved/${PRODUCT_ID}`, () => vi.mocked(saved.removeSavedProduct)],
     ['GET', '/users/me/history', () => vi.mocked(history.listScanHistory)],
+    ['DELETE', `/users/me/history/${PRODUCT_ID}`, () => vi.mocked(history.removeFromHistory)],
   ] as const)('%s %s con la base caída → 503', async (method, url, servicio) => {
     const { DependencyUnavailableError } = await import('../../../platform/dependencyError');
     servicio().mockRejectedValue(new DependencyUnavailableError('supabase', 'boom'));
@@ -235,6 +240,35 @@ describe('GET /users/me/history (T-05)', () => {
   });
 });
 
+describe('DELETE /users/me/history/:productId (F-01, RF-017)', () => {
+  it('200 { ok: true } y borra del historial del usuario del token', async () => {
+    const res = await app.inject({ method: 'DELETE', url: `/users/me/history/${PRODUCT_ID}`, headers: comoA });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ ok: true });
+    expect(history.removeFromHistory).toHaveBeenCalledWith(USER_A, PRODUCT_ID);
+  });
+
+  it('idempotente: borrar dos veces responde 200 las dos', async () => {
+    const url = `/users/me/history/${PRODUCT_ID}`;
+    expect((await app.inject({ method: 'DELETE', url, headers: comoA })).statusCode).toBe(200);
+    expect((await app.inject({ method: 'DELETE', url, headers: comoA })).statusCode).toBe(200);
+  });
+
+  it.each(['no-es-uuid', '7790000000017'])('productId %j que no es uuid → 400 sin llegar al servicio', async (id) => {
+    const res = await app.inject({ method: 'DELETE', url: `/users/me/history/${id}`, headers: comoA });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual(VALIDATION);
+    expect(history.removeFromHistory).not.toHaveBeenCalled();
+  });
+
+  it('error del servicio → 500 con mensaje', async () => {
+    vi.mocked(history.removeFromHistory).mockRejectedValue(new Error('db'));
+    const res = await app.inject({ method: 'DELETE', url: `/users/me/history/${PRODUCT_ID}`, headers: comoA });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({ error: 'No se pudo borrar del historial', code: 'INTERNAL' });
+  });
+});
+
 /* Aislamiento (RNF-S03): el usuario A nunca opera sobre los datos del B.
  * Cada caso manda el id de B por todas las vías que controla el cliente y
  * verifica que al servicio le llega el id del token de A. */
@@ -288,6 +322,20 @@ describe('aislamiento entre usuarios (T-05)', () => {
   it('GET history: userId en headers se ignora', async () => {
     await app.inject({ method: 'GET', url: '/users/me/history', headers: { ...comoA, ...intentoDeB } });
     expect(history.listScanHistory).toHaveBeenCalledWith(USER_A, 20);
+  });
+
+  it('DELETE history: borra del historial del dueño del token aunque se mande el id de otro', async () => {
+    await app.inject({
+      method: 'DELETE', url: `/users/me/history/${PRODUCT_ID}?userId=${USER_B}`, headers: { ...comoA, ...intentoDeB },
+    });
+    expect(history.removeFromHistory).toHaveBeenCalledTimes(1);
+    expect(history.removeFromHistory).toHaveBeenCalledWith(USER_A, PRODUCT_ID);
+  });
+
+  it('DELETE history: cada token borra solo de su historial', async () => {
+    await app.inject({ method: 'DELETE', url: `/users/me/history/${PRODUCT_ID}`, headers: comoA });
+    await app.inject({ method: 'DELETE', url: `/users/me/history/${PRODUCT_ID}`, headers: comoB });
+    expect(vi.mocked(history.removeFromHistory).mock.calls).toEqual([[USER_A, PRODUCT_ID], [USER_B, PRODUCT_ID]]);
   });
 
 });

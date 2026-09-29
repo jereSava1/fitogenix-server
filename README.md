@@ -49,6 +49,7 @@ Todas las rutas del contrato llevan el prefijo **`/v1`** (D-44), sin alias de la
 | `POST /v1/users/me/saved` `{ productId }` | sí | Guardar (idempotente). `404 NOT_FOUND` si el producto no existe |
 | `DELETE /v1/users/me/saved/:productId` | sí | Quitar un guardado (idempotente) |
 | `GET /v1/users/me/history?limit=` | sí | Historial de escaneos: resumen más `scannedAt` (`limit` entre 1 y 50, por defecto 20) |
+| `DELETE /v1/users/me/history/:productId` | sí | Borrar un producto del historial (idempotente) |
 | `DELETE /v1/users/me` | sí | Eliminar la cuenta |
 | `GET /health` | no | Chequeo de vida (el proceso responde) |
 | `GET /health/ready` | no | Listo para atender: 503 si Supabase no responde; informa el estado de Redis |

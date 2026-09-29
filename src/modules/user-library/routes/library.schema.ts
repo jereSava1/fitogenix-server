@@ -70,5 +70,13 @@ export const listHistorySchema = {
   },
 };
 
+export const removeFromHistorySchema = {
+  tags: ['user-library'],
+  summary: 'Borrar un producto del historial (idempotente)',
+  security: [{ bearerAuth: [] }],
+  params: Type.Object({ productId: ProductIdSchema }),
+  response: { 200: Type.Ref(OkSchema), ...errorResponses(400, 401, 429, 500, 503) },
+};
+
 /** Los schemas con `$id` que usan estas rutas. */
 export const librarySharedSchemas = [ApiErrorSchema, OkSchema, SavedItemSchema, HistoryItemSchema];

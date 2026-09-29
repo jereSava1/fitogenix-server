@@ -7,10 +7,10 @@ import { DependencyUnavailableError } from '../../../platform/dependencyError';
 import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas } from '../../../platform/http/schemas';
 import type { ScanHistory } from '../application/history';
-import { librarySharedSchemas, listHistorySchema } from './library.schema';
+import { librarySharedSchemas, listHistorySchema, removeFromHistorySchema } from './library.schema';
 
 export const historyRoutes = (deps: { history: ScanHistory }): FastifyPluginAsync => async (instance) => {
-  const { listScanHistory } = deps.history;
+  const { listScanHistory, removeFromHistory } = deps.history;
   addSharedSchemas(instance, librarySharedSchemas);
   const app = instance.withTypeProvider<TypeBoxTypeProvider>();
   await app.register(requireAuth);
@@ -29,4 +29,20 @@ export const historyRoutes = (deps: { history: ScanHistory }): FastifyPluginAsyn
       return reply.status(500).send(apiError('INTERNAL', 'No se pudo obtener el historial'));
     }
   });
+
+  // Quitar un producto del historial por productId. Idempotente (RF-017).
+  app.delete(
+    '/users/me/history/:productId',
+    { schema: removeFromHistorySchema },
+    async (request, reply) => {
+      try {
+        await removeFromHistory(request.userId, request.params.productId);
+        return reply.send({ ok: true });
+      } catch (err) {
+        if (err instanceof DependencyUnavailableError) throw err; // 503
+        app.log.error(err, 'Error al borrar del historial');
+        return reply.status(500).send(apiError('INTERNAL', 'No se pudo borrar del historial'));
+      }
+    },
+  );
 };

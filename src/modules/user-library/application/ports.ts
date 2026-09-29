@@ -18,4 +18,6 @@ export interface HistoryRepository {
   /** Registra o refresca el escaneo. **Nunca lanza**: es fire-and-forget del
    *  lookup, así que loguea el error y sigue. */
   upsert(userId: string, productId: string, at: Date): Promise<void>;
+  /** Idempotente. Error de DB → lanza. */
+  remove(userId: string, productId: string): Promise<void>;
 }
