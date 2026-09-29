@@ -99,3 +99,34 @@ describe('coherencia de umbrales', () => {
     expect(resolveProductStatus(null)).toEqual({ label: 'Sin datos suficientes', tone: 'neutral' });
   });
 });
+
+/* T-02 · Caracterización de los bordes de banda (docs/05-plan.md).
+ *
+ * Fija la presentación completa en cada borde, tal como está hoy. Si un
+ * cambio mueve un corte, este bloque falla en el borde exacto.
+ */
+describe('caracterización — bordes de banda (T-02)', () => {
+  const BORDES: ReadonlyArray<[
+    number | null,
+    { label: string; color: string; tagline: string; sello: string | null; estado: string },
+  ]> = [
+    [0, { label: 'MALO', color: '#dc2626', tagline: 'No lo recomendamos', sello: 'NO FITOGÉNICO', estado: 'No fitogénico' }],
+    [24, { label: 'MALO', color: '#dc2626', tagline: 'No lo recomendamos', sello: 'NO FITOGÉNICO', estado: 'No fitogénico' }],
+    [25, { label: 'MODERADO', color: '#f97316', tagline: 'Consumilo con consciencia', sello: null, estado: 'Consumo consciente' }],
+    [39, { label: 'MODERADO', color: '#f97316', tagline: 'Consumilo con consciencia', sello: null, estado: 'Consumo consciente' }],
+    [40, { label: 'MODERADO', color: '#f97316', tagline: 'Consumilo con consciencia', sello: null, estado: 'Consumo consciente' }],
+    [49, { label: 'MODERADO', color: '#f97316', tagline: 'Consumilo con consciencia', sello: null, estado: 'Consumo consciente' }],
+    [50, { label: 'BUENO', color: '#84cc16', tagline: 'Buena opción', sello: null, estado: 'Consumo consciente' }],
+    [74, { label: 'BUENO', color: '#84cc16', tagline: 'Buena opción', sello: null, estado: 'Consumo consciente' }],
+    [75, { label: 'EXCELENTE', color: '#16a34a', tagline: 'Lo recomendamos', sello: 'FITOGÉNICO', estado: 'Fitogénico' }],
+    [100, { label: 'EXCELENTE', color: '#16a34a', tagline: 'Lo recomendamos', sello: 'FITOGÉNICO', estado: 'Fitogénico' }],
+    [null, { label: 'SIN DATOS SUFICIENTES', color: '#9ca3af', tagline: 'No tenemos datos confiables de este producto', sello: null, estado: 'Sin datos suficientes' }],
+  ];
+
+  it.each(BORDES)('puntaje %s', (score, esperado) => {
+    expect(getScoreLabel(score)).toEqual({ label: esperado.label, color: esperado.color });
+    expect(getScoreTagline(score)).toBe(esperado.tagline);
+    expect(getSello(score)).toBe(esperado.sello);
+    expect(resolveProductStatus(score).label).toBe(esperado.estado);
+  });
+});
