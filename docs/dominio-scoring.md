@@ -105,5 +105,5 @@ Relevados en `CONTEXT.md §6` y `§8` y re-verificados contra el código el 2026
 
 ## [PREGUNTA]
 
-1. **NOVA.** `CONTEXT.md §2.4` registra una decisión del 2026-08-31, "NOVA se sostiene, no se borra de ningún lado", y hay dos usos que D-36 (2026-09-28, eliminar `nova_group`) no menciona: `scripts/audit-scores.ts` lo usa como señal de calidad (un NOVA 4 con puntaje alto se marca para revisión) y es la forma directa de chequear la excepción legal del art. 7 (M-7). D-36 es posterior y manda. Dato para decidir (medido el 2026-09-29): solo **3.955 de 81.449 productos (4,9 %)** tienen `nova_group`, y de los que tienen ingredientes, el 20 % (3.889 de 19.308); por grupo, 415 NOVA 1, 165 NOVA 2, 445 NOVA 3 y 2.930 NOVA 4. ¿Se confirma, o se revisa antes de B-01 (el ítem que borra la columna)?
-2. **Fuentes primarias.** ¿Copio los PDF de F10 y F9 (6,5 MB) a `docs/fuentes/`, o quedan referenciados por su identificador oficial?
+1. ~~**NOVA.**~~ Resuelta: **D-36 confirmada** el 2026-09-29 (solo el 4,9 % del catálogo tiene `nova_group`; el motor detecta ultraprocesados por marcadores propios). M-7 se resuelve sin NOVA.
+2. ~~**Fuentes primarias.**~~ Resuelta: D-64 (se citan, no se versionan).
