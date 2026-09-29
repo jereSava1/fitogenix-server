@@ -4,43 +4,39 @@ Fix de **SEC-01** (D-08, RNF-S01, ADR-0005 / ADR-0010). Ítem U-01 de [`05-plan.
 
 | Archivo | Qué hace | Escribe |
 |---|---|---|
-| [`1-verificacion.sql`](1-verificacion.sql) | Foto de policies, grants, RLS, la RPC, vistas y funciones que tocan el catálogo, default privileges, + 4 productos al azar para el smoke | No |
-| [`2-cambio.sql`](2-cambio.sql) | Borra la policy pública, `REVOKE` a `anon`/`authenticated`/`PUBLIC` sobre `products` y `products_staging`, `REVOKE EXECUTE` de la RPC y `GRANT EXECUTE` explícito a `service_role`. Una transacción con chequeos al final: si algo no queda bien, aborta sin aplicar nada | Sí |
+| [`1-verificacion.sql`](1-verificacion.sql) | Cinco consultas cortas (1A a 1E), **una por vez**: permisos por tabla y rol, policies, funciones que tocan el catálogo, vistas + ACL + default privileges, y 4 productos al azar para el smoke | No |
+| [`2-cambio.sql`](2-cambio.sql) | Borra la policy pública, `REVOKE` a `anon`/`authenticated`/`PUBLIC` sobre `products` y `products_staging`, `REVOKE EXECUTE` de la RPC y `GRANT EXECUTE` explícito a `service_role`. Una transacción con chequeos al final: si algo no queda bien, aborta sin aplicar nada. Se pega **entero** (22 líneas) | Sí |
 | [`3-rollback.sql`](3-rollback.sql) | Vuelve exactamente al estado anterior (incluida la exposición) | Sí |
 
-**Probado** el 2026-09-29 en un Postgres 16 local con los roles de Supabase simulados (`anon`, `authenticated`, `service_role` con `BYPASSRLS`, `authenticator` con `SET ROLE`, default privileges de `public` como los de Supabase): antes, `anon` lee 50/50 filas y la RPC; después, `permission denied` en las 3 pruebas para `anon` y `authenticated`, y `service_role` sigue leyendo todo; el cambio es idempotente; si `service_role` solo tenía `EXECUTE` vía `PUBLIC`, lo conserva; un chequeo fallido no deja nada aplicado; el rollback reproduce las ACL originales (misma verificación, sin diferencias). Lo que **no** se pudo probar acá: PostgREST real (códigos HTTP) y el server en Render; para eso están P-01 a P-03 y S-01 a S-04.
+**Probado** el 2026-09-29 en un Postgres 16 local con los roles de Supabase simulados (`anon`, `authenticated`, `service_role` con `BYPASSRLS`, `authenticator` con `SET ROLE`, default privileges de `public` como los de Supabase): antes, `anon` lee 50/50 filas y la RPC; después, `permission denied` en las 3 pruebas para `anon` y `authenticated`, y `service_role` sigue leyendo todo; el cambio es idempotente; si `service_role` solo tenía `EXECUTE` vía `PUBLIC`, lo conserva; un chequeo fallido no deja nada aplicado; el rollback reproduce las ACL originales (misma verificación, sin diferencias). El 2026-09-29 se partió la verificación en consultas cortas porque la versión de una sola consulta era demasiado larga para pegarla; las versiones cortas se volvieron a probar enteras. Lo que **no** se pudo probar acá: PostgREST real (códigos HTTP) y el server en Render; para eso están P-01 a P-03 y S-01 a S-04.
 
 ## Procedimiento
 
 | Paso | Qué | Resultado esperado | Si no da eso |
 |---|---|---|---|
 | 0 | Confirmar V-03: nadie usa un build viejo de la app (era Expo, `849bd54`…`ba53ac9`) que lea `products` directo. Parar el ETL | — | Esperar |
-| 1 | Correr `1-verificacion.sql` (**V**) y guardar el JSON | Ver tabla "Verificación" | **Parar** y pasarme el JSON |
+| 1 | Correr las consultas 1A a 1E de `1-verificacion.sql` (**V**), una por vez, **sin texto seleccionado** en el editor (si hay selección, Supabase corre solo eso) | Ver tabla "Verificación" | **Parar** y pasarme las 5 salidas |
 | 2 | Pruebas HTTP P-01 a P-03 **antes** del cambio | P-01 y P-03: `200` con filas (confirma SEC-01). P-02: `200 []` (RLS sin policies) | Pasarme la salida |
-| 3 | Smoke S-01 y S-02 **antes** del cambio (filas 1 y 2 de `muestra_smoke`) | `200` en los dos | Parar: el server ya falla sin el cambio |
+| 3 | Smoke S-01 y S-02 **antes** del cambio (filas 1 y 2 de la 1E) | `200` en los dos | Parar: el server ya falla sin el cambio |
 | 4 | Correr `2-cambio.sql` | `Success. No rows returned` | Si dice `lock timeout`, reintentar. Si dice `U-01: …`, no se aplicó nada: pasarme el mensaje. Ante cualquier error, correr `rollback;` antes de seguir |
-| 5 | Correr `1-verificacion.sql` (**P**) | Ver tabla "Verificación" | Pasarme el JSON |
+| 5 | Correr 1A a 1D (**P**) | Ver tabla "Verificación" | Pasarme las salidas |
 | 6 | Pruebas P-01 a P-03 **después** | `401` (o `403`) con `"code":"42501"` en las tres. **Un `200`, aunque sea `[]`, es falla** | Pasarme la salida |
-| 7 | Smoke S-01 a S-04 **después** (filas 3 y 4 de `muestra_smoke`, que no están en Redis) | `200` en todos | **Rollback** (`3-rollback.sql`) y pasarme la salida |
+| 7 | Smoke S-03 y S-04 **después** (filas 3 y 4 de la 1E, que no están en Redis) | `200` en todos | **Rollback** (`3-rollback.sql`) y pasarme la salida |
 | 8 | Logs de Render, 15 minutos | Ningún `permission denied` ni `42501` | Rollback |
 
 > Por qué filas distintas antes y después: el lookup cachea en Redis. Si se repite el mismo producto, el `200` de después podría salir de Redis sin tocar Supabase y no probaría nada. Y ojo: hoy **una falla de Supabase en el lookup responde `404`**, no `500` (caracterizado en T-06), así que un `404` en S-03/S-04 es falla, no "producto inexistente".
 
 ## Verificación: esperado antes (V) y después (P)
 
-| Clave | V (antes) | P (después) |
+| Consulta | V (antes) | P (después) |
 |---|---|---|
-| `a_policies_products` | 1: `Anyone can read products`, `SELECT`, `{anon,authenticated}`, `true` | `[]` |
-| `b_rls` | `true` en las dos | `true` en las dos |
-| `c_privilegios_tablas` | `anon` y `authenticated`: 7 privilegios; `service_role`: al menos `SELECT`, `INSERT`, `UPDATE`, `DELETE` | `anon` y `authenticated`: `[]`; `service_role`: igual que antes |
-| `d_grants_public_tablas` | `0` y `0` | `0` y `0` |
-| `e_funcion` | **una sola** firma `search_products_by_name(text,integer)`, `security_definer: false`, todo `true` | `public_execute`, `anon`, `authenticated`: `false`; `service_role`: `true` |
-| `f_acl_crudas` | Se guarda para comparar | Sin `anon`, `authenticated` ni `=X/…` (PUBLIC) |
-| `g_vistas_dependientes` | `[]` | `[]` |
-| `h_funciones_que_nombran_el_catalogo` | Solo `search_products_by_name` | Ídem, con `anon: false` |
-| `i_default_privileges_public` | Informativo (no se cambia en U-01; ver D-61) | Igual que antes |
+| 1A · permisos | 6 filas, `rls = true` en todas; `anon` y `authenticated`: los 7 privilegios; `service_role`: al menos `DELETE,INSERT,SELECT,UPDATE`; `grants_public = 0` | `anon` y `authenticated`: `privilegios` vacío; `service_role`: igual que antes; `rls = true`; `grants_public = 0` |
+| 1B · policies | 1 fila: `Anyone can read products`, `SELECT`, `{anon,authenticated}`, `true` | 0 filas |
+| 1C · funciones | **1 sola** fila: `search_products_by_name(text,integer)`, `security_definer = false`, todo lo demás `true` | `public_exec`, `anon`, `authenticated`: `false`; `service_role`: `true` |
+| 1D · vistas, ACL, defaults | Ninguna fila `vista`; las `acl_tabla` se guardan para comparar; `default_privileges` es informativo (no se cambia en U-01, D-61) | Ninguna `vista`; `acl_tabla` sin `anon` ni `authenticated` |
+| 1E · muestra | 4 productos | No hace falta repetirla |
 
-Motivos para **parar en el paso 1**: más de una firma en `e_funcion` (el `REVOKE` nombra una sola), una vista en `g`, otra función en `h`, o `service_role` sin alguno de sus 4 privilegios.
+Motivos para **parar en el paso 1**: más de una fila en la 1C (otra firma de la RPC u otra función que nombra el catálogo), alguna fila `vista` en la 1D, o `service_role` sin alguno de sus 4 privilegios en la 1A.
 
 ## Pruebas HTTP (desde una terminal)
 
