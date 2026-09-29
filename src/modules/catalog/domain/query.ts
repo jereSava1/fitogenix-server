@@ -1,5 +1,5 @@
-// Normalización de queries: minúsculas, sin acentos, espacios colapsados.
-// Redis todavía normaliza distinto (se unifica en H-04).
+// Normalización única de queries (búsqueda en la base y claves de Redis): minúsculas,
+// sin acentos, espacios colapsados.
 export function normalizeQuery(query: string): string {
   return query
     .toLowerCase()
