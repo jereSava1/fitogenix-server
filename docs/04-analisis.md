@@ -47,7 +47,7 @@ Estados de la matriz de requisitos:
 | RF-027 | Cerrar sesión | PARCIAL | Directo a Supabase |
 | RF-028 | Ver y editar perfil | PARCIAL | Directo a `profiles` |
 | RF-029 | Eliminar cuenta | **INCONSISTENTE** → corregido en U-03 (`97d4998`, rama de integración de native) | Roto de punta a punta: la app llama `/api/delete-account` (no existe, `ProfileScreen.tsx:148`) y `DELETE /users/me` no lo llama nadie. **Bloquea App Store** |
-| RF-030 | Exigir sesión en rutas privadas | IMPLEMENTADO | **0 tests**; responde 401 cuando Auth está caído (RNF-D03) |
+| RF-030 | Exigir sesión en rutas privadas | IMPLEMENTADO | **0 tests** (al 2026-09-28; cubierto después por T-04 y T-05); responde 401 cuando Auth está caído (RNF-D03) |
 | RF-040 | Onboarding en el primer uso | **INCONSISTENTE** | Aparece **siempre**: persistencia comentada (`lib/onboardingGate.ts`, "TODO restore when done testing") |
 | RF-041 | Guía | IMPLEMENTADO | Promete "foto de la etiqueta" (roadmap, RF-061) |
 | RF-042 | Ayuda y soporte | **INCONSISTENTE** | Enlaza a `/terms`, que no existe (`HelpScreen.tsx:114`) |
