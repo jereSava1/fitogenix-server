@@ -1,10 +1,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScanHistory } from '../application/history';
 
-// Supabase simulado: `.select().eq().order().limit()` → selectResult; `.upsert()` → upsertResult.
+// Supabase simulado: `.select().eq().order().limit()` → selectResult; `.upsert()` → upsertResult;
+// `.delete().eq().eq()` → deleteResult.
 type DbError = { message: string; code?: string } | null;
 let selectResult: { data: unknown; error: DbError } = { data: null, error: null };
 let upsertResult: { error: DbError } = { error: null };
+let deleteResult: { error: DbError } = { error: null };
 
 const limitFn = vi.fn(async () => selectResult);
 const order = vi.fn(() => ({ limit: limitFn }));
@@ -15,7 +17,10 @@ const select = vi.fn(() => {
   return chain;
 });
 const upsert = vi.fn(async (_payload: unknown, _options: unknown) => upsertResult);
-const from = vi.fn(() => ({ select, upsert }));
+const deleteEqProductId = vi.fn(async () => deleteResult);
+const deleteEqUser = vi.fn(() => ({ eq: deleteEqProductId }));
+const deleteFn = vi.fn(() => ({ eq: deleteEqUser }));
+const from = vi.fn(() => ({ select, upsert, delete: deleteFn }));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from })),
@@ -36,6 +41,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   selectResult = { data: null, error: null };
   upsertResult = { error: null };
+  deleteResult = { error: null };
 });
 
 afterEach(() => {
@@ -113,6 +119,32 @@ describe('recordScan', () => {
 
     await expect(history.recordScan('user-1', 'uuid-purgado')).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalled();
+  });
+});
+
+describe('removeFromHistory (RF-017)', () => {
+  it('borra por user_id + product_id y es idempotente (sin error aunque no exista)', async () => {
+    await expect(history.removeFromHistory('user-1', 'uuid-alfajor')).resolves.toBeUndefined();
+
+    expect(from).toHaveBeenCalledWith('scan_history');
+    expect(deleteFn).toHaveBeenCalledTimes(1);
+    expect(deleteEqUser).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(deleteEqProductId).toHaveBeenCalledWith('product_id', 'uuid-alfajor');
+  });
+
+  it('un error de la base sale como DependencyUnavailableError (503)', async () => {
+    deleteResult = { error: { message: 'boom' } };
+    await expect(history.removeFromHistory('user-1', 'uuid-galletitas')).rejects.toMatchObject({
+      name: 'DependencyUnavailableError',
+      dependency: 'supabase',
+    });
+  });
+
+  it('una excepción del cliente (red, timeout) también', async () => {
+    deleteEqProductId.mockRejectedValueOnce(new TypeError('fetch failed'));
+    await expect(history.removeFromHistory('user-1', 'uuid-galletitas')).rejects.toMatchObject({
+      name: 'DependencyUnavailableError',
+    });
   });
 });
 

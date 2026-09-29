@@ -39,4 +39,13 @@ export const supabaseHistoryRepository: HistoryRepository = {
       console.error(`scan_history upsert (${productId}):`, err);
     }
   },
+
+  /** Idempotente: borrar algo que no estaba en el historial no es error. */
+  async remove(userId, productId) {
+    const { error } = await runQuery('scan_history delete', () =>
+      admin().from('scan_history').delete().eq('user_id', userId).eq('product_id', productId),
+    );
+
+    if (error) throw queryFailed('scan_history delete', error);
+  },
 };

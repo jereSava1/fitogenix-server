@@ -243,6 +243,24 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expectMatchesContract('/v1/users/me/history', 'get', 503, falla.json());
   });
 
+  it('DELETE /users/me/history/:productId → 200, 401 y 503 (F-01)', async () => {
+    const url = `/v1/users/me/history/${PRODUCT_ID}`;
+    db.results.scan_history = { error: null };
+    const ok = await call('DELETE', url, { auth: true });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({ ok: true });
+    expectMatchesContract('/v1/users/me/history/{productId}', 'delete', 200, ok.json());
+
+    const sinSesion = await call('DELETE', url);
+    expect(sinSesion.statusCode).toBe(401);
+    expectMatchesContract('/v1/users/me/history/{productId}', 'delete', 401, sinSesion.json());
+
+    db.results.scan_history = { error: { message: 'boom' } };
+    const falla = await call('DELETE', url, { auth: true });
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/history/{productId}', 'delete', 503, falla.json());
+  });
+
   it('DELETE /users/me → 200, 401, 500 (del handler y de una excepción) y 503', async () => {
     const ok = await call('DELETE', '/v1/users/me', { auth: true });
     expect(ok.statusCode).toBe(200);
@@ -329,6 +347,7 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
       { path: '/v1/users/me/saved', method: 'post', res: await call('POST', '/v1/users/me/saved', { auth: true, payload: { productId: 'no-es-uuid' } }) },
       { path: '/v1/users/me/saved/{productId}', method: 'delete', res: await call('DELETE', '/v1/users/me/saved/no-es-uuid', { auth: true }) },
       { path: '/v1/users/me/history', method: 'get', res: await call('GET', '/v1/users/me/history?limit=abc', { auth: true }) },
+      { path: '/v1/users/me/history/{productId}', method: 'delete', res: await call('DELETE', '/v1/users/me/history/no-es-uuid', { auth: true }) },
       { path: '/v1/products/{id}', method: 'get', res: await call('GET', '/v1/products/no-es-uuid') },
     ];
     for (const { path, method, res } of casos) {
@@ -472,7 +491,7 @@ describe('contrato — caídas de la base (H-01)', () => {
   });
 
   it('las rutas que leen o escriben la base declaran 503', () => {
-    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history'];
+    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}'];
     for (const ruta of conBase) {
       for (const op of Object.values(contract.paths[ruta]!)) {
         expect(Object.keys(op.responses), ruta).toContain('503');
@@ -487,6 +506,7 @@ describe('contrato — Supabase Auth caído (H-02)', () => {
     ['POST', '/v1/users/me/saved', '/v1/users/me/saved', 'post'],
     ['DELETE', `/v1/users/me/saved/${PRODUCT_ID}`, '/v1/users/me/saved/{productId}', 'delete'],
     ['GET', '/v1/users/me/history', '/v1/users/me/history', 'get'],
+    ['DELETE', `/v1/users/me/history/${PRODUCT_ID}`, '/v1/users/me/history/{productId}', 'delete'],
     ['DELETE', '/v1/users/me', '/v1/users/me', 'delete'],
   ] as const;
 

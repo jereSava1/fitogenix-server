@@ -449,7 +449,7 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 | 5 | `POST /users/me/saved` | Sí | body `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `404 NOT_FOUND`, `503` | Schema de request OK; campos de más → 400 (K-04, D-70) |
 | 6 | `DELETE /users/me/saved/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | Schema de params OK |
 | 7 | `GET /users/me/history` | Sí | query `{ limit?: integer 1..50 (default 20) }` | `200 { items: HistoryItem[] }` | `400`, `401`, `503` | **K-04:** resumen + `scannedAt` (ISO); parámetros de más → 400 (D-70). El rango se sigue ajustando en el handler en vez del schema |
-| 8 | `DELETE /users/me/history/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | **Nuevo** (RF-017) |
+| 8 | `DELETE /users/me/history/:productId` | Sí | params `{ productId: Uuid }` | `200 { ok: true }` | `400`, `401`, `503` | **Hecho en F-01** (RF-017, contrato `0.6.0`): idempotente |
 
 ### B.3.3 `auth` (ADR-0010)
 

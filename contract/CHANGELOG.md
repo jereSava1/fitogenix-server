@@ -4,6 +4,10 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.6.0 — 2026-09-29 · F-01
+
+**Aditivo.** Nuevo `DELETE /v1/users/me/history/{productId}` (RF-017, D-13): borra el producto del historial del usuario de la sesión. Idempotente: responde `200 { ok: true }` aunque no estuviera. `400` si el id no es uuid, `401` sin sesión, `503` si la base no responde (o si Supabase Auth no responde y no hay claves para verificar la sesión, como el resto de las rutas con sesión). Native lo empieza a usar en F-11 (hoy borra solo en el teléfono y el ítem vuelve al sincronizar, RF-015).
+
 ## 0.5.0 — 2026-09-29 · H-02
 
 **Aditivo.** `DELETE /v1/users/me` declara `503 DEPENDENCY_UNAVAILABLE` (con `Retry-After: 10`). Guardados e historial ya lo declaraban desde 0.4.0; ahora también lo responden por Auth. Decisiones: D-29, D-75.

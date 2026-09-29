@@ -17,6 +17,11 @@ export function makeScanHistory(repo: HistoryRepository) {
       return repo.upsert(userId, productId, new Date());
     },
 
+    /** Borra el producto del historial del usuario. Idempotente (RF-017). */
+    removeFromHistory(userId: string, productId: string): Promise<void> {
+      return repo.remove(userId, productId);
+    },
+
     /** Más reciente primero. Omite filas sin producto o sin crudos; un error de base se
      *  propaga (500). */
     async listScanHistory(userId: string, limit: number): Promise<HistoryItem[]> {

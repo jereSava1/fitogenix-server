@@ -235,9 +235,13 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 
 ### 7.2 Etapa 7 — Funcionalidad nueva y native "todo por el server"
 
+| ID | Estado |
+|---|---|
+| F-01 | ✅ Hecho en `feat/f01-borrar-historial`. **Contrato `0.6.0` (aditivo).** `DELETE /v1/users/me/history/:productId` en `user-library`: `HistoryRepository.remove` (borra por `user_id` y `product_id`; un error o una excepción de la base → `DependencyUnavailableError`, 503), caso de uso `removeFromHistory` y ruta en `history.route.ts` con `requireAuth` (params uuid → 400; error inesperado → 500 "No se pudo borrar del historial"). Tests 664 → 678: repositorio (filtros, error y excepción → error tipado), caso de uso, ruta en T-05 (200, idempotente, 400, 401, 500, 503 y aislamiento: el id de otro usuario en query o headers se ignora; cada token borra de su historial) y contrato (200, 400, 401, 503; declarado en las listas de rutas con base y con sesión). Mutación (sin filtro por usuario, sin filtro por producto, tragarse el error de la base, `userId` de la query, caída como 500, `productId` sin uuid) detectada. Verificado de punta a punta con el server compilado contra un Supabase falso local: 401 sin token, 200 dos veces y 400 sin uuid; el `DELETE` que llega a PostgREST filtra `user_id` (del token) y `product_id`. Native sincroniza el contrato; la app lo usa en F-11 |
+
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
-| F-01 | P1 | AGREGAR | server | `DELETE /v1/users/me/history/:productId` | RF-017, D-13 | Bajo | Tests de ruta (200, 400, 401, aislamiento) | `PR-35 feat(user-library): borrar del historial` |
+| F-01 | P1 | AGREGAR | server | ✅ `DELETE /v1/users/me/history/:productId` | RF-017, D-13 | Bajo | Tests de ruta (200, 400, 401, aislamiento) | `PR-35 feat(user-library): borrar del historial` |
 | F-02 | P0 | AGREGAR | server | Módulo `auth`: `signup` + `username-availability` (con los límites de D-48 para `/auth/*`, pendientes de H-03) (el server crea `profiles` con el teléfono, D-46) | ADR-0010, RF-020/021, D-17, D-46 | **Alto** | Tests de contrato y de error (email tomado, username tomado, se deshace el usuario si falla el perfil) | `PR-36 feat(auth): registro` |
 | F-03 | P0 | AGREGAR | server | `login`, `oauth/google`, `oauth/apple`, `refresh`, `logout`; reenvío de IP con `trustProxy` (D-30); rate limit por email | ADR-0010, D-30, RF-022/023/024/027 | **Alto** | Tests de contrato; la IP que se reenvía sale de `request.ip` y nunca del cliente | `PR-37 feat(auth): sesión` |
 | F-04 | P1 | AGREGAR | server | `password/forgot` (202 siempre) y `password/reset` | ADR-0010, RF-025 | Medio | Tests: no revela si el email existe | `PR-38 feat(auth): recuperar contraseña` |
