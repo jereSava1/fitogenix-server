@@ -1,18 +1,18 @@
 import 'dotenv/config';
 import { config } from './platform/config';
 import { buildApp } from './platform/http/buildApp';
+import { resolveUserIdFromToken } from './platform/http/auth';
 import { registerCatalog } from './modules/catalog';
-import { recordScan, resolveUserIdFromToken } from './services/scanHistoryService';
+import { recordScan, registerUserLibrary } from './modules/user-library';
 import { deleteUserRoute } from './routes/users/deleteMe';
-import { savedProductsRoutes } from './routes/users/saved';
-import { scanHistoryRoutes } from './routes/users/history';
 
 // Composition root: arma la app base y le registra las rutas de cada módulo.
 async function start() {
   const app = await buildApp({ logger: true });
 
   // El registro del escaneo se inyecta en catalog (02-arquitectura §3.3): el
-  // usuario se resuelve desde el token y el escaneo va al historial.
+  // usuario se resuelve desde el token y el escaneo va al historial de
+  // user-library. catalog no conoce a user-library.
   await registerCatalog(app, {
     onScan: async ({ token, productId }) => {
       const userId = await resolveUserIdFromToken(token);
@@ -20,8 +20,7 @@ async function start() {
     },
   });
   await app.register(deleteUserRoute);
-  await app.register(savedProductsRoutes);
-  await app.register(scanHistoryRoutes);
+  await registerUserLibrary(app);
 
   await app.listen({ port: config.port, host: '0.0.0.0' });
 }

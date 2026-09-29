@@ -1,8 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SavedProducts } from '../application/saved';
 
 // ── Mock de Supabase ──
 // createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
-// en los `*Result`. Cubre las tres formas que usa savedProductsService:
+// en los `*Result`. Cubre las tres formas que usa el repositorio de guardados:
 //   .from().select().eq().order()   → selectResult (GET)
 //   .from().upsert()                → upsertResult (POST)
 //   .from().delete().eq().eq()      → deleteResult (DELETE)
@@ -24,13 +25,16 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from })),
 }));
 
-type SavedModule = typeof import('./savedProductsService');
-let saved: SavedModule;
+// Portado de services/savedProductsService.test.ts (M-06): se prueban los
+// casos de uso cableados con el repositorio real, igual que en producción.
+let saved: SavedProducts;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  saved = await import('./savedProductsService');
+  const { makeSavedProducts } = await import('../application/saved');
+  const { supabaseSavedRepository } = await import('./supabaseSavedRepository');
+  saved = makeSavedProducts(supabaseSavedRepository);
 });
 
 beforeEach(() => {

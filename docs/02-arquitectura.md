@@ -241,9 +241,9 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 20 | `productRowMapper.ts` · `joinedRowToProduct` | `catalog` · `index.ts` como `productResponseFromRow` | MOVER | Lo consume `user-library` para presentar productos embebidos. **Hecho en M-05:** vive en `infrastructure/productRow.ts` (usa el mapper de filas, y `application/` no puede importar infraestructura) y se expone en el `index.ts` |
 | 21 | `imageService.ts` · `removeBackground` | — | ELIMINAR | Se elimina remove.bg (D-49); se lleva `REMOVE_BG_API_KEY` |
 | 22 | `imageService.ts` · `fetchRetailerImage`, `fetchSearchImageUrl` | — | ELIMINAR | Sin uso; se lleva `SERPAPI_API_KEY` |
-| 23 | `savedProductsService.ts` · `listSavedProducts`, `saveProduct`, `removeSavedProduct` | `user-library` · `application/saved.ts` + `infrastructure/supabaseSavedRepository.ts` | PARTIR | — |
-| 24 | `scanHistoryService.ts` · `recordScan`, `listScanHistory` | `user-library` · `application/history.ts` + `infrastructure/supabaseHistoryRepository.ts` | PARTIR | + `removeFromHistory` (RF-017) |
-| 25 | `scanHistoryService.ts` · `resolveUserIdFromToken` | `platform` · `http/auth.ts` (`optionalAuth`) | MOVER | ⚠ alto riesgo (auth) |
+| 23 | `savedProductsService.ts` · `listSavedProducts`, `saveProduct`, `removeSavedProduct` | `user-library` · `application/saved.ts` + `infrastructure/supabaseSavedRepository.ts` | PARTIR | Hecho en M-06: el repositorio hace el SQL y el caso de uso presenta las filas con `catalog.productResponseFromRow` |
+| 24 | `scanHistoryService.ts` · `recordScan`, `listScanHistory` | `user-library` · `application/history.ts` + `infrastructure/supabaseHistoryRepository.ts` | PARTIR | + `removeFromHistory` (RF-017). **M-06:** partido; `removeFromHistory` queda para F-01. El "nunca lanza" de `recordScan` vive en el repositorio, que loguea como antes |
+| 25 | `scanHistoryService.ts` · `resolveUserIdFromToken` | `platform` · `http/auth.ts` (`optionalAuth`) | MOVER | ⚠ alto riesgo (auth). **M-06:** mudado sin cambios a `http/auth.ts` (T-04 idéntico; sus 2 tests en `resolveUserIdFromToken.test.ts`); `optionalAuth` lo reemplaza en H-02 |
 | 26 | `claudeService.ts` · `enrichWithAI` (+test) | `etl` · `enrichment/claudeEnricher.ts` | MOVER | `@anthropic-ai/sdk` deja de ser dependencia del server |
 | 27 | `offService.ts` | — | ELIMINAR | Sin importadores |
 | 28 | `fallbackFoodApi.ts` (+test) | — | ELIMINAR | Cascada retirada; se lleva `EDAMAM_*` |
@@ -259,7 +259,7 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 33 | `routes/products/lookup.ts` | `catalog/routes/lookup.route.ts` | MOVER | Sin `import` de `user-library` (§3.3). **Hecho en M-05:** `lookupRoutes({ lookup, onScan })`; `main.ts` arma `onScan` con `resolveUserIdFromToken` + `recordScan`. Mientras no exista `optionalAuth` (H-02), `onScan` recibe `{ token, productId }` en vez del `(userId, productId)` de §8.2 |
 | 34 | `routes/products/lookupSchema.ts` | `catalog/routes/lookup.schema.ts` | MOVER | La Fase 3 decide la fuente única del contrato. Hecho en M-05 |
 | 35 | `routes/products/image.ts` | — | ELIMINAR | D-49; native pasa a usar `imageUrl` directo |
-| 36 | `routes/users/saved.ts`, `history.ts` | `user-library/routes/*` | MOVER | + `DELETE /users/me/history/:productId` |
+| 36 | `routes/users/saved.ts`, `history.ts` | `user-library/routes/*` | MOVER | + `DELETE /users/me/history/:productId`. **M-06:** `savedRoutes({ saved })` y `historyRoutes({ history })`; el borrado del historial es F-01 |
 | 37 | `routes/users/deleteMe.ts` | `account/routes/deleteMe.route.ts` + `application/deleteAccount.ts` + `infrastructure/supabaseAuthAdmin.ts` | PARTIR | Deja de crear un cliente Supabase por request |
 | 38 | `types/fitogenix.ts` · `FitogenixProduct` | `catalog` · tipo `ProductResponse` (derivado del schema, Fase 3) | MOVER | — |
 | 39 | `types/fitogenix.ts` · `RawOFFProduct` | `catalog` · `domain/rawProduct.ts` (`RawProduct`) | MOVER | El ETL lo importa desde `catalog/index.ts` |

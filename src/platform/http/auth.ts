@@ -43,3 +43,22 @@ export const requireAuth = fp(authPlugin, {
   name: 'fitogenix-auth',
   fastify: '5.x',
 });
+
+/**
+ * Resuelve el userId desde un access token de Supabase. Devuelve null si el
+ * token es inválido o expiró — SIN loguear error: un token vencido en un
+ * lookup (que degrada a anónimo) es un caso normal, no una falla.
+ *
+ * Lo usa el registro del escaneo del lookup (el `onScan` de main.ts). Vivía en
+ * `services/scanHistoryService.ts`; se mudó acá en M-06 sin cambios. H-02 lo
+ * reemplaza por `optionalAuth` (docs/02-arquitectura.md §5.2 #25).
+ */
+export async function resolveUserIdFromToken(token: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin().auth.getUser(token);
+    if (error || !data.user) return null;
+    return data.user.id;
+  } catch {
+    return null;
+  }
+}

@@ -1,14 +1,15 @@
 /**
  * Ruta de historial de escaneos por usuario. Bajo requireAuth (mismo patrón
- * que saved.ts): `request.userId` viene del JWT de Supabase. La lógica vive
- * en scanHistoryService para poder testearla sin Fastify.
+ * que saved.route.ts): `request.userId` viene del JWT de Supabase. El caso de
+ * uso (`application/history.ts`) se inyecta desde el index del módulo (M-06).
  */
 
-import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../../platform/http/auth';
-import { listScanHistory } from '../../services/scanHistoryService';
+import type { FastifyPluginAsync } from 'fastify';
+import { requireAuth } from '../../../platform/http/auth';
+import type { ScanHistory } from '../application/history';
 
-export async function scanHistoryRoutes(app: FastifyInstance) {
+export const historyRoutes = (deps: { history: ScanHistory }): FastifyPluginAsync => async (app) => {
+  const { listScanHistory } = deps.history;
   await app.register(requireAuth);
 
   // Historial de escaneos, más reciente primero. `limit` opcional (default 20);
@@ -33,4 +34,4 @@ export async function scanHistoryRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: 'No se pudo obtener el historial' });
     }
   });
-}
+};

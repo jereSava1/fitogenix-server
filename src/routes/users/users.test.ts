@@ -2,12 +2,17 @@
  * usuarios (docs/05-plan.md).
  *
  * Se registran los módulos de rutas reales (saved, history, deleteMe) como en
- * main.ts, con Supabase y los servicios simulados. Dos usuarios, A y B, cada
+ * main.ts, con Supabase y los servicios simulados. Desde M-06 las rutas de
+ * user-library reciben los casos de uso inyectados: en vez de simular los
+ * módulos de servicios se les pasan fakes con los mismos nombres, así los
+ * casos y las aserciones quedan idénticos. Dos usuarios, A y B, cada
  * uno con su token: el `userId` que llega a los servicios tiene que salir
  * SIEMPRE del token, nunca de lo que mande el cliente (body, query, headers).
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+import type { SavedProducts } from '../../modules/user-library/application/saved';
+import type { ScanHistory } from '../../modules/user-library/application/history';
 
 const USER_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const USER_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -21,17 +26,15 @@ const supabaseAuth = vi.hoisted(() => ({
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ auth: supabaseAuth })),
 }));
-vi.mock('../../services/savedProductsService', () => ({
-  listSavedProducts: vi.fn(),
-  saveProduct: vi.fn(),
-  removeSavedProduct: vi.fn(),
-}));
-vi.mock('../../services/scanHistoryService', () => ({
-  listScanHistory: vi.fn(),
-}));
-
-let saved: typeof import('../../services/savedProductsService');
-let history: typeof import('../../services/scanHistoryService');
+const saved = {
+  listSavedProducts: vi.fn<SavedProducts['listSavedProducts']>(),
+  saveProduct: vi.fn<SavedProducts['saveProduct']>(),
+  removeSavedProduct: vi.fn<SavedProducts['removeSavedProduct']>(),
+};
+const history = {
+  listScanHistory: vi.fn<ScanHistory['listScanHistory']>(),
+  recordScan: vi.fn<ScanHistory['recordScan']>(),
+};
 let app: FastifyInstance;
 
 const TOKENS: Record<string, string> = { 'token-a': USER_A, 'token-b': USER_B };
@@ -42,16 +45,14 @@ beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
 
-  saved = await import('../../services/savedProductsService');
-  history = await import('../../services/scanHistoryService');
-  const { savedProductsRoutes } = await import('./saved');
-  const { scanHistoryRoutes } = await import('./history');
+  const { savedRoutes } = await import('../../modules/user-library/routes/saved.route');
+  const { historyRoutes } = await import('../../modules/user-library/routes/history.route');
   const { deleteUserRoute } = await import('./deleteMe');
 
   app = Fastify();
   await app.register(deleteUserRoute);
-  await app.register(savedProductsRoutes);
-  await app.register(scanHistoryRoutes);
+  await app.register(savedRoutes({ saved }));
+  await app.register(historyRoutes({ history }));
   await app.ready();
 });
 
