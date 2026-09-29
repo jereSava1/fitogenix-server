@@ -52,10 +52,13 @@ where defaclnamespace = 'public'::regnamespace
 order by 1, 2;
 
 
--- 1F · Cuatro productos al azar para el smoke del server (solo antes)
+-- 1F · Cuatro productos al azar para el smoke del server (solo antes).
+-- Solo filas con ingredientes o nutrientes: sin datos crudos el lookup las
+-- trata como "no está en el catálogo" y responde 404 aunque la fila exista.
 select barcode, product_name
 from products
 where barcode ~ '^[0-9]{8,14}$'
   and length(product_name) between 5 and 40
+  and (coalesce(ingredients_text, '') <> '' or coalesce(nutriments, '{}'::jsonb) <> '{}'::jsonb)
 order by random()
 limit 4;

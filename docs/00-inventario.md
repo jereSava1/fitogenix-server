@@ -330,6 +330,8 @@ Se registran acá para que no se pierdan. Cada uno se formaliza en su fase: RNF 
 
 ### 7.1 SEC-01 · Lectura pública del catálogo con la anon key (P0)
 
+> **Cerrado el 2026-09-29 por U-01** ([`sql/u01/`](sql/u01/README.md)).
+
 **RNF (Fase 1), seguridad:** *"Ningún dato de catálogo es accesible con la anon key."* Medida: con la anon key, `GET /rest/v1/products`, `GET /rest/v1/products_staging` y `POST /rest/v1/rpc/search_products_by_name` responden con error de permisos (no con filas ni con una lista vacía), y el lookup del server sigue respondiendo 200.
 
 **Precondiciones del fix:**

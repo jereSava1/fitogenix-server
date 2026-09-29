@@ -81,12 +81,12 @@ Opcional, si hay un usuario de prueba con sesión: `GET $API/users/me/saved` y `
 
 | Paso | Resultado | OK |
 |---|---|---|
-| 0 · V-03 y ETL parado | | |
+| 0 · V-03 y ETL parado | Confirmado por el responsable | ✅ |
 | 1 · verificación antes | 2026-09-29. **1A:** 8 filas, `rls = true`; `anon`, `authenticated`, `postgres` y `service_role` con `DELETE,INSERT,MAINTAIN,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE` en las dos tablas; sin `PUBLIC`. `MAINTAIN` no estaba previsto: se agregó al rollback y al chequeo del cambio. **1B:** la policy pública, como se esperaba. **1C:** 1 fila, `security_definer = false`, todo `true` (incluido `public_exec`: la línea PUBLIC del rollback va). **1D:** 0 filas (ninguna vista depende de las tablas). **1E:** defaults de `postgres` y `supabase_admin` que dan todo a `anon`/`authenticated` en tablas (`arwdDxtm`), funciones y secuencias → insumo de C-05 (D-60). **1F:** `7791708000081` · Langostino Pelado Crudo · `7790080032055` · Huevos Color Yemalinda Maple Map 20 Un. | ✅ |
-| 2 · P-01 / P-02 / P-03 antes | | |
-| 3 · S-01 / S-02 antes | | |
-| 4 · cambio | | |
-| 5 · verificación después | | |
-| 6 · P-01 / P-02 / P-03 después | | |
-| 7 · S-03 / S-04 después | | |
-| 8 · logs de Render | | |
+| 2 · P-01 / P-02 / P-03 antes | No se corrieron: la 1A a la 1C ya mostraban la exposición | — |
+| 3 · S-01 / S-02 antes | No se corrieron | — |
+| 4 · cambio | 2026-09-29: `Success. No rows returned` (los chequeos internos pasaron) | ✅ |
+| 5 · verificación después | Pendiente, opcional: P-01 a P-03 ya prueban el efecto | — |
+| 6 · P-01 / P-02 / P-03 después | Las tres: `HTTP 401` con `"code":"42501"` (`permission denied for table products`, `… products_staging`, `… function search_products_by_name`) | ✅ |
+| 7 · S-03 / S-04 después | `7790080032055` y los Huevos dieron **404**: 3 de las 4 filas de la 1F no tienen ingredientes ni nutrientes, y el lookup trata esas filas como fuera de catálogo (`cacheService.ts · rowToCachedRaw`). Con la secret key del server, la misma fila y la RPC responden 200: el cambio no afectó a `service_role`. Se corrigió la 1F y se repitió con productos con datos: `7790787035007`, `7790580129880`, "Vino Los Helechos Chardonnay 750" y "Langostino Pelado Crudo" → **200** en los cuatro (barcode y RPC), entre 0,5 y 1,1 s | ✅ |
+| 8 · logs de Render | Pendiente de revisión por el responsable | — |

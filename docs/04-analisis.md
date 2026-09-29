@@ -97,7 +97,7 @@ Estados de la matriz de requisitos:
 | RNF-D03 | Auth caído → 401 | `plugins/auth.ts` |
 | RNF-D05 | Health no refleja dependencias | `main.ts` |
 | RNF-D07 | Disponibilidad sin medir | Sin monitoreo externo |
-| RNF-S01 | Catálogo legible con la anon key | SEC-01 |
+| RNF-S01 | Catálogo legible con la anon key (**cerrado por U-01, 2026-09-29**) | SEC-01 |
 | RNF-S04 | Rate limit en memoria, único para todo | `main.ts` |
 | RNF-S05 | SSRF en `/products/image` | Se resuelve eliminando el endpoint (D-49) |
 | RNF-S06 | CORS abierto | `origin: true` en `main.ts` |
@@ -243,7 +243,7 @@ Todas las brechas del contrato están detalladas en [03-contratos.md](03-contrat
 | **SEC-02** | `fitogenix-native/ENVIRONMENT.md` tiene en **texto plano** la secret key de Supabase de producción (acceso total a la base, saltea RLS), la de Anthropic y la de SerpAPI. No está versionado ni en el historial, pero es un archivo en disco pensado para leerse y compartirse. **Además, esas claves se imprimieron en la salida de esta sesión de auditoría** al buscar secretos (no quedaron en `docs/`: verificado) | **Crítica** | **Resuelto en parte (D-51):** archivo eliminado (movido a la Papelera). Las claves **no se rotan** (riesgo aceptado). Pendiente del usuario: vaciar la Papelera |
 | SEC-03 | El `.env` local de native tiene `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY` y `SERPAPI_API_KEY`, que la app no usa | Media | Borrarlas del `.env` de native |
 | SEC-04 | El server exige `ANTHROPIC_API_KEY` y `SERPAPI_API_KEY` para arrancar sin usarlas | Baja | D-05 |
-| SEC-05 | La anon key de Supabase va embebida en la app; con SEC-01 abre el catálogo | Alta (hasta cerrar SEC-01) | SEC-01 + D-28 |
+| SEC-05 | La anon key de Supabase va embebida en la app; con SEC-01 abre el catálogo | Alta hasta cerrar SEC-01; baja desde U-01 (2026-09-29): la anon key ya no abre el catálogo | SEC-01 + D-28 |
 | SEC-06 | `eas.json` versiona el email personal de un colaborador (`appleId`) | Baja (dato personal) | Mover a config de EAS |
 | — | **Historial de git limpio**: 0 claves y 0 archivos `.env` versionados en los dos repos, incluidas las ramas borradas (revisadas desde los bundles) | — | — |
 

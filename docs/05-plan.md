@@ -53,7 +53,7 @@ flowchart LR
 
 | ID | Estado |
 |---|---|
-| U-01 | **SQL entregado, pendiente de corrida** (D-58): [`sql/u01/`](sql/u01/README.md) en `fix/u01-cerrar-catalogo`, mergeado a `fitogenix/refactor-cleanup`. Probado en un Postgres local con los roles de Supabase simulados. Se cierra cuando el responsable devuelva los resultados de las pruebas P y S |
+| U-01 | ✅ **Aplicado en producción el 2026-09-29** ([`sql/u01/`](sql/u01/README.md), `fix/u01-cerrar-catalogo`). Con la anon key, `products`, `products_staging` y la RPC responden `401 / 42501`; el lookup del server sigue en 200 por barcode y por nombre. Queda mirar los logs de Render (paso 8) |
 | U-02 | ✅ Hecho: `d9fabb5` en `fix/etl-paginacion` (server), mergeado a `fitogenix/refactor-cleanup`. Tests nuevos fallan sin el arreglo (verificado) |
 | U-03 | ✅ Hecho: `97d4998` en `fix/eliminar-cuenta` (native), mergeado a `fitogenix/refactor-cleanup`. 5 tests nuevos; `tsc` sin errores nuevos |
 
