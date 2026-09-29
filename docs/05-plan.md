@@ -74,7 +74,9 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 |---|---|
 | T-01 | ✅ Hecho en `ci/t01-tests-y-tipos`, mergeado a `fitogenix/refactor-cleanup`. `npm run typecheck` (src + `tsconfig.scripts.json`: 32 archivos de `scripts/`, 0 errores) y `npm test` (424) en cada push y PR. Falta ver el primer run en GitHub (no se pusheó) |
 | T-02 | ✅ Hecho en `test/t02-caracterizar-presentacion`, mergeado a `fitogenix/refactor-cleanup`. 32 tests nuevos: bordes de banda en `presentation.test.ts`; `fito` y `flagged` por borde en `productLookupService.presentation.test.ts` (motor simulado; `flagged` < 40 marcado `CARACTERIZA … K-04`); snapshot de la respuesta completa de `mapRawToProduct` para 10 goldens (`__snapshots__/`, generado, 966 líneas). Prueba de mutación: mover el corte de `flagged` o un color de banda hace fallar la suite |
-| T-03 a T-07 | Pendientes |
+| T-03 | En curso en `test/t03-golden-catalogo` (sin mergear): consulta [`sql/t03-muestra-catalogo.sql`](sql/t03-muestra-catalogo.sql) entregada; el golden y su test se agregan cuando llegue la muestra (D-58) |
+| T-04 | ✅ Hecho en `test/t04-caracterizar-auth`, mergeado a `fitogenix/refactor-cleanup`. `src/plugins/auth.test.ts`: 17 tests con Supabase simulado. Cuatro `CARACTERIZA … H-02`: Auth caído → 401; `getUser` que lanza → 500; `Bearer` sin espacio se manda como token; un header sin prefijo `Bearer` se usa entero como token. Prueba de mutación verificada |
+| T-05 a T-07 | Pendientes |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
@@ -157,7 +159,7 @@ Reglas: **mudanzas sin cambios de comportamiento**; los tests de las etapas 1 y 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
 | H-01 | P0 | REFACTOR | server | `DependencyUnavailableError`, manejador de errores central, timeouts (Redis 200 ms sin reintentos; Supabase 2 s), `/health/ready` | ADR-0006, RNF-D01/D02/D05, RNF-U01 | Medio | Antes: T-06. Después: T-06 actualizado a propósito (**base caída → 503**; Redis caído → 200 rápido) | `PR-30 fix: 503 ante caídas, nunca 404` |
-| H-02 | P1 | REFACTOR | server | JWT local con JWKS (`jose`); `optionalAuth` reemplaza a `resolveUserIdFromToken`; `getUser` extra en `DELETE /v1/users/me` | ADR-0008 (aceptado), RNF-D03 | **Alto (auth)** | Antes: T-04 y T-05. Después: T-04 actualizado a propósito (**Auth caído → 503**) + `iss` / `aud` incorrectos → 401 | `PR-31 feat(auth): validación local del JWT` |
+| H-02 | P1 | REFACTOR | server | JWT local con JWKS (`jose`); `optionalAuth` reemplaza a `resolveUserIdFromToken`; `getUser` extra en `DELETE /v1/users/me` | ADR-0008 (aceptado), RNF-D03 | **Alto (auth)** | Antes: T-04 y T-05. Después: T-04 actualizado a propósito (**Auth caído → 503**; y decidir los otros tres `CARACTERIZA` de `auth.test.ts`: `getUser` que lanza, `Bearer` sin espacio, header sin prefijo) + `iss` / `aud` incorrectos → 401 | `PR-31 feat(auth): validación local del JWT` |
 | H-03 | P1 | REFACTOR | server | CORS con lista explícita (o deshabilitado: la app nativa no lo necesita); límites por ruta (D-48); `logger.redact` | RNF-S04, RNF-S06, D-48 | Bajo | Después: tests de 429 por ruta | `PR-32 feat: CORS, límites y redact` |
 | H-04 | P2 | REFACTOR | server | Una sola `normalizeQuery`, también para las claves de Redis | 03-contratos §B.4.9 | Bajo | Después: test de normalización con acentos | `PR-33 fix(catalog): normalización única` |
 | H-05 | P2 | AGREGAR | server | `Dockerfile` multi-stage | ADR-0007 | Bajo | Después: build de la imagen en CI | `PR-34 chore: Dockerfile portable` |
