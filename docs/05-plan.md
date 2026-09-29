@@ -97,7 +97,8 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | ID | Estado |
 |---|---|
 | E-01 | ✅ Hecho en `chore/e01-cascada-retirada`, mergeado a `fitogenix/refactor-cleanup`. Borrados `offService.ts`, `fallbackFoodApi.ts` y `openBeautyFactsApi.ts` (+ sus 2 tests, 12 casos) y `EDAMAM_*` de `config.ts` y `.env.example`. Ningún import en `src/` ni `scripts/` (solo comentarios). Suite: 514 → 502. En Render, `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` quedan sin uso y se pueden borrar |
-| E-02 a E-07 | Pendientes |
+| E-02 | ✅ Hecho en `chore/e02-imagenes`, mergeado a `fitogenix/refactor-cleanup`. Borrados `imageService.ts` y `routes/products/image.ts` (+ su registro en `main.ts`); `serpApiKey` y `removeBgApiKey` salen de `config.ts` y `.env.example`, así que el server ya no exige `SERPAPI_API_KEY` para arrancar (D-05). No había tests de esos archivos. `GET /products/image` → 404 cuando esto llegue a `main` (native cae a la foto original por `CleanProductImage · onError` hasta K-06). En Render, `SERPAPI_API_KEY` y `REMOVE_BG_API_KEY` quedan sin uso. Los tests que setean `SERPAPI_API_KEY` se limpian en C-03 |
+| E-03 a E-07 | Pendientes |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
