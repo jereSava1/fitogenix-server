@@ -105,9 +105,8 @@ describe('recordScan', () => {
   });
 
   it('no lanza ante violación de FK (producto purgado del cache entre lookup y registro)', async () => {
-    // Nota: el viejo race "producto todavía no cacheado" ya no existe — el
-    // cold path AWAITEA setCachedProduct (migración 006) — pero la FK puede
-    // fallar igual si la fila se purga en el medio, y nunca debe romper nada.
+    // El lookup solo lee del catálogo, pero la FK puede fallar igual si la
+    // fila se borra en el medio, y nunca debe romper nada.
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     upsertResult = {
       error: {

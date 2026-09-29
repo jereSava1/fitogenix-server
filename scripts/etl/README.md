@@ -1,6 +1,6 @@
 # ETL — poblamiento masivo del catálogo
 
-Código del Agente ETL (ver `fitogenix-agents/06-agente-etl-data.md` para el diseño completo — este README es solo el cómo correrlo). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload`, `mapRawToProduct`, `enrichWithAI` y `ftgEngine` directamente, sin duplicarlos. No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts existentes en `scripts/`.
+Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload`, `mapRawToProduct`, `enrichWithAI` y `ftgEngine` directamente, sin duplicarlos. No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts existentes en `scripts/`.
 
 ```
 scripts/etl/
@@ -170,6 +170,6 @@ from products order by updated_at desc limit 10;
 
 ## Nunca
 
-- Correr `etl:merge -- --enrich` sin límite y sin haber confirmado presupuesto con el Agente de Datos (`05-agente-datos.md`) — gasta tokens de Claude en lote.
+- Correr `etl:merge -- --enrich` sin límite y sin haber confirmado presupuesto con el responsable del proyecto — gasta tokens de Claude en lote.
 - Subir el `.env` a git (ya está en `.gitignore`, verificado).
 - Escalar `--pages`/`--limit` a valores grandes antes de revisar los resultados del subconjunto chico.

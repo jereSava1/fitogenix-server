@@ -1,7 +1,7 @@
 // Heurísticas de calidad de datos — auditoría de `products`. Todo PURO (sin
 // I/O): candidatea filas sospechosas por patrón, no decide ni corrige solo.
 // El job (jobs/auditDataQuality.ts) las reporta para revisión humana antes
-// de tocar nada. Ver fitogenix-agents/06-agente-etl-data.md.
+// de tocar nada.
 
 // Patrones típicos de texto de fábrica/legal que a veces termina pegado en
 // `ingredients_text` por errores de carga comunitaria en Open Food Facts —

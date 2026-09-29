@@ -1,6 +1,5 @@
 // Lectura/escritura de `products_staging` (migrations/009_products_staging.sql).
 // Ningún adapter ni job escribe directo a `products` — todo pasa por acá primero.
-// Ver 06-agente-etl-data.md, Fase 3.
 import { admin } from './supabaseAdmin';
 import type { RawOFFProduct } from '../../../src/types/fitogenix';
 

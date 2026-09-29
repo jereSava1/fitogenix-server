@@ -11,7 +11,7 @@
 //      mg en vez de g).
 //
 // Es el paso 1 (barato, determinístico, sin gastar un token de IA) del plan
-// de auditoría de datos — ver fitogenix-agents/06-agente-etl-data.md. Reporta
+// de auditoría de datos. Reporta
 // para revisión humana; la corrección (anular el campo y re-pasar la fila
 // por el gate de completitud + merge existente) es un paso APARTE y
 // deliberado, después de mirar la muestra acá. No se auto-aplica nada.
