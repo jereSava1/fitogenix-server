@@ -4,14 +4,11 @@
 
 import { getRedis } from '../../../platform/redis';
 import type { CachedProduct, ProductCache } from '../application/ports';
+import { normalizeQuery } from '../domain/query';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';
 const SEARCH_KEY_PREFIX = 'ftg:search:';
 const SEARCH_TTL_SECONDS = 2592000; // 30 días
-
-function normalizeQuery(query: string): string {
-  return query.toLowerCase().trim();
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

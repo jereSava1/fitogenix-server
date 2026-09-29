@@ -173,6 +173,14 @@ describe('redisService con Redis configurado — entrada vieja → miss → se r
     expect(store.get('ftg:search:coca cola')).toBe('7790895000123');
     await expect(redis.getSearchBarcode('COCA COLA')).resolves.toBe('7790895000123');
   });
+
+  // H-04: la misma normalización que la búsqueda en la base (acentos y espacios).
+  it('queries equivalentes con acentos o espacios de más comparten clave', async () => {
+    await redis.setSearchBarcode('Café  con   LECHE', '7790001000017');
+    expect(store.get('ftg:search:cafe con leche')).toBe('7790001000017');
+    await expect(redis.getSearchBarcode('cafe con leche')).resolves.toBe('7790001000017');
+    await expect(redis.getSearchBarcode('Cafe\tcon leche')).resolves.toBe('7790001000017');
+  });
 });
 
 describe('redisProductCache — el puerto ProductCache (M-04)', () => {
