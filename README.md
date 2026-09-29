@@ -26,8 +26,9 @@ npm run dev             # tsx watch src/main.ts, puerto 3000
 ## Antes de dar algo por terminado
 
 ```bash
-npm run typecheck    # tsc de src/ y de scripts/ (tsconfig.scripts.json)
-npm run lint:deps    # reglas de dependencias entre módulos (dependency-cruiser)
+npm run typecheck    # tsc de src/, etl/ y scripts/ (tsconfig.scripts.json)
+npm run lint:deps    # reglas de dependencias entre módulos (dependency-cruiser); cualquier violación falla
+npm run lint:unused  # código, exports y dependencias sin uso (knip --production, config en knip.json)
 npm test             # vitest
 ```
 
