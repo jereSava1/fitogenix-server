@@ -26,7 +26,7 @@ import {
   type StagingRowFull,
 } from '../lib/staging';
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 import { isComplete } from '../lib/completeness';
 import { mapRawToProduct } from '../../src/modules/catalog';
 import { buildCachePayload } from '../../src/modules/catalog';
@@ -46,11 +46,11 @@ function parseArgs() {
 }
 
 /**
- * Los productos del lote que YA existen, mapeados a RawOFFProduct para poder
+ * Los productos del lote que YA existen, mapeados a RawProduct para poder
  * entrar al merge como una fuente más.
  */
-async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, RawOFFProduct>> {
-  const out = new Map<string, RawOFFProduct>();
+async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, RawProduct>> {
+  const out = new Map<string, RawProduct>();
   if (barcodes.length === 0) return out;
 
   const { data, error } = await admin()

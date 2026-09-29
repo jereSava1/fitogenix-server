@@ -21,7 +21,7 @@ import { admin } from '../lib/supabaseAdmin';
 import { parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from '../adapters/vtexAdapter';
 import { mapRawToProduct } from '../../src/modules/catalog';
 import { buildCachePayload } from '../../src/modules/catalog';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
 const UA = { 'User-Agent': 'Fitogenix-ETL/0.1 (contacto: soporte@fitogenix.com)' };
 
@@ -142,7 +142,7 @@ async function main() {
 
     // Los datos NUESTROS mandan cuando ya existen: esto llena huecos, no
     // pisa lo que ya teníamos de una fuente que pudo ser mejor.
-    const merged: RawOFFProduct = {
+    const merged: RawProduct = {
       product_name: p.product_name ?? (found.productName as string | undefined),
       brands: p.brand ?? (found.brand as string | undefined),
       image_url: p.image_url ?? undefined,

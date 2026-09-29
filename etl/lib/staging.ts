@@ -1,12 +1,12 @@
 // Lectura/escritura de `products_staging` (supabase/migrations/legacy/009_products_staging.sql).
 // Ningún adapter ni job escribe directo a `products` — todo pasa por acá primero.
 import { admin } from './supabaseAdmin';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
 export type StagingInsert = {
   source: string;
   barcode: string | null;
-  raw: RawOFFProduct;
+  raw: RawProduct;
   runId: string;
 };
 
@@ -95,7 +95,7 @@ export async function insertStagingRows(rows: StagingInsert[]): Promise<number> 
   return inserted;
 }
 
-export type PendingStagingRow = { id: string; source: string; raw: RawOFFProduct };
+export type PendingStagingRow = { id: string; source: string; raw: RawProduct };
 
 // `discarded_incomplete` NO es un estado terminal — es un "soft fail"
 // reintentable, y desde la migración 010 lo es SIEMPRE, no solo con --enrich.
@@ -150,7 +150,7 @@ export type StagingRowFull = {
   source: string;
   merge_status: string;
   run_id: string;
-  raw: RawOFFProduct;
+  raw: RawProduct;
 };
 
 /**
@@ -175,7 +175,7 @@ export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<stri
   // `pending`. No se perdía estado —se reintentaban en la corrida siguiente— pero
   // cada corrida procesaba ~64 % de lo que decía procesar, sin un solo error.
   // Medido el 2026-09-03: `--limit 5000` escribió 3.209 barcodes y salteó 1.791.
-  await paginateRows<StagingRowFull & { raw_payload: RawOFFProduct }>(
+  await paginateRows<StagingRowFull & { raw_payload: RawProduct }>(
     'fetchRowsForBarcodes',
     (from, to) =>
       admin()
@@ -283,7 +283,7 @@ export async function fetchPendingRowsForBarcode(
     console.error(`[staging] fetchPendingRowsForBarcode(${barcode}) error:`, error?.message);
     return [];
   }
-  return (data as { id: string; source: string; raw_payload: RawOFFProduct }[]).map((r) => ({
+  return (data as { id: string; source: string; raw_payload: RawProduct }[]).map((r) => ({
     id: r.id,
     source: r.source,
     raw: r.raw_payload,
@@ -320,7 +320,7 @@ export async function fetchAllRowsForBarcode(barcode: string): Promise<PendingSt
     console.error(`[staging] fetchAllRowsForBarcode(${barcode}) error:`, error?.message);
     return [];
   }
-  return (data as { id: string; source: string; raw_payload: RawOFFProduct }[]).map((r) => ({
+  return (data as { id: string; source: string; raw_payload: RawProduct }[]).map((r) => ({
     id: r.id,
     source: r.source,
     raw: r.raw_payload,

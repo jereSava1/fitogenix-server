@@ -4,7 +4,7 @@
 // de origen del producto; el inglés es el más común después del español.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { INGREDIENTS, ADDITIVES } from '../src/modules/scoring/domain/data/ingredients';
+import { INGREDIENTS, ADDITIVES } from '../src/modules/scoring';
 
 // clave = alias español ya existente (localiza la entrada) → aliases EN a sumar
 const EN: Record<string, string[]> = {

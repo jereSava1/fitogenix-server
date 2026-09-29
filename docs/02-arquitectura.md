@@ -261,15 +261,15 @@ Acción: **MOVER** (sin cambios de lógica), **PARTIR** (se reparte en varios de
 | 35 | `routes/products/image.ts` | — | ELIMINAR | D-49; native pasa a usar `imageUrl` directo |
 | 36 | `routes/users/saved.ts`, `history.ts` | `user-library/routes/*` | MOVER | + `DELETE /users/me/history/:productId`. **M-06:** `savedRoutes({ saved })` y `historyRoutes({ history })`; el borrado del historial es F-01 |
 | 37 | `routes/users/deleteMe.ts` | `account/routes/deleteMe.route.ts` + `application/deleteAccount.ts` + `infrastructure/supabaseAuthAdmin.ts` | PARTIR | Deja de crear un cliente Supabase por request. **Hecho en M-07:** usa `platform/supabase.ts · supabaseAdmin()` (misma URL y key) |
-| 38 | `types/fitogenix.ts` · `FitogenixProduct` | `catalog` · tipo `ProductResponse` (derivado del schema, Fase 3) | MOVER | — |
-| 39 | `types/fitogenix.ts` · `RawOFFProduct` | `catalog` · `domain/rawProduct.ts` (`RawProduct`) | MOVER | El ETL lo importa desde `catalog/index.ts` |
+| 38 | `types/fitogenix.ts` · `FitogenixProduct` | `catalog` · tipo `ProductResponse` (derivado del schema, Fase 3) | MOVER | **M-09:** mudado sin renombrar a `application/productResponse.ts`; el nombre y la derivación del schema llegan con K-01 / K-04 |
+| 39 | `types/fitogenix.ts` · `RawOFFProduct` | `catalog` · `domain/rawProduct.ts` (`RawProduct`) | MOVER | El ETL lo importa desde `catalog/index.ts`. Hecho en M-09 (renombrado en todo el código) |
 
 ### 5.4 Fuera de `src/`
 
 | # | Actual | Destino | Acción |
 |---|---|---|---|
 | 40 | `scripts/etl/**` | `etl/**` | MOVER; imports de `src/services/*` → APIs públicas de `catalog` y `scoring`. **Hecho en M-08** (el ETL usa `catalog/index.ts`: `mapRawToProduct`, `buildCachePayload` y los tipos) |
-| 41 | `scripts/{audit-scores,score-histogram,capture-golden,add-en-aliases}.ts` | `scripts/` | Se quedan; imports → `scoring/index.ts` |
+| 41 | `scripts/{audit-scores,score-histogram,capture-golden,add-en-aliases}.ts` | `scripts/` | Se quedan; imports → `scoring/index.ts`. **Hecho en M-09:** `add-en-aliases` usa `INGREDIENTS` / `ADDITIVES`, que `scoring` expone para curaduría. `audit-scores` y `score-histogram` toman el cliente Supabase de `etl/lib/supabaseAdmin.ts` |
 | 42 | `scripts/test-search-rpc.ts` | — | ELIMINAR (smoke manual de una sola vez; confirmado, D-31) |
 | 43 | `migrations/*.sql` | `supabase/migrations/` + baseline | ADR-0009 |
 | 44 | `MOTOR_V21_INFORME.md` | `docs/` (histórico) o eliminar | Se decide en la Fase 4 |

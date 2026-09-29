@@ -1,4 +1,4 @@
-/* Fila de `products` → `RawOFFProduct` reconstruido (funciones puras, sin I/O).
+/* Fila de `products` → `RawProduct` reconstruido (funciones puras, sin I/O).
  *
  * Adaptador de la tabla `products`: lo comparten el lector del catálogo
  * (`supabaseProductReader.ts`) y los listados de guardados e historial
@@ -7,7 +7,8 @@
  * `services/productRowMapper.ts · joinedRowToProduct` (M-05).
  */
 
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
+import type { RawProduct } from '../domain/rawProduct';
 import type { CachedProductRow } from '../application/ports';
 import { mapRawToProduct } from '../application/productResponse';
 
@@ -23,7 +24,7 @@ function asStringArray(v: unknown): string[] | undefined {
 }
 
 /**
- * Reconstruye el RawOFFProduct crudo desde una fila de `products` (función PURA,
+ * Reconstruye el RawProduct crudo desde una fila de `products` (función PURA,
  * sin I/O). Compartida entre las lecturas del catálogo (supabaseProductReader) y
  * productResponseFromRow (listados de guardados/historial con productos embebidos
  * vía PostgREST) para que todos apliquen EXACTAMENTE el mismo mapeo.
@@ -46,7 +47,7 @@ export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow 
   // Fila sin datos crudos (o con nutriments vacío) → tratar como miss.
   if (!ingredientsText && !hasNutriments) return null;
 
-  const raw: RawOFFProduct = {
+  const raw: RawProduct = {
     product_name: typeof data.product_name === 'string' ? data.product_name : undefined,
     brands: typeof data.brand === 'string' ? data.brand : undefined,
     image_url: typeof data.image_url === 'string' ? data.image_url : undefined,

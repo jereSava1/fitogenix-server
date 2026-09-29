@@ -11,7 +11,7 @@
  */
 
 import { productResponseFromRow } from '../../catalog';
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../../catalog';
 import type { HistoryRepository } from './ports';
 
 export function makeScanHistory(repo: HistoryRepository) {

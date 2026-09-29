@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
 // ── Mock del SDK de Anthropic ──
 // `new Anthropic({...})` debe devolver un objeto con `messages.create()` —
@@ -58,7 +58,7 @@ function setClaudeResponse(json: unknown): void {
 
 describe('enrichWithAI', () => {
   it('no llama a Claude si ya hay ingredientes y nutrientes clave', async () => {
-    const off: RawOFFProduct = {
+    const off: RawProduct = {
       product_name: 'Producto completo',
       ingredients_text: 'harina, agua, sal',
       nutriments: { 'energy-kcal_100g': 300, proteins_100g: 5, carbohydrates_100g: 40 },
@@ -75,7 +75,7 @@ describe('enrichWithAI', () => {
     setClaudeResponse({
       nutriments: { 'energy-kcal_100g': 4500, proteins_100g: 8, carbohydrates_100g: 40 },
     });
-    const off: RawOFFProduct = {
+    const off: RawProduct = {
       product_name: 'Producto sin nutrientes',
       brands: 'Marca',
       ingredients_text: 'harina, agua, sal, azúcar',
@@ -88,7 +88,7 @@ describe('enrichWithAI', () => {
 
   it('no setea nutriments si TODOS los valores propuestos son implausibles', async () => {
     setClaudeResponse({ nutriments: { 'energy-kcal_100g': 4500, carbohydrates_100g: 817 } });
-    const off: RawOFFProduct = {
+    const off: RawProduct = {
       product_name: 'Producto raro',
       ingredients_text: 'harina, agua, sal, azúcar',
     };
@@ -98,7 +98,7 @@ describe('enrichWithAI', () => {
 
   it('acepta nutrientes dentro de rango normalmente', async () => {
     setClaudeResponse({ nutriments: { 'energy-kcal_100g': 450, proteins_100g: 8, carbohydrates_100g: 60 } });
-    const off: RawOFFProduct = {
+    const off: RawProduct = {
       product_name: 'Producto normal',
       ingredients_text: 'harina, agua, sal, azúcar',
     };
@@ -108,7 +108,7 @@ describe('enrichWithAI', () => {
 
   it('completa ingredients_text cuando falta', async () => {
     setClaudeResponse({ ingredients_text: 'agua, sal' });
-    const off: RawOFFProduct = {
+    const off: RawProduct = {
       product_name: 'Producto sin ingredientes',
       nutriments: { 'energy-kcal_100g': 300, proteins_100g: 5, carbohydrates_100g: 40 },
     };
@@ -118,13 +118,13 @@ describe('enrichWithAI', () => {
 
   it('no crashea con JSON inválido de Claude — devuelve el producto sin tocar', async () => {
     mockResponseText = 'esto no es json';
-    const off: RawOFFProduct = { product_name: 'X' };
+    const off: RawProduct = { product_name: 'X' };
     const result = await enrichWithAI(off);
     expect(result).toBe(off);
   });
 
   it('no llama a Claude si no hay product_name ni brands', async () => {
-    const off: RawOFFProduct = {};
+    const off: RawProduct = {};
     const result = await enrichWithAI(off);
     expect(messagesCreate).not.toHaveBeenCalled();
     expect(result).toBe(off);

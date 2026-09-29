@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
+import type { RawProduct } from '../domain/rawProduct';
 
 // ── Mock de Supabase ──
 // createClient devuelve un cliente cuyo query builder resuelve a lo que dejemos
@@ -62,7 +63,7 @@ const makeProduct = (overrides: Record<string, unknown> = {}): FitogenixProduct 
     ...overrides,
   }) as unknown as FitogenixProduct;
 
-const rawGalletitas: RawOFFProduct = {
+const rawGalletitas: RawProduct = {
   product_name: 'Galletitas',
   ingredients_text: 'harina, azucar',
   nutriments: { sugars_100g: 20 },
@@ -91,7 +92,7 @@ describe('buildCachePayload', () => {
   });
 
   it('usa null para crudos ausentes', () => {
-    const raw: RawOFFProduct = { product_name: 'X' };
+    const raw: RawProduct = { product_name: 'X' };
     const product = makeProduct({
       name: 'X',
       brand: '',
@@ -123,7 +124,7 @@ describe('buildCachePayload', () => {
   });
 
   it('producto solo-IA: name_key SIN prefijo y sin columna barcode', () => {
-    const raw: RawOFFProduct = {
+    const raw: RawProduct = {
       product_name: 'Alfajor Artesanal',
       ingredients_text: 'dulce de leche',
     };
@@ -163,7 +164,7 @@ describe('rowToCachedRaw', () => {
     ai_enriched: true,
   };
 
-  it('reconstruye el RawOFFProduct y expone productId/barcode/nameKey', () => {
+  it('reconstruye el RawProduct y expone productId/barcode/nameKey', () => {
     const result = cache.rowToCachedRaw(fullRow);
     expect(result).not.toBeNull();
     expect(result?.productId).toBe('uuid-galletitas');

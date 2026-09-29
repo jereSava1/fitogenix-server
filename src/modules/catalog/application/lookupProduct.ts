@@ -1,7 +1,7 @@
 import type { ProductCache, ProductReader } from './ports';
 import { mapRawToProduct } from './productResponse';
 import { isBarcode, nameKey } from '../domain/query';
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from './productResponse';
 
 /**
  * Búsqueda de productos — SOLO catálogo propio (decisión de producto,

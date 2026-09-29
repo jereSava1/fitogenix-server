@@ -10,9 +10,59 @@ import {
   getScoreTagline,
   resolveProductStatus,
   scoreProduct,
+  type AnalyzedIngredient,
+  type NoScoreCode,
+  type NutritionFacts,
 } from '../../scoring';
 import { extractCategory, extractNutrition } from '../domain/productData';
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { RawProduct } from '../domain/rawProduct';
+
+/** La respuesta de `POST /products/lookup` y de cada ítem de guardados e
+ *  historial. Hasta M-09 vivía en `src/types/fitogenix.ts`; K-01 la deriva del
+ *  schema del contrato y K-04 la reemplaza por `ProductDetail` / `ProductSummary`. */
+export type FitogenixProduct = {
+  id: string;
+  name: string;
+  subtitle: string | null;
+  brand: string;
+  category: string;
+  categoryEmoji: string;
+
+  /**
+   * `null` cuando §1 del motor dice que no se puntúa: fuera de alcance, sin
+   * datos suficientes, o lista que no se pudo identificar. Es un estado de
+   * primera clase, no un error — la app muestra el mensaje de `noScore` en vez
+   * del número. Nunca se rellena con un valor conservador: "la ausencia de
+   * datos nunca mejora un puntaje".
+   */
+  score: number | null;
+  scoreAvailable: boolean;
+  noScore: { code: NoScoreCode; message: string } | null;
+
+  flagged: boolean;
+  emoji: string;
+  bgColor: string;
+  imageUrl: string | null;
+  ingredients: readonly AnalyzedIngredient[];
+  nutrition: NutritionFacts;
+  // No se manda `breakdown` (decisión de producto, 2026-08-18): la cuenta
+  // paso por paso es información nuestra, no del usuario B2C — la lista de
+  // ingredientes con severidad ya cubre el "por qué". El motor lo sigue
+  // calculando internamente (ver `scoreProduct` en `modules/scoring` / scripts de ETL y
+  // auditoría), solo que ya no cruza la red.
+  dataSource: string;
+  aiEnriched?: boolean;
+  // Identidad del producto: uuid de la fila en `products` (migración 006).
+  // Es el identificador estable que el cliente usa para guardar/quitar el
+  // producto en favoritos (POST/DELETE /users/me/saved).
+  productId: string;
+  // ── Presentación derivada del score (calculada server-side, única fuente
+  // de verdad). El cliente solo renderiza estos campos, no recalcula umbrales.
+  scoreLabel: string;   // 'EXCELENTE' | 'BUENO' | 'MODERADO' | 'MALO' | 'SIN DATOS SUFICIENTES'
+  scoreColor: string;   // color hex del tier
+  tagline: string;      // 'Lo recomendamos', etc.
+  fito: 'fito' | 'nofito' | 'none';
+};
 
 // Presentación derivada del score — única fuente de verdad de los umbrales.
 // El cliente consume estos campos en vez de recalcularlos.
@@ -50,7 +100,7 @@ function cleanName(raw: string | undefined, fallback: string): string {
 // Exportada para reutilizarla en `productResponseFromRow` (listados de
 // guardados e historial) y en el ETL: los productos guardados se recomputan
 // con el MISMO mapeo que un lookup.
-export function mapRawToProduct(off: RawOFFProduct, query: string): FitogenixProduct {
+export function mapRawToProduct(off: RawProduct, query: string): FitogenixProduct {
   const breakdown = scoreProduct(off);
   // Los ingredientes salen del MISMO breakdown, no de una segunda pasada: en
   // v2.1 la posición de cada ingrediente y su resta son parte del cálculo, así
@@ -76,7 +126,7 @@ export function mapRawToProduct(off: RawOFFProduct, query: string): FitogenixPro
     ingredients,
     nutrition,
     // `breakdown` NO se adjunta a la respuesta (decisión de producto,
-    // 2026-08-18) — ver la nota en types/fitogenix.ts.
+    // 2026-08-18) — ver la nota en el tipo FitogenixProduct, arriba.
     dataSource: off._aiSource ? 'ai' : 'off',
     // Default para tipar; los resolutores la pisan con el id real de la fila
     // en `products` (del hit de cache o del catálogo).

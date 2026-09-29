@@ -34,7 +34,8 @@ export function lookupRoutes(deps: {
         // usa para serializar con fast-json-stringify; la contracara es que
         // todo campo no declarado se elimina de la respuesta, así que el
         // schema está atado a `FitogenixProduct` en tiempo de compilación.
-        // La fuente de verdad del contrato es src/types/fitogenix.ts; el espejo
+        // La fuente de verdad del contrato es el tipo `FitogenixProduct`
+        // (application/productResponse.ts); el espejo
         // del cliente vive en fitogenix-native/src/lib/contracts/.
         response: lookupResponseSchema,
       },

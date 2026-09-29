@@ -284,7 +284,7 @@ export type Tier = 'Excelente' | 'Bueno' | 'Moderado' | 'Malo' | 'Sin datos sufi
 
 /**
  * Lo mínimo que el motor necesita de un producto. La satisfacen
- * estructuralmente tanto `RawOFFProduct` como los objetos que arman los
+ * estructuralmente tanto `RawProduct` como los objetos que arman los
  * scripts de curaduría.
  *
  * `nova_group` sigue en la entrada porque viene en el payload y se expone como

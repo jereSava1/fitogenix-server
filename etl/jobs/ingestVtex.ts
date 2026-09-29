@@ -10,7 +10,7 @@
 //
 // Pagina la API pública de catálogo VTEX (catalog_system/pub/products/search,
 // sin auth) — confirmada en vivo contra Jumbo, Disco, Vea y Carrefour el
-// 2026-08-06. Adapta cada producto a RawOFFProduct e inserta en
+// 2026-08-06. Adapta cada producto a RawProduct e inserta en
 // products_staging. NUNCA escribe en `products`.
 //
 // Dominios ya confirmados VTEX: www.jumbo.com.ar, www.disco.com.ar,
