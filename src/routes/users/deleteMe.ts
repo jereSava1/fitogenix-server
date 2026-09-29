@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../../plugins/auth';
+import { requireAuth } from '../../platform/http/auth';
 import { config } from '../../platform/config';
 
 export async function deleteUserRoute(app: FastifyInstance) {

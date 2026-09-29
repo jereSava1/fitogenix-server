@@ -10,7 +10,7 @@
 
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
-import { supabaseAdmin } from '../platform/supabase';
+import { supabaseAdmin } from '../supabase';
 
 // Extend FastifyRequest so TypeScript knows about `userId`.
 declare module 'fastify' {
