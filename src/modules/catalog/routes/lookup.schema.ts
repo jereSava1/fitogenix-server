@@ -1,5 +1,5 @@
 /**
- * Contrato de POST /products/lookup y del producto (`Product`), en TypeBox.
+ * Contrato de POST /v1/products/lookup y del producto (`Product`), en TypeBox.
  *
  * ── DESDE K-01 (ADR-0011) ──
  * Estos schemas son los que Fastify usa para validar y serializar, y de acá
@@ -54,7 +54,7 @@
  */
 
 import { Type, type Static, type TSchema } from '@sinclair/typebox';
-import { ApiErrorSchema, Nullable } from '../../../platform/http/schemas';
+import { errorResponses, Nullable } from '../../../platform/http/schemas';
 import type { FitogenixProduct } from '../application/productResponse';
 import type {
   AnalyzedIngredient,
@@ -150,7 +150,9 @@ export const lookupBodySchema = Type.Object({
   query: Type.String({ minLength: 1, maxLength: 200 }),
 });
 
+/** 404 = `PRODUCT_NOT_IN_CATALOG`; 400, 429 y 500 los arma el manejador de
+ *  errores (platform/http/errors.ts). */
 export const lookupResponseSchema = {
   200: Type.Ref(ProductSchema),
-  404: Type.Ref(ApiErrorSchema),
+  ...errorResponses(400, 404, 429, 500),
 };

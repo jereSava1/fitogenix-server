@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { registerErrorHandling } from '../../../platform/http/errors';
 
 const supabase = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
@@ -45,7 +46,10 @@ const FILA = {
   data_source: 'off',
 };
 
-const NO_ENCONTRADO = { error: 'Todavía no tenemos este producto en nuestro catálogo.' };
+const NO_ENCONTRADO = {
+  error: 'Todavía no tenemos este producto en nuestro catálogo.',
+  code: 'PRODUCT_NOT_IN_CATALOG',
+};
 const BASE_CAIDA = { data: null, error: { message: 'TypeError: fetch failed', code: '' } };
 
 let app: FastifyInstance;
@@ -58,6 +62,7 @@ beforeAll(async () => {
 
   const { registerCatalog } = await import('../index');
   app = Fastify();
+  registerErrorHandling(app); // como en producción (buildApp)
   await registerCatalog(app);
   await app.ready();
 });
@@ -99,11 +104,16 @@ describe('lookup — base de datos caída (T-06)', () => {
   });
 
   // CARACTERIZA: comportamiento actual, cambia en H-01. Si el cliente lanza en
-  // vez de devolver el error, nadie lo atrapa y Fastify responde 500.
+  // vez de devolver el error, el caso de uso no lo atrapa y el manejador de
+  // errores responde 500 INTERNAL (K-03).
   it('por barcode: el cliente de Supabase lanza → 500', async () => {
     supabase.maybeSingle.mockRejectedValue(new Error('socket hang up'));
     const res = await lookup('7790000000031');
     expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({
+      error: 'Ocurrió un error inesperado. Intentá de nuevo en un momento.',
+      code: 'INTERNAL',
+    });
   });
 });
 

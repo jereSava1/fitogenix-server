@@ -5,6 +5,10 @@
  * cualquier error de Supabase Auth (también una caída) se responde 401. H-02
  * lo reemplaza por validación local del JWT (ADR-0008) y cambia esos casos a
  * propósito. Supabase se simula: nada sale a la red.
+ *
+ * K-03 cambió a propósito solo el CUERPO del 401: suma `code: 'UNAUTHENTICATED'`
+ * (formato único de errores, 03-contratos §B.2). Status, mensajes y cuándo se
+ * consulta a Supabase quedan igual.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -65,14 +69,14 @@ describe('requireAuth — sin token (T-04)', () => {
   it('sin header Authorization → 401 y no consulta a Supabase', async () => {
     const res = await pedir();
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Falta el token de sesión' });
+    expect(res.json()).toEqual({ error: 'Falta el token de sesión', code: 'UNAUTHENTICATED' });
     expect(getUser).not.toHaveBeenCalled();
   });
 
   it.each(['Bearer ', 'Bearer    ', ''])('header %j → 401 sin consultar a Supabase', async (header) => {
     const res = await pedir(header);
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Falta el token de sesión' });
+    expect(res.json()).toEqual({ error: 'Falta el token de sesión', code: 'UNAUTHENTICATED' });
     expect(getUser).not.toHaveBeenCalled();
   });
 });
@@ -82,7 +86,7 @@ describe('requireAuth — token rechazado (T-04)', () => {
     errorDeAuth('invalid JWT: unable to parse or verify signature', 403);
     const res = await pedir('Bearer no-es-un-jwt');
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
     expect(getUser).toHaveBeenCalledWith('no-es-un-jwt');
   });
 
@@ -90,14 +94,14 @@ describe('requireAuth — token rechazado (T-04)', () => {
     errorDeAuth('invalid JWT: token is expired', 403);
     const res = await pedir('Bearer jwt-vencido');
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 
   it('Supabase responde sin usuario y sin error → 401', async () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     const res = await pedir('Bearer jwt');
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 
   // CARACTERIZA: comportamiento actual, cambia en H-02. Una caída de Supabase
@@ -110,7 +114,7 @@ describe('requireAuth — token rechazado (T-04)', () => {
     });
     const res = await pedir('Bearer jwt-valido');
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
   });
 
   // CARACTERIZA: comportamiento actual, cambia en H-02. Si getUser lanza en vez
@@ -128,7 +132,7 @@ describe('requireAuth — token rechazado (T-04)', () => {
     errorDeAuth('invalid JWT: unable to parse or verify signature', 403);
     const res = await pedir('Bearer');
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada' });
+    expect(res.json()).toEqual({ error: 'Sesión inválida o expirada', code: 'UNAUTHENTICATED' });
     expect(getUser).toHaveBeenCalledWith('Bearer');
   });
 });

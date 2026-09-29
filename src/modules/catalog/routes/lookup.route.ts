@@ -1,5 +1,6 @@
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
+import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas, ApiErrorSchema } from '../../../platform/http/schemas';
 import type { LookupProduct } from '../application/lookupProduct';
 import { lookupBodySchema, lookupResponseSchema, ProductSchema } from './lookup.schema';
@@ -48,9 +49,9 @@ export function lookupRoutes(deps: {
       // catálogo", no "no se pudo resolver por ningún medio" — el mensaje lo
       // refleja.
       if (!product) {
-        return reply.status(404).send({
-          error: 'Todavía no tenemos este producto en nuestro catálogo.',
-        });
+        return reply.status(404).send(
+          apiError('PRODUCT_NOT_IN_CATALOG', 'Todavía no tenemos este producto en nuestro catálogo.'),
+        );
       }
 
       // Registro del escaneo fire-and-forget: sin await, la respuesta HTTP no

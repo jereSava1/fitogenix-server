@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -17,11 +17,23 @@
       "ApiError": {
         "type": "object",
         "required": [
-          "error"
+          "error",
+          "code"
         ],
         "properties": {
           "error": {
             "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_ERROR",
+              "UNAUTHENTICATED",
+              "NOT_FOUND",
+              "PRODUCT_NOT_IN_CATALOG",
+              "RATE_LIMITED",
+              "INTERNAL"
+            ]
           }
         }
       },
@@ -236,23 +248,6 @@
           }
         }
       },
-      "InternalError": {
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "properties": {
-          "error": {
-            "type": "string"
-          },
-          "statusCode": {
-            "type": "number"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
       "Ok": {
         "type": "object",
         "required": [
@@ -270,7 +265,7 @@
     }
   },
   "paths": {
-    "/products/lookup": {
+    "/v1/products/lookup": {
       "post": {
         "summary": "Buscar un producto por código de barras o por nombre",
         "tags": [
@@ -307,7 +302,37 @@
               }
             }
           },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -320,7 +345,7 @@
         }
       }
     },
-    "/users/me": {
+    "/v1/users/me": {
       "delete": {
         "summary": "Eliminar la cuenta del usuario",
         "tags": [
@@ -352,12 +377,22 @@
               }
             }
           },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -365,7 +400,7 @@
         }
       }
     },
-    "/users/me/saved": {
+    "/v1/users/me/saved": {
       "get": {
         "summary": "Listar los guardados del usuario, más reciente primero",
         "tags": [
@@ -408,12 +443,22 @@
               }
             }
           },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -460,6 +505,16 @@
               }
             }
           },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Default Response",
             "content": {
@@ -480,12 +535,22 @@
               }
             }
           },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -493,7 +558,7 @@
         }
       }
     },
-    "/users/me/saved/{productId}": {
+    "/v1/users/me/saved/{productId}": {
       "delete": {
         "summary": "Quitar un producto de los guardados (idempotente)",
         "tags": [
@@ -526,7 +591,27 @@
               }
             }
           },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -541,7 +626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -549,7 +634,7 @@
         }
       }
     },
-    "/users/me/history": {
+    "/v1/users/me/history": {
       "get": {
         "summary": "Listar el historial de escaneos, más reciente primero",
         "tags": [
@@ -593,7 +678,27 @@
               }
             }
           },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -608,7 +713,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }

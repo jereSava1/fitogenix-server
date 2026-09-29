@@ -11,6 +11,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { supabaseAdmin } from '../supabase';
+import { apiError } from './errors';
 
 // Extend FastifyRequest so TypeScript knows about `userId`.
 declare module 'fastify' {
@@ -25,13 +26,13 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
     if (!token) {
-      return reply.status(401).send({ error: 'Falta el token de sesión' });
+      return reply.status(401).send(apiError('UNAUTHENTICATED', 'Falta el token de sesión'));
     }
 
     const { data, error } = await supabaseAdmin().auth.getUser(token);
 
     if (error || !data.user) {
-      return reply.status(401).send({ error: 'Sesión inválida o expirada' });
+      return reply.status(401).send(apiError('UNAUTHENTICATED', 'Sesión inválida o expirada'));
     }
 
     request.userId = data.user.id;

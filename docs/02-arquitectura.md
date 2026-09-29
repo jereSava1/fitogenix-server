@@ -163,7 +163,7 @@ src/
     redis.ts                      cliente Upstash con timeout y sin reintentos (ADR-0006)
     http/
       buildApp.ts                 Fastify + CORS con lista + rate limit + error handler
-      errors.ts                   DependencyUnavailableError → 503
+      errors.ts                   formato único { error, code } (K-03); DependencyUnavailableError → 503 (H-01)
       auth.ts                     requireAuth / optionalAuth            ⚠ alto riesgo
       health.ts                   /health (liveness) y /health/ready (readiness)
   modules/
