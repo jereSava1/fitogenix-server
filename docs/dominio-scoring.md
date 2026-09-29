@@ -24,7 +24,7 @@
 - Bandas, sello y estado salen **del mismo lugar y con los mismos cortes**: `scoring/constants.ts · TIERS`, con `EXCELLENT_FROM` y `BAD_BELOW` derivados de ahí. Se presentan con `scoring/presentation.ts` (`getScoreLabel`, `getScoreTagline`, `getSello`, `resolveProductStatus`).
 - **El sello es una propiedad de la banda:** la banda más alta lleva el sello positivo, la más baja el negativo, y las del medio van sin sello. Mover el sello es mover un borde de banda.
 - **`null` es una banda, no un cero:** sin datos suficientes no hay puntaje, se muestra su propio mensaje (`NO_DATA_TIER`) y no hay sello.
-- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63 (contrato generado, K-08 y K-09).
+- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63. Desde K-08 el server las publica en `contract/scoring-bands.json`, armado por `scoring.scoringBands()` con estos mismos cortes; native las consume generadas en K-09.
 - Por qué la regla existe: hubo tres criterios distintos para la misma decisión (bandas, estado y sello con cortes propios) y un producto salía "Bueno" y "Fitogénico" a la vez (encabezado de `scoring/presentation.ts`).
 
 ## §S4 — Los octógonos: insumo interno del puntaje

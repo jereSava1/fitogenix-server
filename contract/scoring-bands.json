@@ -1,0 +1,51 @@
+{
+  "scale": {
+    "min": 0,
+    "max": 100
+  },
+  "bands": [
+    {
+      "name": "Excelente",
+      "label": "EXCELENTE",
+      "from": 75,
+      "to": 100,
+      "color": "#16a34a",
+      "message": "Lo recomendamos",
+      "sello": "FITOGÉNICO"
+    },
+    {
+      "name": "Bueno",
+      "label": "BUENO",
+      "from": 50,
+      "to": 74,
+      "color": "#84cc16",
+      "message": "Buena opción",
+      "sello": null
+    },
+    {
+      "name": "Moderado",
+      "label": "MODERADO",
+      "from": 25,
+      "to": 49,
+      "color": "#f97316",
+      "message": "Consumilo con consciencia",
+      "sello": null
+    },
+    {
+      "name": "Malo",
+      "label": "MALO",
+      "from": 0,
+      "to": 24,
+      "color": "#dc2626",
+      "message": "No lo recomendamos",
+      "sello": "NO FITOGÉNICO"
+    }
+  ],
+  "noData": {
+    "name": "Sin datos suficientes",
+    "label": "SIN DATOS SUFICIENTES",
+    "color": "#9ca3af",
+    "message": "No tenemos datos confiables de este producto",
+    "sello": null
+  }
+}

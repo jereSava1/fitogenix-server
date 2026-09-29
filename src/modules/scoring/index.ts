@@ -55,6 +55,15 @@ export { analyzeIngredients, scoreProduct } from './domain/pipeline';
 
 export { ENGINE_VERSION } from './domain/constants';
 
+/** Las bandas del puntaje como dato del contrato (`contract/scoring-bands.json`,
+ *  K-08, D-63). */
+export {
+  scoringBands,
+  type NoDataBand,
+  type ScoringBand,
+  type ScoringBands,
+} from './domain/bands';
+
 export {
   getScoreLabel,
   getScoreTagline,

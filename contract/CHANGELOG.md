@@ -1,8 +1,22 @@
 # Changelog del contrato HTTP
 
-El contrato es `contract/openapi.json`, generado desde los schemas TypeBox de las rutas (`npm run contract:generate`, [ADR-0011](../docs/adr/0011-contrato-http-fuente-unica.md)). El CI falla si el archivo commiteado no coincide con los schemas (`npm run contract:check`). Todo cambio del archivo se anota acá, con el ítem del plan que lo hizo.
+El contrato son dos archivos generados con `npm run contract:generate` ([ADR-0011](../docs/adr/0011-contrato-http-fuente-unica.md)): `contract/openapi.json`, desde los schemas TypeBox de las rutas, y `contract/scoring-bands.json`, las bandas del puntaje desde el motor (D-63). El CI falla si alguno de los archivos commiteados no coincide con lo que se genera (`npm run contract:check`). Todo cambio del archivo se anota acá, con el ítem del plan que lo hizo.
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
+
+## Bandas del puntaje — 2026-09-29 · K-08
+
+Primera versión de `contract/scoring-bands.json` (aditivo: el OpenAPI no cambia). Sale de `scoring.scoringBands()`, armado con `TIERS` y `NO_DATA_TIER`; el label, el mensaje y el sello de cada banda son los que devuelven `getScoreLabel`, `getScoreTagline` y `getSello`, y un test verifica cada puntaje de 0 a 100.
+
+| Banda | Desde | Hasta | Color | Mensaje | Sello |
+|---|---|---|---|---|---|
+| Excelente | 75 | 100 | `#16a34a` | Lo recomendamos | FITOGÉNICO |
+| Bueno | 50 | 74 | `#84cc16` | Buena opción | — |
+| Moderado | 25 | 49 | `#f97316` | Consumilo con consciencia | — |
+| Malo | 0 | 24 | `#dc2626` | No lo recomendamos | NO FITOGÉNICO |
+| Sin datos suficientes | — | — | `#9ca3af` | No tenemos datos confiables de este producto | — |
+
+Native lo consume generado en K-09 (sin tablas de cortes escritas a mano).
 
 ## 0.1.0 — 2026-09-29 · K-01
 

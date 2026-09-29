@@ -1,8 +1,14 @@
-/* Genera el contrato HTTP del server (ADR-0011, K-01).
+/* Genera el contrato del server (ADR-0011).
  *
- *   npm run contract:generate   escribe contract/openapi.json
- *   npm run contract:check      falla si el archivo commiteado no coincide
- *                               con lo que generan los schemas (lo corre el CI)
+ *   npm run contract:generate   escribe contract/openapi.json (K-01) y
+ *                               contract/scoring-bands.json (K-08)
+ *   npm run contract:check      falla si algún archivo commiteado no coincide
+ *                               con lo que generan los schemas y el motor (lo
+ *                               corre el CI)
+ *
+ * `scoring-bands.json` son las bandas del puntaje (nombre, label, desde/hasta,
+ * color, mensaje y sello, más la banda "sin datos"), armadas por el motor con
+ * `scoringBands()`: native las usa generadas y no transcribe cortes (D-63).
  *
  * Arma la misma app que `main.ts` (`buildApp` + `registerModules`) con
  * @fastify/swagger adelante, sin escuchar puertos ni conectarse a nada, y
@@ -15,16 +21,16 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 // La config del server exige estas variables al importarse; el generador no
 // se conecta a nada, así que alcanza con valores de relleno.
 process.env.SUPABASE_URL ??= 'https://contract.invalid';
 process.env.SUPABASE_SECRET_KEY ??= 'contract';
 
-const OUT = join(__dirname, '../contract/openapi.json');
+const CONTRACT_DIR = join(__dirname, '../contract');
 
-async function generate(): Promise<string> {
+async function generateOpenApi(): Promise<string> {
   const { default: swagger } = await import('@fastify/swagger');
   const { buildApp } = await import('../src/platform/http/buildApp');
   const { registerModules } = await import('../src/registerModules');
@@ -60,30 +66,41 @@ async function generate(): Promise<string> {
   return `${JSON.stringify(doc, null, 2)}\n`;
 }
 
+async function generateScoringBands(): Promise<string> {
+  const { scoringBands } = await import('../src/modules/scoring');
+  return `${JSON.stringify(scoringBands(), null, 2)}\n`;
+}
+
 async function main(): Promise<void> {
-  const generated = await generate();
+  const files: Record<string, string> = {
+    'openapi.json': await generateOpenApi(),
+    'scoring-bands.json': await generateScoringBands(),
+  };
 
   if (process.argv.includes('--check')) {
-    let committed = '';
-    try {
-      committed = readFileSync(OUT, 'utf8');
-    } catch {
-      // sin archivo commiteado: cae en la diferencia de abajo
-    }
-    if (committed !== generated) {
-      console.error(
-        'contract/openapi.json no coincide con los schemas de las rutas.\n' +
-          'Corré `npm run contract:generate`, revisá el diff y anotá el cambio en contract/CHANGELOG.md.',
-      );
+    const stale = Object.entries(files).filter(([name, generated]) => {
+      try {
+        return readFileSync(join(CONTRACT_DIR, name), 'utf8') !== generated;
+      } catch {
+        return true; // sin archivo commiteado
+      }
+    });
+    if (stale.length > 0) {
+      for (const [name] of stale) {
+        console.error(`contract/${name} no coincide con lo que generan los schemas y el motor.`);
+      }
+      console.error('Corré `npm run contract:generate`, revisá el diff y anotá el cambio en contract/CHANGELOG.md.');
       process.exit(1);
     }
-    console.log('contract/openapi.json al día.');
+    console.log('contract/ al día.');
     return;
   }
 
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, generated, 'utf8');
-  console.log(`Escrito ${OUT}`);
+  mkdirSync(CONTRACT_DIR, { recursive: true });
+  for (const [name, content] of Object.entries(files)) {
+    writeFileSync(join(CONTRACT_DIR, name), content, 'utf8');
+    console.log(`Escrito contract/${name}`);
+  }
 }
 
 main().catch((err) => {

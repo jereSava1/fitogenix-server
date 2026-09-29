@@ -17,8 +17,9 @@
 
 import type { ScoreStep, ScoreStepKind } from './types';
 
-const MIN_SCORE = 0;
-const MAX_SCORE = 100;
+/** El rango del puntaje (enteros, ver `clampScore`). Lo usa también `bands.ts`. */
+export const MIN_SCORE = 0;
+export const MAX_SCORE = 100;
 
 /** Los datos de una fila, sin el `running` — eso lo calcula el libro. */
 interface StepInput {
