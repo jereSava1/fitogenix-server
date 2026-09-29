@@ -17,14 +17,14 @@
 - **Todos los coeficientes** están en `scoring/constants.ts`; la ejecución, en `scoring/steps.ts` y `scoring/pipeline.ts`.
 - **Todo puntaje es reconstruible:** `breakdown.steps` es la salida principal y `scoring/ledger.ts · ScoreLedger` hace imposible mover el número sin registrar el paso. Lo verifican `calibration.test.ts · expectStepsReconstructScore` y los goldens (`regression.test.ts`, `catalogGolden.test.ts`).
 - **No se inventa:** un ingrediente que no está en la tabla (`scoring/data/ingredients.ts`, `scoring/rubric/`) queda **no identificado**, con su costo y su techo. No se estima por analogía.
-- El motor v2 (cuatro componentes ponderados: toxicidad, nutrición, procesamiento, alineación, y el modificador NOVA) **ya no existe** desde v2.1: los puntajes de v2 no son comparables. Todo texto que describa esos componentes está desactualizado (hoy: `fitogenix-native · ScoringExplainerModal`, ver K-09).
+- El motor v2 (cuatro componentes ponderados: toxicidad, nutrición, procesamiento, alineación, y el modificador NOVA) **ya no existe** desde v2.1: los puntajes de v2 no son comparables. Todo texto que describa esos componentes está desactualizado (el explicador de native lo describía hasta K-09; desde ahí usa un texto provisorio según v2.1, D-74).
 
 ## §S3 — Bandas, sello Fitogénico y "sin datos"
 
 - Bandas, sello y estado salen **del mismo lugar y con los mismos cortes**: `scoring/constants.ts · TIERS`, con `EXCELLENT_FROM` y `BAD_BELOW` derivados de ahí. Se presentan con `scoring/presentation.ts` (`getScoreLabel`, `getScoreTagline`, `getSello`, `resolveProductStatus`).
 - **El sello es una propiedad de la banda:** la banda más alta lleva el sello positivo, la más baja el negativo, y las del medio van sin sello. Mover el sello es mover un borde de banda.
 - **`null` es una banda, no un cero:** sin datos suficientes no hay puntaje, se muestra su propio mensaje (`NO_DATA_TIER`) y no hay sello.
-- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63. Desde K-08 el server las publica en `contract/scoring-bands.json`, armado por `scoring.scoringBands()` con estos mismos cortes; native las consume generadas en K-09.
+- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63. Desde K-08 el server las publica en `contract/scoring-bands.json`, armado por `scoring.scoringBands()` con estos mismos cortes; desde K-09 native las lee solo desde `src/api/scoringBands.ts`, y un test falla si aparece un corte en otro archivo.
 - Por qué la regla existe: hubo tres criterios distintos para la misma decisión (bandas, estado y sello con cortes propios) y un producto salía "Bueno" y "Fitogénico" a la vez (encabezado de `scoring/presentation.ts`).
 
 ## §S4 — Los octógonos: insumo interno del puntaje
