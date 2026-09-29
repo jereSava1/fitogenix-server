@@ -1,9 +1,5 @@
-/* §6 — "Antes de evaluar: limpiar la lista".
- *
- * Todo lo de acá pasa antes del primer número, y es donde el motor más se
- * rompe con datos reales: OCR sin comas, sub-listas anidadas, certificaciones
- * mezcladas con ingredientes, advertencias de alérgenos pegadas al final.
- */
+// §6: la limpieza de la lista, donde el motor más se rompe con datos reales (OCR sin comas,
+// sub-listas, certificaciones, alérgenos al final).
 import { describe, expect, it } from 'vitest';
 import { cleanIngredientList } from './cleaning';
 import { resolvesToSomething } from './classify';

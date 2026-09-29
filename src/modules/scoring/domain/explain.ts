@@ -1,19 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — §7: qué ve el usuario
-
-   El armado de la salida legible. Está separado del cálculo a propósito: acá
-   no se decide ningún número, solo cómo se cuenta lo que ya se decidió.
-
-   Las prohibiciones de §7 valen para todo lo que se escriba en este archivo:
-
-   · ninguna cita a un organismo, año, estudio o cifra que no esté escrita en
-     la rúbrica para ese ingrediente;
-   · nunca decir de dónde salen los datos ni en qué idioma estaban;
-   · "se asocia con", nunca "causa"; nada de "tóxico" ni "cancerígeno" sobre
-     un producto concreto;
-   · la frase de la mirada Fitogenix tiene que ser específica a ESTE producto.
-     Una frase genérica es peor que ninguna.
-═══════════════════════════════════════════════════════════ */
+// §7: cómo se cuenta lo que ya se calculó (acá no se decide ningún número). Sin citar
+// organismos ni cifras fuera de la rúbrica, sin decir de dónde salen los datos, "se asocia
+// con" y nunca "causa".
 
 import { severityOf } from './classify';
 import { CONFIDENCE, DISCLAIMER, ENGINE_VERSION, NO_DATA_TIER, TIERS } from './constants';
@@ -42,16 +29,8 @@ export function tierFor(score: number): TierDefinition {
    Ingredientes
    ──────────────────────────────────────────────────────────── */
 
-/**
- * Un ingrediente evaluado → la forma que consume la UI, con su resta a la
- * vista para que el usuario pueda seguir la cuenta ingrediente por ingrediente.
- *
- * `deducted` dice si la cuenta por ingrediente EFECTIVAMENTE corrió. En un
- * producto con ancla (§3) o con anulación (§5) el puntaje no sale de sumar
- * restas, así que mostrar "−13" al lado del azúcar sería mostrar un número que
- * nadie aplicó. La lista se sigue mostrando entera —§7 la pide— pero sin una
- * cuenta que no existió.
- */
+/** Ingrediente evaluado → forma de la UI, con su resta. Con ancla (§3) o anulación (§5)
+ *  la cuenta por ingrediente no corrió (`deducted`): la lista se muestra sin restas. */
 export function toAnalyzed(ingredient: EvaluatedIngredient, deducted: boolean): AnalyzedIngredient {
   return {
     name: ingredient.display,
@@ -82,10 +61,7 @@ export interface ViewSubject {
   readonly score: number;
 }
 
-/**
- * Una frase, en orden de importancia: primero lo que anula, después lo que no
- * pudimos leer, después lo peor que sí leímos.
- */
+/** Una frase, por importancia: lo que anula, lo que no se pudo leer, lo peor que se leyó. */
 export function fitogenixView(subject: ViewSubject): string {
   const { ingredients, annulments, anchor, score } = subject;
   const prefix = 'Desde la mirada Fitogenix:';
@@ -125,13 +101,8 @@ export interface Coverage {
   readonly confidence: 'alta' | 'media' | 'baja';
 }
 
-/**
- * Fracción de ingredientes que el motor supo identificar.
- *
- * Un puntaje calculado sobre 2 ingredientes reconocidos de 12 no vale lo mismo
- * que uno calculado sobre 12 de 12. Exponerlo permite que la UI module el
- * mensaje en vez de aparentar una precisión que no tenemos.
- */
+/** Fracción de ingredientes identificados: un puntaje sobre 2 de 12 no vale lo que uno sobre
+ *  12 de 12. */
 export function coverageOf(ingredients: readonly EvaluatedIngredient[]): Coverage {
   if (ingredients.length === 0) return { ratio: 0, confidence: 'baja' };
 
@@ -201,14 +172,8 @@ export function buildBreakdown(input: BreakdownInput): ScoreBreakdown {
   };
 }
 
-/**
- * §1 — El resultado cuando NO se puntúa.
- *
- * `score: null`, no un número conservador: el consumidor tiene que poder
- * distinguir "no sabemos" de "sabemos y es mediocre". La cola de curaduría y
- * las advertencias de la etiqueta se devuelven igual, porque son información
- * verdadera aunque no haya puntaje.
- */
+/** §1: sin puntaje es `null`, nunca un número conservador ("no sabemos" ≠ "es mediocre").
+ *  La cola de curaduría y las advertencias se devuelven igual. */
 export function buildNoScoreBreakdown(
   noScore: NoScore,
   extras: {

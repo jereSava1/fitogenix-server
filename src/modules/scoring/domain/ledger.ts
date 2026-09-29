@@ -1,19 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — El libro de la cuenta
-
-   La regla 1 del documento dice que todo puntaje tiene que ser reconstruible:
-   "el usuario tiene que poder seguir la resta". Antes eso era una convención
-   —había que acordarse de empujar un paso cada vez que se tocaba el número— y
-   una convención se rompe el día que alguien agrega un `score -= 3` apurado.
-
-   Acá deja de ser una convención. `ScoreLedger` es inmutable y la ÚNICA forma
-   de mover el puntaje es un método que además registra el paso. No se puede
-   cambiar el número sin dejar la fila: el desglose no puede desincronizarse
-   del resultado porque no hay camino para que eso pase.
-
-   Cada operación devuelve un libro nuevo, así que el pipeline se lee como una
-   sucesión de transformaciones y no como la mutación de una variable.
-═══════════════════════════════════════════════════════════ */
+// El libro de la cuenta: inmutable, y la única forma de mover el puntaje es un método que
+// registra el paso. Así el desglose no puede desincronizarse del resultado.
 
 import type { ScoreStep, ScoreStepKind } from './types';
 
@@ -39,46 +25,26 @@ export class ScoreLedger {
     return new ScoreLedger(value, [{ ...step, delta: null, running: value }]);
   }
 
-  /**
-   * Suma (o resta) y registra. `delta` es el número que el usuario va a ver a
-   * la derecha de la fila.
-   *
-   * Un delta de 0 no ensucia el desglose: el ingrediente sin objeciones sigue
-   * apareciendo en la lista de §7, pero no como una línea de la cuenta.
-   */
+  /** Suma o resta y registra (`delta` es lo que ve el usuario). Un 0 no agrega fila. */
   add(delta: number, step: StepInput): ScoreLedger {
     if (delta === 0) return this;
     const running = this.score + delta;
     return new ScoreLedger(running, [...this.steps, { ...step, delta, running }]);
   }
 
-  /**
-   * Fija un valor en vez de sumarlo, y registra. Es el caso del ancla, del
-   * techo y de la anulación: no son ajustes sobre lo anterior, son un
-   * veredicto que reemplaza la cuenta.
-   */
+  /** Fija un valor y registra: ancla, techo o anulación reemplazan la cuenta. */
   setTo(value: number, step: StepInput): ScoreLedger {
     return new ScoreLedger(value, [...this.steps, { ...step, delta: null, running: value }]);
   }
 
-  /**
-   * Aplica un techo. Si el puntaje ya venía por debajo, el techo no muerde y
-   * no se registra ninguna fila: mostrar "techo 74" en un producto de 30
-   * confundiría más de lo que explica.
-   */
+  /** Aplica un techo. Si ya venía por debajo, no registra nada. */
   capAt(value: number, reason: string): ScoreLedger {
     if (this.score <= value) return this;
     return this.setTo(value, { kind: 'techo', label: `Techo ${value}`, detail: reason });
   }
 
-  /**
-   * Baja el puntaje hasta `floor` como mucho, sin poder subirlo.
-   *
-   * Es la forma del modificador nutricional: el panel es un signo de apoyo, no
-   * el motor, así que puede empeorar el resultado pero no mejorarlo, y no
-   * puede meterse en la banda que el documento reserva para las anulaciones.
-   * Un puntaje que ya venía por debajo del piso queda intacto.
-   */
+  /** Baja hasta `floor` como mucho, nunca sube (modificador nutricional). Si ya venía por
+   *  debajo del piso, no lo toca. */
   addBounded(delta: number, floor: number, step: StepInput): ScoreLedger {
     if (delta >= 0) return this;
     const target = Math.max(Math.min(this.score, floor), this.score + delta);

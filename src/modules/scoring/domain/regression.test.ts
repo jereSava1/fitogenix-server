@@ -1,16 +1,5 @@
-/* Golden regression — congela el puntaje de productos reales representativos
- * de la góndola argentina. Si un valor cambia sin querer, esto lo detecta.
- *
- * Los números se re-capturaron al pasar a v2.1. Los goldens de v2 NO son
- * comparables: cambió la arquitectura entera del puntaje (de base compuesta
- * con penalización decreciente + modificador NOVA + regresión por cobertura,
- * a base 75 con restas fijas por posición + modificador de procesamiento).
- * Cada bloque anota por qué el número es el que es — sin eso, un diff de este
- * archivo parece una regresión.
- *
- * La calibración contra §8 vive en calibration.test.ts. Acá van los
- * productos que §8 no incluye.
- */
+// Congela el puntaje de productos reales representativos. Cada bloque anota por qué el
+// número es el que es. La calibración contra §8 está en calibration.test.ts.
 import { describe, expect, it } from 'vitest';
 import { scoreProduct, type ProductInput } from '../index';
 import { expectStepsReconstructScore } from './calibration.test';

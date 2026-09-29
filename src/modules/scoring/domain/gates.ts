@@ -1,14 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — §1 y §5: las compuertas
-
-   Las dos clases de decisión que se toman ANTES de la cuenta y que la anulan:
-
-   · §1 — cuándo no se puntúa. Fuera de alcance, o la lista no describe nada.
-   · §5 — cuándo el puntaje lo fija una anulación en vez de la aritmética.
-
-   Todo acá es puro: entra texto ya limpio y clasificado, sale un veredicto.
-   Ninguna función toca el puntaje; solo dicen qué pasa.
-═══════════════════════════════════════════════════════════ */
+// §1 (cuándo no se puntúa) y §5 (cuándo una anulación fija el puntaje): decisiones que
+// se toman antes de la cuenta. Puras; ninguna toca el puntaje.
 
 import { matchesPhrase } from './text';
 import { NO_DATA } from './constants';
@@ -52,12 +43,8 @@ export interface ScopeSubject {
   readonly ingredientsText: string;
 }
 
-/**
- * §1.1 — Categorías que Fitogenix no evalúa.
- *
- * Se busca en nombre + categoría porque el dato de categoría de las fuentes es
- * irregular y a veces lo único que delata al producto es cómo se llama.
- */
+/** §1.1: categorías que no se evalúan. Se busca en nombre + categoría (la categoría de las
+ *  fuentes es irregular). */
 export function detectOutOfScope(subject: ScopeSubject): NoScore | null {
   const haystack = `${subject.productName} ${subject.categories}`;
 
@@ -73,12 +60,8 @@ export function detectOutOfScope(subject: ScopeSubject): NoScore | null {
   return null;
 }
 
-/**
- * §1.1 red de contención — "si la lista contiene sustancias no alimentarias,
- * no puntuar aunque la categoría en la base diga que es un alimento".
- *
- * La categoría es un dato de terceros; la lista de ingredientes es el producto.
- */
+/** §1.1: si la lista trae sustancias no alimentarias, no se puntúa aunque la categoría diga
+ *  alimento (la lista es el producto). */
 export function detectNonFood(listText: string): NoScore | null {
   return NON_FOOD_SUBSTANCES.test(listText)
     ? { code: 'no-alimentario', message: OUT_OF_SCOPE_NON_FOOD_MESSAGE }
@@ -104,15 +87,8 @@ function isMostlyGibberish(items: readonly CleanIngredient[]): boolean {
   return gibberish > items.length / 2;
 }
 
-/**
- * "3 o más ingredientes no identificados, o más del 30% de la lista."
- *
- * El criterio porcentual se aplica desde 2 no identificados para arriba.
- * Tomado al pie de la letra alcanzaría a cualquier lista de 3 ingredientes con
- * uno solo sin reconocer (1/3 = 33%), y eso volvería inalcanzables los techos
- * de 74 y 49 que §2 Paso 4 define justamente para 1 y 2 no identificados. Un
- * producto con un único término opaco tiene techo, no ausencia de dato.
- */
+/** §1.2: 3 o más no identificados, o más del 30 % de la lista. El porcentaje rige desde 2:
+ *  con 1 solo hay techo, no ausencia de dato. */
 function tooManyUnidentified(evaluated: readonly EvaluatedIngredient[]): boolean {
   const unknown = evaluated.filter((e) => !e.known).length;
   if (unknown >= NO_DATA.unknownCountLimit) return true;
@@ -164,13 +140,8 @@ function hasAny(subject: AnnulmentSubject, pattern: RegExp, tags: readonly strin
   return pattern.test(subject.listText) || tags.some((tag) => subject.additiveTags.has(tag));
 }
 
-/**
- * §5.2 — Curado de cárnicos.
- *
- * *Los agentes vegetales aportan nitrato que se convierte en nitrito durante
- * el curado. Su función en un fiambre es idéntica a la del nitrito de sodio:
- * conservar y dar color rosado. La diferencia es de etiqueta, no de química.*
- */
+/** §5.2 Curado de cárnicos: los agentes vegetales aportan nitrato que se vuelve nitrito;
+ *  en un fiambre cumplen la misma función que el nitrito de sodio. */
 export function evaluateCuring(subject: AnnulmentSubject): CuringOutcome {
   const { listText, categories } = subject;
 

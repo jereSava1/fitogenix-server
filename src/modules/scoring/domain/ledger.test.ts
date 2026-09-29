@@ -1,9 +1,4 @@
-/* El libro de la cuenta.
- *
- * La regla 1 del documento —"todo puntaje tiene que ser reconstruible"— deja
- * de ser una convención acá: si estos tests pasan, no existe un camino para
- * mover el puntaje sin dejar la fila que lo explica.
- */
+// Si esto pasa, no hay forma de mover el puntaje sin dejar la fila que lo explica.
 import { describe, expect, it } from 'vitest';
 import { ScoreLedger, clampScore } from './ledger';
 

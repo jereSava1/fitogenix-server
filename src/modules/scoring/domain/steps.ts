@@ -1,16 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — §2: los pasos del cálculo
-
-   Un módulo por paso del documento, cada uno una función pura que recibe lo
-   que necesita y devuelve un libro nuevo. Ninguna toca variables de afuera y
-   ninguna puede mover el puntaje sin registrar su fila: eso lo garantiza
-   `ScoreLedger`, no la disciplina de quien escribe.
-
-     Paso 2  restar por ingrediente
-     Paso 3  modificador de procesamiento
-      ·      modificador nutricional (decisión de producto, fuera del spec)
-     Paso 4  techos
-═══════════════════════════════════════════════════════════ */
+// §2, un paso por función pura que devuelve un libro nuevo: restas por ingrediente (2),
+// procesamiento (3), nutrición (decisión de producto) y techos (4).
 
 import { CEILINGS, DEDUCTIONS, DOMINANCE, HEAD_POSITIONS, NUTRITION, PROCESSING } from './constants';
 import { ScoreLedger } from './ledger';
@@ -43,12 +32,7 @@ function deductionDetail(ingredient: EvaluatedIngredient): string {
   return `Impacto ${ingredient.impact}${head ? ', entre los primeros 3 ingredientes' : ''}`;
 }
 
-/**
- * §2 Paso 2 — Una fila por ingrediente que efectivamente resta.
- *
- * Los que no restan igual aparecen en la lista de §7; lo que no aparece es su
- * línea en la cuenta, porque una fila de "−0" no explica nada.
- */
+/** §2 Paso 2: una fila por ingrediente que resta (los demás van en la lista de §7). */
 export function applyIngredientDeductions(
   ledger: ScoreLedger,
   ingredients: readonly EvaluatedIngredient[],
@@ -90,12 +74,8 @@ export interface ProcessingResult {
   readonly verdict: ProcessingVerdict;
 }
 
-/**
- * §2 Paso 3 — El modificador sale de CUÁNTOS marcadores hay, no de cuáles.
- *
- * El bonus de +5 solo llega a un producto que ya venía bien: no rescata una
- * cuenta baja, la confirma.
- */
+/** §2 Paso 3: cuenta cuántos marcadores hay, no cuáles. El +5 confirma una cuenta alta, no
+ *  rescata una baja. */
 export function applyProcessing(
   ledger: ScoreLedger,
   ingredients: readonly EvaluatedIngredient[],
@@ -140,11 +120,8 @@ const ADDED_SUGAR_ENTRY_IDS = new Set([
   'azucar', 'jarabes', 'maltodextrina', 'concentrado-jugo', 'azucar-datil', 'azucar-tradicional',
 ]);
 
-/**
- * El sello de azúcar exige azúcar AÑADIDA: la ley habla de azúcares LIBRES y
- * el panel declara TOTALES. Sin este cruce, la leche entera y la fruta se
- * llevarían un "EXCESO EN AZÚCARES" que en la góndola no tienen.
- */
+/** El sello de azúcar exige azúcar AÑADIDA: si no, la leche y la fruta llevarían uno que en
+ *  la góndola no tienen. */
 function hasAddedSugar(ingredients: readonly EvaluatedIngredient[]): boolean {
   return ingredients.some((i) => {
     const id = rubricImpact(i.item.raw)?.entry.id;
@@ -157,22 +134,8 @@ export interface NutritionResult {
   readonly seals: readonly WarningSeal[];
 }
 
-/**
- * El nutriente detrás de cada octógono, en lenguaje llano.
- *
- * **El octógono no se nombra en texto de usuario.** Desde el 31/8/2026 es
- * insumo interno del puntaje: resta, y no se muestra (`docs/dominio-scoring.md` §S4). La
- * nota de este paso viaja en `steps[].detail`, que SÍ es texto de usuario, así
- * que no puede decir "sello", "octógono" ni citar la Ley 27.642 — eso afirmaría
- * que el envase los lleva, y lo nuestro es una aproximación calculada desde la
- * ETIQUETA, no desde la formulación del producto, que es lo que exige el método
- * oficial (`docs/dominio-scoring.md` §S6).
- *
- * El campo `warnings` del desglose sigue llevando los octógonos: es información
- * verdadera y sirve para curaduría. Lo que no se hace es renderizarla.
- *
- * Copy provisional: el definitivo lo redacta el agente de UX.
- */
+/** El nutriente detrás de cada octógono, en lenguaje llano. Va en `steps[].detail` (texto de
+ *  usuario): no puede decir "sello", "octógono" ni citar la ley (§S4). Copy provisorio. */
 const SEAL_NUTRIENT: Readonly<Record<WarningSeal, string>> = {
   'EXCESO EN AZÚCARES': 'azúcares',
   'EXCESO EN GRASAS SATURADAS': 'grasas saturadas',
@@ -181,14 +144,8 @@ const SEAL_NUTRIENT: Readonly<Record<WarningSeal, string>> = {
   'EXCESO EN CALORÍAS': 'calorías',
 };
 
-/**
- * Los octógonos de la Ley 27.642 y la grasa trans declarada.
- *
- * La ley exime a los alimentos SIN nutrientes críticos AÑADIDOS: la grasa de
- * la leche, la carne o el queso es inherente al alimento, no algo que la
- * industria le puso. Ese es el criterio, y no "matchea un arquetipo nuestro":
- * la leche entera no es yogur ni queso ni manteca, y aun así no lleva sellos.
- */
+/** Octógonos y grasa trans declarada. Exentos los alimentos SIN nutrientes críticos
+ *  AÑADIDOS: la grasa de la leche o la carne es del alimento. */
 export function applyNutrition(
   ledger: ScoreLedger,
   product: ProductInput,
@@ -217,13 +174,8 @@ export function applyNutrition(
     notes.push(`Perfil nutricional desfavorable en ${seals.map((s) => SEAL_NUTRIENT[s]).join(', ')}.`);
   }
 
-  // §5.1 solo ataca la grasa trans por ingrediente, lo que deja pasar a
-  // cualquier producto que la declare sin nombrar el aceite hidrogenado.
-  // Tampoco tiene octógono propio en la ley argentina.
-  //
-  // La excepción del documento se respeta: "grasa trans natural en lácteos o
-  // carne de rumiante → no se anula". Un queso o una manteca declaran trans
-  // en el panel sin que nadie se la haya puesto.
+  // Grasa trans declarada en el panel (§5.1 solo la ve por ingrediente). Excepción del
+  // documento: la natural de lácteos y rumiantes no anula.
   const trans = nutrient(nutriments, 'trans-fat') ?? 0;
   const isNatural = NATURAL_TRANS_PATTERN.test(ingredientsList(ingredients));
   if (trans > NUTRITION.transFatThreshold && !isNatural) {
@@ -258,15 +210,8 @@ export interface CeilingSubject {
   readonly fromAnnulments: Ceiling | null;
 }
 
-/**
- * Todos los techos que le corresponden al producto.
- *
- * NOTA DE CALIBRACIÓN: con base 75 y −8 por no identificado, un producto con
- * un solo término opaco no puede pasar de 67, así que el techo de 74 nunca
- * llega a morder. Se calcula igual porque la UI lo muestra como límite
- * declarado, y porque si algún día sube la base o baja el costo del no
- * identificado, empieza a servir.
- */
+/** Todos los techos del producto. El de 74 hoy no muerde (un término opaco no pasa de 67),
+ *  pero se calcula porque la UI lo muestra como límite. */
 export function collectCeilings(subject: CeilingSubject): Ceiling[] {
   const ceilings: Ceiling[] = [];
   if (subject.fromAnnulments) ceilings.push(subject.fromAnnulments);

@@ -1,30 +1,11 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — Contrato del motor de puntuación
-
-   Todas las formas del dominio viven acá, en un solo archivo sin lógica ni
-   dependencias. Los módulos del motor importan de acá; nadie importa tipos
-   desde un módulo que además ejecuta algo.
-
-   El criterio para que algo sea un tipo con nombre y no un objeto anónimo:
-   si aparece en más de una firma, o si cruza el borde de un módulo, tiene
-   nombre. Los objetos de un solo uso interno siguen siendo anónimos.
-═══════════════════════════════════════════════════════════ */
+// Todas las formas del dominio del motor, sin lógica ni dependencias.
 
 /* ────────────────────────────────────────────────────────────
    Impacto y niveles (§2 Paso 2, §4)
    ──────────────────────────────────────────────────────────── */
 
-/**
- * §2 Paso 2 — Los tres niveles de impacto del documento, más los dos estados
- * que NO son niveles:
- *
- * · `none`        — lo reconocimos y no tenemos objeción.
- * · `desconocido` — no sabemos qué es (§4.7). Tiene costo propio y techo.
- *
- * Que sean estados distintos es la corrección del defecto más grave que tuvo
- * el motor: cuando "no sé" y "está bien" colapsaban en el mismo valor, no
- * saber empujaba el puntaje hacia arriba.
- */
+/** §2 Paso 2: niveles de impacto, más `none` (reconocido, sin objeción) y `desconocido` (no
+ *  se sabe qué es: costo propio y techo). No saber nunca empuja el puntaje hacia arriba. */
 export type Impact = 'alto' | 'medio' | 'bajo' | 'none' | 'desconocido';
 
 /** Severidad que se muestra en la UI. Se deriva del impacto, nunca al revés. */
@@ -42,12 +23,7 @@ export interface DeductionRates {
    La rúbrica como datos (§1, §3, §4, §5)
    ──────────────────────────────────────────────────────────── */
 
-/**
- * §4 — Una fila de la tabla de ingredientes.
- *
- * "Esta sección es datos, no reglas. Crece sin agregar complejidad al
- * sistema." Agregar una fila acá no toca ninguna función del motor.
- */
+/** §4: una fila de la tabla de ingredientes. */
 export interface ImpactEntry {
   readonly id: string;
   readonly aliases: readonly string[];
@@ -64,12 +40,7 @@ export interface ImpactEntry {
   readonly desc?: string;
 }
 
-/**
- * §3 — Una fila de la tabla de anclas.
- *
- * Un ancla es terminal: si la lista entera cabe en la fila, ese ES el puntaje
- * del producto y no se recorre el resto del pipeline.
- */
+/** §3: una fila de anclas. Terminal: si la lista cabe en la fila, ese es el puntaje. */
 export interface Anchor {
   readonly id: string;
   readonly label: string;
@@ -78,21 +49,14 @@ export interface Anchor {
   readonly max: number;
   /** Al menos uno de estos tiene que estar presente… */
   readonly required: readonly string[];
-  /**
-   * …o todos los términos de alguno de estos conjuntos. Existe porque varias
-   * filas de §3 se describen por su composición y no por su nombre: un yogur
-   * declara "leche, fermentos" y la palabra "yogur" no aparece nunca.
-   */
+  /** …o todos los términos de algún conjunto: un yogur declara "leche, fermentos" y nunca
+   *  dice "yogur". */
   readonly requiredAll?: readonly (readonly string[])[];
   /** Además de lo anterior, solo estos pueden aparecer. */
   readonly allowed: readonly string[];
   /** La categoría delata el arquetipo aunque el listado no lo nombre. */
   readonly categoryPattern?: RegExp;
-  /**
-   * §2 Paso 1 dice "1 o 2 ingredientes", pero varias filas de §3 describen
-   * productos de 3-5 componentes (queso, masa madre, pasta seca, conservas).
-   * El tope es por fila, no global.
-   */
+  /** Tope de ingredientes por fila (algunas anclas tienen 3-5 componentes). */
   readonly maxIngredients: number;
   /** Si el panel desmiente al listado, el ancla no aplica. */
   readonly maxSugars?: number;
@@ -215,15 +179,7 @@ export interface EvaluatedIngredient {
   readonly mandatory: boolean;
 }
 
-/**
- * Una regla de clasificación. Devuelve `null` cuando no tiene opinión y el
- * turno pasa a la siguiente.
- *
- * Modelar el orden de precedencia de §4 como una cadena de resolutores —y no
- * como una escalera de `if`— permite testear cada regla por separado y hace
- * que el orden sea un dato visible en vez de una propiedad del control de
- * flujo.
- */
+/** Una regla de clasificación: `null` si no tiene opinión y pasa a la siguiente. */
 export type IngredientResolver = (item: CleanIngredient) => EvaluatedIngredient | null;
 
 /* ────────────────────────────────────────────────────────────
@@ -240,10 +196,7 @@ export type ScoreStepKind =
   | 'anulacion'
   | 'clamp';
 
-/**
- * Una fila de la cuenta. `delta` es `null` en los pasos que FIJAN un valor
- * (base, ancla, techo, anulación, clamp) en vez de sumarlo.
- */
+/** Una fila de la cuenta. `delta` es `null` en los pasos que fijan un valor. */
 export interface ScoreStep {
   readonly kind: ScoreStepKind;
   readonly label: string;
@@ -282,15 +235,8 @@ export interface NoScore {
 
 export type Tier = 'Excelente' | 'Bueno' | 'Moderado' | 'Malo' | 'Sin datos suficientes';
 
-/**
- * Lo mínimo que el motor necesita de un producto. La satisfacen
- * estructuralmente tanto `RawProduct` como los objetos que arman los
- * scripts de curaduría.
- *
- * `nova_group` sigue en la entrada porque viene en el payload y se expone como
- * información, pero desde v2.1 NO participa del cálculo: el puntaje sale de la
- * lista de ingredientes.
- */
+/** Lo mínimo que el motor necesita de un producto (lo cumplen `RawProduct` y los scripts).
+ *  `nova_group` no participa del cálculo. */
 export interface ProductInput {
   readonly product_name?: string;
   readonly ingredients_text?: string;
@@ -359,10 +305,7 @@ export interface Disclaimer {
 export interface ScoreBreakdown {
   readonly engineVersion: string;
 
-  /**
-   * `null` cuando §1 dice que no se puntúa. Nunca un número estimado: "la
-   * ausencia de datos nunca mejora un puntaje".
-   */
+  /** `null` cuando §1 dice que no se puntúa. Nunca un número estimado. */
   readonly score: number | null;
   readonly scoreAvailable: boolean;
   readonly noScore: NoScore | null;

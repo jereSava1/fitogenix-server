@@ -130,6 +130,9 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | C-07 | ✅ Hecho en `docs/c07-refactor-plan` (native), mergeado y pusheado. `REFACTOR_PLAN.md`: B1-B3 respondidas, los 3 ajustes aplicados (servicios solo contra el server, tipos generados, imágenes directas) y estado de los bloqueantes B1-B4 |
 | C-05 | En curso en `chore/c05-baseline` (primer merge): las `001`–`014` y la `015` (D-09) movidas a `supabase/migrations/legacy/`, con su README; referencias corregidas (dos apuntaban a `010_manufacturer_info`, que es la `012`). Falta la baseline: procedimiento en [`sql/c05/`](sql/c05/README.md) (CLI, Docker y contraseña de la base, D-58). **Requisito antes de la primera migración nueva (D-67)** |
 | C-08 | Pendiente: acción manual del responsable |
+| C-09 | ✅ Hecho en `chore/c09-comentarios-motor`. Comentarios del motor de puntaje: máximo 3 líneas, sin historia. JS compilado sin comentarios idéntico en los 34 archivos; goldens y snapshots sin cambios |
+| C-10 | ✅ Hecho en `chore/c10-comentarios`. Ídem en el resto del server, `etl/` y `scripts/` (91 archivos) |
+| C-11 | ✅ Hecho en `chore/c11-comentarios` (native). Ídem en native (40 archivos); regla sumada a `CLAUDE.md` |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
@@ -141,6 +144,9 @@ Objetivo: fijar el comportamiento **actual**, aunque sea incorrecto, para que cu
 | C-06 | P1 | DOCUMENTAR | native | `README.md` (real), `AGENTS.md` (Expo 57), `CLAUDE.md` (sin el SSOT externo), `.env.example` (solo `EXPO_PUBLIC_BACKEND_URL` y los client IDs de Google), comentarios de `api/client.ts` y `CleanProductImage.tsx`, encabezado de `scanCopy.ts`; `eas.json · appleId` → configuración de EAS | 04-analisis §3.2, SEC-06 | Bajo | — | `PR-N06 docs(native): docs y config al día` |
 | C-07 | P1 | DOCUMENTAR | native | `docs/REFACTOR_PLAN.md`: responder B1-B3 y aplicar los 3 ajustes (capa de servicios solo contra el server, tipos generados, imágenes directas) | D-55, 04-analisis §5 | Bajo | — | `PR-N06` (mismo PR) |
 | C-08 | P1 | Acción manual | local | Borrar `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY` y `SERPAPI_API_KEY` del `.env` de native; **vaciar la Papelera** (contiene `ENVIRONMENT.md`) | SEC-02, SEC-03, D-51 | — | — | — |
+| C-09 | P1 | DOCUMENTAR | server | Comentarios del motor (`src/modules/scoring/`): máximo 3 líneas, solo el porqué que no se ve en el código | — | Alto (solo comentarios) | El JS compilado sin comentarios no cambia; suite y goldens idénticos | `chore: comentarios cortos del motor` |
+| C-10 | P2 | DOCUMENTAR | server | Ídem en el resto de `src/`, `etl/` y `scripts/` | — | Bajo | Ídem | `chore: comentarios cortos` |
+| C-11 | P2 | DOCUMENTAR | native | Ídem en `src/` y `scripts/` | — | Bajo | Ídem | `chore(native): comentarios cortos` |
 
 ---
 

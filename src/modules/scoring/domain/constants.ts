@@ -1,59 +1,9 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — §2: los números del documento
-
-   Todos los coeficientes del motor, juntos y sin lógica alrededor. Están acá
-   para que se puedan auditar contra el documento de una sola lectura y para
-   que calibrar sea editar constantes, no leer funciones.
-
-   El documento se define a sí mismo por este archivo:
-   6 coeficientes · 3 niveles de impacto · 1 mecanismo de techo · 6 anulaciones
-═══════════════════════════════════════════════════════════ */
+// Todos los coeficientes del motor (§2), sin lógica: auditar contra el documento y calibrar
+// es editar constantes.
 
 import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types';
 
-/**
- * Versión del motor. Se persiste en `products.engine_version` al escribir el
- * catálogo (la columna se va en B-01, D-35).
- *
- * Hasta K-02 también invalidaba el cache Redis: ahí se guardaba la respuesta
- * armada dentro de un sobre con esta versión, y un bump era la forma de que
- * un cambio del motor le llegara al usuario antes de que venciera el TTL (es
- * lo que cuentan v2.2 y v2.3 abajo). Desde K-02 Redis guarda los datos
- * crudos y la respuesta se recalcula en cada lectura, así que un cambio del
- * motor llega en el mismo deploy, con o sin bump.
- *
- * v2.1 — el puntaje pasa a ser una función de la lista de ingredientes:
- * base 75 → restas por impacto y posición → modificador de procesamiento →
- * techos → clamp. Desaparecen el promedio ponderado de ejes, el modificador
- * NOVA y la regresión a neutro por cobertura. Los puntajes de v2 NO son
- * comparables con los de v2.1.
- *
- * v2.2 — se corrigen cuatro reglas de octógonos contra la Tabla 1 del Decreto
- * 151/2022 y el Manual de Aplicación Rev. I (Disp. ANMAT 11362/2024), con la
- * calculadora oficial de ANMAT como verificación (ver `scoring/seals.ts`):
- *   · sodio gana su condición alternativa (≥300 mg/100 g);
- *   · sodio gana la condición de bebidas sin aporte energético (≥40 mg/100 ml);
- *   · el corte de calorías de bebidas baja de 70 a 25;
- *   · el octógono de calorías pasa a exigir que YA haya un sello de azúcares,
- *     grasas totales o saturadas — antes salía por energía sola.
- *
- * Los tres primeros marcaban DE MENOS y el cuarto DE MÁS, así que hay productos
- * que ganan un octógono y otros que lo pierden. En los dos casos cambia el
- * puntaje vía `sealPenalty`.
- *
- * El bump NO es cosmético: el cache Redis del catálogo trata como MISS toda entrada cuyo
- * sobre no coincida con esta constante, así que sin bumpear, Redis seguiría
- * sirviendo hasta 7 días los octógonos viejos.
- *
- * v2.3 (31/8/2026) — el puntaje NO cambia, y aun así hay que bumpear.
- *
- * Por decisión de producto el octógono resta puntos y deja de mostrarse
- * (`docs/dominio-scoring.md` §S4): la nota del paso nutricional ya no los nombra. Los
- * desgloses cacheados con v2.2 llevan el texto viejo —"Sellos de advertencia:
- * EXCESO EN …"— dentro de `steps[].detail`, que es texto de usuario. Sin bump,
- * la decisión no llega al usuario hasta que venza el TTL. Es el mismo mecanismo
- * de siempre aplicado a un cambio que no toca ningún número.
- */
+/** Versión del motor. Se guarda en `products.engine_version` (la columna se va en B-01). */
 export const ENGINE_VERSION = 'ftg-rubric-v2.3';
 
 /* ── §2 Paso 1 — Punto de partida ─────────────────────────────────────── */
@@ -63,14 +13,8 @@ export const BASE_SCORE = 75;
 
 /* ── §2 Paso 2 — Los seis coeficientes ────────────────────────────────── */
 
-/**
- * "Estos son los ÚNICOS valores válidos."
- *
- * Seis números. No hay un séptimo escondido en el motor: si un puntaje no se
- * puede reconstruir sumando entradas de esta tabla más el modificador de
- * procesamiento, el motor está mal — y hay un test que lo verifica producto
- * por producto.
- */
+/** Los ÚNICOS seis coeficientes: todo puntaje se reconstruye con esta tabla más el
+ *  modificador de procesamiento (un test lo verifica producto por producto). */
 export const DEDUCTIONS: Readonly<Record<Impact, DeductionRates>> = {
   alto:        { first3: 13, rest: 6 },
   medio:       { first3: 7,  rest: 3 },
@@ -125,15 +69,8 @@ export const NO_DATA = {
   unknownCountLimit: 3,
   /** "…o más del 30% de la lista." */
   unknownRatioLimit: 0.3,
-  /**
-   * El criterio porcentual se aplica desde acá para arriba.
-   *
-   * Tomado al pie de la letra alcanzaría a cualquier lista de 3 ingredientes
-   * con uno solo sin reconocer (1/3 = 33%), y eso volvería inalcanzables los
-   * techos de 74 y 49 que §2 Paso 4 define justamente para 1 y 2 no
-   * identificados. Un producto con un único término opaco tiene techo, no
-   * ausencia de dato.
-   */
+  /** El criterio porcentual rige desde acá: con menos, un solo término opaco en una lista
+   *  corta haría inalcanzables los techos de 1 y 2 no identificados (§2 Paso 4). */
   unknownRatioAppliesFrom: 2,
   /** Fracción mínima de caracteres alfabéticos para que un fragmento diga algo. */
   minAlphaRatio: 0.5,
@@ -141,17 +78,9 @@ export const NO_DATA = {
 
 /* ── Modificador nutricional (fuera del documento) ────────────────────── */
 
-/**
- * §2 de v2.1 NO tiene paso nutricional: el puntaje sale de la lista. Se
- * conserva el cruce con los octógonos de la Ley 27.642 y con la grasa trans
- * declarada por decisión de producto, porque atrapa lo que la lista sola no
- * ve —un producto de ingredientes correctos con un panel desastroso— y porque
- * el sello es un dato OFICIAL que el usuario puede verificar mirando el
- * envase.
- *
- * Va como paso propio del desglose, con su propio número, para no romper la
- * regla de reconstruibilidad.
- */
+/** Paso nutricional (decisión de producto, fuera de §2): octógonos de la Ley 27.642 y grasa
+ *  trans declarada. Atrapa un panel desastroso con una lista correcta. Paso propio del
+ *  desglose, para no romper la reconstruibilidad. */
 export const NUTRITION = {
   /** Por encima de esto la grasa trans declarada penaliza. */
   transFatThreshold: 0.2,
@@ -159,29 +88,14 @@ export const NUTRITION = {
   transFatSevereFrom: 2,
   transFatPenalty: 8,
   transFatSeverePenalty: 15,
-  /**
-   * Piso del paso. El panel puede bajar el puntaje, nunca subirlo, y no puede
-   * llevarlo por debajo de esto: la banda 0-14 queda reservada para las
-   * anulaciones de §5 y para las anclas de fondo (jarabe de maíz alto en
-   * fructosa, bebida azucarada), que son juicios sobre la formulación y no
-   * sobre la tabla nutricional.
-   *
-   * Si el puntaje YA venía por debajo del piso, el paso no lo mueve.
-   */
+  /** Piso del paso: el panel baja el puntaje pero no por debajo de esto (0-14 es para las
+   *  anulaciones y las anclas de fondo). Si ya venía por debajo, no lo mueve. */
   floor: 15,
 } as const;
 
 /* ── §2 — Categorías ──────────────────────────────────────────────────── */
 
-/**
- * El puntaje determina la banda, nunca al revés.
- *
- * FUENTE ÚNICA de los umbrales en todo el sistema: la presentación
- * (`scoring.ts`), el sello y el estado del producto salen de acá. Antes había
- * tres criterios distintos para la misma decisión —75/50/25 acá, 70/50 en
- * `resolveProductStatus`, 75/25 en el sello— y un producto de 72 salía
- * "Bueno" con sello "Fitogénico".
- */
+/** Las bandas: única fuente de los umbrales (presentación, sello y estado salen de acá). */
 export const TIERS: readonly TierDefinition[] = [
   { min: 75, tier: 'Excelente', color: '#16a34a', message: 'Lo recomendamos' },
   { min: 50, tier: 'Bueno',     color: '#84cc16', message: 'Buena opción' },
@@ -198,8 +112,7 @@ export const NO_DATA_TIER = {
 
 /** Umbral de la banda alta: el sello Fitogénico y el estado "positivo". */
 export const EXCELLENT_FROM = TIERS[0].min;
-/** Umbral de la banda Buena: desde acá se destacan los ingredientes
- *  beneficiosos; por debajo, los cuestionables (`presentScore`, K-04). */
+/** Desde acá se destacan los ingredientes beneficiosos; por debajo, los cuestionables. */
 export const GOOD_FROM = TIERS[1].min;
 /** Umbral de la banda baja: el sello contrario y el estado "negativo". */
 export const BAD_BELOW = TIERS[2].min;

@@ -1,9 +1,4 @@
-// Octógonos de la Ley 27.642 — contraste contra lo que realmente lleva el
-// envase en la góndola argentina.
-//
-// Estos sellos son distintos del resto del motor: el usuario puede dar vuelta
-// el paquete y verificarlos. Si nuestro cálculo no coincide con el envase, la
-// app pierde credibilidad de una forma que un puntaje discutible no provoca.
+// Octógonos contra lo que lleva el envase: es el único dato que el usuario puede verificar.
 import { describe, expect, it } from 'vitest';
 import { scoreProduct, type ProductInput } from '../index';
 import { computeWarningSeals } from './seals';
@@ -11,10 +6,8 @@ import { computeWarningSeals } from './seals';
 const sellosDe = (p: ProductInput) => scoreProduct(p).warnings;
 
 describe('productos que SÍ llevan sellos', () => {
-  // Este caso esperaba SOLO azúcares, con el umbral de bebidas en 70 kcal/100ml.
-  // Con el corte real de la Tabla 1 (25) una gaseosa de 42 kcal lleva las dos, y
-  // es lo que corresponde: la expectativa vieja era una suposición, no una
-  // observación verificada. Contrastado contra la calculadora oficial de ANMAT.
+  // Con el corte de bebidas de la Tabla 1 (25 kcal) una gaseosa de 42 lleva los dos
+  // (verificado con la calculadora oficial de ANMAT).
   it('una gaseosa cola azucarada lleva exceso en azúcares Y en calorías', () => {
     expect(sellosDe({
       ingredients_text: 'agua, azúcar, colorante caramelo, acidulante',
@@ -92,10 +85,8 @@ describe('azúcares libres vs. totales', () => {
 });
 
 describe('octógono de calorías: exige DOS condiciones', () => {
-  // Manual de Aplicación Rev. I (Disp. ANMAT 11362/2024, pág. 10 y 17): las
-  // calorías no son un nutriente crítico. El sello sale solo si el producto YA
-  // lleva alguno de los de azúcares / grasas totales / grasas saturadas Y
-  // ademas supera el límite de energía.
+  // Las calorías no son nutriente crítico: su sello exige otro de azúcares o grasas y además
+  // superar el límite de energía (Manual Rev. I, Disp. ANMAT 11362/2024).
   const sinOtroSello = { sugars100: 0, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: false };
   // 30 g de azúcar sobre 300 kcal = 40% de la energía: dispara azúcares.
   const conAzucares = { sugars100: 30, satFat100: 0, totalFat100: 0, sodiumMg100: 0, hasAddedSugar: true };

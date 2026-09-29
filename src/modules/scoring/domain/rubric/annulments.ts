@@ -1,14 +1,5 @@
-/* =========================================================
-   FITOGENIX - S5 - ANULACIONES
-
-   Fuerzan la categoria Malo. Ningun otro componente los compensa.
-
-   Las dos reglas de cierre son lo que las hace dificiles de esquivar: la de
-   las grasas se define por el PROCESO declarado ("hidrogenad-",
-   "endurecid-") y no por coincidencia exacta de nombre, y la del curado
-   alcanza a los agentes vegetales porque su funcion en un fiambre es
-   identica a la del nitrito de sodio.
-========================================================= */
+// §5 Anulaciones: fuerzan Malo. Las grasas se detectan por el proceso declarado
+// ("hidrogenad-", "endurecid-") y el curado incluye los agentes vegetales.
 
 import type { AnnulGate, AzoColorant } from '../types';
 
@@ -74,13 +65,8 @@ export const CURING_AGENT_PATTERN =
   /nitrito de sodio|nitrato de sodio|nitrito de potasio|nitrato de potasio|sal de cura|sal nitritada|sodium nitrite|sodium nitrate|potassium nitrite|potassium nitrate|\be\s?249\b|\be\s?25[012]\b/i;
 export const CURING_AGENT_TAGS: readonly string[] = ['en:e249', 'en:e250', 'en:e251', 'en:e252'];
 
-/**
- * §5.2 — Agentes de curado VEGETALES.
- *
- * *Los agentes vegetales aportan nitrato que se convierte en nitrito durante
- * el curado. Su función en un fiambre es idéntica a la del nitrito de sodio:
- * conservar y dar color rosado. La diferencia es de etiqueta, no de química.*
- */
+/** §5.2 Agentes de curado vegetales: aportan nitrato que se vuelve nitrito; en un fiambre
+ *  cumplen la misma función que el nitrito de sodio. */
 export const VEGETABLE_CURING_PATTERN =
   /polvo de apio|jugo de apio|cultivo de apio|extracto de apio|apio en polvo|extracto de acerola|polvo de acerola|extracto de espinaca|jugo de remolacha en polvo|remolacha en polvo|curado natural|curado vegetal|celery powder|celery juice|cultured celery/i;
 

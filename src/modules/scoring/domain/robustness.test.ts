@@ -1,9 +1,5 @@
-/* Blindaje de robustez — cada bloque congela la corrección de un defecto
- * concreto que el motor tuvo con productos reales de OFF y de los retailers.
- *
- * El hilo común: el motor no puede afirmar más de lo que sabe, y lo que el
- * usuario LEE no puede contradecir lo que el motor calculó.
- */
+// Cada bloque cubre un defecto que tuvo el motor con datos reales. El motor no afirma más de
+// lo que sabe, y lo que lee el usuario no contradice lo calculado.
 import { describe, expect, it } from 'vitest';
 import { analyzeIngredients, scoreProduct } from '../index';
 import { matchesPhrase, normalizeText } from './text';
@@ -14,10 +10,7 @@ const nameOf = (t: string, needle: string) =>
   ings(t).find((i) => normalizeText(i.name).includes(normalizeText(needle)));
 
 describe('matching por palabra completa', () => {
-  // El alias "sal" (sin penalización) matcheaba dentro de "salame",
-  // "salchicha" y "salsa de soja" con includes(). Un embutido puntuaba como
-  // sal de mesa — y encima la anulación por curado depende de reconocer
-  // embutidos.
+  // "sal" no puede matchear dentro de "salame", "salchicha" o "salsa de soja".
   it('no matchea un alias dentro de otra palabra', () => {
     expect(matchesPhrase('salame', 'sal')).toBe(false);
     expect(matchesPhrase('salchicha', 'sal')).toBe(false);
@@ -49,11 +42,7 @@ describe('matching por palabra completa', () => {
 });
 
 describe('el nombre mostrado y su color salen del mismo match', () => {
-  // Caso real (Sprite). El OCR se comió las comas y "AGUA CARBONATADA
-  // AZUCARES" quedó como un solo fragmento. Se emitía UNA entrada con el
-  // nombre de la primera sustancia y el color de la peor: al usuario le
-  // aparecía "Agua" pintada de ROJO. El puntaje estaba bien; lo que leía era
-  // falso, que en un producto sensible cuesta más caro que el número.
+  // OCR sin comas (Sprite): "AGUA CARBONATADA AZUCARES" no puede mostrarse como "Agua" en rojo.
   it('un fragmento mal parseado se muestra con el nombre de lo que lo penalizó', () => {
     const lista = ings('NGE AGUA CARBONATADA AZUCARES, CONS BENZOATO BE SODIO');
     const rojo = lista.find((i) => i.sev === 'red')!;
@@ -116,10 +105,7 @@ describe('abreviaturas del rotulado argentino', () => {
 });
 
 describe('lo desconocido nunca premia', () => {
-  // El defecto más grave que tuvo el motor: todo lo no reconocido caía en un
-  // impacto neutro, sumaba al bonus por ingredientes reales y habilitaba el
-  // arquetipo de alimento entero. Un producto de tres ingredientes inventados
-  // daba 80 (Excelente).
+  // Lo no reconocido no es neutro: tres ingredientes inventados no pueden dar Excelente.
   it('un producto de ingredientes ilegibles no devuelve puntaje', () => {
     const bd = scoreProduct({ ingredients_text: 'zzqx, wrrp, ttvm' });
     expect(bd.score).toBeNull();
@@ -139,12 +125,8 @@ describe('lo desconocido nunca premia', () => {
 });
 
 describe('listas mal formadas de OFF y de los retailers', () => {
-  // Caso real (Pitusas sabor limón). El texto trae un preámbulo de marketing
-  // largo antes de "Ingredientes:", y después la lista sin comas. El parser
-  // viejo (a) no encontraba el "Ingredientes:" y (b) descartaba en silencio el
-  // fragmento resultante por largo. Quedaba UN ingrediente —el mineral de
-  // fortificación, que es verde— y la galletita puntuaba 82, "Excelente", con
-  // confianza alta. Confiado y equivocado: el peor resultado posible.
+  // Preámbulo de marketing antes de "Ingredientes:" y lista sin comas (Pitusas): no puede
+  // quedar un solo ingrediente verde y salir Excelente.
   const PITUSAS =
     'GALLETITAS DULCES CON SABORA VAINILLA RELLENAS CON CREMA ARTIFICIAL\r\n' +
     'CON SABOR A LIMON. Ingredientes: Harina de trigo O000 enriquecida por ley 25630, ' +
@@ -259,11 +241,7 @@ describe('el panel nutricional no puede sustituir al listado', () => {
 });
 
 describe('jugo de fruta vs. fruta entera', () => {
-  // Lo encontró la auditoría del catálogo real: "Jugo de naranja 100%
-  // Exprimido" daba 96 (Excelente) con cobertura total, porque "naranja"
-  // matchea el arquetipo de fruta entera. Al perder la fibra y la matriz es
-  // azúcar libre: decirle a alguien que el jugo equivale a la fruta es la
-  // confusión exacta que la regla de cierre de §4.2 existe para evitar.
+  // "Jugo de naranja 100% exprimido" no es fruta entera (§4.2).
   it('el jugo exprimido no puede puntuar como la fruta', () => {
     const jugo = scoreProduct({
       ingredients_text: 'jugo de naranja exprimido', categories: 'Bebidas',

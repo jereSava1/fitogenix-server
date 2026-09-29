@@ -1,19 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   FITOGENIX — §6 "Antes de evaluar: limpiar la lista"
-
-   Todo lo que pasa ANTES del primer número. Vive aparte del motor porque no
-   tiene nada que ver con puntuar: es parseo de rotulado argentino, y es el
-   punto donde el sistema más se rompe en la vida real (OCR, listas sin
-   separadores, sub-listas anidadas, certificaciones mezcladas con
-   ingredientes).
-
-   Orden del documento, respetado al pie de la letra:
-     1. Sacar las advertencias de alérgenos.
-     2. Traducir si hace falta.        ← ver la nota del final
-     3. Normalizar.
-     4. Resolver "y/o".
-     5. Aplanar los paréntesis.
-═══════════════════════════════════════════════════════════ */
+// §6 "Antes de evaluar: limpiar la lista": parseo del rotulado, en el orden del documento
+// (alérgenos, traducción, normalización, "y/o", paréntesis).
 
 import { normalizeText } from './text';
 import {
@@ -39,13 +25,7 @@ const MIN_LETTERS = 3;
 /** Un código de aditivo dice exactamente qué es con cuatro caracteres. */
 const ADDITIVE_CODE = /^(?:e|ins)\s?\d{3,4}\s?[a-d]?$/i;
 
-/**
- * ¿El motor sabe qué es esta cadena?
- *
- * La limpieza lo necesita para una sola decisión —si un paréntesis es una
- * sub-lista o una aclaración— y se lo pide al motor en vez de intentar
- * adivinarlo, para no duplicar la clasificación acá.
- */
+/** ¿El motor reconoce esta cadena? Se le pregunta al motor para no duplicar la clasificación. */
 export type ResolvesPredicate = (text: string) => boolean;
 
 /* ────────────────────────────────────────────────────────────
@@ -57,18 +37,8 @@ interface AllergenSplit {
   readonly warnings: readonly string[];
 }
 
-/**
- * §6.1 — Todo lo que sigue a "puede contener", "trazas de", "elaborado en",
- * "alérgenos:".
- *
- * *Un ingrediente presente solo como traza no es parte de la formulación.
- * Fitogenix evalúa lo que el fabricante eligió poner, no lo que pudo tocar el
- * producto en la planta.*
- *
- * Se corta en la PRIMERA aparición y todo el resto se va a advertencias:
- * cortar solo la oración dejaría entrar lo que viene después, que en las
- * etiquetas reales es siempre más advertencia.
- */
+/** §6.1: desde la PRIMERA "puede contener", "trazas de", "elaborado en" o "alérgenos:",
+ *  todo es advertencia. Se evalúa lo que el fabricante eligió poner, no las trazas. */
 function splitAllergenWarnings(text: string): AllergenSplit {
   const match = ALLERGEN_PREAMBLE.exec(text);
   if (!match) return { list: text, warnings: [] };
@@ -81,17 +51,8 @@ function splitAllergenWarnings(text: string): AllergenSplit {
    Paso 3 — Normalizar y separar
    ──────────────────────────────────────────────────────────── */
 
-/**
- * Separadores de §6.3: "coma, punto y coma, guion o salto de línea". Se suman
- * dos que el documento no nombra pero el rotulado real usa:
- *
- * · el punto seguido de espacio — sin tocar los decimales de "0.5 g";
- * · los dos puntos en medio de la lista, que aparecen cuando el OCR convierte
- *   una coma ("AGUA CARBONATADA AZUCARES: JUGO DE LIMON").
- *
- * El guion solo cuenta rodeado de espacios: "mono-y-diglicéridos" y "E-471"
- * son un ingrediente, no tres.
- */
+/** Separadores de §6.3 más dos del rotulado real: ". " (sin tocar decimales) y ":" en medio
+ *  de la lista (OCR). El guion solo con espacios alrededor ("E-471" es uno). */
 const SEPARATORS = /[,;:\r\n]|\s[-–—]\s|\.(?=\s|$)/;
 
 function splitFragments(text: string): string[] {
@@ -157,16 +118,8 @@ interface Fragment {
   readonly nested: boolean;
 }
 
-/**
- * §6.5 — "Sacar los nombres contenedores ('cobertura de chocolate',
- * 'relleno', 'premezcla') y quedarse con los componentes, numerados por orden
- * de aparición de izquierda a derecha."
- *
- * El contenedor se descarta SOLO si lo que hay dentro del paréntesis resuelve
- * a algo. "Emulsionante (lecitina de soja)" pierde la clase y se queda con la
- * sustancia, que es lo que queremos; pero "leche entera (origen Argentina)"
- * no puede perder la leche para quedarse con un dato de trazabilidad.
- */
+/** §6.5: los contenedores ("relleno", "cobertura de…") se reemplazan por sus componentes,
+ *  solo si lo de adentro resuelve: "leche entera (origen Argentina)" conserva la leche. */
 function flattenParentheses(text: string, resolves: ResolvesPredicate): Fragment[] {
   const out: Fragment[] = [];
   let buffer = '';
@@ -221,11 +174,7 @@ function flattenParentheses(text: string, resolves: ResolvesPredicate): Fragment
    Entrada principal
    ──────────────────────────────────────────────────────────── */
 
-/**
- * Texto crudo de una etiqueta → lista limpia, numerada y deduplicada.
- *
- * Función pura: el mismo texto da siempre la misma lista.
- */
+/** Texto crudo de la etiqueta → lista limpia, numerada y deduplicada. Pura. */
 export function cleanIngredientList(
   ingredientsText: string | undefined,
   resolves: ResolvesPredicate,
@@ -254,10 +203,8 @@ export function cleanIngredientList(
       : cleaned;
     const key = normalizeText(text);
 
-    // §6.5 — "Si el mismo ingrediente aparece varias veces, contarlo una vez,
-    // en su mejor posición." La primera aparición ES la mejor posición, así
-    // que la repetición se descarta; el porcentaje se rescata si lo traía el
-    // duplicado y no el original.
+    // §6.5: un repetido cuenta una vez, en su mejor posición (la primera); si el duplicado
+    // traía el porcentaje, se rescata.
     const previous = seenAt.get(key);
     if (previous != null) {
       const original = items[previous];
@@ -281,17 +228,5 @@ export function cleanIngredientList(
   return { items, allergenWarnings: warnings, certificationsRemoved };
 }
 
-/**
- * §6.2 — Traducir si hace falta.
- *
- * No hay un paso de traducción propio: la tabla de §4 lleva los aliases en
- * inglés y portugués junto a los del español, así que "sugar", "palm oil" y
- * "açúcar" matchean la misma fila y se MUESTRAN con el nombre canónico en
- * español. Es la misma garantía que pide el documento —"traducir ingrediente
- * por ingrediente; si un término no tiene equivalente claro → NO
- * IDENTIFICADO"— sin depender de un traductor en runtime, que sería no
- * determinista y podría inventar.
- *
- * La prohibición asociada ("no decirle al usuario en qué idioma estaba") se
- * cumple sola: el idioma de origen nunca sale del motor.
- */
+/** §6.2: no hay traducción en runtime. La tabla lleva aliases en inglés y portugués que
+ *  matchean la misma fila y se muestran en español: determinista, sin inventar. */

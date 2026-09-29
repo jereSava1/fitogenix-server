@@ -1,13 +1,5 @@
-/* =========================================================
-   FITOGENIX - S3 - ANCLAS
-
-   Productos que SON un ingrediente. Si el listado entero cabe en una fila,
-   esa fila es el puntaje y el pipeline se saltea al Paso 5.
-
-   "Un ancla se aplica solo si la lista completa esta contenida en la fila.
-   Un ingrediente extra invalida el ancla. Que el primer ingrediente sea avena
-   no convierte al producto en avena." 
-========================================================= */
+// §3 Anclas: productos que SON un ingrediente. Aplica solo si la lista completa cabe en la
+// fila (un ingrediente extra la invalida) y el pipeline salta al Paso 5.
 
 import type { Anchor } from '../types';
 
