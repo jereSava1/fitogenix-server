@@ -9,7 +9,7 @@ grant execute on function public.search_products_by_name(text, integer) to servi
 do $$
 declare
   t text;
-  p constant text := 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER';
+  p constant text := 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN';
 begin
   foreach t in array array['public.products', 'public.products_staging'] loop
     if has_table_privilege('anon', t, p) or has_table_privilege('authenticated', t, p) then
