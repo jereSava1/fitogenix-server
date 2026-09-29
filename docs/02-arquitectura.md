@@ -295,7 +295,7 @@ Borrador en [`docs/borradores/dependency-cruiser.cjs`](borradores/dependency-cru
 | `etl-solo-apis-publicas` | `etl/**` → cualquier cosa de `src/` que no sea `modules/{catalog,scoring}/index.ts` |
 | `no-env-fuera-de-config` | Se controla con una regla de lint (`no-restricted-properties` sobre `process.env`), porque dependency-cruiser no analiza expresiones |
 
-Se engancha como `npm run lint:deps` y como paso de CI (hoy no hay CI en `main`: se crea en la Fase 5).
+Se engancha como `npm run lint:deps` y como paso de CI (el CI existe desde T-01: `.github/workflows/ci.yml`; `lint:deps` se suma en M-01).
 
 **Verificado sobre el código actual** (dependency-cruiser 18.4 + TypeScript 6.0.3, salida en [`raw/server-depcruise-borrador-sobre-codigo-actual.txt`](raw/server-depcruise-borrador-sobre-codigo-actual.txt)): la config carga, cruza 112 módulos y marca **30 violaciones**, todas esperables porque describen el trabajo de migración:
 

@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Fitogenix backend — product lookup, scoring pipeline, image proxy",
   "main": "dist/main.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json",
     "prestart": "npm run build",
     "start": "node dist/main.js",
     "test": "vitest run",
