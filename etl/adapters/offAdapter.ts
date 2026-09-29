@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
 // Países soportados y su tag de OFF. Mapa
@@ -49,10 +49,10 @@ type OffDumpLine = {
   countries_tags?: string[];
 };
 
-export type AdaptedProduct = { barcode: string; raw: RawOFFProduct };
+export type AdaptedProduct = { barcode: string; raw: RawProduct };
 
 /**
- * Adapta una línea cruda del dump de OFF a RawOFFProduct. Devuelve null si no
+ * Adapta una línea cruda del dump de OFF a RawProduct. Devuelve null si no
  * aplica: sin barcode válido, fuera de los países activos (`countryTags` —
  * Argentina por default, ver DEFAULT_COUNTRY_TAGS), o sin ningún dato
  * aprovechable — mismo criterio que el gate de completitud de la Fase 3,
@@ -80,7 +80,7 @@ export function adaptOffLine(
   const hasNutriments = line.nutriments != null && Object.keys(line.nutriments).length > 0;
   if (!hasIngredients && !hasNutriments) return null;
 
-  const raw: RawOFFProduct = {
+  const raw: RawProduct = {
     product_name: line.product_name,
     brands: line.brands,
     image_url: line.image_url,

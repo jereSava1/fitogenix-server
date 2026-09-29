@@ -8,7 +8,7 @@
  * de la respuesta sin que falle nada. Acá se compara la respuesta contra el
  * producto ENTERO — incluida la ausencia deliberada de `breakdown` (decisión
  * de producto, 2026-08-18: el motor lo sigue calculando internamente, pero ya
- * no cruza la red — ver la nota en lookup.schema.ts y types/fitogenix.ts).
+ * no cruza la red — ver la nota en lookup.schema.ts y en FitogenixProduct).
  */
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +16,7 @@ import Fastify from 'fastify';
 import { scoreProduct } from '../../scoring';
 import { extractNutrition } from '../domain/productData';
 import type { LookupProduct } from '../application/lookupProduct';
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
 import type { OnScan } from './lookup.route';
 
 // Desde M-05 la ruta recibe el caso de uso inyectado: en vez de simular el

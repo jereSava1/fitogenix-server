@@ -10,13 +10,14 @@
  * `infrastructure/redisProductCache.ts`; el caso de uso los recibe en M-05.
  */
 
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from './productResponse';
+import type { RawProduct } from '../domain/rawProduct';
 
 // Lo que devuelve la lectura del cache: los datos CRUDOS reconstruidos como
-// un RawOFFProduct (para que pasen por el MISMO mapRawToProduct que un lookup
+// un RawProduct (para que pasen por el MISMO mapRawToProduct que un lookup
 // fresco) más el dataSource de la fila. El score NO se guarda: se recomputa.
 export type CachedRaw = {
-  raw: RawOFFProduct;
+  raw: RawProduct;
   dataSource: string;
 };
 

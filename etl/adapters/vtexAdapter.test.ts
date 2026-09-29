@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { adaptVtexProduct, parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from './vtexAdapter';
 
 describe('adaptVtexProduct', () => {
-  it('adapta un producto envasado con EAN real a un RawOFFProduct', () => {
+  it('adapta un producto envasado con EAN real a un RawProduct', () => {
     const results = adaptVtexProduct({
       productName: 'Fideos Tallarín al Huevo 500 Grs',
       brand: 'Don Vicente',

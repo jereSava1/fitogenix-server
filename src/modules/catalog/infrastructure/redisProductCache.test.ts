@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENGINE_VERSION } from '../../scoring';
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
 
 // ── Fake de Upstash ──
 // Un Map hace de servidor: alcanza para fijar el contrato de este módulo (qué

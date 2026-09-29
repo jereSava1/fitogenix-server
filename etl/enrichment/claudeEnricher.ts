@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAnthropicApiKey } from '../config';
 import { findImplausibleNutrients } from '../quality/nutrientPlausibility';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
 let _client: Anthropic | null = null;
 const client = (): Anthropic => {
@@ -63,7 +63,7 @@ async function callClaude(prompt: string, maxTokens: number): Promise<string> {
   return block.type === 'text' ? block.text.trim().replace(/```json|```/g, '').trim() : '';
 }
 
-export async function enrichWithAI(off: RawOFFProduct): Promise<RawOFFProduct> {
+export async function enrichWithAI(off: RawProduct): Promise<RawProduct> {
   const missingIng = ingredientCount(off.ingredients_text) < 3;
   const missingNut = !hasKeyNuts(off.nutriments);
   if (!missingIng && !missingNut) return off;
@@ -110,7 +110,7 @@ export async function enrichWithAI(off: RawOFFProduct): Promise<RawOFFProduct> {
   return off;
 }
 
-export async function aiLookupProduct(query: string): Promise<RawOFFProduct | null> {
+export async function aiLookupProduct(query: string): Promise<RawProduct | null> {
   const isBarcode = /^\d{8,14}$/.test(String(query).trim());
   const hint = isBarcode
     ? `código de barras ${query} (producto argentino o latinoamericano)`

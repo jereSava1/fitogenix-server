@@ -1,13 +1,13 @@
 # ETL — poblamiento masivo del catálogo
 
-Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawOFFProduct`, `buildCachePayload` y `mapRawToProduct` de la API pública de catalog (`src/modules/catalog/index.ts`) y el motor de `scoring`, sin duplicarlos; del server no importa nada más (regla `etl-solo-apis-publicas` de `lint:deps`). Tiene su propia config (`config.ts`: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` y, solo para enriquecer con IA, `ANTHROPIC_API_KEY`). No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts de `scripts/`. Hasta M-08 vivía en `scripts/etl/`.
+Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawProduct`, `buildCachePayload` y `mapRawToProduct` de la API pública de catalog (`src/modules/catalog/index.ts`) y el motor de `scoring`, sin duplicarlos; del server no importa nada más (regla `etl-solo-apis-publicas` de `lint:deps`). Tiene su propia config (`config.ts`: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` y, solo para enriquecer con IA, `ANTHROPIC_API_KEY`). No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts de `scripts/`. Hasta M-08 vivía en `scripts/etl/`.
 
 ```
 etl/
 ├── config.ts       # env del ETL (no usa la del server)
 ├── enrichment/     # claudeEnricher.ts: completa datos faltantes con IA (enrichWithAI)
 ├── quality/        # nutrientPlausibility.ts: rangos físicos plausibles
-├── adapters/       # fuente cruda → RawOFFProduct (nunca escriben nada)
+├── adapters/       # fuente cruda → RawProduct (nunca escriben nada)
 │   ├── offAdapter.ts
 │   └── vtexAdapter.ts
 ├── lib/            # normalización compartida

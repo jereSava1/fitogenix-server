@@ -8,7 +8,8 @@
  */
 
 import { ENGINE_VERSION, getScoreLabel, getSello } from '../../scoring';
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
+import type { RawProduct } from '../domain/rawProduct';
 
 // Referencia de búsqueda para escribir en el cache: un producto se upsertea
 // por su barcode, o por su name_key (query normalizado SIN prefijo) cuando fue
@@ -29,7 +30,7 @@ export type CacheKeyRef = { barcode: string } | { nameKey: string };
  */
 export function buildCachePayload(
   product: FitogenixProduct,
-  raw: RawOFFProduct,
+  raw: RawProduct,
   key: CacheKeyRef,
 ): Record<string, unknown> {
   return {

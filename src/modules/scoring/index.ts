@@ -65,6 +65,20 @@ export {
   type ScoreLabel,
 } from './domain/presentation';
 
+/**
+ * La tabla de ingredientes y aditivos (§4, `domain/data/ingredients.ts`), para
+ * las herramientas de curaduría de `scripts/`: `add-en-aliases.ts` la lee, le
+ * suma aliases en memoria y reescribe el archivo (en su propio proceso, nunca
+ * en el server). El motor la consulta por `domain/catalog.ts`; nadie de
+ * afuera la usa para puntuar.
+ */
+export {
+  ADDITIVES,
+  INGREDIENTS,
+  type Additive,
+  type Ingredient,
+} from './domain/data/ingredients';
+
 export type {
   AnalyzedIngredient,
   Ceiling,

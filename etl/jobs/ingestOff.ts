@@ -1,7 +1,7 @@
 // Uso: npm run etl:off -- --file /ruta/al/products.jsonl[.gz] [--limit 1000]
 //
 // Streamea el dump de OFF (fs.createReadStream + readline, nunca todo en
-// memoria), filtra LATAM/Argentina, adapta a RawOFFProduct, e inserta en
+// memoria), filtra LATAM/Argentina, adapta a RawProduct, e inserta en
 // products_staging en lotes. NUNCA escribe en `products` — eso lo hace
 // runMerge.ts después.
 //

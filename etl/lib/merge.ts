@@ -1,6 +1,6 @@
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
-export type StagingEntry = { source: string; raw: RawOFFProduct };
+export type StagingEntry = { source: string; raw: RawProduct };
 
 // Prioridad de fuente para el merge campo a campo. Dato real (OFF/OBF/Edamam) siempre gana sobre
 // scraper de retailer; scraper siempre gana sobre sintético/IA. Cualquier
@@ -42,7 +42,7 @@ function nonEmpty(v: unknown): boolean {
  * en el nombre y la marca vacía: el dato bueno estaba disponible y el merge
  * elegía el malo.
  */
-function isUsable(field: keyof RawOFFProduct, v: unknown, barcode?: string): boolean {
+function isUsable(field: keyof RawProduct, v: unknown, barcode?: string): boolean {
   if (!nonEmpty(v)) return false;
   const s = typeof v === 'string' ? v.trim() : '';
 
@@ -80,13 +80,13 @@ function isUsable(field: keyof RawOFFProduct, v: unknown, barcode?: string): boo
  * subidas por usuarios. Medido: los retailers traen imagen en el 100% de sus
  * filas y OFF en el 0% de las del dump.
  */
-const FIELD_PRIORITY: Partial<Record<keyof RawOFFProduct, Record<string, number>>> = {
+const FIELD_PRIORITY: Partial<Record<keyof RawProduct, Record<string, number>>> = {
   image_url: { off: 40, obf: 40 },
   image_front_url: { off: 40, obf: 40 },
 };
 
 /**
- * Mergea N RawOFFProduct del MISMO barcode, campo a campo, por prioridad de
+ * Mergea N RawProduct del MISMO barcode, campo a campo, por prioridad de
  * fuente (Fase 3b). Ejemplo: si OFF no trae `image_url` pero el scraper de
  * Jumbo sí, el resultado final lleva la imagen de Jumbo aunque el resto del
  * producto sea de OFF.
@@ -96,10 +96,10 @@ const FIELD_PRIORITY: Partial<Record<keyof RawOFFProduct, Record<string, number>
  * nutricionales de fuentes distintas — que pueden medir en bases distintas —
  * produciría una tabla internamente inconsistente, peor que no tener el dato.
  */
-export function mergeRawProducts(entries: StagingEntry[], barcode?: string): RawOFFProduct {
+export function mergeRawProducts(entries: StagingEntry[], barcode?: string): RawProduct {
   const sorted = [...entries].sort((a, b) => priorityOf(b.source) - priorityOf(a.source));
 
-  const pick = <K extends keyof RawOFFProduct>(field: K): RawOFFProduct[K] | undefined => {
+  const pick = <K extends keyof RawProduct>(field: K): RawProduct[K] | undefined => {
     const override = FIELD_PRIORITY[field];
     const order = override
       ? [...entries].sort(

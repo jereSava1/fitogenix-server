@@ -2,7 +2,7 @@
  * Contrato de respuesta de POST /products/lookup, como JSON Schema.
  *
  * ── FUENTE DE VERDAD ──
- * `src/types/fitogenix.ts` (tipo `FitogenixProduct`) junto con los tipos del
+ * `application/productResponse.ts` (tipo `FitogenixProduct`) junto con los tipos del
  * motor en `src/modules/scoring/index.ts` (`ScoreBreakdown`,
  * `AnalyzedIngredient`, `NutritionFacts`, `ScoreStep`). Este archivo NO define
  * el contrato: lo TRANSCRIBE a JSON Schema para que Fastify lo serialice, y
@@ -52,7 +52,7 @@
  * producción en vez de en un error de compilación.
  */
 
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
 import type {
   AnalyzedIngredient,
   NutritionFacts,

@@ -15,11 +15,13 @@ export { productResponseFromRow } from './infrastructure/productRow';
 export type { OnScan };
 
 // Para el ETL (ADR-0004): arma la respuesta y el payload que persiste en
-// `products` con el mismo código que el server. Los tipos viven todavía en
-// src/types/fitogenix.ts; pasan al módulo en M-09.
+// `products` con el mismo código que el server.
 export { mapRawToProduct } from './application/productResponse';
 export { buildCachePayload } from './infrastructure/supabaseProductWriter';
-export type { FitogenixProduct, RawOFFProduct } from '../../types/fitogenix';
+
+// Tipos del catálogo (M-09: antes en src/types/fitogenix.ts).
+export type { FitogenixProduct } from './application/productResponse';
+export type { RawProduct } from './domain/rawProduct';
 
 /** Registra `POST /products/lookup` con los adaptadores reales. `onScan` lo
  *  arma `main.ts` con user-library (catalog no lo conoce). */

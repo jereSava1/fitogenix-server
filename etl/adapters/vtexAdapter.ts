@@ -1,4 +1,4 @@
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
 // Shape parcial de la respuesta de `GET /api/catalog_system/pub/products/search`
@@ -91,7 +91,7 @@ export function parseVtexSeals(field?: string[]): string[] | undefined {
   return unique.length > 0 ? unique : undefined;
 }
 
-export type AdaptedProduct = { barcode: string; raw: RawOFFProduct };
+export type AdaptedProduct = { barcode: string; raw: RawProduct };
 
 /**
  * Códigos internos de balanza/PLU (productos de peso variable: verdulería,
@@ -114,7 +114,7 @@ function cleanCategory(categories?: string[]): string | undefined {
 }
 
 /**
- * Adapta un producto VTEX a una lista de RawOFFProduct — un producto puede
+ * Adapta un producto VTEX a una lista de RawProduct — un producto puede
  * tener varios SKUs/items (ej. mismo producto en presentaciones distintas),
  * cada uno con su propio EAN, así que devuelve un array (0, 1 o más).
  *

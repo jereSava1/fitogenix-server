@@ -40,7 +40,7 @@
 
 import { getRedis } from '../../../platform/redis';
 import { ENGINE_VERSION } from '../../scoring';
-import type { FitogenixProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from '../application/productResponse';
 import type { ProductCache } from '../application/ports';
 
 const REDIS_KEY_PREFIX = 'ftg:product:';

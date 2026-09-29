@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CachedProductRow, ProductCache, ProductReader } from './ports';
-import type { FitogenixProduct, RawOFFProduct } from '../../../types/fitogenix';
+import type { FitogenixProduct } from './productResponse';
+import type { RawProduct } from '../domain/rawProduct';
 
 /**
  * Búsqueda SOLO catálogo propio (decisión de producto, 2026-08-18): sin
@@ -29,7 +30,7 @@ const redisService = {
 type LookupModule = typeof import('./lookupProduct');
 let lookupProduct: ReturnType<LookupModule['makeLookupProduct']>;
 
-const rawProduct: RawOFFProduct = {
+const rawProduct: RawProduct = {
   product_name: 'Galletitas',
   brands: 'Marca',
   ingredients_text: 'harina, azucar',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mergeRawProducts, primarySourceOf } from './merge';
-import type { RawOFFProduct } from '../../src/modules/catalog';
+import type { RawProduct } from '../../src/modules/catalog';
 
 describe('mergeRawProducts', () => {
   it('prioriza OFF sobre un scraper de retailer para campos que ambos traen', () => {
@@ -66,8 +66,8 @@ describe('primarySourceOf', () => {
 // con el barcode en el nombre y la marca vacía, con el dato bueno disponible
 // en otra fila.
 describe('el merge descarta valores de relleno', () => {
-  const off = (raw: Partial<RawOFFProduct>) => ({ source: 'off', raw: raw as RawOFFProduct });
-  const jumbo = (raw: Partial<RawOFFProduct>) => ({ source: 'jumbo', raw: raw as RawOFFProduct });
+  const off = (raw: Partial<RawProduct>) => ({ source: 'off', raw: raw as RawProduct });
+  const jumbo = (raw: Partial<RawProduct>) => ({ source: 'jumbo', raw: raw as RawProduct });
 
   it('el código de barras no se acepta como nombre', () => {
     const r = mergeRawProducts(
@@ -117,11 +117,11 @@ describe('la imagen la gana el retailer, el resto lo gana OFF', () => {
   const off = { source: 'off', raw: {
     product_name: 'Nombre OFF', ingredients_text: 'ingredientes de off, curados',
     image_url: 'https://images.openfoodfacts.org/foto-de-celular.jpg',
-  } as RawOFFProduct };
+  } as RawProduct };
   const jumbo = { source: 'jumbo', raw: {
     product_name: 'Nombre Jumbo', ingredients_text: 'ingredientes de jumbo',
     image_url: 'https://jumbo.com.ar/producto.jpg',
-  } as RawOFFProduct };
+  } as RawProduct };
 
   it('la imagen sale del retailer: fotografía de producto, no foto de usuario', () => {
     expect(mergeRawProducts([off, jumbo]).image_url).toBe('https://jumbo.com.ar/producto.jpg');
@@ -143,9 +143,9 @@ describe('la imagen la gana el retailer, el resto lo gana OFF', () => {
 // o por la API de OFF—, la corrida los borraba. Por eso la fila existente
 // entra al merge como una fuente más, de prioridad mínima.
 describe('la fila existente en products participa del merge', () => {
-  const existing = (raw: Partial<RawOFFProduct>) => ({ source: 'existing', raw: raw as RawOFFProduct });
-  const jumbo = (raw: Partial<RawOFFProduct>) => ({ source: 'jumbo', raw: raw as RawOFFProduct });
-  const off = (raw: Partial<RawOFFProduct>) => ({ source: 'off', raw: raw as RawOFFProduct });
+  const existing = (raw: Partial<RawProduct>) => ({ source: 'existing', raw: raw as RawProduct });
+  const jumbo = (raw: Partial<RawProduct>) => ({ source: 'jumbo', raw: raw as RawProduct });
+  const off = (raw: Partial<RawProduct>) => ({ source: 'off', raw: raw as RawProduct });
 
   it('conserva los ingredientes que ya teníamos cuando staging no los trae', () => {
     const r = mergeRawProducts([
@@ -183,8 +183,8 @@ describe('la fila existente en products participa del merge', () => {
 
   it('no cambia la fuente reportada del producto', () => {
     expect(primarySourceOf([
-      { source: 'existing', raw: {} as RawOFFProduct },
-      { source: 'jumbo', raw: {} as RawOFFProduct },
+      { source: 'existing', raw: {} as RawProduct },
+      { source: 'jumbo', raw: {} as RawProduct },
     ])).toBe('jumbo');
   });
 });

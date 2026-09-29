@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { mapRawToProduct } from './productResponse';
-import type { RawOFFProduct } from '../../../types/fitogenix';
+import type { RawProduct } from '../domain/rawProduct';
 
 /* T-02 · Caracterización de la respuesta completa (docs/05-plan.md).
  *
@@ -17,7 +17,7 @@ import type { RawOFFProduct } from '../../../types/fitogenix';
  * del ítem que lo cambia.
  */
 describe('caracterización — respuesta completa de mapRawToProduct (T-02)', () => {
-  const PRODUCTOS: ReadonlyArray<[string, RawOFFProduct]> = [
+  const PRODUCTOS: ReadonlyArray<[string, RawProduct]> = [
     ['Coca-Cola', {
       product_name: 'Coca-Cola', categories: 'Bebidas, Gaseosas',
       ingredients_text: 'agua carbonatada, azúcar, colorante caramelo E150d, acidulante ácido fosfórico, aromas naturales, cafeína',
