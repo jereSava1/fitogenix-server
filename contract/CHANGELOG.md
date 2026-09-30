@@ -4,6 +4,16 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.8.0 — 2026-09-30 · F-04
+
+**Aditivo.** Recuperar la contraseña por el server (RF-025, ADR-0010, D-79): native deja de llamar a Supabase para esto en F-08.
+
+- **Nuevo `POST /v1/auth/password/forgot`** `{ email }` → `202 { ok: true }`, exista o no el email; `400`, `429`, `503` (si Supabase Auth no responde).
+- **Nuevo `POST /v1/auth/password/reset`** `{ email, code, newPassword }` → `200 { ok: true }`. `code` de 6 a 10 dígitos (el largo lo configura el proyecto de Supabase); `newPassword` de 8 a 72 caracteres. `401 INVALID_CODE` si el código no sirve o venció; `400` si Supabase rechaza la contraseña (igual a la anterior o débil), con el motivo en `error`; `429` con `Retry-After` tras 5 códigos fallidos para ese email en 15 minutos; `503`.
+- **Nuevo código de error `INVALID_CODE`** (401).
+- Límite de `/v1/auth/*`: 10 pedidos por minuto por IP en cada ruta (el general sigue en 60).
+- Native hoy acepta contraseñas desde 6 caracteres: en F-08 pasa a 8, como el contrato.
+
 ## 0.7.0 — 2026-09-30 · F-05
 
 **Aditivo.** Perfil del usuario (RF-028, ADR-0010): native deja de leer y escribir `profiles` directo en F-09.

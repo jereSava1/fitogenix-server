@@ -406,7 +406,7 @@ type OnboardingAnswers = {   // claves ESTABLES (hoy diets y allergies usan el t
 
 Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOALS`, `SYMPTOMS`, `DIETS`, `ALLERGIES`, `AVOID` y las fuentes). `diets` y `allergies` hoy se identifican por su **texto** ("Sin Gluten", "Maní"): el contrato usa claves estables y la app mapea.
 
-**Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error: **F-05** suma `USERNAME_TAKEN` (409).
+**Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error: **F-05** suma `USERNAME_TAKEN` (409). **F-04** suma `INVALID_CODE` (401).
 
 **H-01 (2026-09-29, contrato `0.4.0`):** se suma `DEPENDENCY_UNAVAILABLE` (503 + `Retry-After: 10`) cuando la base no responde o falla, en el lookup, el detalle, guardados e historial. "No está" (404) queda solo para una consulta que salió bien sin filas.
 
@@ -466,6 +466,8 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 | 17 | `POST /auth/password/reset` | No | `{ email, code (6 dígitos), newPassword (8..72) }` | `204` | `400`, `401 INVALID_CODE`, `429`, `503` |
 
 Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `newPassword`, `refreshToken`, `idToken`, `code`).
+
+**F-04 (2026-09-30, contrato `0.8.0`, D-79):** 16 y 17 hechos, con estos ajustes: `forgot` responde `202 { ok: true }` aunque el email no exista (y aunque Supabase aplique su propio límite de envíos), salvo que Supabase Auth no responda (`503`); `reset` responde `200 { ok: true }` (como el resto de las escrituras) y acepta códigos de 6 a 10 dígitos (el largo lo configura el proyecto de Supabase). Límites: 10 por minuto por IP en cada ruta y 5 códigos fallidos por email cada 15 minutos (`429` con `Retry-After`). El server no loguea los bodies (verificado con un test).
 
 ### B.3.4 `account`
 

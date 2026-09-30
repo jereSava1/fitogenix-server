@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { registerCatalog } from './modules/catalog';
 import { recordScan, registerUserLibrary } from './modules/user-library';
 import { registerAccount } from './modules/account';
+import { registerAuth } from './modules/auth';
 
 /** Prefijo de todas las rutas del contrato (D-44). `/health` queda afuera; sin alias. */
 export const API_PREFIX = '/v1';
@@ -17,6 +18,7 @@ export async function registerModules(app: FastifyInstance): Promise<void> {
       await registerCatalog(v1, {
         onScan: ({ userId, productId }) => recordScan(userId, productId),
       });
+      await registerAuth(v1);
       await registerAccount(v1);
       await registerUserLibrary(v1);
     },

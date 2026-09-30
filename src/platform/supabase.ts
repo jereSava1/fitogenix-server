@@ -31,6 +31,17 @@ export function supabaseAdmin(): ReturnType<typeof createClient<any>> {
   return _admin;
 }
 
+/** Cliente descartable para operaciones de Auth que abren una sesión de usuario (p. ej.
+ *  `verifyOtp`). Nunca se hacen sobre `supabaseAdmin()`: su sesión pasaría a firmar las
+ *  consultas siguientes como ese usuario. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function supabaseAuthClient(): ReturnType<typeof createClient<any>> {
+  return createClient(config.supabaseUrl, config.supabaseSecretKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: fetchWithTimeout(SUPABASE_TIMEOUT_MS) },
+  });
+}
+
 /** Corre una consulta: si lanza (red, timeout), sale como DependencyUnavailableError. */
 export async function runQuery<R>(what: string, run: () => PromiseLike<R>): Promise<R> {
   try {
