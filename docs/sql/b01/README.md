@@ -44,7 +44,7 @@ Guardados, historial y reportes se borran en cascada con el producto.
 
 **B-01a (2026-09-30):** `supabase db push` aplicó `20260930204540`; `migration list --linked` la muestra local y remota; `products` quedó con 13 columnas (`id`, `barcode`, `product_name`, `brand`, `category`, `image_url`, `data_source`, `created_at`, `ingredients_text`, `nutriments`, `additives_tags`, `ai_enriched`, `updated_at`).
 
-**Filas `ai` (2026-09-30):** 5 filas. Al borrarlas se van en cascada **1 guardado** (Opera) y **4 entradas de historial** (Froot Loops, Papas Fritas Clásicas, Cheetos, Nivea Crema Corporal); ningún reporte.
+**Filas `ai` (2026-09-30):** 5 filas. Al borrarlas se van en cascada **1 guardado** (Opera) y **4 entradas de historial** (Froot Loops, Papas Fritas Clásicas, Cheetos, Nivea Crema Corporal); ningún reporte. **El responsable aprobó perderlos (2026-09-30).**
 
 | id | producto | guardados | historial |
 |---|---|---|---|
