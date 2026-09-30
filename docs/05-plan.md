@@ -215,7 +215,7 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 
 ### 7.1 Etapa 6 — Endurecimiento del server
 
-**Etapa 6 COMPLETA (2026-09-29):** H-01 a H-05 hechos.
+**Etapa 6 COMPLETA (2026-09-29):** H-01 a H-05 hechos. H-06 (actualizar `fastify`, D-77) se sumó después, antes de F-05.
 
 | ID | Estado |
 |---|---|
@@ -232,12 +232,14 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 | H-03 | P1 | REFACTOR | server | ✅ CORS con lista explícita (o deshabilitado: la app nativa no lo necesita); límites por ruta (D-48); `logger.redact`. (El 429 en vez de 500 ya se arregló en K-03, D-69) | RNF-S04, RNF-S06, D-48 | Bajo | Antes: `buildApp.test.ts` (M-02). Después: tests de 429 por ruta | `PR-32 feat: CORS, límites y redact` |
 | H-04 | P2 | REFACTOR | server | ✅ Una sola `normalizeQuery`, también para las claves de Redis | 03-contratos §B.4.9 | Bajo | Después: test de normalización con acentos | `PR-33 fix(catalog): normalización única` |
 | H-05 | P2 | AGREGAR | server | ✅ `Dockerfile` multi-stage | ADR-0007 | Bajo | Después: build de la imagen en CI | `PR-34 chore: Dockerfile portable` |
+| H-06 | P1 | REFACTOR | server | Actualizar `fastify` (y `fast-uri`) por los avisos de `npm audit`, en especial `X-Forwarded-*` con `trustProxy` por saltos | D-77, H-03 | Medio | Antes y después: toda la suite, `buildApp.test.ts` (IP detrás del proxy) y el contrato sin cambios | `PR-34b chore: fastify al día` |
 
 ### 7.2 Etapa 7 — Funcionalidad nueva y native "todo por el server"
 
 | ID | Estado |
 |---|---|
 | F-01 | ✅ Hecho en `feat/f01-borrar-historial`. **Contrato `0.6.0` (aditivo).** `DELETE /v1/users/me/history/:productId` en `user-library`: `HistoryRepository.remove` (borra por `user_id` y `product_id`; un error o una excepción de la base → `DependencyUnavailableError`, 503), caso de uso `removeFromHistory` y ruta en `history.route.ts` con `requireAuth` (params uuid → 400; error inesperado → 500 "No se pudo borrar del historial"). Tests 664 → 678: repositorio (filtros, error y excepción → error tipado), caso de uso, ruta en T-05 (200, idempotente, 400, 401, 500, 503 y aislamiento: el id de otro usuario en query o headers se ignora; cada token borra de su historial) y contrato (200, 400, 401, 503; declarado en las listas de rutas con base y con sesión). Mutación (sin filtro por usuario, sin filtro por producto, tragarse el error de la base, `userId` de la query, caída como 500, `productId` sin uuid) detectada. Verificado de punta a punta con el server compilado contra un Supabase falso local: 401 sin token, 200 dos veces y 400 sin uuid; el `DELETE` que llega a PostgREST filtra `user_id` (del token) y `product_id`. Native sincroniza el contrato; la app lo usa en F-11 |
+| F-11a | ✅ Hecho en `feat/f11a-historial-y-guardar` (native), mergeado a `fitogenix/refactor-cleanup` de native; esta fila, en `docs/f11a-estado` (server). Primera mitad de F-11 (D-76). (1) **Borrar del historial:** con sesión, `removeFromHistory` llama a `removeFromHistoryRemote` (`DELETE /v1/users/me/history/{productId}`, F-01) con update optimista; si el server falla (incluido un 503), el ítem vuelve a su lugar, salvo que un escaneo nuevo ya lo haya traído. Sin sesión sigue siendo local. (2) **Guardar sin cuenta (D-14, RNF-U05):** `toggleSaved` sin sesión no hace nada (antes marcaba el producto como guardado en memoria) y `ScanResultScreen` abre una alerta que invita a crear una cuenta ("Crear cuenta" → `/welcome`; copy provisorio en `constants/scanCopy.ts`). El botón de guardar suma rol y etiqueta accesibles. Tests 150 → 162. **Actualizados a propósito:** los dos `CARACTERIZA` de F-11 en `scanResultStore.test.tsx` (guardar sin sesión; borrar del historial). **Nuevos:** cliente (URL, sin sesión, 401, 500, 503 no es "iniciá sesión"), store (borrar con y sin sesión, revertir sin duplicar, `clearHistory` sigue local) y pantalla (invitación sin sesión, con sesión guarda sin preguntar). Mutación (borrar sin avisar al server, sin revertir, revertir duplicando, guardar sin sesión en memoria, pantalla que guarda sin sesión, invitación que no lleva a crear cuenta, URL equivocada) detectada. `expo lint` sigue con los 24 problemas previos (ninguno nuevo). **F-11b** (feedback y reportes) queda para después de F-07 |
 
 | ID | Prio | Acción | Repo | Archivos | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
@@ -251,7 +253,7 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 | F-08 | P0 | REFACTOR | native | Cliente de auth propio contra `/v1/auth/*`: tokens en `expo-secure-store` y refresh. Migración **por flujo** (login → registro → reset → OAuth), un PR por flujo, conviviendo con el SDK de Supabase hasta el último | ADR-0010, D-28 | **Alto** | Antes: T-07. Después: tests por flujo | `PR-N09…N12 feat(native): auth por el server` |
 | F-09 | P1 | REFACTOR | native | Perfil por el server (`/v1/users/me/profile`) | ADR-0010, RF-028 | Medio | Tests de la pantalla de datos personales | `PR-N13 feat(native): perfil por el server` |
 | F-10 | P1 | REFACTOR | native | Onboarding: respuestas en memoria + guardado temporal de 24 h al registrarse (D-27) + consentimiento + envío después del primer login | RF-048, D-20, D-27, RNF-S10 | Medio | Tests: se envía tras el login; se borra al vencer o al elegir "sin cuenta" | `PR-N14 feat(native): guardar el onboarding con cuenta` |
-| F-11 | P1 | REFACTOR | native | Feedback y reportes reales; borrar del historial llama al server; guardar sin cuenta invita a crear una | RF-043/044, RF-017, D-14, RNF-U05, RNF-U07 | Bajo | Tests de cada acción | `PR-N15 feat(native): acciones reales` |
+| F-11 | P1 | REFACTOR | native | En dos partes (D-76): ✅ **F-11a** borrar del historial llama al server; guardar sin cuenta invita a crear una. **F-11b** feedback y reportes reales (después de F-07) | RF-043/044, RF-017, D-14, RNF-U05, RNF-U07 | Bajo | Tests de cada acción | `PR-N15 feat(native): acciones reales` |
 | F-12 | P1 | ELIMINAR | native | `@supabase/supabase-js`, `src/lib/supabase.ts`, `EXPO_PUBLIC_SUPABASE_*` (cuando F-08 y F-09 estén completos) | D-28 | Medio | Después: `grep supabase src/` vacío; CI verde | `PR-N16 chore(native): sin Supabase en la app` |
 | F-13 | P2 | REFACTOR | native | Accesibilidad transversal: `accessibilityLabel` en controles de solo ícono, "reducir movimiento", escalado de texto | RNF-U11, D-23 | Bajo | Checklist manual con VoiceOver y TalkBack | `PR-N17 feat(native): accesibilidad` |
 
@@ -319,6 +321,8 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 | D-73 | Pantallas de K-06 | Con `highlight: 'ninguno'`, beneficiosos primero sin destacar lo cuestionable; placeholder de imagen = ícono genérico (`cube-outline`) hasta que haya uno de diseño; `noScore` con título fijo "Sin puntaje" + el mensaje del server |
 | D-74 | Explicador y guía de K-09 | Texto provisorio del explicador según el motor v2.1 (para UX); la guía conserva su texto y toma del contrato solo rango, color, label y sello |
 | D-75 | Bordes de la sesión (H-02) | `getUser` de `DELETE /v1/users/me` que lanza o no responde → 503; `Bearer` sin token o sin espacio → 401 "Falta el token de sesión"; se exige `Bearer <token>` (sin prefijo → 401); lookup con token inválido o vencido → anónimo, sin registrar el escaneo |
+| D-76 | F-11 en dos partes | F-11a (historial y guardar sin cuenta) ya; F-11b (feedback y reportes) después de F-07. Invitación con alerta nativa y copy provisorio |
+| D-77 | Actualizar `fastify` | Ítem H-06, antes de F-05 y de definir `TRUST_PROXY_HOPS` |
 
 1. ~~**Analítica (L-09):** pendiente de decisión~~ → resuelta por **D-61** (2026-09-28): se difiere como [DT-05](deuda-tecnica.md), con rumbo a un endpoint propio.
 2. ~~**Escritura sin uso en catalog (M-04):** ¿borrar `setCachedProduct` / `findUpgradableNameRow`?~~ → resuelta por **D-65** (2026-09-29): se borraron en M-04.
