@@ -55,7 +55,6 @@ flowchart TB
   main --> catalog & library & auth & account & feedback & platform
   catalog --> scoring
   library --> catalog
-  feedback -. "valida productId" .-> catalog
   catalog & library & auth & account & feedback --> platform
   etl --> catalog & scoring
   scripts --> scoring & catalog
@@ -79,7 +78,7 @@ Reglas de la figura (las hace cumplir §6):
 | **user-library** | Guardados e historial del usuario: listar, guardar, quitar, registrar escaneo, borrar ítem del historial (RF-017) | `registerUserLibrary(app, deps)`, `recordScan(userId, productId)` | `catalog` (presentar productos), `platform` | `account`, `feedback`, `etl` | `saved_products`, `scan_history` | Chico (casi sin dominio) |
 | **account** | Datos de la cuenta del usuario: ver y editar el perfil (`profiles`), guardar las respuestas del onboarding con consentimiento (RF-048, RNF-S10), eliminar la cuenta | `registerAccount(app, deps)` | `platform` | `catalog`, `user-library`, `auth`, `feedback`, `etl` | `profiles`, `onboarding_responses` (nueva); borra en `auth.users` vía Admin API | Chico |
 | **auth** (nuevo, ADR-0010) | Sesión e identidad sobre Supabase Auth: registro, disponibilidad de username, login con email / Google / Apple, refresh, logout, recuperación de contraseña. El cliente no toca Supabase | `registerAuth(app, deps)` | `platform` | `catalog`, `user-library`, `account`, `feedback`, `etl` | Supabase Auth (sin tablas propias); ejecuta `is_username_available` | Chico, pero **alto riesgo** (credenciales) |
-| **feedback** | Recibir feedback y reportes de producto, de anónimos y usuarios (D-21, D-26) | `registerFeedback(app, deps)` | `catalog` (verificar que el `productId` exista, opcional), `platform` | `user-library`, `account`, `etl` | `feedback`, `product_reports` (nuevas) | **Trivial**: ruta + validación + insert. No lleva `domain/` ni `application/` |
+| **feedback** | Recibir feedback y reportes de producto, de anónimos y usuarios (D-21, D-26) | `registerFeedback(app)` | `platform` (el `productId` lo valida la FK de la base, D-82) | `user-library`, `account`, `etl` | `feedback`, `product_reports` (F-07) | **Trivial**: ruta + validación + insert. Sin `domain/`; `application/` solo con el puerto y el recorte de los mensajes |
 | **platform** (no es un módulo de negocio) | Infraestructura compartida: config del server, cliente Supabase admin único, cliente Redis con timeout, armado de Fastify (CORS, rate limit, manejo de errores), `requireAuth` / `optionalAuth`, health | Funciones sueltas por archivo | Paquetes npm | Cualquier módulo | — | Chico; `http/auth.ts` es **alto riesgo** |
 | **ingestion** (`etl/`) | Poblar y sanear el catálogo: ingesta a staging, merge, completitud, enriquecimiento con IA, calidad de datos | Entry points `etl/jobs/*.ts` | `catalog` (escritor y tipos), `scoring` | `src/platform/http`, `user-library`, `account`, `feedback` | `products_staging`; escribe `products` **solo** vía `catalog.createProductWriter()` | Mediano; fuera del deploy |
 

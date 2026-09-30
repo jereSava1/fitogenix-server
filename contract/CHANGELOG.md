@@ -4,6 +4,15 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.9.0 — 2026-09-30 · F-07
+
+**Aditivo.** Feedback y reportes de productos, con o sin sesión (RF-043, RF-044, D-21, D-26, D-82). Native los empieza a usar en F-11b (hoy los simula).
+
+- **Nuevo `POST /v1/feedback`** `{ message, appVersion?, platform? }` → `202 { ok: true }`. `message` de 1 a 2000 caracteres con al menos uno visible; `appVersion` hasta 32 caracteres (letras, números, `.`, `+`, `-`); `platform` `'ios' | 'android'`. `400`, `429`, `503`.
+- **Nuevo `POST /v1/products/{productId}/reports`** `{ type, message? }` → `202 { ok: true }`. `type` `'info' | 'ingredients' | 'score' | 'image' | 'other'`; `message` hasta 2000 caracteres (vacío = sin mensaje). `404 NOT_FOUND` si el producto no está en el catálogo; `400`, `429`, `503`.
+- Las dos rutas aceptan `Authorization: Bearer <token>` opcional: con un token válido se guarda el usuario; sin token, o con uno vencido o inválido, se guarda como anónimo (no responden `401`).
+- Límite: 5 pedidos por minuto por IP en cada ruta (el general sigue en 60).
+
 ## 0.8.0 — 2026-09-30 · F-04
 
 **Aditivo.** Recuperar la contraseña por el server (RF-025, ADR-0010, D-79): native deja de llamar a Supabase para esto en F-08.

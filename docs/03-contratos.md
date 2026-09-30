@@ -487,6 +487,8 @@ Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `ne
 | 22 | `POST /feedback` | Opcional | `{ message: string (1..2000), appVersion?: string, platform?: 'ios' \| 'android' }` | `202` | `400`, `429`, `503` |
 | 23 | `POST /products/:productId/reports` | Opcional | params `{ productId: Uuid }`, body `{ type: 'info' \| 'ingredients' \| 'score' \| 'image' \| 'other', message?: string (≤ 2000) }` | `202` | `400`, `404 NOT_FOUND`, `429`, `503` |
 
+**F-07 (2026-09-30, contrato `0.9.0`, D-82):** 22 y 23 hechos. Responden `202 { ok: true }`; `message` del feedback con al menos un carácter visible y `appVersion` hasta 32 caracteres; un token vencido o inválido se guarda como anónimo (sin `401`); el `404` sale de la FK de `product_reports`. Límite: 5 por minuto por IP en cada ruta.
+
 ### B.3.6 `platform`
 
 | # | Endpoint | Auth | 2xx | Errores |
@@ -552,7 +554,7 @@ Así el teléfono se guarda (D-17) sin viajar en el token, y la creación del pe
 
 ### B.4.8 Feedback y reportes (escritura)
 
-DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, `platform`, `created_at`) o de `product_reports` (`id`, `user_id` nullable, `product_id` FK, `type`, `message`, `created_at`, `status` default `'open'`). Sin guardar la IP en la tabla (el rate limit la usa en memoria).
+DTO → fila de `feedback` (`id`, `user_id` nullable, `message`, `app_version`, `platform`, `created_at`) o de `product_reports` (`id`, `user_id` nullable, `product_id` FK, `type`, `message`, `created_at`, `status` default `'open'`). Sin guardar la IP en la tabla (el rate limit la usa en memoria). **Hecho en F-07** (migración `20260930130025_feedback_y_reportes`): `status` es `open` o `closed`; el `user_id` se borra en cascada con la cuenta y el reporte, con el producto (D-82).
 
 ### B.4.9 Mappers y tipos duplicados que se eliminan
 
