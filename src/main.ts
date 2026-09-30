@@ -10,7 +10,7 @@ async function start() {
   const app = await buildApp(
     {
       logger: { redact: LOG_REDACT },
-      trustProxy: config.trustProxyHops > 0 ? config.trustProxyHops : false,
+      trustProxy: config.trustProxy.length > 0 ? config.trustProxy : false,
     },
     { corsOrigins: config.corsOrigins },
   );
