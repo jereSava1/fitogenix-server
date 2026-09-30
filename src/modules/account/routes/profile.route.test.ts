@@ -16,6 +16,8 @@ const NO_ESTA = { error: 'Todavía no completaste tus datos personales', code: '
 const profile = {
   getProfile: vi.fn<ProfileService['getProfile']>(),
   updateProfile: vi.fn<ProfileService['updateProfile']>(),
+  isUsernameAvailable: vi.fn<ProfileService['isUsernameAvailable']>(),
+  createProfile: vi.fn<ProfileService['createProfile']>(),
 };
 let app: FastifyInstance;
 let comoA: { authorization: string };

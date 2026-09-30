@@ -8,13 +8,18 @@ let updateResult: { data: unknown; error: DbError } = { data: null, error: null 
 
 const selectMaybeSingle = vi.fn(async () => selectResult);
 const selectEq = vi.fn(() => ({ maybeSingle: selectMaybeSingle }));
-const retry = vi.fn(() => ({ eq: selectEq }));
+let usernameResult: { data: unknown; error: DbError } = { data: [], error: null };
+const limit = vi.fn(async () => usernameResult);
+const ilike = vi.fn(() => ({ limit }));
+const retry = vi.fn(() => ({ eq: selectEq, ilike }));
 const select = vi.fn(() => ({ retry }));
 const updateMaybeSingle = vi.fn(async () => updateResult);
 const updateSelect = vi.fn(() => ({ maybeSingle: updateMaybeSingle }));
 const updateEq = vi.fn(() => ({ select: updateSelect }));
 const update = vi.fn((_row: unknown) => ({ eq: updateEq }));
-const from = vi.fn(() => ({ select, update }));
+let upsertResult: { error: DbError } = { error: null };
+const upsert = vi.fn(async (_row: unknown, _opts: unknown) => upsertResult);
+const from = vi.fn(() => ({ select, update, upsert }));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ from })),
@@ -32,6 +37,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   selectResult = { data: null, error: null };
   updateResult = { data: null, error: null };
+  usernameResult = { data: [], error: null };
+  upsertResult = { error: null };
 });
 
 const FILA = { first_name: 'Ana', last_name: 'Pérez', username: 'ana.p', phone: '+5491123456789' };
@@ -89,5 +96,61 @@ describe('update', () => {
     await expect(repo.update('user-1', { firstName: 'Ana' })).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
     updateMaybeSingle.mockRejectedValueOnce(new TypeError('fetch failed'));
     await expect(repo.update('user-1', { firstName: 'Ana' })).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+  });
+});
+
+describe('isUsernameTaken', () => {
+  it('busca sin distinguir mayúsculas y con el _ como literal (en LIKE es comodín)', async () => {
+    await expect(repo.isUsernameTaken('ana_p')).resolves.toBe(false);
+    expect(select).toHaveBeenCalledWith('id');
+    expect(retry).toHaveBeenCalledWith(false);
+    expect(ilike).toHaveBeenCalledWith('username', 'ana\\_p');
+    expect(limit).toHaveBeenCalledWith(1);
+
+    usernameResult = { data: [{ id: 'otro' }], error: null };
+    await expect(repo.isUsernameTaken('ana.p')).resolves.toBe(true);
+    expect(ilike).toHaveBeenLastCalledWith('username', 'ana.p');
+  });
+
+  it('un error de la base → DependencyUnavailableError (503)', async () => {
+    usernameResult = { data: null, error: { message: 'boom' } };
+    await expect(repo.isUsernameTaken('ana')).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+  });
+});
+
+describe('create', () => {
+  const NUEVO = { firstName: 'Ana', lastName: 'Pérez', username: 'ana.p', phone: '+5491123456789' };
+
+  it('sin fila: la crea con los cuatro campos', async () => {
+    await expect(repo.create('user-1', NUEVO)).resolves.toBe('created');
+    expect(selectEq).toHaveBeenCalledWith('id', 'user-1');
+    expect(upsert).toHaveBeenCalledWith({ id: 'user-1', ...FILA }, { onConflict: 'id' });
+  });
+
+  it('fila sin username (la del trigger o un registro que no terminó): la completa', async () => {
+    selectResult = { data: { username: null }, error: null };
+    await expect(repo.create('user-1', NUEVO)).resolves.toBe('created');
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('fila con username (se registró antes y no confirmó): no la toca', async () => {
+    selectResult = { data: { username: 'ana.vieja' }, error: null };
+    await expect(repo.create('user-1', NUEVO)).resolves.toBe('exists');
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('username repetido (23505) → username_taken', async () => {
+    upsertResult = { error: { code: '23505', message: 'duplicate key' } };
+    await expect(repo.create('user-1', NUEVO)).resolves.toBe('username_taken');
+  });
+
+  it('otro error al leer o al escribir → DependencyUnavailableError (503)', async () => {
+    selectResult = { data: null, error: { message: 'boom' } };
+    await expect(repo.create('user-1', NUEVO)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+    selectResult = { data: null, error: null };
+    upsertResult = { error: { code: '42501', message: 'permission denied' } };
+    await expect(repo.create('user-1', NUEVO)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+    upsert.mockRejectedValueOnce(new TypeError('fetch failed'));
+    await expect(repo.create('user-1', NUEVO)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
   });
 });

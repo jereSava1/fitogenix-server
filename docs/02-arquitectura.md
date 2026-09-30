@@ -482,8 +482,8 @@ Todo lo que native va a llamar. Schemas completos en [03-contratos.md §B.3](03-
 | 6 | `DELETE /users/me/saved/:productId` | user-library | Sí | Existe | — |
 | 7 | `GET /users/me/history?limit=` | user-library | Sí | Existe | Devuelve resumen + `scannedAt` |
 | 8 | `DELETE /users/me/history/:productId` | user-library | Sí | **Nuevo** (hecho en F-01) | RF-017 |
-| 9 | `POST /auth/signup` | auth | No | **Nuevo** | `supabase.auth.signUp` |
-| 10 | `GET /auth/username-availability?username=` | auth | No | **Nuevo** | RPC directa |
+| 9 | `POST /auth/signup` | auth | No | **Nuevo** (hecho en F-02) | `supabase.auth.signUp` |
+| 10 | `GET /auth/username-availability?username=` | auth | No | **Nuevo** (hecho en F-02) | RPC directa |
 | 11 | `POST /auth/login` | auth | No | **Nuevo** | `signInWithPassword` |
 | 12 | `POST /auth/oauth/google` | auth | No | **Nuevo** | `signInWithIdToken` |
 | 13 | `POST /auth/oauth/apple` | auth | No | **Nuevo** | `signInWithIdToken` |

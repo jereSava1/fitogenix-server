@@ -7,12 +7,8 @@ import type { FastifyPluginAsync } from 'fastify';
 import { apiError, RATE_LIMITED_MESSAGE } from '../../../platform/http/errors';
 import { addSharedSchemas, ApiErrorSchema, errorResponses, OkSchema } from '../../../platform/http/schemas';
 import type { PasswordReset } from '../application/resetPassword';
+import { AUTH_RATE_LIMIT, Email, Password } from './fields';
 
-/** D-48: `/auth/*` con 10 pedidos por minuto por IP (el general es 60). */
-export const AUTH_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
-
-const Email = Type.String({ format: 'email', maxLength: 254 });
-const Password = Type.String({ minLength: 8, maxLength: 72 });
 // El largo del código lo configura el proyecto de Supabase (6 por defecto, hasta 10).
 const Code = Type.String({ pattern: '^[0-9]{6,10}$' });
 

@@ -22,6 +22,12 @@ export function StringEnum<T extends string>(values: Record<T, true>) {
  *  su schema (`true satisfies SameShape<Static<typeof S>, T>`). */
 export type SameShape<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
+// Reglas de los datos personales, iguales en el registro y en el perfil (03-contratos §B.3.3).
+export const PersonName = () => Type.String({ minLength: 1, maxLength: 60, pattern: '\\S' });
+export const Username = () => Type.String({ minLength: 3, maxLength: 30, pattern: '^[a-z0-9_.]+$' });
+/** E.164. */
+export const Phone = () => Type.String({ pattern: '^\\+[1-9][0-9]{6,14}$' });
+
 /** Solo los códigos que el server responde hoy; uno nuevo se suma acá y en el CHANGELOG. */
 export const ERROR_CODES = [
   'VALIDATION_ERROR',
@@ -30,6 +36,7 @@ export const ERROR_CODES = [
   'PRODUCT_NOT_IN_CATALOG',
   'RATE_LIMITED',
   'DEPENDENCY_UNAVAILABLE',
+  'EMAIL_TAKEN',
   'USERNAME_TAKEN',
   'INVALID_CODE',
   'INTERNAL',

@@ -12,6 +12,11 @@ function toProfile(row: ProfileRow): Profile {
   return { firstName: row.first_name, lastName: row.last_name, username: row.username, phone: row.phone };
 }
 
+/** `_` es comodín en LIKE y los usernames lo admiten. */
+function likeLiteral(text: string): string {
+  return text.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 function toRow(changes: ProfileChanges): Partial<ProfileRow> {
   const row: Partial<ProfileRow> = {};
   if (changes.firstName !== undefined) row.first_name = changes.firstName;
@@ -39,5 +44,30 @@ export const supabaseProfileRepository: ProfileRepository = {
       throw queryFailed('profiles update', error);
     }
     return data ? toProfile(data) : 'not_found';
+  },
+
+  async isUsernameTaken(username) {
+    const { data, error } = await runQuery('profiles username', () =>
+      admin().from('profiles').select('id').retry(false).ilike('username', likeLiteral(username)).limit(1),
+    );
+    if (error) throw queryFailed('profiles username', error);
+    return (data ?? []).length > 0;
+  },
+
+  async create(userId, profile) {
+    const current = await runQuery('profiles select', () =>
+      admin().from('profiles').select('username').retry(false).eq('id', userId).maybeSingle<{ username: string | null }>(),
+    );
+    if (current.error) throw queryFailed('profiles select', current.error);
+    if (current.data?.username) return 'exists';
+
+    const { error } = await runQuery('profiles upsert', () =>
+      admin().from('profiles').upsert({ id: userId, ...toRow(profile) }, { onConflict: 'id' }),
+    );
+    if (error) {
+      if (error.code === '23505') return 'username_taken';
+      throw queryFailed('profiles upsert', error);
+    }
+    return 'created';
   },
 };

@@ -10,7 +10,10 @@ import {
   ApiErrorSchema,
   errorResponses,
   Nullable,
+  PersonName,
+  Phone,
   type SameShape,
+  Username,
 } from '../../../platform/http/schemas';
 import type { Profile, ProfileChanges } from '../application/ports';
 import type { ProfileService } from '../application/profile';
@@ -26,14 +29,13 @@ export const ProfileSchema = Type.Object(
 );
 true satisfies SameShape<Static<typeof ProfileSchema>, Profile>;
 
-// Las reglas del registro (03-contratos §B.3.3), para los campos que se mandan.
-const Name = Type.String({ minLength: 1, maxLength: 60, pattern: '\\S' });
+// Las reglas del registro, para los campos que se mandan.
 const ProfileChangesSchema = Type.Object(
   {
-    firstName: Type.Optional(Name),
-    lastName: Type.Optional(Name),
-    username: Type.Optional(Type.String({ minLength: 3, maxLength: 30, pattern: '^[a-z0-9_.]+$' })),
-    phone: Type.Optional(Type.String({ pattern: '^\\+[1-9][0-9]{6,14}$' })),
+    firstName: Type.Optional(PersonName()),
+    lastName: Type.Optional(PersonName()),
+    username: Type.Optional(Username()),
+    phone: Type.Optional(Phone()),
   },
   { additionalProperties: false, minProperties: 1 },
 );

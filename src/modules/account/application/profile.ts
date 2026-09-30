@@ -1,4 +1,11 @@
-import type { Profile, ProfileChanges, ProfileRepository, UpdateProfileResult } from './ports';
+import type {
+  CreateProfileResult,
+  NewProfile,
+  Profile,
+  ProfileChanges,
+  ProfileRepository,
+  UpdateProfileResult,
+} from './ports';
 
 export function makeProfile(repo: ProfileRepository) {
   return {
@@ -9,6 +16,14 @@ export function makeProfile(repo: ProfileRepository) {
 
     updateProfile(userId: string, changes: ProfileChanges): Promise<UpdateProfileResult> {
       return repo.update(userId, changes);
+    },
+
+    async isUsernameAvailable(username: string): Promise<boolean> {
+      return !(await repo.isUsernameTaken(username));
+    },
+
+    createProfile(userId: string, profile: NewProfile): Promise<CreateProfileResult> {
+      return repo.create(userId, profile);
     },
   };
 }

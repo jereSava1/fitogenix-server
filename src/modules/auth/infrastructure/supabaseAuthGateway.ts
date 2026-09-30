@@ -1,7 +1,7 @@
 // Supabase Auth. Lo que abre una sesión de usuario va en un cliente descartable, nunca en el admin.
 
 import { DependencyUnavailableError } from '../../../platform/dependencyError';
-import { supabaseAuthClient } from '../../../platform/supabase';
+import { supabaseAdmin, supabaseAuthClient } from '../../../platform/supabase';
 import type { AuthGateway } from '../application/ports';
 
 type AuthFailure = { status?: number; code?: string; message: string };
@@ -51,5 +51,27 @@ export const supabaseAuthGateway: AuthGateway = {
       return updated.error.code === 'same_password' ? 'same_password' : 'weak_password';
     }
     return 'ok';
+  },
+
+  async signUp(email, password) {
+    const client = supabaseAuthClient();
+    const { data, error } = await call('signUp', () => client.auth.signUp({ email, password }));
+    if (error) {
+      if (!rejected(error)) throw unavailable('signUp', error);
+      if (error.status === 429) return 'rate_limited';
+      if (error.code === 'user_already_exists' || error.code === 'email_exists') return 'email_taken';
+      if (error.code === 'weak_password') return 'weak_password';
+      return 'rejected';
+    }
+    // Sin confirmación de email Auth abre una sesión: no se usa.
+    if (data.session) await client.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    if (!data.user) throw unavailable('signUp', { message: 'respuesta sin usuario' });
+    return { userId: data.user.id };
+  },
+
+  async deleteUser(userId) {
+    const { error } = await call(`deleteUser ${userId}`, () => supabaseAdmin().auth.admin.deleteUser(userId));
+    // 404: ya no existe, no hay nada que deshacer.
+    if (error && error.status !== 404) throw unavailable(`deleteUser ${userId}`, error);
   },
 };
