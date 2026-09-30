@@ -40,6 +40,20 @@ from products p where p.data_source = 'ai';
 
 Guardados, historial y reportes se borran en cascada con el producto.
 
+## Resultados
+
+**B-01a (2026-09-30):** `supabase db push` aplicó `20260930204540`; `migration list --linked` la muestra local y remota; `products` quedó con 13 columnas (`id`, `barcode`, `product_name`, `brand`, `category`, `image_url`, `data_source`, `created_at`, `ingredients_text`, `nutriments`, `additives_tags`, `ai_enriched`, `updated_at`).
+
+**Filas `ai` (2026-09-30):** 5 filas. Al borrarlas se van en cascada **1 guardado** (Opera) y **4 entradas de historial** (Froot Loops, Papas Fritas Clásicas, Cheetos, Nivea Crema Corporal); ningún reporte.
+
+| id | producto | guardados | historial |
+|---|---|---|---|
+| `8fe9c32b-df1e-48b8-8b5d-9cebf710fb20` | Opera | 1 | 0 |
+| `c34034b6-c8a1-4099-bd6b-65f7193936c9` | Froot Loops | 0 | 1 |
+| `973b5682-5418-4c0a-8565-ec9cdddabfe9` | Papas Fritas Clásicas | 0 | 1 |
+| `dc456db7-1907-4e87-98aa-1c6753517e53` | Cheetos | 0 | 1 |
+| `c635ca10-f23b-4bb3-8130-d8156dcbbcc4` | Nivea Crema Corporal | 0 | 1 |
+
 ## Probado en local (2026-09-30)
 
 Supabase local con todas las migraciones: `products` queda con 13 columnas y los índices `products_pkey`, `products_barcode_key`, `products_data_source_idx`, `products_missing_ingredients_idx` y `products_name_trgm_idx`. `buildCachePayload` + `upsert` por barcode (como el ETL) inserta y actualiza sin errores; el server compilado responde el lookup por barcode y por nombre (RPC `search_products_by_name`) con el puntaje calculado al leer.
