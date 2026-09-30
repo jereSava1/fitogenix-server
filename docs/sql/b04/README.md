@@ -76,6 +76,8 @@ GRANT ALL ON SEQUENCE public.registro_controles_id_seq, public.validation_runs_i
 
 `validation_runs` tiene 10 inserts y 9 filas sin borrados: un insert que falló o se deshizo también cuenta. Hasta la comparación del 2026-10-14, **no consultar estas tablas** (ni desde el SQL Editor): cualquier lectura sube `seq_scan`.
 
+**Paso 2 (2026-09-30):** `supabase db push` aplicó `20260930202339` (B-02) y `20260930202728`; `migration list --linked` las muestra locales y remotas. La comprobación de permisos devuelve solo `postgres` en las tres tablas.
+
 ## Paso 3 · DROP
 
 Migración `DROP TABLE` de las tres (se prepara cuando se cumpla el criterio del paso 2). Consecuencia: desaparecen los FK `ON DELETE RESTRICT` hacia `products`.
