@@ -41,7 +41,6 @@ export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow 
     image_url: typeof data.image_url === 'string' ? data.image_url : undefined,
     ingredients_text: ingredientsText,
     nutriments,
-    nova_group: typeof data.nova_group === 'number' ? data.nova_group : undefined,
     additives_tags: asStringArray(data.additives_tags),
     categories: typeof data.category === 'string' ? data.category : undefined,
     _aiEnriched: data.ai_enriched === true,
@@ -53,7 +52,6 @@ export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow 
     dataSource: typeof data.data_source === 'string' ? data.data_source : 'off',
     productId,
     barcode: typeof data.barcode === 'string' ? data.barcode : null,
-    nameKey: typeof data.name_key === 'string' ? data.name_key : null,
   };
 }
 

@@ -13,7 +13,6 @@ type Row = {
   category: string | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
-  nova_group: number | null;
   additives_tags: string[] | null;
 };
 
@@ -21,7 +20,6 @@ function toInput(r: Row): ProductInput {
   return {
     ingredients_text: r.ingredients_text ?? undefined,
     nutriments: r.nutriments ?? {},
-    nova_group: r.nova_group ?? undefined,
     additives_tags: r.additives_tags ?? [],
     categories: r.category ?? undefined,
   };
@@ -32,7 +30,7 @@ async function fetchAll(limit: number): Promise<Row[]> {
   for (let from = 0; from < limit; from += PAGE_SIZE) {
     const { data, error } = await admin()
       .from('products')
-      .select('barcode, product_name, category, ingredients_text, nutriments, nova_group, additives_tags')
+      .select('barcode, product_name, category, ingredients_text, nutriments, additives_tags')
       .not('ingredients_text', 'is', null)
       .order('barcode')
       .range(from, Math.min(from + PAGE_SIZE, limit) - 1);

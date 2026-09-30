@@ -39,7 +39,7 @@ async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, Ra
 
   const { data, error } = await admin()
     .from('products')
-    .select('barcode, product_name, brand, category, image_url, ingredients_text, nutriments, nova_group, additives_tags')
+    .select('barcode, product_name, brand, category, image_url, ingredients_text, nutriments, additives_tags')
     .in('barcode', barcodes);
 
   if (error || !data) {
@@ -55,7 +55,6 @@ async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, Ra
       image_url: (r.image_url as string) ?? undefined,
       ingredients_text: (r.ingredients_text as string) ?? undefined,
       nutriments: (r.nutriments as Record<string, unknown>) ?? undefined,
-      nova_group: (r.nova_group as number) ?? undefined,
       additives_tags: (r.additives_tags as string[]) ?? undefined,
     });
   }
@@ -119,7 +118,7 @@ async function main() {
         incomplete = !isComplete(combined);
       }
 
-      const payload = buildCachePayload(combined, { barcode });
+      const payload = buildCachePayload(combined, barcode);
       // El origen es la fuente de más prioridad del merge (off, vtex…), salvo
       // que lo haya resuelto la IA.
       if (!combined._aiSource) payload.data_source = primarySourceOf(entries);

@@ -12,10 +12,8 @@ type Row = {
   product_name: string | null;
   brand: string | null;
   category: string | null;
-  score: number | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
-  nova_group: number | null;
   additives_tags: string[] | null;
 };
 
@@ -34,7 +32,6 @@ function toInput(r: Row): ProductInput {
   return {
     ingredients_text: r.ingredients_text ?? undefined,
     nutriments: r.nutriments ?? {},
-    nova_group: r.nova_group ?? undefined,
     additives_tags: r.additives_tags ?? [],
     categories: r.category ?? undefined,
   };
@@ -67,11 +64,12 @@ function analyze(r: Row): Finding[] {
       why: `Excelente con solo ${Math.round(bd.coverage * 100)}% de ingredientes reconocidos.` });
   }
 
-  // Un ultraprocesado en la banda alta: NOVA no entra al puntaje, así que es una señal
-  // externa para mirar.
-  if (r.nova_group === 4 && (bd.score ?? 0) >= 75) {
+  // Marcadores de ultraprocesado y aun así en la banda alta (D-36: el veredicto de
+  // procesamiento del motor reemplaza a NOVA).
+  const markers = bd.processing.markers.length;
+  if (markers > 0 && (bd.score ?? 0) >= 75) {
     out.push({ ...base, rule: 'ultraprocesado-excelente',
-      why: 'NOVA 4 puntuando como Excelente.' });
+      why: `${markers} marcador${markers === 1 ? '' : 'es'} de ultraprocesado puntuando como Excelente.` });
   }
 
   // Bebida azucarada que igual queda bien parada.
@@ -89,9 +87,9 @@ function analyze(r: Row): Finding[] {
   }
 
   // El error opuesto, igual de dañino: castigar un alimento real.
-  if (r.nova_group === 1 && bd.score != null && bd.score < 50) {
+  if (markers === 0 && (r.additives_tags ?? []).length === 0 && bd.score != null && bd.score < 50) {
     out.push({ ...base, rule: 'alimento-real-castigado',
-      why: 'NOVA 1 (alimento mínimamente procesado) por debajo de Bueno.' });
+      why: 'Sin marcadores de ultraprocesado ni aditivos, por debajo de Bueno.' });
   }
 
   // No es error del motor, es calidad de dato — pero define cuánto del
@@ -113,7 +111,7 @@ async function fetchAll(limit: number): Promise<Row[]> {
   for (let from = 0; from < limit; from += PAGE_SIZE) {
     const { data, error } = await admin()
       .from('products')
-      .select('barcode, product_name, brand, category, score, ingredients_text, nutriments, nova_group, additives_tags')
+      .select('barcode, product_name, brand, category, ingredients_text, nutriments, additives_tags')
       .not('ingredients_text', 'is', null)
       .order('barcode')
       .range(from, Math.min(from + PAGE_SIZE, limit) - 1);

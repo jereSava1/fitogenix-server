@@ -137,10 +137,6 @@ npm run etl:fix-quality -- --limit 200
 npm run etl:fix-quality -- --limit 200 --apply
 ```
 
-Requiere `supabase/migrations/legacy/012_manufacturer_info.sql` aplicada antes de correr con
-`--apply` (agrega una columna nueva, nullable, para no perder info de
-fabricante — ver abajo).
-
 Nunca reescribe un campo con un dato INVENTADO — Claude (`lib/qualityAI.ts`,
 Haiku, separado de `enrichment/claudeEnricher.ts`, que completa datos faltantes al mergear) se
 usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
@@ -151,8 +147,7 @@ usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
   devuelve null si no hay nada identificable con confianza.
 - **ingredients_text sospechoso**: Claude separa, del mismo texto, la
   porción real de ingredientes de la de fabricante/dirección/RNE-RNPA. La
-  real queda en `ingredients_text`; la de fabricante se MUEVE a
-  `manufacturer_info` en vez de perderse. Si no hay nada rescatable,
+  real queda en `ingredients_text`; la de fabricante se descarta (D-41). Si no hay nada rescatable,
   `ingredients_text` se anula — la fila vuelve a pasar por el gate de
   completitud + `runMerge.ts` que ya existe (se re-busca un dato real antes
   de recurrir a `--enrich`), nunca queda con un valor inventado.
@@ -166,8 +161,8 @@ select source, merge_status, count(*) from products_staging group by 1, 2 order 
 -- cuántos productos reales hay ahora
 select count(*) from products;
 
--- los últimos que se escribieron
-select barcode, product_name, brand, score, data_source, engine_version
+-- los últimos que se escribieron (el puntaje no se guarda: lo muestra `npm run etl:stats`)
+select barcode, product_name, brand, data_source
 from products order by updated_at desc limit 10;
 ```
 

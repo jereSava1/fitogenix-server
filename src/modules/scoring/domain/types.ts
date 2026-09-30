@@ -235,13 +235,11 @@ export interface NoScore {
 
 export type Tier = 'Excelente' | 'Bueno' | 'Moderado' | 'Malo' | 'Sin datos suficientes';
 
-/** Lo mínimo que el motor necesita de un producto (lo cumplen `RawProduct` y los scripts).
- *  `nova_group` no participa del cálculo. */
+/** Lo mínimo que el motor necesita de un producto (lo cumplen `RawProduct` y los scripts). */
 export interface ProductInput {
   readonly product_name?: string;
   readonly ingredients_text?: string;
   readonly nutriments?: Record<string, unknown>;
-  readonly nova_group?: number;
   readonly additives_tags?: readonly string[];
   readonly labels_tags?: readonly string[];
   readonly categories?: string;

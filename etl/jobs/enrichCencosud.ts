@@ -24,7 +24,6 @@ type Row = {
   brand: string | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
-  nova_group: number | null;
   additives_tags: string[] | null;
   category: string | null;
   image_url: string | null;
@@ -80,7 +79,7 @@ async function fetchCandidates(limit: number, prefix: string | undefined): Promi
   for (let from = 0; rows.length < limit; from += PAGE_SIZE) {
     let query = admin()
       .from('products')
-      .select('id, barcode, product_name, brand, ingredients_text, nutriments, nova_group, additives_tags, category, image_url')
+      .select('id, barcode, product_name, brand, ingredients_text, nutriments, additives_tags, category, image_url')
       .not('barcode', 'is', null);
     if (prefix) query = query.like('barcode', `${prefix}%`);
     const { data, error } = await query
@@ -132,7 +131,6 @@ async function main() {
         ? p.ingredients_text!
         : ingredients,
       nutriments: p.nutriments && Object.keys(p.nutriments).length > 0 ? p.nutriments : nutriments,
-      nova_group: p.nova_group ?? undefined,
       additives_tags: p.additives_tags ?? undefined,
       labels_tags: labels,
     };
@@ -150,7 +148,7 @@ async function main() {
       continue;
     }
 
-    const payload = buildCachePayload(merged, { barcode: p.barcode! });
+    const payload = buildCachePayload(merged, p.barcode!);
     const { error } = await admin().from('products').upsert(payload, { onConflict: 'barcode' });
     if (error) {
       fallos++;

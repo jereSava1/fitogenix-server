@@ -92,7 +92,6 @@ export function mergeRawProducts(entries: StagingEntry[], barcode?: string): Raw
     image_front_url: pick('image_front_url'),
     ingredients_text: pick('ingredients_text'),
     nutriments: pick('nutriments'), // bloque atómico — ver comentario arriba
-    nova_group: pick('nova_group'),
     additives_tags: pick('additives_tags'),
     labels_tags: pick('labels_tags'),
     categories: pick('categories'),

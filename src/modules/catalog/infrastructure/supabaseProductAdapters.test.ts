@@ -25,7 +25,6 @@ type CacheModule = typeof import('./productRow') &
   typeof import('./supabaseProductReader') &
   typeof import('./supabaseProductWriter');
 let cache: CacheModule;
-let ENGINE_VERSION: string;
 
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -35,7 +34,6 @@ beforeAll(async () => {
     ...(await import('./supabaseProductReader')),
     ...(await import('./supabaseProductWriter')),
   };
-  ({ ENGINE_VERSION } = await import('../../scoring'));
 });
 
 beforeEach(() => {
@@ -50,76 +48,43 @@ const rawGalletitas: RawProduct = {
   product_name: 'Galletitas',
   ingredients_text: 'harina, azucar',
   nutriments: { sugars_100g: 20 },
-  nova_group: 4,
   additives_tags: ['en:e330'],
   _aiEnriched: true,
 };
 
 // La fila completa de los 200 productos de la muestra la fija supabaseProductWriter.test.ts.
 describe('buildCachePayload', () => {
-  it('con barcode: guarda los crudos, engine_version y SOLO la columna barcode', () => {
-    const payload = cache.buildCachePayload(rawGalletitas, { barcode: '7790001' });
+  it('guarda el barcode y los crudos, sin puntaje ni columnas borradas (B-01)', () => {
+    const payload = cache.buildCachePayload(rawGalletitas, '7790001');
 
     expect(payload.barcode).toBe('7790001');
-    // La otra columna de búsqueda se OMITE (para no pisar un alias existente)
-    // y cache_key ya no existe en el esquema.
-    expect('name_key' in payload).toBe(false);
-    expect('cache_key' in payload).toBe(false);
     expect(payload.ingredients_text).toBe('harina, azucar');
     expect(payload.nutriments).toEqual({ sugars_100g: 20 });
-    expect(payload.nova_group).toBe(4);
     expect(payload.additives_tags).toEqual(['en:e330']);
-    expect(payload.engine_version).toBe(ENGINE_VERSION);
     expect(payload.ai_enriched).toBe(true);
+    for (const col of ['score', 'score_label', 'sello', 'engine_version', 'nova_group', 'name_key', 'manufacturer_info', 'cache_key']) {
+      expect(col in payload).toBe(false);
+    }
   });
 
   it('usa null para crudos ausentes', () => {
     const raw: RawProduct = { product_name: 'X' };
 
-    const payload = cache.buildCachePayload(raw, { barcode: '111' });
+    const payload = cache.buildCachePayload(raw, '111');
     expect(payload.ingredients_text).toBeNull();
     expect(payload.nutriments).toBeNull();
-    expect(payload.nova_group).toBeNull();
     expect(payload.additives_tags).toBeNull();
   });
 
-  it('score null se persiste como null, con su label y sin sello', () => {
-    // Sin puntaje se guarda null, no 0: si no, quedaría igual que el peor producto.
-    const cerveza: RawProduct = {
-      product_name: 'Cerveza rubia',
-      categories: 'Bebidas alcohólicas, Cervezas',
-      ingredients_text: 'agua, malta de cebada, lúpulo',
-    };
-
-    const payload = cache.buildCachePayload(cerveza, { barcode: '222' });
-
-    expect(payload.score).toBeNull();
-    expect(payload.score_label).toBe('SIN DATOS SUFICIENTES');
-    expect(payload.sello).toBeNull();
-  });
-
-  it('producto solo-IA: name_key SIN prefijo y sin columna barcode', () => {
-    const raw: RawProduct = {
-      product_name: 'Alfajor Artesanal',
-      ingredients_text: 'dulce de leche',
-      _aiSource: true,
-      _aiEnriched: true,
-    };
-
-    const payload = cache.buildCachePayload(raw, { nameKey: 'alfajor artesanal' });
-    // name_key es el QUERY normalizado sin el prefijo 'name:' (ese prefijo es
-    // solo de las claves internas de Redis/logs, no va a la DB).
-    expect(payload.name_key).toBe('alfajor artesanal');
-    expect('barcode' in payload).toBe(false);
-    expect('cache_key' in payload).toBe(false);
+  it('producto de IA: data_source ai', () => {
+    const payload = cache.buildCachePayload({ ingredients_text: 'dulce de leche', _aiSource: true }, '333');
     expect(payload.data_source).toBe('ai');
-    expect(payload.ai_enriched).toBe(true);
   });
 
   it('columnas denormalizadas desde el crudo: nombre limpio o de reemplazo, marca, categoría, imagen', () => {
     const payload = cache.buildCachePayload(
       { ...rawGalletitas, product_name: 'Galletitas (x3) 300 g', brands: 'Marca', categories: 'en:snacks', image_url: 'a.jpg', image_front_url: 'f.jpg' },
-      { barcode: '7790001' },
+      '7790001',
     );
     expect(payload).toMatchObject({
       product_name: 'Galletitas',
@@ -129,9 +94,8 @@ describe('buildCachePayload', () => {
       data_source: 'off',
     });
 
-    const sinNada = cache.buildCachePayload({ ingredients_text: 'agua' }, { nameKey: 'agua mineral' });
-    expect(sinNada).toMatchObject({ product_name: 'agua mineral', brand: null, category: 'Alimento', image_url: null, ai_enriched: false });
-    expect(cache.buildCachePayload({ ingredients_text: 'agua' }, { barcode: '111' }).product_name).toBe('111');
+    const sinNada = cache.buildCachePayload({ ingredients_text: 'agua' }, '111');
+    expect(sinNada).toMatchObject({ product_name: '111', brand: null, category: 'Alimento', image_url: null, ai_enriched: false });
   });
 });
 
@@ -139,25 +103,22 @@ describe('rowToCachedRaw', () => {
   const fullRow: Record<string, unknown> = {
     id: 'uuid-galletitas',
     barcode: '7790001',
-    name_key: null,
     product_name: 'Galletitas',
     brand: 'Marca',
     category: 'Snacks',
     image_url: 'http://img',
     ingredients_text: 'harina, azucar',
     nutriments: { sugars_100g: 20 },
-    nova_group: 4,
     additives_tags: ['en:e330'],
     data_source: 'off',
     ai_enriched: true,
   };
 
-  it('reconstruye el RawProduct y expone productId/barcode/nameKey', () => {
+  it('reconstruye el RawProduct y expone productId/barcode', () => {
     const result = cache.rowToCachedRaw(fullRow);
     expect(result).not.toBeNull();
     expect(result?.productId).toBe('uuid-galletitas');
     expect(result?.barcode).toBe('7790001');
-    expect(result?.nameKey).toBeNull();
     expect(result?.dataSource).toBe('off');
     expect(result?.raw).toMatchObject({
       product_name: 'Galletitas',
@@ -165,7 +126,6 @@ describe('rowToCachedRaw', () => {
       image_url: 'http://img',
       ingredients_text: 'harina, azucar',
       nutriments: { sugars_100g: 20 },
-      nova_group: 4,
       additives_tags: ['en:e330'],
       categories: 'Snacks',
       _aiEnriched: true,
@@ -173,17 +133,15 @@ describe('rowToCachedRaw', () => {
     });
   });
 
-  it('expone nameKey en filas solo-IA (barcode null)', () => {
+  it('fila sin barcode: barcode null', () => {
     const result = cache.rowToCachedRaw({
       id: 'uuid-alfajor',
       barcode: null,
-      name_key: 'alfajor artesanal',
       ingredients_text: 'dulce de leche',
       data_source: 'ai',
     });
     expect(result?.productId).toBe('uuid-alfajor');
     expect(result?.barcode).toBeNull();
-    expect(result?.nameKey).toBe('alfajor artesanal');
   });
 
   it('fila sin id → null (sin identidad no sirve para el payload ni las FKs)', () => {
@@ -276,7 +234,6 @@ describe('findCachedProductByName', () => {
   const makeRow = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
     id: 'uuid-coca',
     barcode: '57045399',
-    name_key: null,
     product_name: 'Coca-Cola',
     brand: 'Coca-Cola',
     ingredients_text: 'agua carbonatada, azucar',
@@ -320,7 +277,7 @@ describe('findCachedProductByName', () => {
     // en vez de re-ordenar del lado del cliente.
     mockRpcRows = [
       makeRow(),
-      makeRow({ id: 'uuid-ai', barcode: null, name_key: 'coca cola', data_source: 'ai' }),
+      makeRow({ id: 'uuid-ai', barcode: null, data_source: 'ai' }),
     ];
 
     const result = await cache.findCachedProductByName('coca cola');
@@ -341,14 +298,13 @@ describe('findCachedProductByName', () => {
     mockRpcRows = [
       // Fila vieja sin ingredients_text ni nutriments: no sirve aunque tenga barcode.
       makeRow({ ingredients_text: null, nutriments: null }),
-      makeRow({ id: 'uuid-ai', barcode: null, name_key: 'coca cola', data_source: 'ai' }),
+      makeRow({ id: 'uuid-ai', barcode: null, data_source: 'ai' }),
     ];
 
     const result = await cache.findCachedProductByName('coca cola');
 
     expect(result?.productId).toBe('uuid-ai');
     expect(result?.barcode).toBeNull();
-    expect(result?.nameKey).toBe('coca cola');
     expect(result?.dataSource).toBe('ai');
   });
 
@@ -366,7 +322,6 @@ describe('supabaseProductReader — el puerto ProductReader (M-04)', () => {
   const row: Record<string, unknown> = {
     id: 'uuid-galletitas',
     barcode: '7790001',
-    name_key: null,
     product_name: 'Galletitas',
     ingredients_text: 'harina, azucar',
     nutriments: { sugars_100g: 20 },

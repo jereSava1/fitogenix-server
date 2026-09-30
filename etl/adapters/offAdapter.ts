@@ -29,7 +29,6 @@ type OffDumpLine = {
   image_front_url?: string;
   ingredients_text?: string;
   nutriments?: Record<string, unknown>;
-  nova_group?: number;
   additives_tags?: string[];
   labels_tags?: string[];
   categories?: string;
@@ -69,7 +68,6 @@ export function adaptOffLine(
     image_front_url: line.image_front_url,
     ingredients_text: line.ingredients_text,
     nutriments: line.nutriments,
-    nova_group: line.nova_group,
     additives_tags: line.additives_tags,
     labels_tags: line.labels_tags,
     categories: line.categories,

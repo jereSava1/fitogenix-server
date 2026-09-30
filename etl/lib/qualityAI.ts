@@ -30,8 +30,7 @@ export type IngredientsExtraction = {
    * copiada literalmente — null si no hay nada rescatable. */
   realIngredients: string | null;
   /** Porción del texto original que sea razón social/dirección/RNE-RNPA del
-   * fabricante — se mapea a `products.manufacturer_info` en vez de perderse.
-   * null si no aparece nada de eso. */
+   * fabricante, o null. Se pide para separarla de los ingredientes; no se guarda (D-41). */
   manufacturerInfo: string | null;
 };
 

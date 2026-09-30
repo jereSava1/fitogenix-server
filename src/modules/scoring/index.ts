@@ -16,10 +16,8 @@ export {
   type ScoringBands,
 } from './domain/bands';
 
-/** Presentación para la app. `getScoreLabel` y `getSello`, para las columnas del ETL. */
+/** Presentación para la app. */
 export {
-  getScoreLabel,
-  getSello,
   presentScore,
   type Fito,
   type Highlight,

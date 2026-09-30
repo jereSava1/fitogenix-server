@@ -105,17 +105,15 @@ async function main() {
       const extraction = await classifyAndExtractIngredients(p.ingredients_text);
       if (extraction.realIngredients) {
         console.log(
-          `[ingredients/extraído] ${p.barcode ?? p.id}: "${extraction.realIngredients.slice(0, 60)}${extraction.realIngredients.length > 60 ? '...' : ''}"${extraction.manufacturerInfo ? ' (+ manufacturer_info)' : ''}`,
+          `[ingredients/extraído] ${p.barcode ?? p.id}: "${extraction.realIngredients.slice(0, 60)}${extraction.realIngredients.length > 60 ? '...' : ''}"`,
         );
         updates.ingredients_text = extraction.realIngredients;
-        if (extraction.manufacturerInfo) updates.manufacturer_info = extraction.manufacturerInfo;
         ingredientsExtracted++;
       } else {
         console.log(
-          `[ingredients/anulado] ${p.barcode ?? p.id}: nada rescatable — vuelve al gate de completitud${extraction.manufacturerInfo ? ' (se guarda manufacturer_info igual)' : ''}`,
+          `[ingredients/anulado] ${p.barcode ?? p.id}: nada rescatable — vuelve al gate de completitud`,
         );
         updates.ingredients_text = null;
-        if (extraction.manufacturerInfo) updates.manufacturer_info = extraction.manufacturerInfo;
         ingredientsNulled++;
       }
       touched = true;
