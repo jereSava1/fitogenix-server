@@ -16,6 +16,7 @@ const db = vi.hoisted(() => ({
   upserts: [] as { table: string; row: unknown }[],
   getUser: undefined as unknown as (token: string) => Promise<unknown>,
   deleteUser: undefined as unknown as (id: string) => Promise<unknown>,
+  verifyOtp: undefined as unknown as () => Promise<unknown>,
 }));
 
 vi.mock('@supabase/supabase-js', () => {
@@ -41,6 +42,10 @@ vi.mock('@supabase/supabase-js', () => {
       auth: {
         getUser: (token: string) => db.getUser(token),
         admin: { deleteUser: (id: string) => db.deleteUser(id) },
+        resetPasswordForEmail: async () => ({ data: {}, error: null }),
+        verifyOtp: () => db.verifyOtp(),
+        updateUser: async () => ({ data: { user: { id: USER } }, error: null }),
+        signOut: async () => ({ error: null }),
       },
     }),
   };
@@ -141,6 +146,7 @@ beforeEach(() => {
       ? { data: { user: { id: USER } }, error: null }
       : { data: { user: null }, error: { message: 'invalid JWT' } };
   db.deleteUser = async () => ({ data: {}, error: null });
+  db.verifyOtp = async () => ({ data: { user: { id: USER }, session: {} }, error: null });
 });
 
 async function call(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, opts: { auth?: boolean; payload?: unknown } = {}) {
@@ -313,6 +319,31 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     const falla = await call('PATCH', path, { auth: true, payload: { firstName: 'Ana' } });
     expect(falla.statusCode).toBe(503);
     expectMatchesContract(path, 'patch', 503, falla.json());
+  });
+
+  it('POST /auth/password/forgot y /reset → 202, 200, 400, 401 y 503 (F-04)', async () => {
+    const forgot = await call('POST', '/v1/auth/password/forgot', { payload: { email: 'ana@mail.com' } });
+    expect(forgot.statusCode).toBe(202);
+    expectMatchesContract('/v1/auth/password/forgot', 'post', 202, forgot.json());
+    const forgotInvalido = await call('POST', '/v1/auth/password/forgot', { payload: { email: 'x' } });
+    expectMatchesContract('/v1/auth/password/forgot', 'post', 400, forgotInvalido.json());
+
+    const body = { email: 'ana@mail.com', code: '123456', newPassword: 'nueva-clave' };
+    const ok = await call('POST', '/v1/auth/password/reset', { payload: body });
+    expect(ok.statusCode).toBe(200);
+    expectMatchesContract('/v1/auth/password/reset', 'post', 200, ok.json());
+
+    db.verifyOtp = async () => ({ data: {}, error: { status: 403, message: 'Token has expired or is invalid' } });
+    const invalido = await call('POST', '/v1/auth/password/reset', { payload: body });
+    expect(invalido.statusCode).toBe(401);
+    expectMatchesContract('/v1/auth/password/reset', 'post', 401, invalido.json());
+
+    db.verifyOtp = async () => {
+      throw new TypeError('fetch failed');
+    };
+    const caido = await call('POST', '/v1/auth/password/reset', { payload: body });
+    expect(caido.statusCode).toBe(503);
+    expectMatchesContract('/v1/auth/password/reset', 'post', 503, caido.json());
   });
 
   it('DELETE /users/me → 200, 401, 500 (del handler y de una excepción) y 503', async () => {

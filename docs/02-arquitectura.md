@@ -490,8 +490,8 @@ Todo lo que native va a llamar. Schemas completos en [03-contratos.md §B.3](03-
 | 13 | `POST /auth/oauth/apple` | auth | No | **Nuevo** | `signInWithIdToken` |
 | 14 | `POST /auth/refresh` | auth | Refresh token | **Nuevo** | Refresh del SDK |
 | 15 | `POST /auth/logout` | auth | Sí | **Nuevo** | `signOut` |
-| 16 | `POST /auth/password/forgot` | auth | No | **Nuevo** | `resetPasswordForEmail` |
-| 17 | `POST /auth/password/reset` | auth | No | **Nuevo** | `verifyOtp` + `updateUser` |
+| 16 | `POST /auth/password/forgot` | auth | No | **Nuevo** (hecho en F-04) | `resetPasswordForEmail` |
+| 17 | `POST /auth/password/reset` | auth | No | **Nuevo** (hecho en F-04) | `verifyOtp` + `updateUser` |
 | 18 | `GET /users/me/profile` | account | Sí | **Nuevo** (hecho en F-05) | `select` directo a `profiles` |
 | 19 | `PATCH /users/me/profile` | account | Sí | **Nuevo** (hecho en F-05) | `update` directo a `profiles` |
 | 20 | `POST /users/me/onboarding` | account | Sí | **Nuevo** | RF-048 (con consentimiento, RNF-S10) |
