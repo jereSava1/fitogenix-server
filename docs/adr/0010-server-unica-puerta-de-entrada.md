@@ -1,6 +1,6 @@
 # ADR-0010 · El server como única puerta de entrada del cliente
 
-- **Estado:** Propuesto (decisión de producto D-28, 2026-09-28)
+- **Estado:** Aceptado (decisión de producto D-28, 2026-09-28) · implementado el 2026-09-30 (server F-02 a F-07, native F-08 a F-12). Falta cerrar `anon` en la base (B-03) y sacar el trigger (B-02)
 - **Fecha:** 2026-09-28
 - **Relacionado:** ADR-0005 (revisado por este ADR), ADR-0008, SEC-01, RF-020 a RF-029
 - **Riesgo:** ALTO (auth). Requiere tests de caracterización antes y tests de contrato de cada endpoint nuevo.
