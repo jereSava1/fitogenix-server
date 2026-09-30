@@ -478,6 +478,8 @@ Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `ne
 | 20 | `POST /users/me/onboarding` | Sí | `{ answers: OnboardingAnswers, consent: { healthData: true, textVersion: string } }` | `204` | `400` (incluye `consent.healthData !== true` si hay `symptoms` o `allergies`), `401`, `503` |
 | 21 | `DELETE /users/me` | Sí (+ `getUser`, ADR-0008) | — | `204` | `401`, `503` |
 
+**F-06 (2026-09-30, contrato `0.10.0`, D-83):** 20 hecho, con estos ajustes: responde `200 { ok: true }`; `consent` es opcional y, si viene, `healthData` es exactamente `true`; piden consentimiento `symptoms`, `diets` y `allergies` (cualquier respuesta, también `'none'`); una fila por usuario (reenviar reemplaza).
+
 **F-05 (2026-09-30, contrato `0.7.0`):** 18 y 19 hechos. `PATCH` cambia solo los campos que vienen (sin `null`: no vacía campos), rechaza campos de más (D-70) y responde 404 si no hay fila.
 
 ### B.3.5 `feedback`
@@ -550,7 +552,7 @@ Así el teléfono se guarda (D-17) sin viajar en el token, y la creación del pe
 
 ### B.4.7 Onboarding (escritura)
 
-`OnboardingAnswers` + `consent` → `account.saveOnboarding` → fila de `onboarding_responses` (`user_id`, `answers jsonb`, `consent_health_data_at`, `consent_text_version`, `created_at`), borrado en cascada con el usuario (RNF-S10). En native, las respuestas viven en memoria y en el almacenamiento temporal de 24 h (D-27) hasta tener sesión.
+`OnboardingAnswers` + `consent` → `account.saveOnboarding` → fila de `onboarding_responses` (`user_id`, `answers jsonb`, `consent_health_data_at`, `consent_text_version`, `created_at`), borrado en cascada con el usuario (RNF-S10). **Hecho en F-06** (migración `20260930131803_onboarding_responses`): `user_id` es la clave (una fila por usuario, con `updated_at`) y la base rechaza síntomas, dietas o alergias sin consentimiento. En native, las respuestas viven en memoria y en el almacenamiento temporal de 24 h (D-27) hasta tener sesión.
 
 ### B.4.8 Feedback y reportes (escritura)
 

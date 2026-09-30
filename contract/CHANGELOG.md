@@ -4,6 +4,15 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.10.0 — 2026-09-30 · F-06
+
+**Aditivo.** Respuestas del onboarding (RF-048, RNF-S10, D-83). Native las empieza a mandar en F-10 (hoy se pierden).
+
+- **Nuevo componente `OnboardingAnswers`**: `{ goals, symptoms, diets, allergies, avoid, source }`. Las cinco listas usan claves estables (no las etiquetas de la pantalla: `'Maní'` es `'peanut'`), sin repetidos; `source` es una clave o `null`. Todas las claves son obligatorias (una lista puede ir vacía).
+- **Nuevo `POST /v1/users/me/onboarding`** `{ answers: OnboardingAnswers, consent?: { healthData: true, textVersion } }` → `200 { ok: true }`. Con sesión. Una fila por usuario: si se manda de nuevo, reemplaza la anterior.
+- **Consentimiento:** cualquier respuesta en `symptoms`, `diets` o `allergies` (también `'none'`) necesita `consent`; sin él → `400 VALIDATION_ERROR` "Para guardar síntomas, dietas o alergias necesitamos tu consentimiento.". Si la persona no aceptó, no se manda `consent`: `healthData` tiene que ser exactamente `true` (ni `"true"` ni `1`). `textVersion` identifica el texto que aceptó (1 a 40 caracteres: letras, números, `.`, `_`, `-`).
+- `400` (validación), `401`, `503`.
+
 ## 0.9.0 — 2026-09-30 · F-07
 
 **Aditivo.** Feedback y reportes de productos, con o sin sesión (RF-043, RF-044, D-21, D-26, D-82). Native los empieza a usar en F-11b (hoy los simula).
