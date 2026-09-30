@@ -25,9 +25,15 @@ Lo que falta necesita la CLI, Docker y la contraseña de la base, así que lo co
 
 Con eso me avisás. Yo reviso la baseline contra [`raw/supabase-schema.json`](../../raw/supabase-schema.json), incluidos el trigger `on_auth_user_created` (vive en `auth.users` y el dump de `public` puede no traerlo), las policies, los grants posteriores a U-01 y el COMMENT de la `015`. La pruebo sobre una base local vacía y la commiteo.
 
-## Paso 7 (después de mi revisión)
+## Resultado de la revisión (2026-09-30)
 
-Marca la baseline como aplicada sin ejecutarla, y saca del historial la migración suelta `validation_tables_v1`, que no tiene archivo (sus tablas quedan dentro de la baseline):
+El historial remoto trajo una migración que no esperábamos, `20260930115256_create_waitlist` (tabla `waitlist` del sitio www.fitogenix.com). Por eso la baseline quedó sin la `waitlist`, y esa migración va en su propio archivo con el SQL original (`supabase_migrations.schema_migrations.statements`). A la baseline se le sumaron el trigger `on_auth_user_created` (vive en `auth.users` y el dump no lo trae) y los `REVOKE` de U-01 sobre el catálogo: `pg_dump` no escribe los `REVOKE`, y en una base nueva los permisos por defecto de `public` lo dejaban abierto a `anon`.
+
+Probado en una base local vacía (`supabase start` con Postgres y Auth): las dos migraciones se aplican sin errores y el dump de esa base es idéntico al de producción.
+
+## Paso 7 (lo corre el responsable, desde `~/fitogenix-server` con `git pull`)
+
+Marca la baseline como aplicada sin ejecutarla, y saca del historial la migración suelta `validation_tables_v1`, que no tiene archivo (sus tablas quedan dentro de la baseline). La de la `waitlist` ya figura como aplicada y ahora también tiene su archivo: no se toca.
 
 ```bash
 supabase migration repair --status reverted 20260923014352
@@ -35,4 +41,4 @@ supabase migration repair --status applied 20260929000000
 supabase migration list --linked
 ```
 
-Al final, `migration list` tiene que mostrar solo `20260929000000`, local y remota. Desde ahí, toda migración nueva va en `supabase/migrations/` con el checklist del ADR-0009 y se aplica con `supabase db push`, nunca pegando SQL en el editor.
+Al final, `migration list` tiene que mostrar `20260929000000` y `20260930115256`, cada una local y remota. Desde ahí, toda migración nueva va en `supabase/migrations/` con el checklist del ADR-0009 y se aplica con `supabase db push`, nunca pegando SQL en el editor.
