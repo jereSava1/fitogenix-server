@@ -88,6 +88,7 @@ const FILA = {
 const GUARDADO = { product_id: PRODUCT_ID, created_at: '2026-07-08T12:00:00.123456+00:00', products: FILA };
 const ESCANEO = { product_id: PRODUCT_ID, scanned_at: '2026-07-14T12:00:00+00:00', products: FILA };
 const PERFIL_FILA = { first_name: 'Ana', last_name: 'Pérez', username: 'ana.p', phone: '+5491123456789' };
+const RESPUESTAS_ONBOARDING = { goals: ['energy'], symptoms: [], diets: [], allergies: [], avoid: [], source: null };
 
 /** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary`. */
 const CAMPOS_RESUMEN = ['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor'];
@@ -382,6 +383,31 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expect(authCaido.statusCode).toBe(503);
     expectMatchesContract('/v1/users/me', 'delete', 503, authCaido.json());
   });
+  it('POST /users/me/onboarding → 200, 400, 401 y 503 (F-06)', async () => {
+    const path = '/v1/users/me/onboarding';
+    const conSalud = { ...RESPUESTAS_ONBOARDING, symptoms: ['fog'] };
+    const ok = await call('POST', path, { auth: true, payload: { answers: conSalud, consent: { healthData: true, textVersion: 'v1' } } });
+    expect(ok.statusCode).toBe(200);
+    expectMatchesContract(path, 'post', 200, ok.json());
+    expect(db.upserts).toEqual([{
+      table: 'onboarding_responses',
+      row: expect.objectContaining({ user_id: USER, answers: conSalud, consent_text_version: 'v1' }),
+    }]);
+
+    const sinConsentimiento = await call('POST', path, { auth: true, payload: { answers: conSalud } });
+    expect(sinConsentimiento.statusCode).toBe(400);
+    expectMatchesContract(path, 'post', 400, sinConsentimiento.json());
+    expect(db.upserts).toHaveLength(1);
+
+    const sinSesion = await call('POST', path, { payload: { answers: RESPUESTAS_ONBOARDING } });
+    expectMatchesContract(path, 'post', 401, sinSesion.json());
+
+    db.results.onboarding_responses = { data: null, error: { message: 'TypeError: fetch failed' } };
+    const caido = await call('POST', path, { auth: true, payload: { answers: RESPUESTAS_ONBOARDING } });
+    expect(caido.statusCode).toBe(503);
+    expectMatchesContract(path, 'post', 503, caido.json());
+  });
+
   it('POST /feedback y /products/{productId}/reports → 202, 400, 404 y 503, con o sin sesión (F-07)', async () => {
     const anonimo = await call('POST', '/v1/feedback', { payload: { message: 'Hola', platform: 'ios' } });
     expect(anonimo.statusCode).toBe(202);
@@ -615,7 +641,7 @@ describe('contrato — caídas de la base (H-01)', () => {
   });
 
   it('las rutas que leen o escriben la base declaran 503', () => {
-    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}', '/v1/users/me/profile', '/v1/feedback', '/v1/products/{productId}/reports'];
+    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}', '/v1/users/me/profile', '/v1/feedback', '/v1/products/{productId}/reports', '/v1/users/me/onboarding'];
     for (const ruta of conBase) {
       for (const op of Object.values(contract.paths[ruta]!)) {
         expect(Object.keys(op.responses), ruta).toContain('503');
@@ -634,6 +660,7 @@ describe('contrato — Supabase Auth caído (H-02)', () => {
     ['DELETE', '/v1/users/me', '/v1/users/me', 'delete'],
     ['GET', '/v1/users/me/profile', '/v1/users/me/profile', 'get'],
     ['PATCH', '/v1/users/me/profile', '/v1/users/me/profile', 'patch'],
+    ['POST', '/v1/users/me/onboarding', '/v1/users/me/onboarding', 'post'],
   ] as const;
 
   /** La app completa con el módulo de auth recién importado: sin claves en cache. */
@@ -657,7 +684,7 @@ describe('contrato — Supabase Auth caído (H-02)', () => {
     const fria = await appSinClaves();
     try {
       for (const [method, url, ruta, op] of conSesion) {
-        const payload = method === 'POST' ? { productId: PRODUCT_ID } : method === 'PATCH' ? { firstName: 'Ana' } : undefined;
+        const payload = url.endsWith('/onboarding') ? { answers: RESPUESTAS_ONBOARDING } : method === 'POST' ? { productId: PRODUCT_ID } : method === 'PATCH' ? { firstName: 'Ana' } : undefined;
         const res = await fria.inject({ method, url, headers: comoUsuario, payload });
         expect(res.statusCode, `${method} ${url}`).toBe(503);
         expect(res.headers['retry-after']).toBe('10');

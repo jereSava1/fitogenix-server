@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -342,6 +342,121 @@
             "type": [
               "null",
               "string"
+            ]
+          }
+        }
+      },
+      "OnboardingAnswers": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "goals",
+          "symptoms",
+          "diets",
+          "allergies",
+          "avoid",
+          "source"
+        ],
+        "properties": {
+          "goals": {
+            "uniqueItems": true,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "healthier",
+                "toxins",
+                "condition",
+                "energy",
+                "family",
+                "weight"
+              ]
+            }
+          },
+          "symptoms": {
+            "uniqueItems": true,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "energy",
+                "fog",
+                "digestion",
+                "skin",
+                "sleep",
+                "weight"
+              ]
+            }
+          },
+          "diets": {
+            "uniqueItems": true,
+            "maxItems": 9,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "none",
+                "gluten_free",
+                "paleo",
+                "carnivore",
+                "vegetarian",
+                "pescatarian",
+                "kosher",
+                "dairy_free",
+                "vegan"
+              ]
+            }
+          },
+          "allergies": {
+            "uniqueItems": true,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "none",
+                "peanut",
+                "tree_nuts",
+                "dairy",
+                "egg",
+                "soy",
+                "shellfish",
+                "gluten"
+              ]
+            }
+          },
+          "avoid": {
+            "uniqueItems": true,
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "seedoils",
+                "sweeteners",
+                "dyes",
+                "metals",
+                "preservatives",
+                "sugar"
+              ]
+            }
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "instagram",
+              "tiktok",
+              "friend",
+              "podcast",
+              "doctor",
+              "appstore",
+              "other",
+              null
             ]
           }
         }
@@ -1045,6 +1160,121 @@
             }
           },
           "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/onboarding": {
+      "post": {
+        "summary": "Guardar las respuestas del onboarding (datos de salud solo con consentimiento)",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "answers"
+                ],
+                "properties": {
+                  "answers": {
+                    "$ref": "#/components/schemas/OnboardingAnswers"
+                  },
+                  "consent": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "healthData",
+                      "textVersion"
+                    ],
+                    "properties": {
+                      "healthData": {
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "textVersion": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "pattern": "^[0-9A-Za-z._-]+$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
             "description": "Default Response",
             "content": {
               "application/json": {
