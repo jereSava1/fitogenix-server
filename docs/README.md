@@ -25,6 +25,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | `00-inventario.md` … `05-plan.md` | Un documento por fase de la auditoría |
 | `decisiones.md` | Registro único de decisiones |
 | `dominio-scoring.md` | Qué evalúa el motor, cómo se arma el puntaje, bandas y sello, los octógonos y la norma que los fundamenta, y los temas abiertos del motor |
+| `checklist-accesibilidad.md` | Checklist manual de F-13 (VoiceOver, TalkBack, letra grande y reducir movimiento) |
 | `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica, calidad del motor) |
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
 | `borradores/dependency-cruiser.cjs` | Borrador original de las reglas de dependencias (ya copiado a la raíz como `.dependency-cruiser.cjs` en M-01) |
