@@ -552,7 +552,7 @@ Hoy: `signUp` manda nombre, apellido, username y **teléfono** en `options.data`
 3. En el primer login con Google o Apple, si no hay fila de `profiles`, el server la crea (con lo que traiga el proveedor).
 4. El trigger `handle_new_user` queda sin uso y se elimina.
 
-**F-02 (2026-09-30, D-84):** 1, 2 y 4 hechos en el server, con dos ajustes: el username se chequea antes de crear el usuario (y se deshace igual si otro lo gana en el medio), y el trigger se elimina después de F-08 (B-02); hasta entonces el server completa la fila vacía que crea. El 3 se hizo en F-03 (D-85).
+**F-02 (2026-09-30, D-84):** 1, 2 y 4 hechos en el server, con dos ajustes: el username se chequea antes de crear el usuario (y se deshace igual si otro lo gana en el medio), y el trigger se elimina después de F-08 (B-02); hasta entonces el server completa la fila vacía que crea. El trigger se eliminó en B-02 (2026-09-30). El 3 se hizo en F-03 (D-85).
 
 Así el teléfono se guarda (D-17) sin viajar en el token, y la creación del perfil queda en código testeable en vez de en un trigger de la base.
 

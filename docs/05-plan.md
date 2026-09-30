@@ -272,10 +272,16 @@ Se hace con C-05 pendiente (D-67). **Etapa 5 COMPLETA (2026-09-29):** K-01 a K-0
 
 ### 7.3 Etapa 8 — Base de datos
 
+Orden (de lo más fácil a lo más difícil): B-02 → B-04 (pasos 1 y 2) → B-01 → B-04 paso 3 (no antes del 2026-10-14). B-03 espera a que F-12 esté en producción. Los cambios en la base son seguros aunque `main` siga en producción: nadie usa la app de producción, `main` lee `products` con `select('*')` y no escribe las columnas de B-01, y el ETL no se corre hasta terminar B-01 (responsable, 2026-09-30).
+
+| ID | Estado |
+|---|---|
+| B-02 | ✅ Hecho en `chore/b02-sin-trigger-perfil`. Migración `20260930202339_sin_trigger_de_perfil` (`DROP TRIGGER on_auth_user_created` + `DROP FUNCTION handle_new_user`), **pendiente de `db push` del responsable**. El server no cambia: `profiles.create` y `ensure` ya hacían `upsert` y completan una fila vacía (las que creó el trigger en producción siguen andando). Verificado en el Supabase local con las 7 migraciones: sin trigger ni función; `POST /v1/auth/signup` crea **una** fila con nombre, apellido, username y teléfono; repetir el registro → `409 USERNAME_TAKEN` sin fila nueva; login de un usuario sin perfil (creado por el admin, como un OAuth nuevo) → crea la fila. Tests: 1009, sin cambios |
+
 | ID | Prio | Acción | Repo | Archivos / recurso | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
 | B-01 | P1 | ELIMINAR | Supabase | Columnas `score`, `score_label`, `sello`, `engine_version` (+ índice), `nova_group`, `name_key` (+ UNIQUE), `manufacturer_info`; índice `products_barcode_unique_idx`; las 5 filas `data_source='ai'` (antes: verificar guardados e historial) | D-35, D-36, D-41, DB-02 | Medio | Antes: el escritor del catálogo (ETL) ya no escribe esas columnas; `scripts/audit-scores.ts` deja de leer `nova_group` (su chequeo pasa a usar el veredicto de procesamiento del motor, D-36); `grep` de las columnas en el código vacío. Después: smoke del lookup y del ETL | `PR-42 chore(db): limpiar columnas sin uso` |
-| B-02 | P1 | ELIMINAR | Supabase | Trigger `on_auth_user_created` + `handle_new_user()` (F-02 ya crea el perfil; desde F-08 native registra por el server: **ya se puede**, D-84) | D-46 | Medio | Después: el registro crea el perfil una sola vez | `PR-43 chore(db): sin trigger de perfil` |
+| B-02 | P1 | ELIMINAR | Supabase | ✅ Trigger `on_auth_user_created` + `handle_new_user()` (F-02 ya crea el perfil; desde F-08 native registra por el server: **ya se puede**, D-84) | D-46 | Medio | Después: el registro crea el perfil una sola vez | `PR-43 chore(db): sin trigger de perfil` |
 | B-03 | P1 | REFACTOR | Supabase | `REVOKE` de `anon` sobre `profiles` e `is_username_available` (cuando F-12 esté en producción: la app ya no los usa desde F-12) | ADR-0010, D-28 | Bajo | Después: prueba negativa con la anon key | `PR-44 fix(db): anon sin acceso` |
 | B-04 | P1 | ELIMINAR | Supabase | Tablas `productos_validados`, `registro_controles`, `validation_runs` en 3 pasos: backup → `REVOKE` (incluido `service_role`) durante 14 días → `DROP` | DB-01, D-07 | Medio | Cada paso con su criterio (00-inventario §7.2) | `PR-45a/b/c chore(db): tablas de validación` |
 

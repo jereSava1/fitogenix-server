@@ -37,11 +37,10 @@ export interface ProfileRepository {
   update(userId: string, changes: ProfileChanges): Promise<UpdateProfileResult>;
   /** Sin distinguir mayúsculas. */
   isUsernameTaken(username: string): Promise<boolean>;
-  /** Crea la fila del usuario recién registrado. Una fila sin username (la del trigger
-   *  `handle_new_user`, o un registro que no terminó) se completa. */
+  /** Crea la fila del usuario recién registrado. Una fila sin username (un registro que
+   *  no terminó, o las que creaba la base antes de B-02) se completa. */
   create(userId: string, profile: NewProfile): Promise<CreateProfileResult>;
-  /** Si no hay fila, o está vacía (la del trigger), la deja con estos nombres; si tiene
-   *  datos, no la toca. */
+  /** Si no hay fila, o está vacía, la deja con estos nombres; si tiene datos, no la toca. */
   ensure(userId: string, names: ProfileNames): Promise<void>;
 }
 
