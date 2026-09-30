@@ -22,7 +22,7 @@ vi.mock('@supabase/supabase-js', () => {
   const builder = (table: string) => {
     const result = () => Promise.resolve(db.results[table] ?? { data: null, error: null });
     const b: Record<string, unknown> = {};
-    for (const m of ['select', 'retry', 'eq', 'order', 'limit', 'delete', 'in', 'is', 'ilike']) {
+    for (const m of ['select', 'retry', 'eq', 'order', 'limit', 'delete', 'update', 'in', 'is', 'ilike']) {
       b[m] = () => b;
     }
     b.upsert = (row: unknown) => {
@@ -77,6 +77,7 @@ const FILA = {
 };
 const GUARDADO = { product_id: PRODUCT_ID, created_at: '2026-07-08T12:00:00.123456+00:00', products: FILA };
 const ESCANEO = { product_id: PRODUCT_ID, scanned_at: '2026-07-14T12:00:00+00:00', products: FILA };
+const PERFIL_FILA = { first_name: 'Ana', last_name: 'Pérez', username: 'ana.p', phone: '+5491123456789' };
 
 /** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary`. */
 const CAMPOS_RESUMEN = ['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor'];
@@ -131,6 +132,7 @@ beforeEach(() => {
     products: { data: FILA, error: null },
     saved_products: { data: [GUARDADO], error: null },
     scan_history: { data: [ESCANEO], error: null },
+    profiles: { data: PERFIL_FILA, error: null },
   };
   db.upserts = [];
   auth.jwks('ok');
@@ -141,7 +143,7 @@ beforeEach(() => {
   db.deleteUser = async () => ({ data: {}, error: null });
 });
 
-async function call(method: 'GET' | 'POST' | 'DELETE', url: string, opts: { auth?: boolean; payload?: unknown } = {}) {
+async function call(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, opts: { auth?: boolean; payload?: unknown } = {}) {
   return app.inject({ method, url, headers: opts.auth ? comoUsuario : {}, payload: opts.payload as never });
 }
 
@@ -259,6 +261,58 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     const falla = await call('DELETE', url, { auth: true });
     expect(falla.statusCode).toBe(503);
     expectMatchesContract('/v1/users/me/history/{productId}', 'delete', 503, falla.json());
+  });
+
+  it('GET /users/me/profile → 200, 401, 404 y 503 (F-05)', async () => {
+    const ok = await call('GET', '/v1/users/me/profile', { auth: true });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({ firstName: 'Ana', lastName: 'Pérez', username: 'ana.p', phone: '+5491123456789' });
+    expectMatchesContract('/v1/users/me/profile', 'get', 200, ok.json());
+
+    const sinSesion = await call('GET', '/v1/users/me/profile');
+    expect(sinSesion.statusCode).toBe(401);
+    expectMatchesContract('/v1/users/me/profile', 'get', 401, sinSesion.json());
+
+    db.results.profiles = { data: null, error: null };
+    const noEsta = await call('GET', '/v1/users/me/profile', { auth: true });
+    expect(noEsta.statusCode).toBe(404);
+    expectMatchesContract('/v1/users/me/profile', 'get', 404, noEsta.json());
+
+    db.results.profiles = { data: null, error: { message: 'boom' } };
+    const falla = await call('GET', '/v1/users/me/profile', { auth: true });
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract('/v1/users/me/profile', 'get', 503, falla.json());
+  });
+
+  it('PATCH /users/me/profile → 200, 400, 401, 404, 409 y 503 (F-05)', async () => {
+    const path = '/v1/users/me/profile';
+    const ok = await call('PATCH', path, { auth: true, payload: { firstName: 'Ana' } });
+    expect(ok.statusCode).toBe(200);
+    expectMatchesContract(path, 'patch', 200, ok.json());
+
+    const invalido = await call('PATCH', path, { auth: true, payload: { username: 'Con Mayúsculas' } });
+    expect(invalido.statusCode).toBe(400);
+    expectMatchesContract(path, 'patch', 400, invalido.json());
+
+    const sinSesion = await call('PATCH', path, { payload: { firstName: 'Ana' } });
+    expect(sinSesion.statusCode).toBe(401);
+    expectMatchesContract(path, 'patch', 401, sinSesion.json());
+
+    db.results.profiles = { data: null, error: { code: '23505', message: 'duplicate key value' } };
+    const tomado = await call('PATCH', path, { auth: true, payload: { username: 'tomado' } });
+    expect(tomado.statusCode).toBe(409);
+    expect(tomado.json()).toEqual({ error: 'Ese nombre de usuario ya está en uso', code: 'USERNAME_TAKEN' });
+    expectMatchesContract(path, 'patch', 409, tomado.json());
+
+    db.results.profiles = { data: null, error: null };
+    const noEsta = await call('PATCH', path, { auth: true, payload: { firstName: 'Ana' } });
+    expect(noEsta.statusCode).toBe(404);
+    expectMatchesContract(path, 'patch', 404, noEsta.json());
+
+    db.results.profiles = { data: null, error: { message: 'boom' } };
+    const falla = await call('PATCH', path, { auth: true, payload: { firstName: 'Ana' } });
+    expect(falla.statusCode).toBe(503);
+    expectMatchesContract(path, 'patch', 503, falla.json());
   });
 
   it('DELETE /users/me → 200, 401, 500 (del handler y de una excepción) y 503', async () => {
@@ -491,7 +545,7 @@ describe('contrato — caídas de la base (H-01)', () => {
   });
 
   it('las rutas que leen o escriben la base declaran 503', () => {
-    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}'];
+    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}', '/v1/users/me/profile'];
     for (const ruta of conBase) {
       for (const op of Object.values(contract.paths[ruta]!)) {
         expect(Object.keys(op.responses), ruta).toContain('503');
@@ -508,6 +562,8 @@ describe('contrato — Supabase Auth caído (H-02)', () => {
     ['GET', '/v1/users/me/history', '/v1/users/me/history', 'get'],
     ['DELETE', `/v1/users/me/history/${PRODUCT_ID}`, '/v1/users/me/history/{productId}', 'delete'],
     ['DELETE', '/v1/users/me', '/v1/users/me', 'delete'],
+    ['GET', '/v1/users/me/profile', '/v1/users/me/profile', 'get'],
+    ['PATCH', '/v1/users/me/profile', '/v1/users/me/profile', 'patch'],
   ] as const;
 
   /** La app completa con el módulo de auth recién importado: sin claves en cache. */
@@ -531,9 +587,8 @@ describe('contrato — Supabase Auth caído (H-02)', () => {
     const fria = await appSinClaves();
     try {
       for (const [method, url, ruta, op] of conSesion) {
-        const res = await fria.inject({
-          method, url, headers: comoUsuario, payload: method === 'POST' ? { productId: PRODUCT_ID } : undefined,
-        });
+        const payload = method === 'POST' ? { productId: PRODUCT_ID } : method === 'PATCH' ? { firstName: 'Ana' } : undefined;
+        const res = await fria.inject({ method, url, headers: comoUsuario, payload });
         expect(res.statusCode, `${method} ${url}`).toBe(503);
         expect(res.headers['retry-after']).toBe('10');
         expectMatchesContract(ruta, op, 503, res.json());

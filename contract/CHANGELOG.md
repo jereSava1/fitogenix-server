@@ -4,6 +4,16 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.7.0 — 2026-09-30 · F-05
+
+**Aditivo.** Perfil del usuario (RF-028, ADR-0010): native deja de leer y escribir `profiles` directo en F-09.
+
+- **Nuevo componente `Profile`**: `{ firstName, lastName, username, phone }`, los cuatro `string | null`.
+- **Nuevo `GET /v1/users/me/profile`** → `200 Profile`; `404 NOT_FOUND` si el usuario no tiene fila; `401`, `503`.
+- **Nuevo `PATCH /v1/users/me/profile`**: cambia solo los campos que vienen (al menos uno), con las reglas del registro: nombre y apellido de 1 a 60 caracteres, `username` de 3 a 30 con `^[a-z0-9_.]+$`, `phone` en E.164 (`+` y de 7 a 15 dígitos). No acepta `null` (no vacía campos) ni campos de más (D-70). → `200 Profile`; `400`, `401`, `404`, `409`, `503`.
+- **Nuevo código de error `USERNAME_TAKEN`** (409): el username ya es de otro usuario (sin distinguir mayúsculas).
+- Native hoy guarda el username tal como se escribe y el teléfono como texto libre: en F-09 tiene que mandar solo los campos que el usuario cambió, normalizados.
+
 ## 0.6.0 — 2026-09-29 · F-01
 
 **Aditivo.** Nuevo `DELETE /v1/users/me/history/{productId}` (RF-017, D-13): borra el producto del historial del usuario de la sesión. Idempotente: responde `200 { ok: true }` aunque no estuviera. `400` si el id no es uuid, `401` sin sesión, `503` si la base no responde (o si Supabase Auth no responde y no hay claves para verificar la sesión, como el resto de las rutas con sesión). Native lo empieza a usar en F-11 (hoy borra solo en el teléfono y el ítem vuelve al sincronizar, RF-015).

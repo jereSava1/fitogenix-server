@@ -406,7 +406,7 @@ type OnboardingAnswers = {   // claves ESTABLES (hoy diets y allergies usan el t
 
 Los enums de onboarding salen de las constantes de `OnboardingScreen.tsx` (`GOALS`, `SYMPTOMS`, `DIETS`, `ALLERGIES`, `AVOID` y las fuentes). `diets` y `allergies` hoy se identifican por su **texto** ("Sin Gluten", "Maní"): el contrato usa claves estables y la app mapea.
 
-**Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error:
+**Estado de `ApiError` (K-03, 2026-09-29, D-69):** implementado en `platform/http/schemas.ts` (`ApiErrorSchema`, `ERROR_CODES`) y `platform/http/errors.ts` (`apiError`, `registerErrorHandling`). `ErrorCode` tiene **solo los códigos que el server responde hoy**: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `NOT_FOUND`, `PRODUCT_NOT_IN_CATALOG`, `RATE_LIMITED` e `INTERNAL`. Los demás de la lista de arriba se suman con el ítem que los empieza a responder (`DEPENDENCY_UNAVAILABLE` con H-01, los de `/auth/*` con F-02 y F-03) y se anotan en `contract/CHANGELOG.md`. Cómo se arma cada error: **F-05** suma `USERNAME_TAKEN` (409).
 
 **H-01 (2026-09-29, contrato `0.4.0`):** se suma `DEPENDENCY_UNAVAILABLE` (503 + `Retry-After: 10`) cuando la base no responde o falla, en el lookup, el detalle, guardados e historial. "No está" (404) queda solo para una consulta que salió bien sin filas.
 
@@ -472,9 +472,11 @@ Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `ne
 | # | Endpoint | Auth | Request | 2xx | Errores |
 |---|---|---|---|---|---|
 | 18 | `GET /users/me/profile` | Sí | — | `200 Profile` | `401`, `404 NOT_FOUND` (sin fila de perfil), `503` |
-| 19 | `PATCH /users/me/profile` | Sí | `Partial<Profile>` con las mismas reglas que el registro; al menos un campo | `200 Profile` | `400`, `401`, `409 USERNAME_TAKEN`, `503` |
+| 19 | `PATCH /users/me/profile` | Sí | `Partial<Profile>` con las mismas reglas que el registro; al menos un campo | `200 Profile` | `400`, `401`, `404 NOT_FOUND`, `409 USERNAME_TAKEN`, `503` |
 | 20 | `POST /users/me/onboarding` | Sí | `{ answers: OnboardingAnswers, consent: { healthData: true, textVersion: string } }` | `204` | `400` (incluye `consent.healthData !== true` si hay `symptoms` o `allergies`), `401`, `503` |
 | 21 | `DELETE /users/me` | Sí (+ `getUser`, ADR-0008) | — | `204` | `401`, `503` |
+
+**F-05 (2026-09-30, contrato `0.7.0`):** 18 y 19 hechos. `PATCH` cambia solo los campos que vienen (sin `null`: no vacía campos), rechaza campos de más (D-70) y responde 404 si no hay fila.
 
 ### B.3.5 `feedback`
 

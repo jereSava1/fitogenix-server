@@ -30,6 +30,7 @@ export const ERROR_CODES = [
   'PRODUCT_NOT_IN_CATALOG',
   'RATE_LIMITED',
   'DEPENDENCY_UNAVAILABLE',
+  'USERNAME_TAKEN',
   'INTERNAL',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];

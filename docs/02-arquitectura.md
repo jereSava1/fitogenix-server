@@ -492,8 +492,8 @@ Todo lo que native va a llamar. Schemas completos en [03-contratos.md §B.3](03-
 | 15 | `POST /auth/logout` | auth | Sí | **Nuevo** | `signOut` |
 | 16 | `POST /auth/password/forgot` | auth | No | **Nuevo** | `resetPasswordForEmail` |
 | 17 | `POST /auth/password/reset` | auth | No | **Nuevo** | `verifyOtp` + `updateUser` |
-| 18 | `GET /users/me/profile` | account | Sí | **Nuevo** | `select` directo a `profiles` |
-| 19 | `PATCH /users/me/profile` | account | Sí | **Nuevo** | `update` directo a `profiles` |
+| 18 | `GET /users/me/profile` | account | Sí | **Nuevo** (hecho en F-05) | `select` directo a `profiles` |
+| 19 | `PATCH /users/me/profile` | account | Sí | **Nuevo** (hecho en F-05) | `update` directo a `profiles` |
 | 20 | `POST /users/me/onboarding` | account | Sí | **Nuevo** | RF-048 (con consentimiento, RNF-S10) |
 | 21 | `DELETE /users/me` | account | Sí | Existe | Native pasa a llamarlo (RF-029) |
 | 22 | `POST /feedback` | feedback | Opcional | **Nuevo** | RF-043 (D-21) |

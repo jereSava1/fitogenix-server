@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -33,6 +33,7 @@
               "PRODUCT_NOT_IN_CATALOG",
               "RATE_LIMITED",
               "DEPENDENCY_UNAVAILABLE",
+              "USERNAME_TAKEN",
               "INTERNAL"
             ]
           }
@@ -305,6 +306,41 @@
             "type": "boolean",
             "enum": [
               true
+            ]
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "required": [
+          "firstName",
+          "lastName",
+          "username",
+          "phone"
+        ],
+        "properties": {
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -621,6 +657,210 @@
             }
           },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/profile": {
+      "get": {
+        "summary": "Ver los datos personales del usuario",
+        "tags": [
+          "account"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Editar los datos personales (solo los campos que se mandan)",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "minLength": 1,
+                    "maxLength": 60,
+                    "pattern": "\\S",
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "minLength": 1,
+                    "maxLength": 60,
+                    "pattern": "\\S",
+                    "type": "string"
+                  },
+                  "username": {
+                    "minLength": 3,
+                    "maxLength": 30,
+                    "pattern": "^[a-z0-9_.]+$",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "pattern": "^\\+[1-9][0-9]{6,14}$",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
             "description": "Default Response",
             "content": {
               "application/json": {
