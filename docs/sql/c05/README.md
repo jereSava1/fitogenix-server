@@ -42,3 +42,26 @@ supabase migration list --linked
 ```
 
 Al final, `migration list` tiene que mostrar `20260929000000` y `20260930115256`, cada una local y remota. Desde ahí, toda migración nueva va en `supabase/migrations/` con el checklist del ADR-0009 y se aplica con `supabase db push`, nunca pegando SQL en el editor.
+
+## Después del paso 7 (2026-09-30)
+
+El paso 7 quedó hecho: `migration list` muestra `20260929000000` y `20260930115256`, locales y remotas. Faltan dos migraciones chicas, probadas en una base local vacía, que las aplica el responsable:
+
+| Migración | Qué hace |
+|---|---|
+| `20260930124852_default_privileges_sin_anon` | D-60: lo que se cree en `public` de acá en adelante no queda abierto a `anon` ni `authenticated` por defecto. No toca lo existente |
+| `20260930124853_waitlist_solo_insert` | D-81: en la `waitlist`, `anon` y `authenticated` solo pueden insertar |
+
+```bash
+supabase db push --dry-run
+supabase db push
+supabase migration list --linked
+```
+
+`--dry-run` muestra qué se va a aplicar sin tocar nada; tienen que aparecer solo esas dos. Para verificar después, en el SQL Editor (solo lectura):
+
+```sql
+select grantee, string_agg(privilege_type, ', ' order by privilege_type) from information_schema.role_table_grants where table_schema = 'public' and table_name = 'waitlist' group by grantee;
+```
+
+`anon` y `authenticated` tienen que tener solo `INSERT`.
