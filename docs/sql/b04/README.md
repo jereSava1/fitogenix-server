@@ -62,6 +62,20 @@ GRANT ALL ON TABLE public.productos_validados, public.registro_controles, public
 GRANT ALL ON SEQUENCE public.registro_controles_id_seq, public.validation_runs_id_seq TO service_role;
 ```
 
+## Resultados
+
+**Paso 1 (2026-09-30):** backup en `~/fitogenix-backups/2026-09-30-tablas-validacion.sql` (máquina del responsable). Archivo y base coinciden: `productos_validados` 25, `registro_controles` 1155, `validation_runs` 9.
+
+**Foto de `pg_stat_user_tables` antes del `REVOKE` (2026-09-30)**, tomada después del backup y del conteo (los dos suman `seq_scan`):
+
+| Tabla | seq_scan | idx_scan | n_tup_ins | n_tup_upd | n_tup_del |
+|---|---|---|---|---|---|
+| productos_validados | 9 | 26 | 25 | 7 | 0 |
+| registro_controles | 25 | 41 | 1155 | 80 | 0 |
+| validation_runs | 4 | 43 | 10 | 9 | 0 |
+
+`validation_runs` tiene 10 inserts y 9 filas sin borrados: un insert que falló o se deshizo también cuenta. Hasta la comparación del 2026-10-14, **no consultar estas tablas** (ni desde el SQL Editor): cualquier lectura sube `seq_scan`.
+
 ## Paso 3 · DROP
 
 Migración `DROP TABLE` de las tres (se prepara cuando se cumpla el criterio del paso 2). Consecuencia: desaparecen los FK `ON DELETE RESTRICT` hacia `products`.
