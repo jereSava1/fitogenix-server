@@ -9,6 +9,7 @@ describe('makeProfile', () => {
     update: vi.fn(async () => 'username_taken' as const),
     isUsernameTaken: vi.fn(async () => taken),
     create: vi.fn(async () => 'created' as const),
+    ensure: vi.fn(async () => undefined),
   });
 
   it('getProfile y updateProfile delegan en el repositorio', async () => {
@@ -21,7 +22,7 @@ describe('makeProfile', () => {
     expect(repo.update).toHaveBeenCalledWith('user-1', { username: 'x.y' });
   });
 
-  it('isUsernameAvailable es lo contrario de isUsernameTaken; createProfile delega', async () => {
+  it('isUsernameAvailable es lo contrario de isUsernameTaken; createProfile y ensureProfile delegan', async () => {
     await expect(makeProfile(armar(true)).isUsernameAvailable('ana')).resolves.toBe(false);
     const repo = armar(false);
     const profile = makeProfile(repo);
@@ -29,5 +30,7 @@ describe('makeProfile', () => {
     const nuevo = { firstName: 'Ana', lastName: 'Pérez', username: 'ana', phone: '+5491123456789' };
     await expect(profile.createProfile('user-1', nuevo)).resolves.toBe('created');
     expect(repo.create).toHaveBeenCalledWith('user-1', nuevo);
+    await profile.ensureProfile('user-1', { firstName: 'Ana', lastName: null });
+    expect(repo.ensure).toHaveBeenCalledWith('user-1', { firstName: 'Ana', lastName: null });
   });
 });

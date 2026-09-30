@@ -103,6 +103,11 @@ export const requireAuth = fp<{ checkSession?: boolean }>(
   { name: 'fitogenix-auth', fastify: '5.x' },
 );
 
+/** El token de la request, para las rutas que lo pasan a Supabase (p. ej. cerrar sesión). */
+export function accessTokenOf(request: FastifyRequest): string | null {
+  return bearerToken(request.headers.authorization);
+}
+
 /** Sesión opcional: el usuario si el token es válido; si no vino, no sirve o no se puede
  *  verificar, null y la request sigue como anónima (ADR-0006, D-75). */
 export async function optionalAuth(request: FastifyRequest): Promise<string | null> {

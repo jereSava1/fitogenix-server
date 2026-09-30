@@ -70,4 +70,17 @@ export const supabaseProfileRepository: ProfileRepository = {
     }
     return 'created';
   },
+
+  async ensure(userId, names) {
+    const current = await runQuery('profiles select', () =>
+      admin().from('profiles').select(COLUMNS).retry(false).eq('id', userId).maybeSingle<ProfileRow>(),
+    );
+    if (current.error) throw queryFailed('profiles select', current.error);
+    if (current.data && Object.values(current.data).some((v) => v !== null)) return;
+
+    const { error } = await runQuery('profiles upsert', () =>
+      admin().from('profiles').upsert({ id: userId, first_name: names.firstName, last_name: names.lastName }, { onConflict: 'id' }),
+    );
+    if (error) throw queryFailed('profiles upsert', error);
+  },
 };

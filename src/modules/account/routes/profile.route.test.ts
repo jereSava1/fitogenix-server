@@ -18,6 +18,7 @@ const profile = {
   updateProfile: vi.fn<ProfileService['updateProfile']>(),
   isUsernameAvailable: vi.fn<ProfileService['isUsernameAvailable']>(),
   createProfile: vi.fn<ProfileService['createProfile']>(),
+  ensureProfile: vi.fn<ProfileService['ensureProfile']>(),
 };
 let app: FastifyInstance;
 let comoA: { authorization: string };

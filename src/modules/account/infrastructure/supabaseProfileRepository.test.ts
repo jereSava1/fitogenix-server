@@ -154,3 +154,37 @@ describe('create', () => {
     await expect(repo.create('user-1', NUEVO)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
   });
 });
+
+describe('ensure (primer inicio de sesión con un proveedor)', () => {
+  const NOMBRES = { firstName: 'Ana', lastName: 'Pérez' };
+
+  it('sin fila: la crea con los nombres', async () => {
+    await repo.ensure('user-1', NOMBRES);
+    expect(selectEq).toHaveBeenCalledWith('id', 'user-1');
+    expect(upsert).toHaveBeenCalledWith({ id: 'user-1', first_name: 'Ana', last_name: 'Pérez' }, { onConflict: 'id' });
+  });
+
+  it('fila vacía (la del trigger): la completa', async () => {
+    selectResult = { data: { first_name: null, last_name: null, username: null, phone: null }, error: null };
+    await repo.ensure('user-1', NOMBRES);
+    expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['nombre', { first_name: 'Otra' }],
+    ['username', { username: 'ana.p' }],
+    ['teléfono', { phone: '+5491123456789' }],
+  ])('fila con algún dato (%s): no la toca', async (_c, dato) => {
+    selectResult = { data: { first_name: null, last_name: null, username: null, phone: null, ...dato }, error: null };
+    await repo.ensure('user-1', NOMBRES);
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('un error al leer o al escribir → DependencyUnavailableError (503)', async () => {
+    selectResult = { data: null, error: { message: 'boom' } };
+    await expect(repo.ensure('user-1', NOMBRES)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+    selectResult = { data: null, error: null };
+    upsertResult = { error: { code: '23503', message: 'fk' } };
+    await expect(repo.ensure('user-1', NOMBRES)).rejects.toMatchObject({ name: 'DependencyUnavailableError' });
+  });
+});

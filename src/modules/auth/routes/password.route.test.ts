@@ -52,7 +52,7 @@ describe('POST /auth/password/forgot', () => {
     const res = await forgot({ email: 'ana@mail.com' });
     expect(res.statusCode).toBe(202);
     expect(res.json()).toEqual({ ok: true });
-    expect(passwordReset.forgot).toHaveBeenCalledWith('ana@mail.com');
+    expect(passwordReset.forgot).toHaveBeenCalledWith('ana@mail.com', '127.0.0.1');
   });
 
   it.each([
@@ -81,7 +81,7 @@ describe('POST /auth/password/reset', () => {
     const res = await reset(BODY);
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
-    expect(passwordReset.reset).toHaveBeenCalledWith('ana@mail.com', '123456', 'nueva-clave');
+    expect(passwordReset.reset).toHaveBeenCalledWith('ana@mail.com', '123456', 'nueva-clave', '127.0.0.1');
   });
 
   it('código inválido o vencido → 401 INVALID_CODE', async () => {
@@ -155,11 +155,12 @@ describe('/auth/password — límites y logs (D-48)', () => {
     const logs: string[] = [];
     app = await armar({ logs });
     passwordReset.reset.mockResolvedValue('invalid_code');
-    await reset({ email: 'secreta@mail.com', code: '987654', newPassword: 'clave-secreta' });
-    await reset({ email: 'secreta@mail.com', code: '9876', newPassword: 'clave-secreta' });
+    await reset({ email: 'secreta@mail.com', code: '9081726354', newPassword: 'clave-secreta' });
+    await reset({ email: 'secreta@mail.com', code: 'zq-invalido', newPassword: 'clave-secreta' });
     await forgot({ email: 'secreta@mail.com' });
     const todo = logs.join('');
     expect(todo).toContain('/auth/password/reset');
-    for (const secreto of ['secreta@mail.com', '987654', '9876', 'clave-secreta']) expect(todo).not.toContain(secreto);
+    // Secretos que no pueden salir de casualidad en un tiempo o un timestamp del log.
+    for (const secreto of ['secreta@mail.com', '9081726354', 'zq-invalido', 'clave-secreta']) expect(todo).not.toContain(secreto);
   });
 });

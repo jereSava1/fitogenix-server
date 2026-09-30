@@ -53,7 +53,7 @@ describe('POST /auth/signup', () => {
     const res = await registrar(BODY);
     expect(res.statusCode).toBe(201);
     expect(res.json()).toEqual({ status: 'confirmation_required' });
-    expect(signUp.signUp).toHaveBeenCalledWith('ana@mail.com', 'clave-segura', PERFIL);
+    expect(signUp.signUp).toHaveBeenCalledWith('ana@mail.com', 'clave-segura', PERFIL, '127.0.0.1');
   });
 
   it.each([

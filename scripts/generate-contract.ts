@@ -23,7 +23,7 @@ async function generateOpenApi(): Promise<string> {
       openapi: '3.1.0',
       info: {
         title: 'Fitogenix API',
-        version: '0.11.0',
+        version: '0.12.0',
         description:
           'Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md.',
       },

@@ -27,6 +27,8 @@ export type NewProfile = Record<keyof Profile, string>;
 /** `exists`: el usuario ya tenía perfil (se registró antes y no confirmó): no se toca. */
 export type CreateProfileResult = 'created' | 'exists' | 'username_taken';
 
+export type ProfileNames = Pick<Profile, 'firstName' | 'lastName'>;
+
 export interface ProfileRepository {
   /** La fila del usuario; `null` si no tiene. Una falla de la base lanza (503). */
   get(userId: string): Promise<Profile | null>;
@@ -38,6 +40,9 @@ export interface ProfileRepository {
   /** Crea la fila del usuario recién registrado. Una fila sin username (la del trigger
    *  `handle_new_user`, o un registro que no terminó) se completa. */
   create(userId: string, profile: NewProfile): Promise<CreateProfileResult>;
+  /** Si no hay fila, o está vacía (la del trigger), la deja con estos nombres; si tiene
+   *  datos, no la toca. */
+  ensure(userId: string, names: ProfileNames): Promise<void>;
 }
 
 // Onboarding (RF-048): claves estables; la app mapea sus etiquetas.

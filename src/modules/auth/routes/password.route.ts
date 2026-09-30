@@ -4,10 +4,10 @@
 import { Type } from '@sinclair/typebox';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
-import { apiError, RATE_LIMITED_MESSAGE } from '../../../platform/http/errors';
+import { apiError } from '../../../platform/http/errors';
 import { addSharedSchemas, ApiErrorSchema, errorResponses, OkSchema } from '../../../platform/http/schemas';
 import type { PasswordReset } from '../application/resetPassword';
-import { AUTH_RATE_LIMIT, Email, Password } from './fields';
+import { AUTH_RATE_LIMIT, Email, Password, sendRateLimited, SUPABASE_RETRY_AFTER_S } from './fields';
 
 // El largo del código lo configura el proyecto de Supabase (6 por defecto, hasta 10).
 const Code = Type.String({ pattern: '^[0-9]{6,10}$' });
@@ -34,7 +34,7 @@ export const passwordRoutes = (deps: { passwordReset: PasswordReset }): FastifyP
         response: { 202: Type.Ref(OkSchema), ...errorResponses(400, 429, 500, 503) },
       },
     }, async (request, reply) => {
-      await deps.passwordReset.forgot(request.body.email);
+      await deps.passwordReset.forgot(request.body.email, request.ip);
       return reply.status(202).send({ ok: true });
     });
 
@@ -48,17 +48,13 @@ export const passwordRoutes = (deps: { passwordReset: PasswordReset }): FastifyP
       },
     }, async (request, reply) => {
       const { email, code, newPassword } = request.body;
-      const result = await deps.passwordReset.reset(email, code, newPassword);
+      const result = await deps.passwordReset.reset(email, code, newPassword, request.ip);
 
       if (result === 'ok') return reply.send({ ok: true });
       if (result === 'invalid_code') return reply.status(401).send(INVALID_CODE);
       if (result === 'same_password' || result === 'weak_password') {
         return reply.status(400).send(apiError('VALIDATION_ERROR', REJECTED_PASSWORD[result]));
       }
-      const retryAfter = result === 'rate_limited' ? 60 : result.tooManyAttempts;
-      return reply
-        .status(429)
-        .header('retry-after', String(retryAfter))
-        .send(apiError('RATE_LIMITED', RATE_LIMITED_MESSAGE));
+      return sendRateLimited(reply, result === 'rate_limited' ? SUPABASE_RETRY_AFTER_S : result.tooManyAttempts);
     });
   };

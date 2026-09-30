@@ -484,11 +484,11 @@ Todo lo que native va a llamar. Schemas completos en [03-contratos.md §B.3](03-
 | 8 | `DELETE /users/me/history/:productId` | user-library | Sí | **Nuevo** (hecho en F-01) | RF-017 |
 | 9 | `POST /auth/signup` | auth | No | **Nuevo** (hecho en F-02) | `supabase.auth.signUp` |
 | 10 | `GET /auth/username-availability?username=` | auth | No | **Nuevo** (hecho en F-02) | RPC directa |
-| 11 | `POST /auth/login` | auth | No | **Nuevo** | `signInWithPassword` |
-| 12 | `POST /auth/oauth/google` | auth | No | **Nuevo** | `signInWithIdToken` |
-| 13 | `POST /auth/oauth/apple` | auth | No | **Nuevo** | `signInWithIdToken` |
-| 14 | `POST /auth/refresh` | auth | Refresh token | **Nuevo** | Refresh del SDK |
-| 15 | `POST /auth/logout` | auth | Sí | **Nuevo** | `signOut` |
+| 11 | `POST /auth/login` | auth | No | **Nuevo** (hecho en F-03) | `signInWithPassword` |
+| 12 | `POST /auth/oauth/google` | auth | No | **Nuevo** (hecho en F-03) | `signInWithIdToken` |
+| 13 | `POST /auth/oauth/apple` | auth | No | **Nuevo** (hecho en F-03) | `signInWithIdToken` |
+| 14 | `POST /auth/refresh` | auth | Refresh token | **Nuevo** (hecho en F-03) | Refresh del SDK |
+| 15 | `POST /auth/logout` | auth | Sí | **Nuevo** (hecho en F-03) | `signOut` |
 | 16 | `POST /auth/password/forgot` | auth | No | **Nuevo** (hecho en F-04) | `resetPasswordForEmail` |
 | 17 | `POST /auth/password/reset` | auth | No | **Nuevo** (hecho en F-04) | `verifyOtp` + `updateUser` |
 | 18 | `GET /users/me/profile` | account | Sí | **Nuevo** (hecho en F-05) | `select` directo a `profiles` |
