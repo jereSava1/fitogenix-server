@@ -80,7 +80,7 @@ Cada lookup deja una línea de log:
 
 ## Base de datos
 
-`supabase/migrations/legacy/` tiene las migraciones históricas `001` a `015`, que se aplicaron a mano en el SQL Editor y **no reproducen** la base real (hay objetos creados a mano). La baseline con la CLI de Supabase (`supabase/migrations/<timestamp>_baseline.sql`) es el ítem C-05 del plan. Las consultas y migraciones las corre el responsable del proyecto (D-58); los scripts entregados quedan en [`docs/sql/`](docs/sql/).
+`supabase/migrations/legacy/` tiene las migraciones históricas `001` a `015`, que se aplicaron a mano en el SQL Editor y **no reproducen** la base real (hay objetos creados a mano). La base de verdad es `supabase/migrations/`: la baseline `20260929000000_baseline.sql` (el schema de producción, C-05) y, después, cada migración nueva, que se aplica con `supabase db push` siguiendo el checklist del [ADR-0009](docs/adr/0009-migraciones.md). Nunca se pega SQL en el editor. Las consultas y migraciones las corre el responsable del proyecto (D-58); los scripts entregados quedan en [`docs/sql/`](docs/sql/).
 
 ## ETL
 
