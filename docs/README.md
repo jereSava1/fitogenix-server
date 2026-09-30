@@ -8,7 +8,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-84) |
+| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-85) |
 | Probar la app a mano y ver lo que se encontró | [`pruebas-manuales.md`](pruebas-manuales.md) |
 | Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
 | Saber qué tiene que hacer el sistema | [`01-requerimientos.md`](01-requerimientos.md) |

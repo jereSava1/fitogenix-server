@@ -389,7 +389,7 @@ type Nutrition = {           // por 100 g/ml; cada valor puede faltar en el orig
 type SavedItem   = ProductSummary & { savedAt: IsoDateTime };
 type HistoryItem = ProductSummary & { scannedAt: IsoDateTime };
 
-type Session = { accessToken: string; refreshToken: string; expiresAt: number; user: { id: Uuid; email: string } };
+type Session = { accessToken: string; refreshToken: string; expiresAt: number; user: { id: Uuid; email: string | null } }; // email null: Apple (D-85)
 type Profile = { firstName: string | null; lastName: string | null; username: string | null; phone: string | null };
 
 type OnboardingAnswers = {   // claves ESTABLES (hoy diets y allergies usan el texto de la etiqueta)
@@ -466,6 +466,8 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 | 17 | `POST /auth/password/reset` | No | `{ email, code (6 dígitos), newPassword (8..72) }` | `204` | `400`, `401 INVALID_CODE`, `429`, `503` |
 
 Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `newPassword`, `refreshToken`, `idToken`, `code`).
+
+**F-03 (2026-09-30, contrato `0.12.0`, D-85):** 11 a 15 hechos. `Session.user.email` puede ser `null`; `/oauth/apple` acepta además `firstName` y `lastName` opcionales (Apple solo los da la primera vez) y `nonce` es el original sin hashear; login acepta contraseñas de 1 a 72; `logout` cierra solo la sesión de ese dispositivo y cerrarla de nuevo también da `204`. El primer login con Google o Apple crea el perfil. Límites: 10 por minuto por IP en cada ruta y 5 contraseñas fallidas por email cada 15 minutos. El server manda la IP del usuario a Supabase en `Sb-Forwarded-For` (D-30).
 
 **F-02 (2026-09-30, contrato `0.11.0`, D-84):** 9 y 10 hechos como dice la tabla; `400` también si Supabase rechaza la contraseña o el email; `429` con `Retry-After` si Supabase limita los mails. Límite: 10 por minuto por IP en cada ruta. Un email registrado sin confirmar responde `201` (Supabase reenvía el mail) sin tocar su perfil.
 
@@ -550,7 +552,7 @@ Hoy: `signUp` manda nombre, apellido, username y **teléfono** en `options.data`
 3. En el primer login con Google o Apple, si no hay fila de `profiles`, el server la crea (con lo que traiga el proveedor).
 4. El trigger `handle_new_user` queda sin uso y se elimina.
 
-**F-02 (2026-09-30, D-84):** 1, 2 y 4 hechos en el server, con dos ajustes: el username se chequea antes de crear el usuario (y se deshace igual si otro lo gana en el medio), y el trigger se elimina después de F-08 (B-02); hasta entonces el server completa la fila vacía que crea. El 3 va con F-03.
+**F-02 (2026-09-30, D-84):** 1, 2 y 4 hechos en el server, con dos ajustes: el username se chequea antes de crear el usuario (y se deshace igual si otro lo gana en el medio), y el trigger se elimina después de F-08 (B-02); hasta entonces el server completa la fila vacía que crea. El 3 se hizo en F-03 (D-85).
 
 Así el teléfono se guarda (D-17) sin viajar en el token, y la creación del perfil queda en código testeable en vez de en un trigger de la base.
 

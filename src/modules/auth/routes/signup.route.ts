@@ -4,7 +4,7 @@
 import { Type } from '@sinclair/typebox';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
-import { apiError, RATE_LIMITED_MESSAGE } from '../../../platform/http/errors';
+import { apiError } from '../../../platform/http/errors';
 import {
   addSharedSchemas,
   ApiErrorSchema,
@@ -14,7 +14,7 @@ import {
   Username,
 } from '../../../platform/http/schemas';
 import type { SignUp } from '../application/signUp';
-import { AUTH_RATE_LIMIT, Email, Password } from './fields';
+import { AUTH_RATE_LIMIT, Email, Password, sendRateLimited, SUPABASE_RETRY_AFTER_S } from './fields';
 
 const REJECTED = {
   email_taken: [409, apiError('EMAIL_TAKEN', 'Ya hay una cuenta con ese email.')],
@@ -53,12 +53,10 @@ export const signUpRoutes = (deps: { signUp: SignUp }): FastifyPluginAsync =>
       },
     }, async (request, reply) => {
       const { email, password, ...profile } = request.body;
-      const result = await deps.signUp.signUp(email, password, profile);
+      const result = await deps.signUp.signUp(email, password, profile, request.ip);
 
       if (result === 'confirmation_required') return reply.status(201).send({ status: result });
-      if (result === 'rate_limited') {
-        return reply.status(429).header('retry-after', '60').send(apiError('RATE_LIMITED', RATE_LIMITED_MESSAGE));
-      }
+      if (result === 'rate_limited') return sendRateLimited(reply, SUPABASE_RETRY_AFTER_S);
       const [status, body] = REJECTED[result];
       return reply.status(status).send(body);
     });

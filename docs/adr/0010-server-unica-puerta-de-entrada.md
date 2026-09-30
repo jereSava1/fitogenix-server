@@ -78,7 +78,7 @@ Configuración del dashboard (Authentication → Rate Limits), **confirmada** el
 **Decisión D-30: reenviar la IP real del usuario a Supabase Auth.** El dashboard tiene la opción *"IP Address Forwarding: Clients can forward end-user IP addresses to Auth for rate limiting when using secret API keys"*. El server usa una secret key (`sb_secret_…`), así que:
 
 1. Se activa **Enable IP address forwarding** en el dashboard **antes** de migrar el login al server (acción manual, en el PR de `auth`).
-2. El server manda la IP del usuario en cada llamada a Supabase Auth, con el header que indique la documentación de Supabase para esta opción (**a confirmar** al implementar).
+2. El server manda la IP del usuario en cada llamada a Supabase Auth, en el header `Sb-Forwarded-For` (**hecho en F-03**: `supabaseAuthClient(ip)`). Supabase lo respeta solo con la opción activada y con una secret key.
 3. **La IP tiene que ser confiable:** Fastify con `trustProxy` configurado para el proxy del proveedor (Render hoy), así `request.ip` es la IP real y no un `X-Forwarded-For` inventado por el cliente. Sin esto, un atacante podría rotar IPs falsas y saltearse los límites de Supabase.
 4. Test de contrato: la llamada a Supabase Auth lleva la IP de `request.ip` y nunca un valor que venga crudo del cliente.
 

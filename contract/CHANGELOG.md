@@ -4,6 +4,18 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.12.0 — 2026-09-30 · F-03
+
+**Aditivo.** Sesión por el server con email, Google y Apple (RF-022/023/024/027, ADR-0010, D-85). Native la usa en F-08.
+
+- **Nuevo componente `Session`**: `{ accessToken, refreshToken, expiresAt, user: { id, email } }`. `expiresAt` en segundos desde epoch; `user.email` puede ser `null` (Apple).
+- **Nuevo `POST /v1/auth/login`** `{ email, password }` → `200 Session`. `401 INVALID_CREDENTIALS`, `403 EMAIL_NOT_CONFIRMED`, `429` con `Retry-After` (también tras 5 contraseñas fallidas para ese email en 15 minutos), `400`, `503`.
+- **Nuevo `POST /v1/auth/oauth/google`** `{ idToken }` y **`POST /v1/auth/oauth/apple`** `{ idToken, nonce?, firstName?, lastName? }` → `200 Session`, con los mismos errores que el login. `nonce` es el original (sin hashear); `firstName` y `lastName` son los que da Apple la primera vez. El primer inicio de sesión crea la cuenta y el perfil.
+- **Nuevo `POST /v1/auth/refresh`** `{ refreshToken }` → `200 Session`; `401 INVALID_REFRESH_TOKEN`, `429`, `400`, `503`.
+- **Nuevo `POST /v1/auth/logout`** (con sesión) → `204`; cierra la sesión de ese dispositivo. Cerrarla de nuevo también da `204`.
+- **Nuevos códigos de error `INVALID_CREDENTIALS`, `EMAIL_NOT_CONFIRMED` e `INVALID_REFRESH_TOKEN`.**
+- Límite: 10 pedidos por minuto por IP en cada ruta.
+
 ## 0.11.0 — 2026-09-30 · F-02
 
 **Aditivo.** Registro por el server (RF-020, RF-021, ADR-0010, D-46, D-84). Native lo usa en F-08.

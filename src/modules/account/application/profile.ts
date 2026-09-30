@@ -3,6 +3,7 @@ import type {
   NewProfile,
   Profile,
   ProfileChanges,
+  ProfileNames,
   ProfileRepository,
   UpdateProfileResult,
 } from './ports';
@@ -24,6 +25,10 @@ export function makeProfile(repo: ProfileRepository) {
 
     createProfile(userId: string, profile: NewProfile): Promise<CreateProfileResult> {
       return repo.create(userId, profile);
+    },
+
+    ensureProfile(userId: string, names: ProfileNames): Promise<void> {
+      return repo.ensure(userId, names);
     },
   };
 }
