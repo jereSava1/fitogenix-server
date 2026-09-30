@@ -277,6 +277,7 @@ Orden (de lo más fácil a lo más difícil): B-02 → B-04 (pasos 1 y 2) → B-
 | ID | Estado |
 |---|---|
 | B-02 | ✅ Hecho en `chore/b02-sin-trigger-perfil`. Migración `20260930202339_sin_trigger_de_perfil` (`DROP TRIGGER on_auth_user_created` + `DROP FUNCTION handle_new_user`), **pendiente de `db push` del responsable**. El server no cambia: `profiles.create` y `ensure` ya hacían `upsert` y completan una fila vacía (las que creó el trigger en producción siguen andando). Verificado en el Supabase local con las 7 migraciones: sin trigger ni función; `POST /v1/auth/signup` crea **una** fila con nombre, apellido, username y teléfono; repetir el registro → `409 USERNAME_TAKEN` sin fila nueva; login de un usuario sin perfil (creado por el admin, como un OAuth nuevo) → crea la fila. Tests: 1009, sin cambios |
+| B-04 | Pasos 1 y 2 listos en `chore/b04-tablas-validacion`, **pendientes del responsable** ([`sql/b04/`](sql/b04/README.md)): backup con `supabase db dump --data-only` (solo las tres tablas) y conteo contra la base; foto de `pg_stat_user_tables`; migración `20260930202728_tablas_de_validacion_sin_acceso` (`REVOKE ALL` a `anon`, `authenticated`, `service_role` y `PUBLIC` sobre las tablas y sus dos secuencias). Probado en local: `service_role` → `42501`, `products` sigue en 200, solo `postgres` conserva permisos. Paso 3 (`DROP`) no antes del 2026-10-14 |
 
 | ID | Prio | Acción | Repo | Archivos / recurso | RF / ADR / D | Riesgo | Tests antes → después | PR |
 |---|---|---|---|---|---|---|---|---|
