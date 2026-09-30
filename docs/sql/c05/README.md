@@ -45,7 +45,7 @@ Al final, `migration list` tiene que mostrar `20260929000000` y `20260930115256`
 
 ## Después del paso 7 (2026-09-30)
 
-El paso 7 quedó hecho: `migration list` muestra `20260929000000` y `20260930115256`, locales y remotas. Faltan dos migraciones chicas, probadas en una base local vacía, que las aplica el responsable:
+El paso 7 quedó hecho: `migration list` muestra `20260929000000` y `20260930115256`, locales y remotas. Después se sumaron dos migraciones chicas, probadas en una base local vacía y **aplicadas por el responsable el 2026-09-30** con `supabase db push`:
 
 | Migración | Qué hace |
 |---|---|
@@ -65,3 +65,5 @@ select grantee, string_agg(privilege_type, ', ' order by privilege_type) from in
 ```
 
 `anon` y `authenticated` tienen que tener solo `INSERT`.
+
+**Resultado (2026-09-30):** `migration list --linked` muestra las cuatro migraciones (`20260929000000`, `20260930115256`, `20260930124852`, `20260930124853`) locales y remotas; en la `waitlist`, `anon` y `authenticated` quedaron solo con `INSERT` (`postgres` y `service_role` con todo). C-05 cerrado.
