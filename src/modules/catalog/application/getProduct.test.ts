@@ -8,7 +8,6 @@ const fila = (overrides: Partial<CachedProductRow> = {}): CachedProductRow => ({
   dataSource: 'off',
   productId: 'uuid-yogur',
   barcode: '7790000000017',
-  nameKey: null,
   ...overrides,
 });
 
@@ -34,13 +33,13 @@ describe('makeGetProduct (K-04)', () => {
     await expect(makeGetProduct({ reader: lector(null) })('uuid-x')).resolves.toBeNull();
   });
 
-  it('sin nombre: el barcode de la fila; sin barcode, la búsqueda que la originó', async () => {
+  it('sin nombre: el barcode de la fila; sin barcode, el id', async () => {
     const sinNombre = { raw: { ingredients_text: 'agua' } };
     const conBarcode = await makeGetProduct({ reader: lector(fila(sinNombre)) })('uuid-yogur');
     expect(conBarcode?.name).toBe('7790000000017');
 
-    const soloNombre = fila({ ...sinNombre, barcode: null, nameKey: 'agua mineral' });
+    const soloNombre = fila({ ...sinNombre, barcode: null });
     const sinBarcode = await makeGetProduct({ reader: lector(soloNombre) })('uuid-yogur');
-    expect(sinBarcode?.name).toBe('agua mineral');
+    expect(sinBarcode?.name).toBe('uuid-yogur');
   });
 });

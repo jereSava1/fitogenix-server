@@ -47,14 +47,12 @@ beforeEach(() => {
 const galletitasRow = {
   id: 'uuid-galletitas',
   barcode: '7790001',
-  name_key: null,
   product_name: 'Galletitas',
   brand: 'Marca',
   category: 'Snacks',
   image_url: 'http://img',
   ingredients_text: 'harina, azucar',
   nutriments: { sugars_100g: 20 },
-  nova_group: 4,
   additives_tags: ['en:e330'],
   data_source: 'off',
   ai_enriched: false,
@@ -63,7 +61,6 @@ const galletitasRow = {
 const alfajorRow = {
   id: 'uuid-alfajor',
   barcode: null,
-  name_key: 'alfajor artesanal',
   product_name: 'Alfajor Artesanal',
   brand: '',
   ingredients_text: 'dulce de leche, harina',
@@ -77,7 +74,6 @@ const alfajorRow = {
 const cervezaRow = {
   id: 'uuid-cerveza',
   barcode: '7790003',
-  name_key: null,
   product_name: 'Cerveza rubia',
   brand: 'Marca',
   category: 'Bebidas alcohólicas, Cervezas',

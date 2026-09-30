@@ -6,7 +6,6 @@ export type RawProduct = {
   image_front_url?: string;
   ingredients_text?: string;
   nutriments?: Record<string, unknown>;
-  nova_group?: number;
   additives_tags?: string[];
   labels_tags?: string[];
   categories?: string;

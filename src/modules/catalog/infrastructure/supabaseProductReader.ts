@@ -6,9 +6,9 @@ import type { CachedProductRow, ProductReader } from '../application/ports';
 import { normalizeQuery } from '../domain/query';
 import { rowToCachedRaw } from './productRow';
 
-// Lectura común: una fila por columna única (id, barcode o name_key).
+// Lectura común: una fila por columna única.
 async function getCachedBy(
-  column: 'id' | 'barcode' | 'name_key',
+  column: 'id' | 'barcode',
   value: string,
 ): Promise<CachedProductRow | null> {
   const { data, error } = await runQuery('products select', () =>

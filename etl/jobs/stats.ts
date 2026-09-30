@@ -3,6 +3,7 @@
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 import { fetchStagingStatusRows } from '../lib/staging';
+import { ENGINE_VERSION, scoreProduct } from '../../src/modules/scoring';
 
 async function main() {
   const client = admin();
@@ -29,7 +30,7 @@ async function main() {
 
   const { data: sample, error: sampleErr } = await client
     .from('products')
-    .select('barcode, product_name, brand, score, data_source, engine_version')
+    .select('barcode, product_name, brand, category, ingredients_text, nutriments, additives_tags, data_source')
     .not('barcode', 'is', null)
     .order('updated_at', { ascending: false })
     .limit(5);
@@ -37,11 +38,15 @@ async function main() {
   if (sampleErr) {
     console.error('Error leyendo muestra de products:', sampleErr.message);
   } else if (sample) {
-    console.log('\n=== últimos 5 productos escritos (más recientes primero) ===');
+    console.log(`\n=== últimos 5 productos escritos (más recientes primero; puntaje con ${ENGINE_VERSION}) ===`);
     for (const p of sample as Record<string, unknown>[]) {
-      console.log(
-        `  ${p.barcode} — ${p.product_name} (${p.brand}) — score=${p.score} fuente=${p.data_source} engine=${p.engine_version}`,
-      );
+      const { score } = scoreProduct({
+        ingredients_text: (p.ingredients_text as string | null) ?? undefined,
+        nutriments: (p.nutriments as Record<string, unknown> | null) ?? {},
+        additives_tags: (p.additives_tags as string[] | null) ?? [],
+        categories: (p.category as string | null) ?? undefined,
+      });
+      console.log(`  ${p.barcode} — ${p.product_name} (${p.brand}) — score=${score} fuente=${p.data_source}`);
     }
   }
 }

@@ -10,13 +10,10 @@ export type CachedRaw = {
   dataSource: string;
 };
 
-// Fila de `products` reconstruida con su identidad y atributos de búsqueda.
-// `productId` = products.id (uuid, la identidad — migración 006); `barcode` y
-// `nameKey` son los atributos de búsqueda (ambos nullable).
+// Fila de `products` reconstruida con su identidad (`products.id`, uuid) y su barcode.
 export type CachedProductRow = CachedRaw & {
   productId: string;
   barcode: string | null;
-  nameKey: string | null;
 };
 
 /** Lectura de `products`. Un error de Supabase hoy es `null` (miss); cambia en H-01. */

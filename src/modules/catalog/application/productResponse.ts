@@ -58,11 +58,9 @@ export interface ProductIdentity {
   fallbackName: string;
 }
 
-/** El nombre de reemplazo de una fila de `products` (listados y detalle): su
- *  barcode, o la búsqueda que la originó. Antes los listados mostraban el
- *  uuid. */
-export function rowFallbackName(row: Pick<CachedProductRow, 'barcode' | 'nameKey' | 'productId'>): string {
-  return row.barcode ?? row.nameKey ?? row.productId;
+/** El nombre de reemplazo de una fila de `products` (listados y detalle). */
+export function rowFallbackName(row: Pick<CachedProductRow, 'barcode' | 'productId'>): string {
+  return row.barcode ?? row.productId;
 }
 
 function summaryOf(raw: RawProduct, identity: ProductIdentity, score: number | null): ProductSummary {

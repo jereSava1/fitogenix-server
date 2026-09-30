@@ -11,14 +11,14 @@ describe('productos que SÍ llevan sellos', () => {
   it('una gaseosa cola azucarada lleva exceso en azúcares Y en calorías', () => {
     expect(sellosDe({
       ingredients_text: 'agua, azúcar, colorante caramelo, acidulante',
-      categories: 'Bebidas, Gaseosas', nova_group: 4,
+      categories: 'Bebidas, Gaseosas',
       nutriments: { 'energy-kcal_100g': 42, 'sugars_100g': 10.6, 'sodium_100g': 0.01 },
     })).toEqual(['EXCESO EN AZÚCARES', 'EXCESO EN CALORÍAS']);
   });
 
   it('una galletita dulce lleva varios', () => {
     const s = sellosDe({
-      ingredients_text: 'harina de trigo, azúcar, aceite de girasol, sal', nova_group: 4,
+      ingredients_text: 'harina de trigo, azúcar, aceite de girasol, sal',
       nutriments: { 'energy-kcal_100g': 470, 'sugars_100g': 30, 'saturated-fat_100g': 8, 'fat_100g': 20, 'sodium_100g': 0.4 },
     });
     expect(s).toContain('EXCESO EN AZÚCARES');
@@ -28,7 +28,7 @@ describe('productos que SÍ llevan sellos', () => {
 
   it('un snack salado lleva sodio y calorías', () => {
     const s = sellosDe({
-      ingredients_text: 'papa, aceite de girasol, sal', nova_group: 4,
+      ingredients_text: 'papa, aceite de girasol, sal',
       nutriments: { 'energy-kcal_100g': 536, 'saturated-fat_100g': 4, 'fat_100g': 34, 'sodium_100g': 0.55 },
     });
     expect(s).toContain('EXCESO EN SODIO');
@@ -42,25 +42,25 @@ describe('exención de la ley: sin nutrientes críticos añadidos', () => {
   // leche sola no matchea ninguno. En la góndola no lleva ninguno.
   it('la leche entera no lleva sellos, aunque supere los umbrales de grasa', () => {
     expect(sellosDe({
-      ingredients_text: 'leche entera', categories: 'Lácteos', nova_group: 1,
+      ingredients_text: 'leche entera', categories: 'Lácteos',
       nutriments: { 'energy-kcal_100g': 61, 'sugars_100g': 4.7, 'saturated-fat_100g': 1.9, 'fat_100g': 3.2 },
     })).toEqual([]);
   });
 
   it('la carne y el queso simple tampoco: su grasa es inherente', () => {
     expect(sellosDe({
-      ingredients_text: 'carne vacuna', categories: 'Carnes', nova_group: 1,
+      ingredients_text: 'carne vacuna', categories: 'Carnes',
       nutriments: { 'energy-kcal_100g': 250, 'saturated-fat_100g': 7, 'fat_100g': 18 },
     })).toEqual([]);
     expect(sellosDe({
-      ingredients_text: 'leche entera, sal, cuajo, fermentos', categories: 'Quesos', nova_group: 3,
+      ingredients_text: 'leche entera, sal, cuajo, fermentos', categories: 'Quesos',
       nutriments: { 'energy-kcal_100g': 300, 'saturated-fat_100g': 16, 'fat_100g': 25, 'sodium_100g': 0.6 },
     })).toEqual([]);
   });
 
   it('el aceite de oliva no lleva sellos pese a ser 100% grasa', () => {
     expect(sellosDe({
-      ingredients_text: 'aceite de oliva extra virgen', nova_group: 2,
+      ingredients_text: 'aceite de oliva extra virgen',
       nutriments: { 'energy-kcal_100g': 884, 'fat_100g': 100, 'saturated-fat_100g': 14 },
     })).toEqual([]);
   });

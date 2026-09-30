@@ -8,7 +8,7 @@ import { buildCachePayload } from './supabaseProductWriter';
 
 /** Cómo arman su fila los jobs del ETL (`runMerge`, `enrichCencosud`). */
 function etlRowFor(raw: RawProduct, barcode: string): Record<string, unknown> {
-  return buildCachePayload(raw, { barcode });
+  return buildCachePayload(raw, barcode);
 }
 
 const muestra = JSON.parse(
@@ -26,15 +26,13 @@ function rawDe(row: Record<string, unknown>, i: number): RawProduct {
     additives_tags: row.additives_tags as string[] | undefined,
     brands: i % 3 === 0 ? undefined : `Marca ${i}`,
     image_url: i % 4 === 0 ? undefined : `https://img.test/${i}.jpg`,
-    nova_group: i % 5 === 0 ? 4 : undefined,
     _aiSource: i % 7 === 0,
     _aiEnriched: i % 6 === 0,
   };
 }
 
 const DERIVADAS = [
-  'barcode', 'product_name', 'brand', 'category', 'image_url', 'score', 'score_label',
-  'sello', 'data_source', 'ai_enriched', 'engine_version',
+  'barcode', 'product_name', 'brand', 'category', 'image_url', 'data_source', 'ai_enriched',
 ] as const;
 
 describe('fila que escribe el ETL en products (caracterización K-04)', () => {
@@ -56,12 +54,10 @@ describe('fila que escribe el ETL en products (caracterización K-04)', () => {
     for (const { raw, fila } of filas) {
       expect(fila.ingredients_text).toBe(raw.ingredients_text ?? null);
       expect(fila.nutriments).toEqual(raw.nutriments ?? null);
-      expect(fila.nova_group).toBe(raw.nova_group ?? null);
       expect(fila.additives_tags).toEqual(raw.additives_tags ?? null);
       expect(typeof fila.updated_at).toBe('string');
-      expect('name_key' in fila).toBe(false);
       expect(Object.keys(fila).sort()).toEqual(
-        [...DERIVADAS, 'ingredients_text', 'nutriments', 'nova_group', 'additives_tags', 'updated_at'].sort(),
+        [...DERIVADAS, 'ingredients_text', 'nutriments', 'additives_tags', 'updated_at'].sort(),
       );
     }
   });

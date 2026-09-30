@@ -24,7 +24,6 @@ const rawProduct: RawProduct = {
   brands: 'Marca',
   ingredients_text: 'harina, azucar',
   nutriments: { sugars_100g: 20 },
-  nova_group: 4,
 };
 
 // Hit de catálogo con la forma nueva (identidad + atributos de búsqueda).
@@ -33,7 +32,6 @@ const cachedHit = (overrides: Partial<CachedProductRow> = {}): CachedProductRow 
   dataSource: 'off',
   productId: 'uuid-galletitas',
   barcode: '7790895000123',
-  nameKey: null,
   ...overrides,
 });
 
@@ -212,7 +210,6 @@ describe('lookupProduct — búsqueda por texto contra el catálogo', () => {
         dataSource: 'ai',
         productId: 'uuid-name',
         barcode: null,
-        nameKey: 'galletitas marca',
       }),
     );
 
@@ -266,7 +263,7 @@ describe('lookupProduct — singleflight', () => {
     let calls = 0;
     vi.mocked(cacheService.findCachedProductByName).mockImplementation(async () => {
       calls += 1;
-      return cachedHit({ barcode: null, nameKey: 'galletitas marca' });
+      return cachedHit({ barcode: null });
     });
 
     const [a, b] = await Promise.all([

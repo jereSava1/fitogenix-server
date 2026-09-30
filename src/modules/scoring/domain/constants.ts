@@ -3,7 +3,7 @@
 
 import type { DeductionRates, Disclaimer, Impact, TierDefinition } from './types';
 
-/** Versión del motor. Se guarda en `products.engine_version` (la columna se va en B-01). */
+/** Versión del motor (va en la explicación del puntaje). */
 export const ENGINE_VERSION = 'ftg-rubric-v2.3';
 
 /* ── §2 Paso 1 — Punto de partida ─────────────────────────────────────── */
