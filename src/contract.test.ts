@@ -14,6 +14,7 @@ import { simularSupabaseAuth, SUPABASE_URL, type SupabaseAuthSimulado } from './
 const db = vi.hoisted(() => ({
   results: {} as Record<string, unknown>,
   upserts: [] as { table: string; row: unknown }[],
+  inserts: [] as { table: string; row: unknown }[],
   getUser: undefined as unknown as (token: string) => Promise<unknown>,
   deleteUser: undefined as unknown as (id: string) => Promise<unknown>,
   verifyOtp: undefined as unknown as () => Promise<unknown>,
@@ -28,6 +29,10 @@ vi.mock('@supabase/supabase-js', () => {
     }
     b.upsert = (row: unknown) => {
       db.upserts.push({ table, row });
+      return b;
+    };
+    b.insert = (row: unknown) => {
+      db.inserts.push({ table, row });
       return b;
     };
     b.maybeSingle = result;
@@ -140,6 +145,7 @@ beforeEach(() => {
     profiles: { data: PERFIL_FILA, error: null },
   };
   db.upserts = [];
+  db.inserts = [];
   auth.jwks('ok');
   db.getUser = async (token) =>
     token === tokenOk
@@ -376,6 +382,39 @@ describe('contrato — cada respuesta valida contra el OpenAPI (K-01)', () => {
     expect(authCaido.statusCode).toBe(503);
     expectMatchesContract('/v1/users/me', 'delete', 503, authCaido.json());
   });
+  it('POST /feedback y /products/{productId}/reports → 202, 400, 404 y 503, con o sin sesión (F-07)', async () => {
+    const anonimo = await call('POST', '/v1/feedback', { payload: { message: 'Hola', platform: 'ios' } });
+    expect(anonimo.statusCode).toBe(202);
+    expectMatchesContract('/v1/feedback', 'post', 202, anonimo.json());
+    const conSesion = await call('POST', '/v1/feedback', { auth: true, payload: { message: ' Muy buena ' } });
+    expect(conSesion.statusCode).toBe(202);
+    expect(db.inserts).toEqual([
+      { table: 'feedback', row: { user_id: null, message: 'Hola', app_version: null, platform: 'ios' } },
+      { table: 'feedback', row: { user_id: USER, message: 'Muy buena', app_version: null, platform: null } },
+    ]);
+    const invalido = await call('POST', '/v1/feedback', { payload: { message: '' } });
+    expectMatchesContract('/v1/feedback', 'post', 400, invalido.json());
+    db.results.feedback = { data: null, error: { message: 'TypeError: fetch failed' } };
+    const caido = await call('POST', '/v1/feedback', { payload: { message: 'Hola' } });
+    expect(caido.statusCode).toBe(503);
+    expectMatchesContract('/v1/feedback', 'post', 503, caido.json());
+
+    const path = '/v1/products/{productId}/reports';
+    const url = `/v1/products/${PRODUCT_ID}/reports`;
+    const ok = await call('POST', url, { auth: true, payload: { type: 'score' } });
+    expect(ok.statusCode).toBe(202);
+    expectMatchesContract(path, 'post', 202, ok.json());
+    expect(db.inserts.at(-1)).toEqual({ table: 'product_reports', row: { user_id: USER, product_id: PRODUCT_ID, type: 'score', message: null } });
+    expectMatchesContract(path, 'post', 400, (await call('POST', url, { payload: { type: 'spam' } })).json());
+    db.results.product_reports = { data: null, error: { code: '23503', message: 'violates foreign key constraint' } };
+    const noEsta = await call('POST', url, { payload: { type: 'info' } });
+    expect(noEsta.statusCode).toBe(404);
+    expectMatchesContract(path, 'post', 404, noEsta.json());
+    db.results.product_reports = { data: null, error: { message: 'TypeError: fetch failed' } };
+    const reporteCaido = await call('POST', url, { payload: { type: 'info' } });
+    expect(reporteCaido.statusCode).toBe(503);
+    expectMatchesContract(path, 'post', 503, reporteCaido.json());
+  });
 });
 
 describe('contrato — /v1 y errores uniformes (K-03)', () => {
@@ -576,7 +615,7 @@ describe('contrato — caídas de la base (H-01)', () => {
   });
 
   it('las rutas que leen o escriben la base declaran 503', () => {
-    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}', '/v1/users/me/profile'];
+    const conBase = ['/v1/products/lookup', '/v1/products/{id}', '/v1/users/me/saved', '/v1/users/me/saved/{productId}', '/v1/users/me/history', '/v1/users/me/history/{productId}', '/v1/users/me/profile', '/v1/feedback', '/v1/products/{productId}/reports'];
     for (const ruta of conBase) {
       for (const op of Object.values(contract.paths[ruta]!)) {
         expect(Object.keys(op.responses), ruta).toContain('503');
