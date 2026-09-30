@@ -7,6 +7,8 @@ function armar(resultado: Awaited<ReturnType<AuthGateway['resetPassword']>> = 'o
   const gateway = {
     sendPasswordResetCode: vi.fn<AuthGateway['sendPasswordResetCode']>(async () => undefined),
     resetPassword: vi.fn<AuthGateway['resetPassword']>(async () => resultado),
+    signUp: vi.fn<AuthGateway['signUp']>(),
+    deleteUser: vi.fn<AuthGateway['deleteUser']>(),
   };
   const attempts = failedAttempts({ max: 2, windowMs: 60_000 });
   return { gateway, attempts, reset: makePasswordReset({ gateway, attempts }) };

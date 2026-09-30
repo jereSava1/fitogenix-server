@@ -7,12 +7,16 @@ type AuthMock = {
   verifyOtp: ReturnType<typeof vi.fn>;
   updateUser: ReturnType<typeof vi.fn>;
   signOut: ReturnType<typeof vi.fn>;
+  signUp: ReturnType<typeof vi.fn>;
+  admin: { deleteUser: ReturnType<typeof vi.fn> };
 };
 const clientes = vi.hoisted(() => [] as { options: { auth?: { persistSession?: boolean } }; auth: AuthMock }[]);
 const respuestas = vi.hoisted(() => ({
   reset: { data: {}, error: null } as unknown,
   verify: { data: { user: { id: 'u1' }, session: {} }, error: null } as unknown,
   update: { data: { user: { id: 'u1' } }, error: null } as unknown,
+  signUp: { data: { user: { id: 'u-nuevo' }, session: null }, error: null } as unknown,
+  deleteUser: { data: {}, error: null } as unknown,
 }));
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -22,6 +26,8 @@ vi.mock('@supabase/supabase-js', () => ({
       verifyOtp: vi.fn(async () => respuestas.verify),
       updateUser: vi.fn(async () => respuestas.update),
       signOut: vi.fn(async () => ({ error: null })),
+      signUp: vi.fn(async () => respuestas.signUp),
+      admin: { deleteUser: vi.fn(async () => respuestas.deleteUser) },
     };
     clientes.push({ options, auth });
     return { auth };
@@ -42,6 +48,8 @@ beforeEach(() => {
   respuestas.reset = { data: {}, error: null };
   respuestas.verify = { data: { user: { id: 'u1' }, session: {} }, error: null };
   respuestas.update = { data: { user: { id: 'u1' } }, error: null };
+  respuestas.signUp = { data: { user: { id: 'u-nuevo' }, session: null }, error: null };
+  respuestas.deleteUser = { data: {}, error: null };
 });
 
 describe('sendPasswordResetCode', () => {
@@ -122,5 +130,61 @@ describe('resetPassword', () => {
     await expect(gateway.resetPassword('ana@mail.com', '123456', 'nueva-clave')).rejects.toMatchObject({
       name: 'DependencyUnavailableError',
     });
+  });
+});
+
+describe('signUp', () => {
+  it('crea el usuario en un cliente descartable, solo con email y contraseña (D-46)', async () => {
+    await expect(gateway.signUp('ana@mail.com', 'clave-segura')).resolves.toEqual({ userId: 'u-nuevo' });
+    expect(clientes).toHaveLength(1);
+    expect(clientes[0]!.options.auth?.persistSession).toBe(false);
+    expect(clientes[0]!.auth.signUp).toHaveBeenCalledWith({ email: 'ana@mail.com', password: 'clave-segura' });
+    expect(clientes[0]!.auth.signOut).not.toHaveBeenCalled();
+  });
+
+  it('si Auth abre una sesión (sin confirmación de email), la revoca', async () => {
+    respuestas.signUp = { data: { user: { id: 'u-nuevo' }, session: {} }, error: null };
+    await gateway.signUp('ana@mail.com', 'clave-segura');
+    expect(clientes[0]!.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it.each([
+    ['email confirmado', 422, 'user_already_exists', 'email_taken'],
+    ['email de otra identidad', 422, 'email_exists', 'email_taken'],
+    ['contraseña débil', 422, 'weak_password', 'weak_password'],
+    ['límite de mails', 429, 'over_email_send_rate_limit', 'rate_limited'],
+    ['email inválido para Auth', 400, 'email_address_invalid', 'rejected'],
+    ['registro deshabilitado', 422, 'signup_disabled', 'rejected'],
+  ])('%s → %s', async (_caso, status, code, esperado) => {
+    respuestas.signUp = error(status, code);
+    await expect(gateway.signUp('ana@mail.com', 'clave-segura')).resolves.toBe(esperado);
+  });
+
+  it('Auth caído, red o respuesta sin usuario → DependencyUnavailableError', async () => {
+    respuestas.signUp = error(500);
+    await expect(gateway.signUp('ana@mail.com', 'clave-segura')).rejects.toMatchObject({ dependency: 'auth' });
+    respuestas.signUp = Promise.reject(new TypeError('fetch failed'));
+    await expect(gateway.signUp('ana@mail.com', 'clave-segura')).rejects.toMatchObject({ dependency: 'auth' });
+    respuestas.signUp = { data: { user: null, session: null }, error: null };
+    await expect(gateway.signUp('ana@mail.com', 'clave-segura')).rejects.toMatchObject({ dependency: 'auth' });
+  });
+});
+
+describe('deleteUser', () => {
+  const admin = () => clientes.find((c) => c.options.auth?.persistSession !== false)!.auth.admin;
+
+  it('borra con la Admin API', async () => {
+    await gateway.deleteUser('u-nuevo');
+    expect(admin().deleteUser).toHaveBeenCalledWith('u-nuevo');
+  });
+
+  it('404 (ya no existe) no es error', async () => {
+    respuestas.deleteUser = error(404, 'user_not_found');
+    await expect(gateway.deleteUser('u-nuevo')).resolves.toBeUndefined();
+  });
+
+  it('cualquier otro error → DependencyUnavailableError con el id', async () => {
+    respuestas.deleteUser = error(500);
+    await expect(gateway.deleteUser('u-nuevo')).rejects.toMatchObject({ dependency: 'auth', message: expect.stringContaining('u-nuevo') });
   });
 });

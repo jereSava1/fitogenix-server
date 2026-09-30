@@ -4,6 +4,15 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.11.0 — 2026-09-30 · F-02
+
+**Aditivo.** Registro por el server (RF-020, RF-021, ADR-0010, D-46, D-84). Native lo usa en F-08.
+
+- **Nuevo `POST /v1/auth/signup`** `{ email, password, firstName, lastName, username, phone }` → `201 { status: 'confirmation_required' }`. `password` de 8 a 72; nombre y apellido de 1 a 60 con al menos un carácter visible; `username` de 3 a 30 (`a-z`, `0-9`, `_`, `.`); `phone` en E.164. El teléfono se guarda en el perfil (D-17). `409 EMAIL_TAKEN` (código nuevo) si el email ya tiene cuenta confirmada; `409 USERNAME_TAKEN`; `400` si los datos no son válidos o Supabase rechaza la contraseña; `429` con `Retry-After`; `503`. Si el email se registró y no se confirmó, responde `201` (llega el mail de nuevo) y el perfil queda como estaba.
+- **Nuevo `GET /v1/auth/username-availability?username=`** → `200 { available: boolean }`, sin distinguir mayúsculas; `400`, `429`, `503`.
+- **Nuevo código de error `EMAIL_TAKEN`.**
+- Límite: 10 pedidos por minuto por IP en cada ruta.
+
 ## 0.10.0 — 2026-09-30 · F-06
 
 **Aditivo.** Respuestas del onboarding (RF-048, RNF-S10, D-83). Native las empieza a mandar en F-10 (hoy se pierden).

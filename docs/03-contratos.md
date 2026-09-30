@@ -467,6 +467,8 @@ Límites por ruta (**validados, D-48**; se ajustan con datos reales): general 60
 
 Todos los bodies de `/auth/*` se excluyen de los logs (redact de `password`, `newPassword`, `refreshToken`, `idToken`, `code`).
 
+**F-02 (2026-09-30, contrato `0.11.0`, D-84):** 9 y 10 hechos como dice la tabla; `400` también si Supabase rechaza la contraseña o el email; `429` con `Retry-After` si Supabase limita los mails. Límite: 10 por minuto por IP en cada ruta. Un email registrado sin confirmar responde `201` (Supabase reenvía el mail) sin tocar su perfil.
+
 **F-04 (2026-09-30, contrato `0.8.0`, D-79):** 16 y 17 hechos, con estos ajustes: `forgot` responde `202 { ok: true }` aunque el email no exista (y aunque Supabase aplique su propio límite de envíos), salvo que Supabase Auth no responda (`503`); `reset` responde `200 { ok: true }` (como el resto de las escrituras) y acepta códigos de 6 a 10 dígitos (el largo lo configura el proyecto de Supabase). Límites: 10 por minuto por IP en cada ruta y 5 códigos fallidos por email cada 15 minutos (`429` con `Retry-After`). El server no loguea los bodies (verificado con un test).
 
 ### B.3.4 `account`
@@ -547,6 +549,8 @@ Hoy: `signUp` manda nombre, apellido, username y **teléfono** en `options.data`
 2. El server inserta la fila de `profiles` (nombre, apellido, username, **teléfono**) con la secret key, en la misma operación. Si el insert falla por username duplicado, borra el usuario recién creado y responde `409 USERNAME_TAKEN`.
 3. En el primer login con Google o Apple, si no hay fila de `profiles`, el server la crea (con lo que traiga el proveedor).
 4. El trigger `handle_new_user` queda sin uso y se elimina.
+
+**F-02 (2026-09-30, D-84):** 1, 2 y 4 hechos en el server, con dos ajustes: el username se chequea antes de crear el usuario (y se deshace igual si otro lo gana en el medio), y el trigger se elimina después de F-08 (B-02); hasta entonces el server completa la fila vacía que crea. El 3 va con F-03.
 
 Así el teléfono se guarda (D-17) sin viajar en el token, y la creación del perfil queda en código testeable en vez de en un trigger de la base.
 

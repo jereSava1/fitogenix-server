@@ -21,12 +21,23 @@ export type ProfileChanges = Partial<Record<keyof Profile, string>>;
 
 export type UpdateProfileResult = Profile | 'not_found' | 'username_taken';
 
+/** El perfil que arma el registro: todos los campos. */
+export type NewProfile = Record<keyof Profile, string>;
+
+/** `exists`: el usuario ya tenía perfil (se registró antes y no confirmó): no se toca. */
+export type CreateProfileResult = 'created' | 'exists' | 'username_taken';
+
 export interface ProfileRepository {
   /** La fila del usuario; `null` si no tiene. Una falla de la base lanza (503). */
   get(userId: string): Promise<Profile | null>;
   /** Cambia solo los campos que vienen. `username_taken` si el username ya es de otro
    *  (índice único sobre `lower(username)`); `not_found` si no hay fila. */
   update(userId: string, changes: ProfileChanges): Promise<UpdateProfileResult>;
+  /** Sin distinguir mayúsculas. */
+  isUsernameTaken(username: string): Promise<boolean>;
+  /** Crea la fila del usuario recién registrado. Una fila sin username (la del trigger
+   *  `handle_new_user`, o un registro que no terminó) se completa. */
+  create(userId: string, profile: NewProfile): Promise<CreateProfileResult>;
 }
 
 // Onboarding (RF-048): claves estables; la app mapea sus etiquetas.

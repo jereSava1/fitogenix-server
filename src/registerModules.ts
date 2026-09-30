@@ -4,7 +4,7 @@
 import type { FastifyInstance } from 'fastify';
 import { registerCatalog } from './modules/catalog';
 import { recordScan, registerUserLibrary } from './modules/user-library';
-import { registerAccount } from './modules/account';
+import { profiles, registerAccount } from './modules/account';
 import { registerAuth } from './modules/auth';
 import { registerFeedback } from './modules/feedback';
 
@@ -19,7 +19,8 @@ export async function registerModules(app: FastifyInstance): Promise<void> {
       await registerCatalog(v1, {
         onScan: ({ userId, productId }) => recordScan(userId, productId),
       });
-      await registerAuth(v1);
+      // El registro crea el perfil con account (D-46); auth no conoce a account.
+      await registerAuth(v1, { profiles });
       await registerAccount(v1);
       await registerUserLibrary(v1);
       await registerFeedback(v1);
