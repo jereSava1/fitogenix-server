@@ -5,7 +5,7 @@
 | Parte | Qué | Cuándo |
 |---|---|---|
 | B-01a | Columnas `score`, `score_label`, `sello`, `engine_version`, `nova_group`, `name_key`, `manufacturer_info`; índices `products_engine_version_idx` y `products_barcode_unique_idx`; UNIQUE `products_name_key_key` | Ahora: migración `20260930204540_products_sin_columnas_sin_uso` |
-| B-01b | Las 5 filas `data_source = 'ai'` | Con el `DROP` de B-04 (desde el 2026-10-14): borrar un producto consulta las tablas de validación por sus FK y movería los contadores de B-04 |
+| B-01b | Las 5 filas `data_source = 'ai'` | Con el `DROP` de B-04 (desde el 2026-10-01): borrar un producto consulta las tablas de validación por sus FK y movería los contadores de B-04 |
 
 ## B-01a (lo corre el responsable, desde `~/fitogenix-server` con `git pull`)
 
