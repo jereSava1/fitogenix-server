@@ -14,6 +14,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Falla con avisos altos en lo que va a producción; el resto lo propone Dependabot.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm run lint:deps
       - run: npm run lint:unused
