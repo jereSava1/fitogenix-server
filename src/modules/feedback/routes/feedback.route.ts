@@ -6,18 +6,18 @@ import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyPluginAsync } from 'fastify';
 import { optionalAuth } from '../../../platform/http/auth';
 import { apiError } from '../../../platform/http/errors';
-import { addSharedSchemas, ApiErrorSchema, errorResponses, OkSchema, StringEnum } from '../../../platform/http/schemas';
+import { addSharedSchemas, ApiErrorSchema, errorResponses, OkSchema, SafeText, StringEnum } from '../../../platform/http/schemas';
 import type { FeedbackService } from '../application/feedback';
 import { PLATFORMS, REPORT_TYPES } from '../application/ports';
 
 /** D-48: 5 por minuto por IP en cada ruta (el general es 60). */
 export const FEEDBACK_RATE_LIMIT = { max: 5, timeWindow: '1 minute' };
 
-const Message = Type.String({ maxLength: 2000 });
+const Message = SafeText({ maxLength: 2000, multiline: true, allowBlank: true });
 
 const FeedbackBody = Type.Object(
   {
-    message: Type.String({ minLength: 1, maxLength: 2000, pattern: '\\S' }),
+    message: SafeText({ maxLength: 2000, multiline: true }),
     appVersion: Type.Optional(Type.String({ maxLength: 32, pattern: '^[0-9A-Za-z.+-]+$' })),
     platform: Type.Optional(StringEnum(PLATFORMS)),
   },

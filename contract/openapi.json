@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fitogenix API",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "description": "Contrato HTTP del server de Fitogenix, generado desde los schemas de las rutas (docs/adr/0011). Historial de cambios: contract/CHANGELOG.md."
   },
   "components": {
@@ -642,6 +642,7 @@
                   "query": {
                     "minLength": 1,
                     "maxLength": 200,
+                    "pattern": "^(?=[\\s\\S]*\\S)[^<>\\p{Cc}]*$",
                     "type": "string"
                   }
                 }
@@ -1012,13 +1013,13 @@
                   "firstName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   },
                   "lastName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   },
                   "username": {
@@ -1319,6 +1320,7 @@
                   "idToken": {
                     "minLength": 1,
                     "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   }
                 }
@@ -1420,23 +1422,25 @@
                   "idToken": {
                     "minLength": 1,
                     "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   },
                   "nonce": {
                     "minLength": 1,
                     "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   },
                   "firstName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   },
                   "lastName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   }
                 }
@@ -1538,6 +1542,7 @@
                   "refreshToken": {
                     "minLength": 1,
                     "maxLength": 512,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   }
                 }
@@ -1823,13 +1828,13 @@
                   "firstName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   },
                   "lastName": {
                     "minLength": 1,
                     "maxLength": 60,
-                    "pattern": "\\S",
+                    "pattern": "^\\p{L}[\\p{L}\\p{M} '’.-]*$",
                     "type": "string"
                   },
                   "username": {
@@ -2519,7 +2524,7 @@
                   "message": {
                     "minLength": 1,
                     "maxLength": 2000,
-                    "pattern": "\\S",
+                    "pattern": "^(?=[\\s\\S]*\\S)(?:[^<>\\p{Cc}]|[\\n\\r\\t])*$",
                     "type": "string"
                   },
                   "appVersion": {
@@ -2622,6 +2627,7 @@
                   },
                   "message": {
                     "maxLength": 2000,
+                    "pattern": "^(?:[^<>\\p{Cc}]|[\\n\\r\\t])*$",
                     "type": "string"
                   }
                 }

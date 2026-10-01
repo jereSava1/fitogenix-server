@@ -4,6 +4,17 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.13.0 — 2026-10-01 · PM-11
+
+**Restringe la entrada de texto (compatible con native actual).** Reglas comunes en `platform/http/schemas.ts`, iguales en native (`presentation/textRules.ts`):
+
+- `firstName` y `lastName` (registro, perfil y `/oauth/apple`): solo letras de cualquier idioma, espacios, apóstrofe, punto y guion, empezando por una letra (antes, cualquier texto con un carácter no blanco).
+- Texto libre sin `<`, `>` ni caracteres de control: `query` del lookup (una línea) y `message` de feedback y reportes (con saltos de línea).
+- Tokens (`idToken`, `nonce`, `refreshToken`): solo caracteres de token.
+- Contraseña: sin cambios a propósito (cualquier carácter).
+
+Lo que no cumple → `400 VALIDATION_ERROR`. Defensa en profundidad contra XSS si estos textos se muestran alguna vez en una web.
+
 ## 0.12.0 — 2026-09-30 · F-03
 
 **Aditivo.** Sesión por el server con email, Google y Apple (RF-022/023/024/027, ADR-0010, D-85). Native la usa en F-08.

@@ -124,6 +124,11 @@ describe('signIn: un adaptador para todos los proveedores', () => {
     await expect(gateway.signIn({ kind: 'password', email: 'a@b.co', password: 'x' }, IP)).resolves.toBe(esperado);
   });
 
+  it('el error de Auth lleva el HTTP: con un 5xx supabase-js deja el mensaje en "{}"', async () => {
+    respuestas.signIn = { data: { user: null, session: null }, error: { status: 500, message: '{}' } };
+    await expect(gateway.signIn({ kind: 'id_token', provider: 'google', idToken: 't' }, IP)).rejects.toThrow('(HTTP 500): {}');
+  });
+
   it.each([
     ['proveedor apagado en Supabase', error(400, 'provider_disabled')],
     ['Auth caído', error(500)],

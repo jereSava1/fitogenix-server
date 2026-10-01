@@ -13,7 +13,10 @@ function rejected(error: AuthFailure): boolean {
 }
 
 function unavailable(what: string, cause: unknown): DependencyUnavailableError {
-  const detail = cause && typeof cause === 'object' && 'message' in cause ? `${what}: ${String(cause.message)}` : what;
+  const failure = cause && typeof cause === 'object' ? (cause as { message?: unknown; status?: unknown }) : {};
+  // Con un 5xx, supabase-js no lee el cuerpo y el mensaje queda en "{}": el status es la pista.
+  const status = typeof failure.status === 'number' && failure.status > 0 ? ` (HTTP ${failure.status})` : '';
+  const detail = failure.message !== undefined ? `${what}${status}: ${String(failure.message)}` : `${what}${status}`;
   return new DependencyUnavailableError('auth', detail, { cause });
 }
 

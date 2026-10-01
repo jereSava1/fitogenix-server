@@ -109,6 +109,8 @@ describe('PATCH /users/me/profile', () => {
     ['nombre vacío', { firstName: '' }],
     ['nombre de espacios', { firstName: '   ' }],
     ['nombre de 61 caracteres', { firstName: 'x'.repeat(61) }],
+    ['nombre con HTML (PM-11)', { firstName: '<img src=x onerror=alert(1)>' }],
+    ['apellido con números', { lastName: 'Pérez2' }],
     ['null para borrar un campo', { phone: null }],
     ['username con mayúsculas', { username: 'Ana' }],
     ['username corto', { username: 'ab' }],
