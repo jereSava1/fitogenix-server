@@ -642,6 +642,7 @@
                   "query": {
                     "minLength": 1,
                     "maxLength": 200,
+                    "pattern": "^(?=[\\s\\S]*\\S)[^<>\\p{Cc}]*$",
                     "type": "string"
                   }
                 }
@@ -1319,6 +1320,7 @@
                   "idToken": {
                     "minLength": 1,
                     "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   }
                 }
@@ -1420,11 +1422,13 @@
                   "idToken": {
                     "minLength": 1,
                     "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   },
                   "nonce": {
                     "minLength": 1,
                     "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   },
                   "firstName": {
@@ -1538,6 +1542,7 @@
                   "refreshToken": {
                     "minLength": 1,
                     "maxLength": 512,
+                    "pattern": "^[A-Za-z0-9._~+/=-]+$",
                     "type": "string"
                   }
                 }
@@ -2519,7 +2524,7 @@
                   "message": {
                     "minLength": 1,
                     "maxLength": 2000,
-                    "pattern": "\\S",
+                    "pattern": "^(?=[\\s\\S]*\\S)(?:[^<>\\p{Cc}]|[\\n\\r\\t])*$",
                     "type": "string"
                   },
                   "appVersion": {
@@ -2622,6 +2627,7 @@
                   },
                   "message": {
                     "maxLength": 2000,
+                    "pattern": "^(?:[^<>\\p{Cc}]|[\\n\\r\\t])*$",
                     "type": "string"
                   }
                 }

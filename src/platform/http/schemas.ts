@@ -22,7 +22,30 @@ export function StringEnum<T extends string>(values: Record<T, true>) {
  *  su schema (`true satisfies SameShape<Static<typeof S>, T>`). */
 export type SameShape<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
-// Reglas de los datos personales, iguales en el registro y en el perfil (03-contratos §B.3.3).
+// Reglas de texto (PM-11): todo texto que entra usa una de estas. native las repite en
+// presentation/textRules.ts y un test las compara con el contrato.
+
+const ONE_LINE = '[^<>\\p{Cc}]';
+const MULTI_LINE = '(?:[^<>\\p{Cc}]|[\\n\\r\\t])';
+
+/** Texto libre (búsqueda, feedback, reportes): sin `<`, `>` ni caracteres de control, y
+ *  con al menos un carácter visible salvo `allowBlank`. */
+export const SafeText = ({ maxLength, multiline = false, allowBlank = false }: { maxLength: number; multiline?: boolean; allowBlank?: boolean }) =>
+  Type.String({
+    ...(allowBlank ? {} : { minLength: 1 }),
+    maxLength,
+    pattern: `^${allowBlank ? '' : '(?=[\\s\\S]*\\S)'}${multiline ? MULTI_LINE : ONE_LINE}*$`,
+  });
+
+/** Tokens de proveedores y de sesión (JWT, refresh, nonce): solo sus caracteres. */
+export const OpaqueToken = (maxLength: number) =>
+  Type.String({ minLength: 1, maxLength, pattern: '^[A-Za-z0-9._~+/=-]+$' });
+
+export const Email = () => Type.String({ format: 'email', maxLength: 254 });
+/** Cualquier carácter a propósito: restringirla la debilitaría, y nunca se muestra. */
+export const Password = () => Type.String({ minLength: 8, maxLength: 72 });
+
+// Datos personales, iguales en el registro y en el perfil (03-contratos §B.3.3).
 /** Letras de cualquier idioma, espacios, apóstrofe, punto y guion: ni `<`, ni `>`, ni números. */
 export const PersonName = () =>
   Type.String({ minLength: 1, maxLength: 60, pattern: "^\\p{L}[\\p{L}\\p{M} '’.-]*$" });

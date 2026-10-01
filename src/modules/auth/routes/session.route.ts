@@ -11,6 +11,7 @@ import {
   ApiErrorSchema,
   errorResponses,
   Nullable,
+  OpaqueToken,
   PersonName,
   type SameShape,
 } from '../../../platform/http/schemas';
@@ -29,7 +30,7 @@ export const SessionSchema = Type.Object(
 );
 true satisfies SameShape<Static<typeof SessionSchema>, Session>;
 
-const IdToken = Type.String({ minLength: 1, maxLength: 4096 });
+const IdToken = OpaqueToken(4096);
 
 interface SignInProvider<B extends TObject> {
   path: string;
@@ -66,7 +67,7 @@ const PROVIDERS = [
       {
         idToken: IdToken,
         // El nonce original (sin hashear) si la app lo pidió.
-        nonce: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
+        nonce: Type.Optional(OpaqueToken(128)),
         // Apple da el nombre solo la primera vez y no viene en el token.
         firstName: Type.Optional(PersonName()),
         lastName: Type.Optional(PersonName()),
@@ -120,7 +121,7 @@ export const sessionRoutes = (deps: { sessions: Sessions }): FastifyPluginAsync 
       schema: {
         tags: ['auth'],
         summary: 'Renovar la sesión con el refresh token',
-        body: Type.Object({ refreshToken: Type.String({ minLength: 1, maxLength: 512 }) }, { additionalProperties: false }),
+        body: Type.Object({ refreshToken: OpaqueToken(512) }, { additionalProperties: false }),
         response: { 200: Type.Ref(SessionSchema), ...errorResponses(400, 401, 429, 500, 503) },
       },
     }, async (request, reply) => {
