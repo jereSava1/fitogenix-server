@@ -44,7 +44,6 @@ export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow 
     additives_tags: asStringArray(data.additives_tags),
     categories: typeof data.category === 'string' ? data.category : undefined,
     _aiEnriched: data.ai_enriched === true,
-    _aiSource: data.data_source === 'ai',
   };
 
   return {

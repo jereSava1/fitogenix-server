@@ -114,9 +114,9 @@ describe('lookupProduct — barcode', () => {
     expect(cacheService.getCachedProductByBarcode).toHaveBeenCalledWith('7790895000123');
   });
 
-  it('TTL de 3 días cuando la fila es de origen IA (dato menos confiable, se refresca antes)', async () => {
+  it('TTL de 7 días en Redis, cualquiera sea el origen del dato', async () => {
     vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(
-      cachedHit({ dataSource: 'ai' }),
+      cachedHit({ dataSource: 'vtex' }),
     );
 
     await lookupProduct('7790895000123');
@@ -124,7 +124,7 @@ describe('lookupProduct — barcode', () => {
     expect(redisService.setInRedis).toHaveBeenCalledWith(
       '7790895000123',
       expect.any(Object),
-      259200,
+      604800,
     );
   });
 });
@@ -208,8 +208,7 @@ describe('lookupProduct — búsqueda por texto contra el catálogo', () => {
   it('hit sin barcode (fila solo-nombre): cachea bajo la clave de texto, no hay barcode que asociar', async () => {
     vi.mocked(cacheService.findCachedProductByName).mockResolvedValue(
       cachedHit({
-        raw: { ...rawProduct, _aiSource: true },
-        dataSource: 'ai',
+        dataSource: 'vtex',
         productId: 'uuid-name',
         barcode: null,
       }),
@@ -218,12 +217,12 @@ describe('lookupProduct — búsqueda por texto contra el catálogo', () => {
     const product = await lookupProduct('galletitas marca');
 
     expect(product?.id).toBe('uuid-name');
-    expect(loggedDataSource()).toBe('ai');
+    expect(loggedDataSource()).toBe('vtex');
     expect(redisService.setSearchBarcode).not.toHaveBeenCalled();
     expect(redisService.setInRedis).toHaveBeenCalledWith(
       'name:galletitas marca',
       expect.any(Object),
-      259200, // TTL corto por ser dato de IA
+      604800,
     );
   });
 

@@ -22,10 +22,7 @@ function present(cached: CachedProduct, query: string): ProductDetail {
   return toProductDetail(cached.raw, { id: cached.productId, fallbackName: query });
 }
 
-/** Los productos de origen IA se refrescan antes: el dato es menos confiable. */
-function ttlFor(dataSource: string): number {
-  return dataSource === 'ai' ? 259200 : 604800;
-}
+const PRODUCT_TTL_SECONDS = 604800; // 7 días
 
 function toCached(cached: CachedProduct): CachedProduct {
   return { productId: cached.productId, dataSource: cached.dataSource, raw: cached.raw };
@@ -74,7 +71,7 @@ export function makeLookupProduct(deps: {
       const product = present(cached, originalQuery);
       logSource(barcode, 'supabase', cached.dataSource);
 
-      cache.set(barcode, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
+      cache.set(barcode, toCached(cached), PRODUCT_TTL_SECONDS).catch((err: unknown) =>
         logger.error({ err, cacheKey: barcode }, 'redis set falló'),
       );
 
@@ -111,7 +108,7 @@ export function makeLookupProduct(deps: {
         // Fila solo-nombre (sin barcode, típicamente resuelta por IA en su
         // momento): la única forma de encontrarla rápido de nuevo es cachear
         // bajo la clave de ESTA query.
-        cache.set(cacheKey, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
+        cache.set(cacheKey, toCached(cached), PRODUCT_TTL_SECONDS).catch((err: unknown) =>
           logger.error({ err, cacheKey }, 'redis set falló'),
         );
       }

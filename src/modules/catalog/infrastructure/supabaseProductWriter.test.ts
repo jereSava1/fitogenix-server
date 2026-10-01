@@ -26,7 +26,6 @@ function rawDe(row: Record<string, unknown>, i: number): RawProduct {
     additives_tags: row.additives_tags as string[] | undefined,
     brands: i % 3 === 0 ? undefined : `Marca ${i}`,
     image_url: i % 4 === 0 ? undefined : `https://img.test/${i}.jpg`,
-    _aiSource: i % 7 === 0,
     _aiEnriched: i % 6 === 0,
   };
 }

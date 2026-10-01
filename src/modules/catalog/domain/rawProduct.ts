@@ -12,5 +12,4 @@ export type RawProduct = {
   quantity?: string;
   serving_size?: string;
   _aiEnriched?: boolean;
-  _aiSource?: boolean;
 };

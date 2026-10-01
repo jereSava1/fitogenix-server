@@ -15,7 +15,7 @@ export function buildCachePayload(raw: RawProduct, barcode: string): Record<stri
     ingredients_text: raw.ingredients_text ?? null,
     nutriments: raw.nutriments ?? null,
     additives_tags: raw.additives_tags ?? null,
-    data_source: raw._aiSource ? 'ai' : 'off',
+    data_source: 'off', // runMerge lo pisa con la fuente principal
     ai_enriched: raw._aiEnriched === true,
     updated_at: new Date().toISOString(),
   };

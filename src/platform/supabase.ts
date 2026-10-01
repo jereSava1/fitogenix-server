@@ -18,10 +18,8 @@ export function fetchWithTimeout(ms: number, baseFetch: typeof fetch = fetch): t
 // Un solo cliente admin para todo el server: la secret key opera con el rol
 // service_role y saltea RLS, así que cada consulta de datos de usuario filtra
 // por user_id a mano (RNF-S03). Se crea la primera vez que se usa.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _admin: ReturnType<typeof createClient<any>> | null = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function supabaseAdmin(): ReturnType<typeof createClient<any>> {
   if (!_admin) {
     _admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
@@ -35,7 +33,6 @@ export function supabaseAdmin(): ReturnType<typeof createClient<any>> {
  *  `verifyOtp`). Nunca se hacen sobre `supabaseAdmin()`: su sesión pasaría a firmar las
  *  consultas siguientes como ese usuario. `clientIp` va en `Sb-Forwarded-For`: con la secret
  *  key, Supabase aplica sus límites por IP a la del usuario y no a la del server (D-30). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function supabaseAuthClient(clientIp: string): ReturnType<typeof createClient<any>> {
   return createClient(config.supabaseUrl, config.supabaseSecretKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

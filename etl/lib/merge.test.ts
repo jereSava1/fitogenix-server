@@ -30,18 +30,6 @@ describe('mergeRawProducts', () => {
     expect(result.nutriments).toEqual({ 'energy-kcal_100g': 100, 'proteins_100g': 5 });
   });
 
-  it('_aiSource es true solo si TODAS las fuentes eran IA', () => {
-    const mixedResult = mergeRawProducts([
-      { source: 'ai', raw: { product_name: 'x', _aiSource: true } },
-      { source: 'carrefour', raw: { image_url: 'y' } },
-    ]);
-    expect(mixedResult._aiSource).toBe(false);
-
-    const pureAiResult = mergeRawProducts([
-      { source: 'ai', raw: { product_name: 'x', _aiSource: true } },
-    ]);
-    expect(pureAiResult._aiSource).toBe(true);
-  });
 });
 
 describe('primarySourceOf', () => {

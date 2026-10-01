@@ -119,9 +119,8 @@ async function main() {
       }
 
       const payload = buildCachePayload(combined, barcode);
-      // El origen es la fuente de más prioridad del merge (off, vtex…), salvo
-      // que lo haya resuelto la IA.
-      if (!combined._aiSource) payload.data_source = primarySourceOf(entries);
+      // El origen es la fuente de más prioridad del merge (off, vtex…).
+      payload.data_source = primarySourceOf(entries);
       payloads.push(payload);
       pending.push({ barcode, rows: trigger, incomplete, wasEnriched });
     }

@@ -59,7 +59,6 @@ async function main() {
   }
 
   // 2. EAN-13 = '0' + UPC-A(12) — mismo código real, dos formatos de texto.
-  const barcodeSet = new Set(products.map((p) => p.barcode));
   const crossFormatDupes: { ean13: ProductRow; upca: ProductRow }[] = [];
   for (const p of products) {
     if (p.barcode.length === 13 && p.barcode.startsWith('0')) {
