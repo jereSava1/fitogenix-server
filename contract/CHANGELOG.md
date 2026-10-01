@@ -4,6 +4,10 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.13.0 — 2026-10-01 · PM-11
+
+**Restringe (compatible con native actual).** `firstName` y `lastName` (registro, perfil y `/oauth/apple`) aceptan solo letras de cualquier idioma, espacios, apóstrofe, punto y guion, empezando por una letra: patrón `^\p{L}[\p{L}\p{M} '’.-]*$` (antes, cualquier texto con un carácter no blanco). Un nombre con `<`, `>`, números o símbolos → `400 VALIDATION_ERROR`. Defensa en profundidad contra XSS si los nombres se muestran alguna vez en una web; native valida lo mismo antes de enviar.
+
 ## 0.12.0 — 2026-09-30 · F-03
 
 **Aditivo.** Sesión por el server con email, Google y Apple (RF-022/023/024/027, ADR-0010, D-85). Native la usa en F-08.

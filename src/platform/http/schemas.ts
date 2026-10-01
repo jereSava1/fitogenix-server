@@ -23,7 +23,9 @@ export function StringEnum<T extends string>(values: Record<T, true>) {
 export type SameShape<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 // Reglas de los datos personales, iguales en el registro y en el perfil (03-contratos §B.3.3).
-export const PersonName = () => Type.String({ minLength: 1, maxLength: 60, pattern: '\\S' });
+/** Letras de cualquier idioma, espacios, apóstrofe, punto y guion: ni `<`, ni `>`, ni números. */
+export const PersonName = () =>
+  Type.String({ minLength: 1, maxLength: 60, pattern: "^\\p{L}[\\p{L}\\p{M} '’.-]*$" });
 export const Username = () => Type.String({ minLength: 3, maxLength: 30, pattern: '^[a-z0-9_.]+$' });
 /** E.164. */
 export const Phone = () => Type.String({ pattern: '^\\+[1-9][0-9]{6,14}$' });

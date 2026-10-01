@@ -57,6 +57,11 @@ describe('POST /auth/signup', () => {
     expect(signUp.signUp).toHaveBeenCalledWith('ana@mail.com', 'clave-segura', PERFIL, '127.0.0.1');
   });
 
+  it.each(['María José', "O'Brien", 'Jean-Luc', 'Zoë'])('nombre "%s" → se acepta', async (firstName) => {
+    const res = await registrar({ ...BODY, firstName });
+    expect(res.statusCode).toBe(201);
+  });
+
   it.each([
     ['email_taken', 409, { error: 'Ya hay una cuenta con ese email.', code: 'EMAIL_TAKEN' }],
     ['username_taken', 409, { error: 'Ese nombre de usuario ya está en uso.', code: 'USERNAME_TAKEN' }],
@@ -93,6 +98,9 @@ describe('POST /auth/signup', () => {
     ['sin nombre', { ...BODY, firstName: undefined }],
     ['nombre en blanco', { ...BODY, firstName: '   ' }],
     ['apellido de 61', { ...BODY, lastName: 'x'.repeat(61) }],
+    ['nombre con HTML (PM-11)', { ...BODY, firstName: '<script>alert(1)</script>' }],
+    ['apellido con números', { ...BODY, lastName: 'Pérez2' }],
+    ['nombre que empieza con espacio', { ...BODY, firstName: ' Ana' }],
     ['username con mayúsculas', { ...BODY, username: 'Ana.P' }],
     ['username de 2', { ...BODY, username: 'ab' }],
     ['username con espacios', { ...BODY, username: 'ana p' }],
