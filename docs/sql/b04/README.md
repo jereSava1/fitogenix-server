@@ -84,6 +84,8 @@ GRANT ALL ON SEQUENCE public.registro_controles_id_seq, public.validation_runs_i
 
 Migración `20261001000000_sin_tablas_de_validacion_ni_filas_ai` (`DROP TABLE` de las tres; incluye B-01b). Consecuencia: desaparecen los FK `ON DELETE RESTRICT` hacia `products`.
 
+**Aplicada el 2026-10-01** (`migration list --linked`: local y remota). Comprobación: 0 tablas de validación en `public` y 0 filas `ai` en `products`.
+
 ## Probado en local (2026-09-30)
 
 Supabase local con todas las migraciones: después del `REVOKE`, `service_role` recibe `42501` en las tres tablas, `products` sigue en 200 y solo `postgres` conserva permisos. El comando del paso 1 con `--local` escribe solo los `COPY` de las tres tablas y los `setval` de sus secuencias.
