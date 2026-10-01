@@ -78,9 +78,11 @@ GRANT ALL ON SEQUENCE public.registro_controles_id_seq, public.validation_runs_i
 
 **Paso 2 (2026-09-30):** `supabase db push` aplicó `20260930202339` (B-02) y `20260930202728`; `migration list --linked` las muestra locales y remotas. La comprobación de permisos devuelve solo `postgres` en las tres tablas.
 
+**Comparación (2026-10-01):** `productos_validados` y `registro_controles` idénticas a la foto; `validation_runs` con `idx_scan` 43 → 44 y nada más. Origen: `pg_stat_statements` muestra la consulta del Table Editor del panel (`select * from public.validation_runs order by validation_runs.id ... limit/offset`, rol `postgres`) y `last_idx_scan` = 2026-10-01 01:39 UTC; el responsable confirmó que la abrió al probar. Ninguna escritura nueva. **Hallazgo:** las escrituras históricas (inserts y updates de `validation_runs`, consultas sobre `notes` en JSON cruzadas con `products`) las hizo el rol `postgres`, que el `REVOKE` no bloquea; por eso el criterio que vale son los contadores.
+
 ## Paso 3 · DROP
 
-Migración `DROP TABLE` de las tres (se prepara cuando se cumpla el criterio del paso 2). Consecuencia: desaparecen los FK `ON DELETE RESTRICT` hacia `products`.
+Migración `20261001000000_sin_tablas_de_validacion_ni_filas_ai` (`DROP TABLE` de las tres; incluye B-01b). Consecuencia: desaparecen los FK `ON DELETE RESTRICT` hacia `products`.
 
 ## Probado en local (2026-09-30)
 
