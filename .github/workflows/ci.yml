@@ -20,7 +20,7 @@ jobs:
       - run: npm run lint:deps
       - run: npm run lint:unused
       - run: npm run contract:check
-      - run: npm test
+      - run: npm run test:coverage
 
   # La imagen de ADR-0007 construye, arranca y responde /health (valores de relleno:
   # /health no toca la base).
