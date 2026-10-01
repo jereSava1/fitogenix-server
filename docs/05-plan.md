@@ -306,11 +306,12 @@ Sale de la auditoría final del 2026-10-01 (D-90): lo que falta para que server 
 | R-03 | P1 | REFACTOR | server | Apagado ordenado: `SIGTERM`/`SIGINT` → `app.close()` (deja terminar los requests en curso cuando Render redeploya) | D-90 | Bajo | Test: con la señal, `close` se llama una vez y el proceso sale con 0 | `PR-47 feat(platform): apagado ordenado` |
 | R-04 | P1 | REFACTOR | server | Logs: `console.*` de `lookupProduct`, `redisProductCache` y `supabaseHistoryRepository` → el logger de Fastify (estructurado y con redact) | OWASP A09, D-90 | Bajo | Tests de los casos que loguean: el evento sale por el logger inyectado | `PR-48 refactor: logs estructurados` |
 | R-05 | P1 | AGREGAR | server | CI de migraciones: un job que levanta Supabase local y aplica `supabase/migrations/` desde cero (`db reset`), y falla si alguna se rompe | ADR-0009, D-90 | Bajo | Después: una migración con error rompe el job | `PR-49 ci: migraciones desde cero` |
-| R-06 | P1 | DOCUMENTAR | server + native + Render | Deploy y rollback: integración → `main` en los dos repos (D-59); `main` protegida (merge solo con CI verde); tag por versión (`vX.Y.Z`); guía de rollback (Render → *Rollback* al deploy anterior; cada migración con su SQL de vuelta atrás); variables de Render (`TRUST_PROXY`, `CORS_ORIGINS`) | ADR-0007, ADR-0009, D-59, D-90 | Medio | Después: deploy de `main` con `/health` y `/health/ready` en 200; un rollback de prueba | `PR-50 docs: deploy y rollback` |
+| R-06 | P1 | DOCUMENTAR | server + native + Render | Deploy y rollback: **Render con el `Dockerfile`** en vez del build de Node (la imagen que prueba el CI es la que corre; Node fijo; usuario sin privilegios; D-91), auto-deploy **después del CI verde** y health check en `/health` (no `/health/ready`: una caída de Supabase reiniciaría el server); integración → `main` en los dos repos (D-59); `main` protegida (merge solo con CI verde); tag por versión (`vX.Y.Z`); guía de rollback (Render → *Rollback* al deploy anterior; cada migración con su SQL de vuelta atrás); variables de Render (`TRUST_PROXY`, `CORS_ORIGINS`) | ADR-0007, ADR-0009, D-59, D-90 | Medio | Después: deploy de `main` con `/health` y `/health/ready` en 200; un rollback de prueba | `PR-50 docs: deploy y rollback` |
 | R-07 | P2 | ELIMINAR | server + native | Código muerto: el camino `_aiSource` / `data_source = 'ai'` (`productRow`, `supabaseProductWriter`, TTL de `lookupProduct`, `etl/lib/merge.ts`); `eslint-disable` sin ESLint en `platform/supabase.ts`; imports sin uso (3 en server); `scripts/reset-project.js` en native. `noUnusedLocals` en los tsconfig de los dos repos | D-41, D-90 | Bajo | Después: `tsc` con `noUnusedLocals` y `knip` sin avisos | `PR-51 chore: código muerto` · `PR-N20` |
 | R-08 | P2 | REFACTOR | server | Contrato server ↔ base: tipos generados con `supabase gen types` (`src/platform/database.types.ts`) en vez de `createClient<any>` y filas leídas a mano; el CI compara los tipos con las migraciones | ADR-0011, D-90 | Medio | Antes: tests de los adaptadores. Después: cambiar una columna en una migración rompe `tsc` o el CI | `PR-52 refactor(platform): tipos de la base` |
 | R-09 | P2 | REFACTOR | native | Capas: las pantallas no importan `api/` ni `auth/` (≈10 hoy), pasan por hooks de `presentation/` como `useSignIn`; `OnboardingScreen` (1332 líneas) partida por paso; `ScanResultScreen` y `HomeScreen` en componentes; regla de lint que prohíbe el import | D-90 | Medio | Antes: tests de render de cada pantalla. Después: los mismos, más tests de los hooks nuevos | `PR-N21…N23 refactor(native): pantallas sin acceso a la API` |
 | R-10 | P2 | TESTEAR | server + native | Cobertura medida (`vitest --coverage`) en el CI, con mínimo exigido en `scoring` y `auth` (alto riesgo) y reporte del resto | D-90 | Bajo | Después: bajar de los mínimos rompe el CI | `PR-53 ci: cobertura` · `PR-N24` |
+| R-11 | P1 | AGREGAR | native | Aviso legal (D-91): (1) **aceptación** de los Términos y la Política antes de registrarse (casilla obligatoria en el registro con email) y al continuar con Google o Apple ("Al continuar aceptás…" en la bienvenida); (2) **una línea al pie del resultado** ("informativo, no reemplaza a un profesional de la salud") con link a los Términos. Los links van a la landing: `www.fitogenix.com/terminos` y `/privacidad`. Sale `CollapsibleSection` (sin uso) | RF-045, D-91 | Bajo | Tests de render: sin la casilla el registro no avanza; los links abren la landing; el pie está en el resultado | `PR-N25 feat(native): aceptación de términos y aviso legal` |
 
 ### 7.4 Etapa 9 — Previo a publicar en tiendas (fuera de la limpieza)
 
@@ -322,7 +323,7 @@ Sale de la auditoría final del 2026-10-01 (D-90): lo que falta para que server 
 | L-04 | Alternativas mejores (RF-060) y lectura de etiquetas (RF-061) | D-24 |
 | L-05 | Metales pesados en el motor (RF-062), con ADR propio y tests de caracterización | D-25 |
 | L-06 | Catálogo limpio y cobertura de puntaje ≥ 95% | DT-01, DT-02 |
-| L-07 | Política de privacidad actualizada (datos de salud, flujos por el server) | RF-045, RNF-S10 |
+| L-07 | Política de privacidad actualizada (datos de salud, flujos por el server). **Urgente desde D-91:** la de la landing (`www.fitogenix.com/privacidad`), que la app enlaza al registrarse, dice que no se recopilan datos de salud | RF-045, RNF-S10, D-91 |
 | L-08 | Medir el p95 desde los logs y monitoreo externo de disponibilidad | RNF-P01–P04, RNF-D07 |
 | L-09 | Destino de la analítica: **diferido** (D-61). Cuando se retome, endpoint propio `POST /v1/events` ([DT-05](deuda-tecnica.md)) | RF-047, D-61 |
 | L-10 | Hosting propio de imágenes por HTTPS | DT-04 |
@@ -340,7 +341,7 @@ Sale de la auditoría final del 2026-10-01 (D-90): lo que falta para que server 
 | 6 · Endurecimiento | 5 | 5 | — | — |
 | 7 · Funcionalidad | 13 | 7 | 9 | — |
 | 8 · Base de datos | 4 | — | — | 6 migraciones |
-| 8b · Cierre del refactor | 10 | 7 | 5 | 1 de deploy |
+| 8b · Cierre del refactor | 11 | 7 | 6 | 1 de deploy |
 | 9 · Previo a tiendas | 10 | — | — | — |
 
 ---
