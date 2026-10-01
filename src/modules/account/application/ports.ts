@@ -59,14 +59,15 @@ export const SOURCES = {
   instagram: true, tiktok: true, friend: true, podcast: true, doctor: true, appstore: true, other: true,
 } as const;
 
-export interface OnboardingAnswers {
+// `type` y no `interface`: así es asignable a la columna jsonb tipada.
+export type OnboardingAnswers = {
   goals: (keyof typeof GOALS)[];
   symptoms: (keyof typeof SYMPTOMS)[];
   diets: (keyof typeof DIETS)[];
   allergies: (keyof typeof ALLERGIES)[];
   avoid: (keyof typeof AVOID)[];
   source: keyof typeof SOURCES | null;
-}
+};
 
 /** Solo existe si la persona aceptó; sin consentimiento no se manda. */
 export interface OnboardingConsent {
