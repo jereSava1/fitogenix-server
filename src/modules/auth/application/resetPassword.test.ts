@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { failedAttempts } from './failedAttempts';
 import type { ResetPasswordResult } from './ports';
 import { makePasswordReset } from './resetPassword';

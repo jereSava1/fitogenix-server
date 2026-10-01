@@ -97,9 +97,6 @@ export function mergeRawProducts(entries: StagingEntry[], barcode?: string): Raw
     categories: pick('categories'),
     quantity: pick('quantity'),
     serving_size: pick('serving_size'),
-    // Solo es "puramente IA" si TODAS las filas que contribuyeron lo eran —
-    // basta que una sola fuente real haya aportado algo para que esto sea false.
-    _aiSource: sorted.length > 0 && sorted.every((e) => e.raw._aiSource === true),
   };
 }
 

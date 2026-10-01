@@ -65,7 +65,7 @@ const alfajorRow = {
   brand: '',
   ingredients_text: 'dulce de leche, harina',
   nutriments: { sugars_100g: 35 },
-  data_source: 'ai',
+  data_source: 'vtex',
   ai_enriched: true,
 };
 

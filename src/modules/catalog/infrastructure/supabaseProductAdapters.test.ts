@@ -76,9 +76,9 @@ describe('buildCachePayload', () => {
     expect(payload.additives_tags).toBeNull();
   });
 
-  it('producto de IA: data_source ai', () => {
-    const payload = cache.buildCachePayload({ ingredients_text: 'dulce de leche', _aiSource: true }, '333');
-    expect(payload.data_source).toBe('ai');
+  it('data_source por defecto "off" (runMerge lo pisa con la fuente principal)', () => {
+    const payload = cache.buildCachePayload({ ingredients_text: 'dulce de leche' }, '333');
+    expect(payload.data_source).toBe('off');
   });
 
   it('columnas denormalizadas desde el crudo: nombre limpio o de reemplazo, marca, categoría, imagen', () => {
@@ -129,7 +129,6 @@ describe('rowToCachedRaw', () => {
       additives_tags: ['en:e330'],
       categories: 'Snacks',
       _aiEnriched: true,
-      _aiSource: false,
     });
   });
 
@@ -138,7 +137,7 @@ describe('rowToCachedRaw', () => {
       id: 'uuid-alfajor',
       barcode: null,
       ingredients_text: 'dulce de leche',
-      data_source: 'ai',
+      data_source: 'vtex',
     });
     expect(result?.productId).toBe('uuid-alfajor');
     expect(result?.barcode).toBeNull();
@@ -172,18 +171,12 @@ describe('rowToCachedRaw', () => {
     ).not.toBeNull();
   });
 
-  it('data_source ausente → default "off"; "ai" marca _aiSource', () => {
+  it('data_source ausente → default "off"; si viene, pasa tal cual', () => {
     const sinSource = cache.rowToCachedRaw({ id: 'uuid-1', ingredients_text: 'agua' });
     expect(sinSource?.dataSource).toBe('off');
-    expect(sinSource?.raw._aiSource).toBe(false);
 
-    const conAI = cache.rowToCachedRaw({
-      id: 'uuid-1',
-      ingredients_text: 'agua',
-      data_source: 'ai',
-    });
-    expect(conAI?.dataSource).toBe('ai');
-    expect(conAI?.raw._aiSource).toBe(true);
+    const conSource = cache.rowToCachedRaw({ id: 'uuid-1', ingredients_text: 'agua', data_source: 'vtex' });
+    expect(conSource?.dataSource).toBe('vtex');
   });
 
   it('la lectura no cambió el mapeo: getCachedProductByBarcode ≡ rowToCachedRaw', async () => {
@@ -277,7 +270,7 @@ describe('findCachedProductByName', () => {
     // en vez de re-ordenar del lado del cliente.
     mockRpcRows = [
       makeRow(),
-      makeRow({ id: 'uuid-ai', barcode: null, data_source: 'ai' }),
+      makeRow({ id: 'uuid-vtex', barcode: null, data_source: 'vtex' }),
     ];
 
     const result = await cache.findCachedProductByName('coca cola');
@@ -298,14 +291,14 @@ describe('findCachedProductByName', () => {
     mockRpcRows = [
       // Fila vieja sin ingredients_text ni nutriments: no sirve aunque tenga barcode.
       makeRow({ ingredients_text: null, nutriments: null }),
-      makeRow({ id: 'uuid-ai', barcode: null, data_source: 'ai' }),
+      makeRow({ id: 'uuid-vtex', barcode: null, data_source: 'vtex' }),
     ];
 
     const result = await cache.findCachedProductByName('coca cola');
 
-    expect(result?.productId).toBe('uuid-ai');
+    expect(result?.productId).toBe('uuid-vtex');
     expect(result?.barcode).toBeNull();
-    expect(result?.dataSource).toBe('ai');
+    expect(result?.dataSource).toBe('vtex');
   });
 
   it('sin candidatas válidas → null; error del RPC → caída', async () => {

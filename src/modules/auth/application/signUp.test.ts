@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { SignUpResult } from './ports';
 import { makeSignUp } from './signUp';
 import { fakeGateway, fakeProfiles } from '../testing/fakes';
