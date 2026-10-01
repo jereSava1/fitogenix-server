@@ -27,7 +27,7 @@
 
 Criterio: los conteos de 2 y 3 son iguales. El DDL ya está versionado en `supabase/migrations/20260929000000_baseline.sql`.
 
-## Paso 2 · Sin acceso durante 14 días
+## Paso 2 · Sin acceso hasta el 2026-10-01 (D-89)
 
 1. Foto de los contadores **antes** del cambio (SQL Editor, pasame el resultado):
 
@@ -55,7 +55,7 @@ Criterio: los conteos de 2 y 3 son iguales. El DDL ya está versionado en `supab
    group by 1, 2 order by 2, 1;
    ```
 
-Criterio para avanzar (desde el **2026-10-14**): ningún error de permisos reportado por ningún proceso y la misma consulta de contadores sin cambios respecto de la foto. Si algo se rompe antes, rollback:
+Criterio para avanzar (desde el **2026-10-01**, un día en vez de 14: D-89): ningún error de permisos reportado por ningún proceso y la misma consulta de contadores sin cambios respecto de la foto. Si algo se rompe antes, rollback:
 
 ```sql
 GRANT ALL ON TABLE public.productos_validados, public.registro_controles, public.validation_runs TO service_role;
@@ -74,7 +74,7 @@ GRANT ALL ON SEQUENCE public.registro_controles_id_seq, public.validation_runs_i
 | registro_controles | 25 | 41 | 1155 | 80 | 0 |
 | validation_runs | 4 | 43 | 10 | 9 | 0 |
 
-`validation_runs` tiene 10 inserts y 9 filas sin borrados: un insert que falló o se deshizo también cuenta. Hasta la comparación del 2026-10-14, **no consultar estas tablas** (ni desde el SQL Editor): cualquier lectura sube `seq_scan`.
+`validation_runs` tiene 10 inserts y 9 filas sin borrados: un insert que falló o se deshizo también cuenta. Hasta la comparación del 2026-10-01, **no consultar estas tablas** (ni desde el SQL Editor): cualquier lectura sube `seq_scan`.
 
 **Paso 2 (2026-09-30):** `supabase db push` aplicó `20260930202339` (B-02) y `20260930202728`; `migration list --linked` las muestra locales y remotas. La comprobación de permisos devuelve solo `postgres` en las tres tablas.
 
