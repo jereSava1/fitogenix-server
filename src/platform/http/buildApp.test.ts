@@ -2,7 +2,8 @@
 import { Writable } from 'node:stream';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildApp, LOG_REDACT } from './buildApp';
+import { LOG_REDACT } from '../logger';
+import { buildApp } from './buildApp';
 
 let app: FastifyInstance | null = null;
 

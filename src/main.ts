@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { config } from './platform/config';
-import { buildApp, LOG_REDACT } from './platform/http/buildApp';
+import { logger } from './platform/logger';
+import { buildApp } from './platform/http/buildApp';
 import { registerReadiness } from './platform/http/health';
 import { closeOnSignals } from './platform/http/shutdown';
 import { registerModules } from './registerModules';
@@ -10,7 +11,7 @@ import { registerModules } from './registerModules';
 async function start() {
   const app = await buildApp(
     {
-      logger: { redact: LOG_REDACT },
+      loggerInstance: logger,
       trustProxy: config.trustProxy.length > 0 ? config.trustProxy : false,
     },
     { corsOrigins: config.corsOrigins },
@@ -22,6 +23,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error(err);
+  logger.fatal({ err }, 'El server no arrancó');
   process.exit(1);
 });

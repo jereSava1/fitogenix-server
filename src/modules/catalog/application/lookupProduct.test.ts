@@ -18,6 +18,7 @@ const redisService = {
 
 type LookupModule = typeof import('./lookupProduct');
 let lookupProduct: ReturnType<LookupModule['makeLookupProduct']>;
+let logger: typeof import('../../../platform/logger').logger;
 
 const rawProduct: RawProduct = {
   product_name: 'Galletitas',
@@ -37,6 +38,7 @@ const cachedHit = (overrides: Partial<CachedProductRow> = {}): CachedProductRow 
 
 beforeAll(async () => {
   const { makeLookupProduct } = await import('./lookupProduct');
+  ({ logger } = await import('../../../platform/logger'));
   lookupProduct = makeLookupProduct({
     reader: {
       findById: cacheService.getProductById,
@@ -54,14 +56,14 @@ beforeAll(async () => {
 
 /** El `dataSource` logueado en la última resolución (no viaja en la respuesta). */
 function loggedDataSource(): string | undefined {
-  const calls = vi.mocked(console.info).mock.calls;
-  const last = calls[calls.length - 1]?.[0];
-  return typeof last === 'string' ? (JSON.parse(last) as { dataSource?: string }).dataSource : undefined;
+  const calls = vi.mocked(logger.info).mock.calls;
+  const last = calls[calls.length - 1]?.[0] as { dataSource?: string } | undefined;
+  return last?.dataSource;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.spyOn(console, 'info').mockImplementation(() => {});
+  vi.spyOn(logger, 'info');
   vi.mocked(redisService.getFromRedis).mockResolvedValue(null);
   vi.mocked(redisService.getSearchBarcode).mockResolvedValue(null);
   vi.mocked(cacheService.getCachedProductByBarcode).mockResolvedValue(null);

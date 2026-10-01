@@ -22,7 +22,8 @@ beforeAll(async () => {
   vi.stubGlobal('fetch', auth.fetch);
   comoUsuario = { authorization: `Bearer ${await auth.token(USER)}` };
 
-  const { buildApp, LOG_REDACT } = await import('../../../platform/http/buildApp');
+  const { buildApp } = await import('../../../platform/http/buildApp');
+  const { LOG_REDACT } = await import('../../../platform/logger');
   const { onboardingRoutes } = await import('./onboarding.route');
   armar = async (logs) => {
     const stream = new Writable({

@@ -18,7 +18,8 @@ const BODY = { email: 'ana@mail.com', password: 'clave-segura', ...PERFIL };
 beforeAll(async () => {
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'test';
-  const { buildApp, LOG_REDACT } = await import('../../../platform/http/buildApp');
+  const { buildApp } = await import('../../../platform/http/buildApp');
+  const { LOG_REDACT } = await import('../../../platform/logger');
   const { signUpRoutes } = await import('./signup.route');
   armar = async (opts = {}) => {
     const stream = new Writable({

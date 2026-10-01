@@ -96,17 +96,19 @@ describe('recordScan', () => {
   });
 
   it('no lanza ante errores de DB: loguea y sigue (fire-and-forget)', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { logger } = await import('../../../platform/logger');
+    const logError = vi.spyOn(logger, 'error');
     upsertResult = { error: { message: 'boom' } };
 
     await expect(history.recordScan('user-1', 'uuid-galletitas')).resolves.toBeUndefined();
-    expect(consoleError).toHaveBeenCalled();
+    expect(logError).toHaveBeenCalled();
   });
 
   it('no lanza ante violación de FK (producto purgado del cache entre lookup y registro)', async () => {
     // El lookup solo lee del catálogo, pero la FK puede fallar igual si la
     // fila se borra en el medio, y nunca debe romper nada.
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { logger } = await import('../../../platform/logger');
+    const logError = vi.spyOn(logger, 'error');
     upsertResult = {
       error: {
         code: '23503',
@@ -115,7 +117,7 @@ describe('recordScan', () => {
     };
 
     await expect(history.recordScan('user-1', 'uuid-purgado')).resolves.toBeUndefined();
-    expect(consoleError).toHaveBeenCalled();
+    expect(logError).toHaveBeenCalled();
   });
 });
 

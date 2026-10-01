@@ -73,8 +73,6 @@ afterAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(console, 'info').mockImplementation(() => {});
   redis.get.mockResolvedValue(null);
   redis.set.mockResolvedValue('OK');
   supabase.maybeSingle.mockResolvedValue({ data: FILA, error: null });

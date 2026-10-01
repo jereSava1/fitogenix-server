@@ -1,5 +1,6 @@
 // Tabla `scan_history`: cada escaneo autenticado referencia `products` por `product_id`.
 
+import { logger } from '../../../platform/logger';
 import { queryFailed, runQuery, supabaseAdmin as admin } from '../../../platform/supabase';
 import type { HistoryRepository } from '../application/ports';
 
@@ -33,10 +34,10 @@ export const supabaseHistoryRepository: HistoryRepository = {
         );
 
       if (error) {
-        console.error(`scan_history upsert (${productId}): ${error.message}`);
+        logger.error({ productId, error: error.message }, 'scan_history upsert falló');
       }
     } catch (err) {
-      console.error(`scan_history upsert (${productId}):`, err);
+      logger.error({ productId, err }, 'scan_history upsert falló');
     }
   },
 
