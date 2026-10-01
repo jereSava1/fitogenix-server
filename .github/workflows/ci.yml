@@ -39,3 +39,18 @@ jobs:
           done
           docker logs server
           exit 1
+
+  # Todas las migraciones sobre una base vacía (R-05): una que se rompa, o que abra datos a
+  # anon/authenticated o deje una tabla sin RLS, frena el merge.
+  migraciones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - run: supabase db start
+      - name: Guardián de permisos
+        run: |
+          problemas=$(psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -tA -f supabase/tests/permisos.sql)
+          if [ -n "$problemas" ]; then echo "$problemas"; exit 1; fi
