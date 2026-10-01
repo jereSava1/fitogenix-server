@@ -67,6 +67,13 @@ Lo que el código ya hace pero los tests automáticos no pueden ver (teléfono r
 |---|---|---|---|---|
 | MT-22 | Checklist de accesibilidad | Los 20 puntos de [checklist-accesibilidad.md](checklist-accesibilidad.md), con VoiceOver y TalkBack | Todos en ✅ | Pendiente |
 
+### Aviso legal (R-11)
+
+| # | Tarea | Cómo | Qué tiene que pasar | Estado |
+|---|---|---|---|---|
+| MT-25 | Términos al registrarse | Registro con email: intentar seguir sin marcar la casilla; tocar los links | Sin la casilla no avanza; los links abren `fitogenix.com/terminos` y `/privacidad` en el navegador y al volver la app sigue donde estaba | Pendiente |
+| MT-26 | Aviso en el resultado | Bajar hasta el final de un resultado | Se ve el aviso de salud y "Términos de uso" abre la landing | Pendiente |
+
 ### Producción
 
 | # | Tarea | Cómo | Qué tiene que pasar | Estado |
