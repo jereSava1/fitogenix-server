@@ -23,6 +23,7 @@ npm run dev             # tsx watch src/main.ts, puerto 3000
 | `PORT` | no | Por defecto 3000 |
 | `CORS_ORIGINS` | no | Orígenes web con CORS, separados por coma. Vacía = sin CORS (la app nativa no lo usa) |
 | `TRUST_PROXY` | en deploy | Direcciones de los proxies delante del server, separadas por comas (IPs, CIDR o nombres de `proxy-addr` como `loopback`). En Render: `10.0.0.0/8`. Sin esto, el rate limit por IP ve la del balanceador y todos comparten el límite. Para verificarla: en el log `incoming request`, `remoteAddress` tiene que ser la IP pública del cliente |
+| `LOG_LEVEL` | no | Nivel del logger (`info` por defecto; `silent` en los tests) |
 | `ANTHROPIC_API_KEY` | solo ETL | Enriquecimiento con IA del ETL. El server no la usa |
 
 ## Antes de dar algo por terminado
@@ -88,7 +89,7 @@ El ETL (`etl/`, scripts `etl:*` de `package.json`, con su propia config en `etl/
 
 ## Deploy
 
-Render (plan free), desde `main`: build `npm install && npm run build`, start `node dist/main.js`. La configuración vive en el dashboard de Render: ahí hay que definir `TRUST_PROXY` (ver Variables).
+Render (plan free), desde `main`, con el `Dockerfile` (D-91; hasta el paso a `main` sigue con el build de Node). Configuración, paso a `main` y rollback: [`docs/deploy.md`](docs/deploy.md).
 
 Forma portable ([ADR-0007](docs/adr/0007-portabilidad-de-hosting.md)): el `Dockerfile` construye una imagen con solo dependencias de producción, configurable por variables de entorno (las de `.env.example`). El CI la construye, la levanta y le pide `/health`.
 

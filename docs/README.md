@@ -8,8 +8,9 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-87) |
+| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-91) |
 | Probar la app a mano y ver lo que se encontró | [`pruebas-manuales.md`](pruebas-manuales.md) |
+| Deployar, pasar a `main` o volver atrás un deploy | [`deploy.md`](deploy.md) |
 | Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
 | Saber qué tiene que hacer el sistema | [`01-requerimientos.md`](01-requerimientos.md) |
 | Ver cómo se va a organizar el server | [`02-arquitectura.md`](02-arquitectura.md) y [`adr/`](adr/README.md) |
@@ -26,6 +27,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | `00-inventario.md` … `05-plan.md` | Un documento por fase de la auditoría |
 | `decisiones.md` | Registro único de decisiones |
 | `dominio-scoring.md` | Qué evalúa el motor, cómo se arma el puntaje, bandas y sello, los octógonos y la norma que los fundamenta, y los temas abiertos del motor |
+| `deploy.md` | Deploy con Docker en Render, protección de `main`, paso del refactor a `main` y rollback (R-06) |
 | `checklist-accesibilidad.md` | Checklist manual de F-13 (VoiceOver, TalkBack, letra grande y reducir movimiento) |
 | `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica, calidad del motor) |
 | `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
