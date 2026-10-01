@@ -148,11 +148,12 @@ describe('redisService con Redis configurado — entrada vieja → miss → se r
 
   it('una entrada de antes de K-02 se lee como MISS y el repoblado la pisa en la misma clave', async () => {
     store.set(PRODUCT_KEY, sobreViejo());
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const { logger } = await import('../../../platform/logger');
+    const info = vi.spyOn(logger, 'info');
 
     // 1. Lectura → miss, sin error; se loguea para seguir el repoblado.
     await expect(redis.getFromRedis('7790895000123')).resolves.toBeNull();
-    expect(info).toHaveBeenCalledWith(expect.stringContaining('redis_stale_format'));
+    expect(info).toHaveBeenCalledWith(expect.objectContaining({ event: 'redis_stale_format' }), 'redis_stale_format');
 
     // 2. El nivel Supabase repuebla sobre la MISMA clave: no quedan huérfanas.
     await redis.setInRedis('7790895000123', crudo());
@@ -163,7 +164,8 @@ describe('redisService con Redis configurado — entrada vieja → miss → se r
   });
 
   it('clave inexistente → null sin loguear entrada obsoleta', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const { logger } = await import('../../../platform/logger');
+    const info = vi.spyOn(logger, 'info');
     await expect(redis.getFromRedis('0000')).resolves.toBeNull();
     expect(info).not.toHaveBeenCalled();
   });

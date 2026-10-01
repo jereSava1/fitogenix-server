@@ -26,7 +26,8 @@ beforeAll(async () => {
   const auth = await simularSupabaseAuth();
   vi.stubGlobal('fetch', auth.fetch);
   token = await auth.token(USER);
-  const { buildApp, LOG_REDACT } = await import('../../../platform/http/buildApp');
+  const { buildApp } = await import('../../../platform/http/buildApp');
+  const { LOG_REDACT } = await import('../../../platform/logger');
   const { sessionRoutes } = await import('./session.route');
   armar = async (opts = {}) => {
     const stream = new Writable({

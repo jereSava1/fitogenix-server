@@ -7,10 +7,6 @@ import { rateLimitedError, registerErrorHandling } from './errors';
  *  con `additionalProperties: false` responden 400 (D-70). Los tests de ruta usan la misma. */
 export const AJV_OPTIONS = { customOptions: { removeAdditional: false } } satisfies FastifyServerOptions['ajv'];
 
-/** Lo que nunca va a los logs (los serializadores de Fastify no loguean headers, pero un
- *  `log.info({ headers })` sí). */
-export const LOG_REDACT = ['req.headers.authorization', 'req.headers.cookie', 'headers.authorization', 'headers.cookie'];
-
 /** La app base sin rutas de negocio: errores, CORS, rate limit y `/health`. */
 export async function buildApp(
   options: FastifyServerOptions = {},

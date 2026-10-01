@@ -1,3 +1,4 @@
+import { logger } from '../../../platform/logger';
 import type { CachedProduct, ProductCache, ProductReader } from './ports';
 import { toProductDetail, type ProductDetail } from './productResponse';
 import { isBarcode, nameKey } from '../domain/query';
@@ -12,7 +13,7 @@ type LookupSource = 'redis' | 'supabase' | 'catalog';
 
 // `source`: el nivel que sirvió esta request. `dataSource`: el proveedor original del dato.
 function logSource(cacheKey: string, source: LookupSource, dataSource: string): void {
-  console.info(JSON.stringify({ event: 'product_lookup', cacheKey, source, dataSource }));
+  logger.info({ event: 'product_lookup', cacheKey, source, dataSource }, 'product_lookup');
 }
 
 /** Redis y la base guardan crudos: los dos se presentan igual. `id` = uuid de la fila;
@@ -74,7 +75,7 @@ export function makeLookupProduct(deps: {
       logSource(barcode, 'supabase', cached.dataSource);
 
       cache.set(barcode, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
-        console.error('[productLookupService] setInRedis error:', err),
+        logger.error({ err, cacheKey: barcode }, 'redis set falló'),
       );
 
       return product;
@@ -104,14 +105,14 @@ export function makeLookupProduct(deps: {
       if (cached.barcode) {
         // Con barcode alcanza con recordar query → barcode: la próxima vez se resuelve por barcode.
         cache.setBarcodeForQuery(trimmed, cached.barcode).catch((err: unknown) =>
-          console.error('[productLookupService] setSearchBarcode error:', err),
+          logger.error({ err, cacheKey }, 'redis setSearchBarcode falló'),
         );
       } else {
         // Fila solo-nombre (sin barcode, típicamente resuelta por IA en su
         // momento): la única forma de encontrarla rápido de nuevo es cachear
         // bajo la clave de ESTA query.
         cache.set(cacheKey, toCached(cached), ttlFor(cached.dataSource)).catch((err: unknown) =>
-          console.error('[productLookupService] setInRedis error:', err),
+          logger.error({ err, cacheKey }, 'redis set falló'),
         );
       }
 

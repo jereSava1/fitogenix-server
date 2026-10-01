@@ -2,6 +2,7 @@
  * Cache Redis del catálogo (Upstash). Guarda el crudo con identidad y origen: la respuesta se
  * arma al leer. Sin UPSTASH_REDIS_REST_* es no-op; si falla o tarda más de 200 ms, miss. */
 
+import { logger } from '../../../platform/logger';
 import { getRedis, withRedisTimeout } from '../../../platform/redis';
 import type { CachedProduct, ProductCache } from '../application/ports';
 import { normalizeQuery } from '../domain/query';
@@ -35,11 +36,11 @@ export async function getFromRedis(key: string): Promise<CachedProduct | null> {
     const cached = parseCachedProduct(value);
     if (!cached) {
       // Otro formato: evento propio y no error, para ver la curva de repoblado.
-      console.info(JSON.stringify({ event: 'redis_stale_format', cacheKey: key }));
+      logger.info({ event: 'redis_stale_format', cacheKey: key }, 'redis_stale_format');
     }
     return cached;
   } catch (err) {
-    console.error('[redisService] getFromRedis error:', err);
+    logger.error({ err, cacheKey: key }, 'redis get falló');
     return null;
   }
 }
@@ -60,7 +61,7 @@ export async function setInRedis(
     };
     await withRedisTimeout(redis.set(REDIS_KEY_PREFIX + key, value, { ex: ttlSeconds }));
   } catch (err) {
-    console.error('[redisService] setInRedis error:', err);
+    logger.error({ err, cacheKey: key }, 'redis set falló');
   }
 }
 
@@ -74,7 +75,7 @@ export async function getSearchBarcode(query: string): Promise<string | null> {
     const code = await withRedisTimeout(redis.get<string>(SEARCH_KEY_PREFIX + normalizeQuery(query)));
     return code ?? null;
   } catch (err) {
-    console.error('[redisService] getSearchBarcode error:', err);
+    logger.error({ err }, 'redis getSearchBarcode falló');
     return null;
   }
 }
@@ -88,7 +89,7 @@ export async function setSearchBarcode(query: string, barcode: string): Promise<
       redis.set(SEARCH_KEY_PREFIX + normalizeQuery(query), barcode, { ex: SEARCH_TTL_SECONDS }),
     );
   } catch (err) {
-    console.error('[redisService] setSearchBarcode error:', err);
+    logger.error({ err }, 'redis setSearchBarcode falló');
   }
 }
 
