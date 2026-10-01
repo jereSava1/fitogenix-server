@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 import { config } from './config';
 import { DependencyUnavailableError } from './dependencyError';
 
@@ -18,11 +19,11 @@ export function fetchWithTimeout(ms: number, baseFetch: typeof fetch = fetch): t
 // Un solo cliente admin para todo el server: la secret key opera con el rol
 // service_role y saltea RLS, así que cada consulta de datos de usuario filtra
 // por user_id a mano (RNF-S03). Se crea la primera vez que se usa.
-let _admin: ReturnType<typeof createClient<any>> | null = null;
+let _admin: SupabaseClient<Database> | null = null;
 
-export function supabaseAdmin(): ReturnType<typeof createClient<any>> {
+export function supabaseAdmin(): SupabaseClient<Database> {
   if (!_admin) {
-    _admin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
+    _admin = createClient<Database>(config.supabaseUrl, config.supabaseSecretKey, {
       global: { fetch: fetchWithTimeout(SUPABASE_TIMEOUT_MS) },
     });
   }
@@ -33,8 +34,8 @@ export function supabaseAdmin(): ReturnType<typeof createClient<any>> {
  *  `verifyOtp`). Nunca se hacen sobre `supabaseAdmin()`: su sesión pasaría a firmar las
  *  consultas siguientes como ese usuario. `clientIp` va en `Sb-Forwarded-For`: con la secret
  *  key, Supabase aplica sus límites por IP a la del usuario y no a la del server (D-30). */
-export function supabaseAuthClient(clientIp: string): ReturnType<typeof createClient<any>> {
-  return createClient(config.supabaseUrl, config.supabaseSecretKey, {
+export function supabaseAuthClient(clientIp: string): SupabaseClient<Database> {
+  return createClient<Database>(config.supabaseUrl, config.supabaseSecretKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { fetch: fetchWithTimeout(SUPABASE_TIMEOUT_MS), headers: { 'Sb-Forwarded-For': clientIp } },
   });
