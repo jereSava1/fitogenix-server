@@ -19,6 +19,7 @@ El orden de las etapas 1 a 5 es **obligatorio** (pedido del responsable del proy
 | 6 | Endurecimiento del server (fallas de dependencias, JWT local, CORS, límites) | ADR-0006, ADR-0008 |
 | 7 | Funcionalidad nueva del server + migración de native a "todo por el server" | ADR-0010, D-28 y RF nuevos |
 | 8 | Base de datos: limpieza y tablas nuevas (cuando el código ya no depende de lo que se borra) | ADR-0009 |
+| 8b | Cierre del refactor: lo que encontró la auditoría final (seguridad, CI/CD, limpieza) | D-90 |
 | 9 | Previo a publicar en tiendas (no es limpieza; se lista para no perderlo) | D-18, D-24 |
 
 **Excepción al orden (D-67):** la etapa 5 avanza con C-05 (etapa 3) pendiente, porque no toca la base; C-05 es requisito antes de la primera migración nueva (etapa 7).
@@ -35,14 +36,15 @@ flowchart LR
   E5 --> E7["7. Funcionalidad nueva + native por el server"]
   E6 --> E7
   E7 --> E8["8. Base de datos"]
-  E8 --> E9["9. Previo a tiendas"]
+  E8 --> E8b["8b. Cierre del refactor"]
+  E8b --> E9["9. Previo a tiendas"]
 ```
 
 ### 0.2 Columnas del backlog
 
 | Columna | Significado |
 |---|---|
-| **ID** | `U-` carril urgente · `T-` etapa 1 · `E-` etapa 2 · `C-` etapa 3 (`D-` queda para decisiones) · `M-` etapa 4 · `K-` etapa 5 · `H-` etapa 6 · `F-` etapa 7 · `B-` etapa 8 · `L-` etapa 9 |
+| **ID** | `U-` carril urgente · `T-` etapa 1 · `E-` etapa 2 · `C-` etapa 3 (`D-` queda para decisiones) · `M-` etapa 4 · `K-` etapa 5 · `H-` etapa 6 · `F-` etapa 7 · `B-` etapa 8 · `R-` etapa 8b · `L-` etapa 9 |
 | **Prio** | **P0** = bloquea o es un riesgo real hoy · **P1** = necesario para el objetivo · **P2** = mejora |
 | **Acción** | ELIMINAR · MOVER · REFACTOR · TESTEAR · DOCUMENTAR (y AGREGAR para funcionalidad nueva) |
 | **Riesgo** | Alto · Medio · Bajo (probabilidad × impacto de romper algo en producción) |
@@ -284,8 +286,28 @@ Orden (de lo más fácil a lo más difícil): B-02 → B-04 (pasos 1 y 2) → B-
 |---|---|---|---|---|---|---|---|---|
 | B-01 | P1 | ELIMINAR | Supabase | ✅ Columnas `score`, `score_label`, `sello`, `engine_version` (+ índice), `nova_group`, `name_key` (+ UNIQUE), `manufacturer_info`; índice `products_barcode_unique_idx`; las 5 filas `data_source='ai'` (antes: verificar guardados e historial) | D-35, D-36, D-41, DB-02 | Medio | Antes: el escritor del catálogo (ETL) ya no escribe esas columnas; `scripts/audit-scores.ts` deja de leer `nova_group` (su chequeo pasa a usar el veredicto de procesamiento del motor, D-36); `grep` de las columnas en el código vacío. Después: smoke del lookup y del ETL | `PR-42 chore(db): limpiar columnas sin uso` |
 | B-02 | P1 | ELIMINAR | Supabase | ✅ Trigger `on_auth_user_created` + `handle_new_user()` (F-02 ya crea el perfil; desde F-08 native registra por el server: **ya se puede**, D-84) | D-46 | Medio | Después: el registro crea el perfil una sola vez | `PR-43 chore(db): sin trigger de perfil` |
-| B-03 | P1 | REFACTOR | Supabase | `REVOKE` de `anon` sobre `profiles` e `is_username_available` (cuando F-12 esté en producción: la app ya no los usa desde F-12) | ADR-0010, D-28 | Bajo | Después: prueba negativa con la anon key | `PR-44 fix(db): anon sin acceso` |
+| B-03 | **P0** | REFACTOR | Supabase | **Ampliado (D-90):** sin permisos de `anon` **ni `authenticated`** sobre `profiles`, `saved_products`, `scan_history` e `is_username_available`, y sin sus policies (RLS activo: solo el server con la secret key). Ya no espera a F-12 en producción: nadie usa la app de producción | ADR-0010, D-28, D-90 | Bajo | Después: pruebas negativas con la key pública y con un token de usuario; los flujos del server siguen andando | `PR-44 fix(db): sin acceso directo a la base` |
 | B-04 | P1 | ELIMINAR | Supabase | ✅ Tablas `productos_validados`, `registro_controles`, `validation_runs` en 3 pasos: backup → `REVOKE` (incluido `service_role`) durante 14 días (acortado a 1 por D-89) → `DROP` | DB-01, D-07 | Medio | Cada paso con su criterio (00-inventario §7.2) | `PR-45a/b/c chore(db): tablas de validación` |
+
+### 7.3b Etapa 8b — Cierre del refactor
+
+Sale de la auditoría final del 2026-10-01 (D-90): lo que falta para que server y native sean una base sólida para el MVP. Orden: P0 → P1 → P2; dentro de cada prioridad, de lo más fácil a lo más difícil.
+
+| ID | Estado |
+|---|---|
+
+| ID | Prio | Acción | Repo | Archivos / recurso | RF / ADR / D | Riesgo | Tests antes → después | PR |
+|---|---|---|---|---|---|---|---|---|
+| R-01 | P0 | REFACTOR | native | Lint en verde: los 16 errores y 10 avisos de `expo lint` (refs leídas durante el render, escrituras sobre valores de animación, `setState` sincrónico en efectos, dependencias de hooks, imports sin uso). Las hojas inferiores de `ProductIssueModal` y `ScoringExplainerModal` pasan a un solo componente (DRY). `npm run lint` en el CI, que además corre en todas las ramas | D-90 | Medio | Antes: tests de render de las pantallas tocadas. Después: `expo lint` sin errores ni avisos en el CI | `PR-N18 fix(native): lint en verde` |
+| R-02 | P0 | REFACTOR | server + native | Dependencias: `npm audit fix` en los dos repos; `npm audit --omit=dev --audit-level=high` en los dos CI; Dependabot semanal (npm y GitHub Actions) | OWASP A06, D-90 | Bajo | Después: `npm audit` sin avisos altos; CI verde | `PR-46 chore: auditoría de dependencias` · `PR-N19` |
+| R-03 | P1 | REFACTOR | server | Apagado ordenado: `SIGTERM`/`SIGINT` → `app.close()` (deja terminar los requests en curso cuando Render redeploya) | D-90 | Bajo | Test: con la señal, `close` se llama una vez y el proceso sale con 0 | `PR-47 feat(platform): apagado ordenado` |
+| R-04 | P1 | REFACTOR | server | Logs: `console.*` de `lookupProduct`, `redisProductCache` y `supabaseHistoryRepository` → el logger de Fastify (estructurado y con redact) | OWASP A09, D-90 | Bajo | Tests de los casos que loguean: el evento sale por el logger inyectado | `PR-48 refactor: logs estructurados` |
+| R-05 | P1 | AGREGAR | server | CI de migraciones: un job que levanta Supabase local y aplica `supabase/migrations/` desde cero (`db reset`), y falla si alguna se rompe | ADR-0009, D-90 | Bajo | Después: una migración con error rompe el job | `PR-49 ci: migraciones desde cero` |
+| R-06 | P1 | DOCUMENTAR | server + native + Render | Deploy y rollback: integración → `main` en los dos repos (D-59); `main` protegida (merge solo con CI verde); tag por versión (`vX.Y.Z`); guía de rollback (Render → *Rollback* al deploy anterior; cada migración con su SQL de vuelta atrás); variables de Render (`TRUST_PROXY`, `CORS_ORIGINS`) | ADR-0007, ADR-0009, D-59, D-90 | Medio | Después: deploy de `main` con `/health` y `/health/ready` en 200; un rollback de prueba | `PR-50 docs: deploy y rollback` |
+| R-07 | P2 | ELIMINAR | server + native | Código muerto: el camino `_aiSource` / `data_source = 'ai'` (`productRow`, `supabaseProductWriter`, TTL de `lookupProduct`, `etl/lib/merge.ts`); `eslint-disable` sin ESLint en `platform/supabase.ts`; imports sin uso (3 en server); `scripts/reset-project.js` en native. `noUnusedLocals` en los tsconfig de los dos repos | D-41, D-90 | Bajo | Después: `tsc` con `noUnusedLocals` y `knip` sin avisos | `PR-51 chore: código muerto` · `PR-N20` |
+| R-08 | P2 | REFACTOR | server | Contrato server ↔ base: tipos generados con `supabase gen types` (`src/platform/database.types.ts`) en vez de `createClient<any>` y filas leídas a mano; el CI compara los tipos con las migraciones | ADR-0011, D-90 | Medio | Antes: tests de los adaptadores. Después: cambiar una columna en una migración rompe `tsc` o el CI | `PR-52 refactor(platform): tipos de la base` |
+| R-09 | P2 | REFACTOR | native | Capas: las pantallas no importan `api/` ni `auth/` (≈10 hoy), pasan por hooks de `presentation/` como `useSignIn`; `OnboardingScreen` (1332 líneas) partida por paso; `ScanResultScreen` y `HomeScreen` en componentes; regla de lint que prohíbe el import | D-90 | Medio | Antes: tests de render de cada pantalla. Después: los mismos, más tests de los hooks nuevos | `PR-N21…N23 refactor(native): pantallas sin acceso a la API` |
+| R-10 | P2 | TESTEAR | server + native | Cobertura medida (`vitest --coverage`) en el CI, con mínimo exigido en `scoring` y `auth` (alto riesgo) y reporte del resto | D-90 | Bajo | Después: bajar de los mínimos rompe el CI | `PR-53 ci: cobertura` · `PR-N24` |
 
 ### 7.4 Etapa 9 — Previo a publicar en tiendas (fuera de la limpieza)
 
@@ -315,6 +337,7 @@ Orden (de lo más fácil a lo más difícil): B-02 → B-04 (pasos 1 y 2) → B-
 | 6 · Endurecimiento | 5 | 5 | — | — |
 | 7 · Funcionalidad | 13 | 7 | 9 | — |
 | 8 · Base de datos | 4 | — | — | 6 migraciones |
+| 8b · Cierre del refactor | 10 | 7 | 5 | 1 de deploy |
 | 9 · Previo a tiendas | 10 | — | — | — |
 
 ---
