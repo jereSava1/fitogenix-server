@@ -29,7 +29,7 @@ Lo que el código ya hace pero los tests automáticos no pueden ver (teléfono r
 |---|---|---|---|---|
 | MT-03 | Registro con email | Crear una cuenta con nombre, apellido, username y teléfono | Llega el mail de confirmación; después de confirmar, el login entra y Perfil muestra nombre y username | Pendiente |
 | MT-04 | Login y errores | Login con el email en MAYÚSCULAS; después con contraseña mala; después con un username tomado al registrarse | Entra igual; contraseña mala → mensaje claro, sin decir si el email existe; username tomado → aviso en el formulario | Pendiente |
-| MT-05 | Google | "Continuar con Google" en el teléfono | Entra; la primera vez se crea el perfil con el nombre de Google | Pendiente |
+| MT-05 | Google | "Continuar con Google" en el teléfono | Entra; la primera vez se crea el perfil con el nombre de Google | ✅ 2026-10-01 (iPhone, bundle `.dev`) |
 | MT-06 | Apple (iOS) | "Continuar con Apple" | Entra; sin errores de nonce ni de client ID | Pendiente |
 | MT-07 | Recuperar contraseña (F-04) | "Olvidé mi contraseña" → código del mail → contraseña nueva | Llega el mail; con el código se cambia; la vieja ya no entra y la nueva sí. Con un email que no existe, la app dice lo mismo (no revela) | Pendiente |
 | MT-08 | La sesión dura | Cerrar la app y abrirla; al día siguiente, abrirla otra vez (el token vence a la hora) | Sigue con la sesión, sin pedir login (el refresh es invisible) | Pendiente |
@@ -48,11 +48,11 @@ Lo que el código ya hace pero los tests automáticos no pueden ver (teléfono r
 
 | # | Tarea | Cómo | Qué tiene que pasar | Estado |
 |---|---|---|---|---|
-| MT-14 | Escanear (PM-03) | Escanear 3 productos reales con la cámara trasera | Lee el código y muestra el resultado | Pendiente |
+| MT-14 | Escanear (PM-03) | Escanear 3 productos reales con la cámara trasera | Lee el código y muestra el resultado | ✅ 2026-10-01 (Rhodesia y otros; ver PM-08) |
 | MT-15 | Buscar y casos raros | Buscar por nombre; un código que no está en el catálogo; una bebida alcohólica | Encuentra el producto; "todavía no está en el catálogo"; "Sin puntaje" con su explicación | Pendiente |
 | MT-16 | Imágenes (PM-02) | Mirar las fotos de varios resultados | Si alguna no carga, anotar cuál (es DT-04) | Pendiente |
-| MT-17 | Guardar e historial | Guardar con cuenta; sin cuenta; borrar una fila del historial | Con cuenta aparece en Guardados; sin cuenta invita a crearla; la fila borrada no vuelve al recargar | Pendiente |
-| MT-18 | Feedback y reportes (F-11b) | Enviar feedback y "Reportar problema" de un producto, con y sin cuenta | "Enviado" solo cuando el server respondió; sin red se puede reintentar | Pendiente |
+| MT-17 | Guardar e historial | Guardar con cuenta; sin cuenta; borrar una fila del historial | Con cuenta aparece en Guardados; sin cuenta invita a crearla; la fila borrada no vuelve al recargar | ✅ 2026-10-01 (guardar e historial) |
+| MT-18 | Feedback y reportes (F-11b) | Enviar feedback y "Reportar problema" de un producto, con y sin cuenta | "Enviado" solo cuando el server respondió; sin red se puede reintentar | ✅ 2026-10-01 (feedback) |
 
 ### Animaciones tocadas en R-01
 
@@ -93,3 +93,6 @@ Lo que el código ya hace pero los tests automáticos no pueden ver (teléfono r
 | PM-05 | 2026-09-30 | Navegador, onboarding | En los pasos "¿Qué querés evitar?" y "¿Cómo nos conociste?" los toques no marcan las opciones ("Todos los anteriores" sí) | En web, un espaciador vacío (`<View style={{ flex: 1 }} />`) queda encima de la lista y se come los clics; en "evitar" además las tarjetas se superponen. Previo a F-10 (solo diseño web; el onboarding es igual en el teléfono). Visto en la prueba de punta a punta de F-08 | A verificar en el teléfono |
 | PM-06 | 2026-10-01 | iPhone, login con Apple | Se mostraba el error crudo del SDK (`RequestUnknownException … AppleAuthenticationExceptions.swift:61`) | La build no tenía el permiso de Apple (el App ID `com.fitogenix.app.dev` no tiene la capacidad); además la app mostraba el mensaje técnico | ✅ Mensaje legible (native `fb34879`). Apple: pendiente de habilitar la capacidad y recompilar (MT-06) |
 | PM-07 | 2026-10-01 | iPhone, login con Google | "Not Found" | El server corría `node dist/main.js` con un `dist/` compilado antes de F-03 (sin las rutas de OAuth) | ✅ Correr `npm run dev` (o `npm run build` antes de `npm start`) |
+| PM-08 | 2026-10-01 | iPhone, Rhodesia (Terrabusi) | Puntaje 0 | La banda "Malo" es correcta (45 % de azúcar, 15 g de grasa saturada, harina refinada), pero el número está inflado por el motor: (1) el mismo aditivo se cuenta 2 o 3 veces (nombre + INS de la etiqueta + `additives_tags` de OFF: lecitina de soja / INS 322 / E322I; ácido cítrico / INS 330; poliglicerol / INS 476; ≈ −12); (2) "aromatizante idéntico al natural" se parte y "Identico al natural" resta −6 como ingrediente rojo; (3) vitaminas B1 y B2 de fortificación restan (hierro, fólico y niacina no); (4) la descripción de "Aromatizante" es la de un cítrico; (5) datos: sodio 0 con sal declarada. Corregido rondaría 20 | Pendiente: ítem del motor (alto riesgo: tests de caracterización antes) |
+| PM-09 | 2026-10-01 | iPhone, snack veggie | Puntaje 30 | Sin analizar: falta el nombre o el código de barras | Pendiente |
+| PM-10 | 2026-10-01 | iPhone, política de privacidad | Hay que ajustarla | La de la app (`PrivacyScreen`) y la de la landing tienen que coincidir y reflejar los datos de salud con consentimiento y los flujos por el server (L-07) | Pendiente (L-07) |
