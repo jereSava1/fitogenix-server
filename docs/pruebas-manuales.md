@@ -6,9 +6,10 @@ Lo que se encuentra probando la app a mano, con su estado. Cada fila nueva lleva
 
 | Dónde | Qué hace falta |
 |---|---|
-| Server | `npm run dev` en `fitogenix-server` (el `.env` apunta al Supabase real: lo que se haga queda en producción) |
+| Server | `npm run dev` en `fitogenix-server` (el `.env` apunta al Supabase real: lo que se haga queda en producción). **No `npm start` sin `npm run build` antes:** corre el `dist/` que haya quedado compilado, que puede ser viejo (PM-07) |
 | Navegador (Expo web) | `CORS_ORIGINS=http://localhost:8081` en el `.env` del server; sin eso el navegador bloquea todo con `Failed to fetch` (H-03: sin lista, sin CORS). `EXPO_PUBLIC_BACKEND_URL=http://localhost:3000` en native |
 | Teléfono | Un *development build* instalado (la app usa `expo-dev-client` y Google Sign-In nativo: Expo Go no alcanza). **Desde F-08 hace falta uno nuevo** (`expo-secure-store`, `expo-crypto` y `usesAppleSignIn`), la misma red Wi-Fi y `EXPO_PUBLIC_BACKEND_URL=http://<IP de la Mac>:3000` |
+| Build en el iPhone | `LANG=en_US.UTF-8 npx expo run:ios --device` en `fitogenix-native` (sin `LANG`, CocoaPods falla). El proyecto local usa el bundle `com.fitogenix.app.dev`: Apple necesita la capacidad *Sign In with Apple* en ese App ID y el bundle en los *Client IDs* de Apple en Supabase; Google, un client ID de iOS para ese bundle |
 | Onboarding | `EXPO_PUBLIC_SKIP_ONBOARDING=1` en el `.env` de native lo saltea (solo en desarrollo) |
 
 ## Pruebas pendientes del responsable (2026-10-01)
@@ -90,3 +91,5 @@ Lo que el código ya hace pero los tests automáticos no pueden ver (teléfono r
 | PM-03 | 2026-09-30 | Navegador, cámara de la computadora | No lee códigos de barras (antes sí) | Sin analizar: puede ser la cámara frontal (imagen espejada o sin foco) o un cambio en el lector web | A verificar en el teléfono; si allá anda, se analiza solo el caso web |
 | PM-04 | 2026-09-30 | Inicio, "Productos analizados" | El nombre del producto se corta en la primera letra ("S…", "F…") | Error de diseño previo al refactor: la tarjeta deja al nombre una sola línea muy angosta | Pendiente (native, diseño) |
 | PM-05 | 2026-09-30 | Navegador, onboarding | En los pasos "¿Qué querés evitar?" y "¿Cómo nos conociste?" los toques no marcan las opciones ("Todos los anteriores" sí) | En web, un espaciador vacío (`<View style={{ flex: 1 }} />`) queda encima de la lista y se come los clics; en "evitar" además las tarjetas se superponen. Previo a F-10 (solo diseño web; el onboarding es igual en el teléfono). Visto en la prueba de punta a punta de F-08 | A verificar en el teléfono |
+| PM-06 | 2026-10-01 | iPhone, login con Apple | Se mostraba el error crudo del SDK (`RequestUnknownException … AppleAuthenticationExceptions.swift:61`) | La build no tenía el permiso de Apple (el App ID `com.fitogenix.app.dev` no tiene la capacidad); además la app mostraba el mensaje técnico | ✅ Mensaje legible (native `fb34879`). Apple: pendiente de habilitar la capacidad y recompilar (MT-06) |
+| PM-07 | 2026-10-01 | iPhone, login con Google | "Not Found" | El server corría `node dist/main.js` con un `dist/` compilado antes de F-03 (sin las rutas de OAuth) | ✅ Correr `npm run dev` (o `npm run build` antes de `npm start`) |
