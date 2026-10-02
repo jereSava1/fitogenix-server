@@ -1,4 +1,4 @@
-// Tablas `feedback` y `product_reports`. Solo se insertan; no se guarda la IP (03-contratos §B.4.8).
+// Tablas `feedback` y `product_reports`. Solo se insertan; no se guarda la IP.
 
 import { queryFailed, runQuery, supabaseAdmin as admin } from '../../../platform/supabase';
 import type { FeedbackRepository } from '../application/ports';

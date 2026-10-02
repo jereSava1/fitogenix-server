@@ -1,8 +1,8 @@
 # ADR-0005 · Propiedad de tablas y acceso a Supabase por actor
 
-- **Estado:** Propuesto · **revisado el 2026-09-28 por ADR-0010** (el cliente ya no accede a Supabase)
+- **Estado:** Aceptado · implementado, con el acceso del cliente revisado por ADR-0010
 - **Fecha:** 2026-09-28
-- **Relacionado:** [02-arquitectura.md §7](../02-arquitectura.md), SEC-01 / D-08, RNF-S01, RNF-S03, DB-01
+- **Relacionado:** D-08, D-90, RNF-S01, RNF-S03, ADR-0010
 
 ## Contexto
 
@@ -38,7 +38,7 @@ Solo la **infraestructura del módulo dueño** consulta su tabla. La excepción 
 
 ### 3. Cierre del catálogo (SEC-01) y de todo acceso `anon`
 
-Con ADR-0010, `anon` no necesita acceso a nada. Se borra la policy pública, se revocan los grants de `anon`/`authenticated` sobre `products` y `products_staging`, y `EXECUTE` de `search_products_by_name` para `anon`, `authenticated` y `PUBLIC`. Cuando native deje de usar Supabase, se revoca también lo que queda: `profiles` y `is_username_available`. Detalle y precondiciones en [00-inventario.md §7.1](../00-inventario.md). RLS queda activo en todas las tablas como segunda barrera, y toda tabla nueva nace con RLS activo y sin grants para `anon`.
+Con ADR-0010, `anon` no necesita acceso a nada. Se borra la policy pública, se revocan los grants de `anon`/`authenticated` sobre `products` y `products_staging`, y `EXECUTE` de `search_products_by_name` para `anon`, `authenticated` y `PUBLIC`. También se revocan los de `profiles`, `saved_products`, `scan_history` e `is_username_available` (D-90). RLS queda activo en todas las tablas como segunda barrera, y toda tabla nueva nace con RLS activo y sin grants para `anon`.
 
 ## Alternativas consideradas
 
@@ -52,5 +52,5 @@ Con ADR-0010, `anon` no necesita acceso a nada. Se borra la policy pública, se 
 
 - **+** Cierra SEC-01 y deja explícito qué puede tocar cada actor.
 - **+** Un solo cliente Supabase en el server (hoy son cinco, uno por request).
-- **−** El filtro por `userId` es la única barrera del server para datos de usuario: se cubre con tests de caracterización de auth (paso 1 del plan).
+- **−** El filtro por `userId` es la única barrera del server para datos de usuario: lo cubren los tests de auth y de user-library.
 - **−** Las tablas nuevas necesitan su migración con RLS y sin grants para `anon` (checklist en ADR-0009).

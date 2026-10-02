@@ -1,6 +1,0 @@
-- Finding files
-Processed 66 files (605ms) 
-
-✔ No circular dependency found!
-
-exit=0

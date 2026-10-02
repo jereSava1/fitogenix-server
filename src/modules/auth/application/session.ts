@@ -33,7 +33,7 @@ export function makeSessions(deps: { gateway: AuthGateway; profiles: AuthProfile
         return result;
       }
       if (key) attempts.clear(key);
-      // Con un proveedor, el primer inicio de sesión es el registro (03-contratos §B.4.6).
+      // Con un proveedor, el primer inicio de sesión es el registro.
       await profiles.ensureProfile(result.session.user.id, result.names);
       return result.session;
     },
