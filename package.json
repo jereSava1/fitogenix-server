@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@fastify/rate-limit": "^10.2.2",
+    "@fastify/rate-limit": "^11.2.0",
     "@fastify/type-provider-typebox": "^5.2.0",
     "@sinclair/typebox": "^0.34.52",
     "@supabase/supabase-js": "^2.108.2",
