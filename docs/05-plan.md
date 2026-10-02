@@ -328,7 +328,7 @@ Orden (de lo más fácil a lo más difícil): B-02 → B-04 (pasos 1 y 2) → B-
 |---|---|---|
 | L-01 | Instancia **siempre encendida** (del proveedor que sea) | D-18, ADR-0007 |
 | L-02 | Activar **IP Address Forwarding** en Supabase Auth (dashboard → Authentication → Rate Limits, o `security_sb_forwarded_for_enabled` por la Management API) antes de que native use el login del server (F-08). El server ya manda `Sb-Forwarded-For` desde F-03; sin la opción, Supabase lo ignora · ✅ activado el 2026-09-30 | D-30 |
-| L-03 | **SMTP propio** o subir el límite de emails (hoy 30 por hora para todo el proyecto) | ADR-0010 |
+| L-03 | **SMTP propio:** Resend ya está como SMTP de Supabase pero en modo de prueba (solo envía al email del dueño; PM-12, el registro de cualquier otra persona falla). Pasos: (1) en resend.com/domains agregar `mail.fitogenix.com` y cargar sus registros DNS (MX y SPF en `send.mail`, DKIM en `resend._domainkey.mail`; opcional DMARC `v=DMARC1; p=none;` en `_dmarc.fitogenix.com`) y verificarlo; (2) en Supabase → Authentication → Emails → SMTP, remitente `no-reply@mail.fitogenix.com`, nombre `Fitogenix` (host `smtp.resend.com`:465, usuario `resend`, la API key como contraseña, sin cambios); (3) subir el límite de mails por hora en Authentication → Rate Limits; (4) probar el registro con un email que no sea el del dueño. **Bloquea el registro con email para cualquier otra persona** | ADR-0010, PM-12 |
 | L-04 | Alternativas mejores (RF-060) y lectura de etiquetas (RF-061) | D-24 |
 | L-05 | Metales pesados en el motor (RF-062), con ADR propio y tests de caracterización | D-25 |
 | L-06 | Catálogo limpio y cobertura de puntaje ≥ 95% | DT-01, DT-02 |
