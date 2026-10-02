@@ -1,0 +1,576 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Barrita de cereal 1`] = `
+{
+  "brand": null,
+  "fito": "nofito",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Cereal integral. Rico en fibra beta-glucano que reduce el colesterol.",
+      "name": "Avena",
+      "sev": "green",
+    },
+    {
+      "desc": "Azúcar líquida refinada. Alta carga glucémica. Presente en productos ultraprocesados.",
+      "name": "Jarabe de glucosa",
+      "sev": "red",
+    },
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Extraído mediante procesos industriales con solventes químicos y altas temperaturas. Rico en omega-6 en proporciones no presentes en la alimentación tradicional humana.",
+      "name": "Aceite de girasol",
+      "sev": "red",
+    },
+    {
+      "desc": "Un frasco de miel es un alimento. La misma miel dentro de una barrita es azúcar añadida, y cumple la misma función que cumpliría el azúcar refinada. Fitogenix evalúa la función del ingrediente en la formulación, no su prestigio.",
+      "name": "Miel",
+      "sev": "red",
+    },
+    {
+      "desc": "Saborizante no especificado. Puede ser natural o artificial. Verificar origen.",
+      "name": "Saborizante",
+      "sev": "yellow",
+    },
+    {
+      "desc": "Emulsionante no especificado. Verificar el número E o el origen.",
+      "name": "Emulsionante",
+      "sev": "orange",
+    },
+  ],
+  "name": "Barrita de cereal",
+  "noScore": null,
+  "nutrition": {
+    "calories": null,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": null,
+    "sodium": null,
+    "sugars": null,
+    "transFat": null,
+  },
+  "score": 23,
+  "scoreColor": "#dc2626",
+  "scoreLabel": "MALO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Coca-Cola 1`] = `
+{
+  "brand": null,
+  "fito": "nofito",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Ingrediente base. Esencial para la vida.",
+      "name": "Agua carbonatada",
+      "sev": "green",
+    },
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.",
+      "name": "Colorante caramelo E150d",
+      "sev": "orange",
+    },
+    {
+      "desc": "Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.",
+      "name": "Acidulante ácido fosfórico",
+      "sev": "orange",
+    },
+    {
+      "desc": "No tenemos una evaluación específica de este ingrediente todavía.",
+      "name": "Aromas naturales",
+      "sev": "yellow",
+    },
+    {
+      "desc": "Estimulante natural. Segura en cantidades moderadas para la mayoría de adultos.",
+      "name": "Cafeína",
+      "sev": "green",
+    },
+  ],
+  "name": "Coca-Cola",
+  "noScore": null,
+  "nutrition": {
+    "calories": 42,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": null,
+    "sodium": 0,
+    "sugars": 10.6,
+    "transFat": null,
+  },
+  "score": 13,
+  "scoreColor": "#dc2626",
+  "scoreLabel": "MALO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Coca-Cola Zero 1`] = `
+{
+  "brand": null,
+  "fito": "none",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Ingrediente base. Esencial para la vida.",
+      "name": "Agua carbonatada",
+      "sev": "green",
+    },
+    {
+      "desc": "Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.",
+      "name": "Colorante caramelo E150d",
+      "sev": "orange",
+    },
+    {
+      "desc": "Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.",
+      "name": "Acidulante ácido fosfórico",
+      "sev": "orange",
+    },
+    {
+      "desc": "Edulcorante no especificado. Verificar si es natural (stevia) o sintético.",
+      "name": "Aspartamo",
+      "sev": "orange",
+    },
+    {
+      "desc": "No tenemos una evaluación específica de este ingrediente todavía.",
+      "name": "Aromas",
+      "sev": "yellow",
+    },
+    {
+      "desc": "Estimulante natural. Segura en cantidades moderadas para la mayoría de adultos.",
+      "name": "Cafeína",
+      "sev": "green",
+    },
+  ],
+  "name": "Coca-Cola Zero",
+  "noScore": null,
+  "nutrition": {
+    "calories": 1,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": null,
+    "sodium": null,
+    "sugars": 0,
+    "transFat": null,
+  },
+  "score": 47,
+  "scoreColor": "#f97316",
+  "scoreLabel": "MODERADO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Galletitas tipo Oreo 1`] = `
+{
+  "brand": null,
+  "fito": "nofito",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Harina refinada sin germen ni salvado. Alta carga glucémica. Preferir integral.",
+      "name": "Harina de trigo",
+      "sev": "red",
+    },
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Cuando la etiqueta no dice qué grasa es, asumimos la más económica del mercado, que es un aceite de semilla refinado.",
+      "name": "Aceite vegetal",
+      "sev": "red",
+    },
+    {
+      "desc": "Cacao tratado con solución alcalina para suavizar acidez y oscurecer color. El proceso reduce buena parte de los flavonoides que hacen valioso al cacao.",
+      "name": "Cacao alcalinizado",
+      "sev": "yellow",
+    },
+    {
+      "desc": "Azúcar líquida refinada. Alta carga glucémica. Presente en productos ultraprocesados.",
+      "name": "Jarabe de glucosa",
+      "sev": "red",
+    },
+    {
+      "desc": "Aditivo industrial sin clasificación específica en nuestra base. Se evalúa con impacto medio: la falta de clasificación no equivale a ausencia de riesgo.",
+      "name": "Leudantes",
+      "sev": "orange",
+    },
+    {
+      "desc": "Mineral esencial. El exceso eleva la presión arterial. Preferir sal marina sin refinar.",
+      "name": "Sal",
+      "sev": "green",
+    },
+    {
+      "desc": "Emulsionante. Generalmente de soja transgénica. Contiene fitoestrógenos.",
+      "name": "Emulsionante",
+      "sev": "orange",
+    },
+    {
+      "desc": "Saborizante no especificado. Puede ser natural o artificial. Verificar origen.",
+      "name": "Saborizante",
+      "sev": "yellow",
+    },
+  ],
+  "name": "Galletitas de chocolate rellenas",
+  "noScore": null,
+  "nutrition": {
+    "calories": 480,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": 9,
+    "sodium": 400,
+    "sugars": 38,
+    "transFat": null,
+  },
+  "score": 12,
+  "scoreColor": "#dc2626",
+  "scoreLabel": "MALO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Jamón cocido con ascorbato 1`] = `
+{
+  "brand": null,
+  "fito": "none",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Proteína animal completa. Rica en hierro hem, zinc, vitamina B12 y creatina.",
+      "name": "Carne de cerdo",
+      "sev": "green",
+    },
+    {
+      "desc": "Ingrediente base. Esencial para la vida.",
+      "name": "Agua",
+      "sev": "green",
+    },
+    {
+      "desc": "Mineral esencial. El exceso eleva la presión arterial. Preferir sal marina sin refinar.",
+      "name": "Sal",
+      "sev": "green",
+    },
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Estabilizante no especificado. Generalmente gomas o fosfatos. Verificar origen.",
+      "name": "Estabilizantes",
+      "sev": "orange",
+    },
+    {
+      "desc": "No tenemos una evaluación específica de este ingrediente todavía.",
+      "name": "Ascorbato de sodio",
+      "sev": "yellow",
+    },
+    {
+      "desc": "Conservante en carnes procesadas. IARC Grupo 2A; EFSA 2023 redujo niveles permitidos. Forma nitrosaminas cancerígenas al cocinar.",
+      "name": "Nitrito de sodio",
+      "sev": "red",
+    },
+  ],
+  "name": "Jamón cocido",
+  "noScore": null,
+  "nutrition": {
+    "calories": null,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": null,
+    "sodium": null,
+    "sugars": null,
+    "transFat": null,
+  },
+  "score": 49,
+  "scoreColor": "#f97316",
+  "scoreLabel": "MODERADO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Leche entera 1`] = `
+{
+  "brand": null,
+  "fito": "fito",
+  "highlight": "beneficiosos",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Lácteo íntegro. Fuente completa de proteínas, calcio y grasas liposolubles.",
+      "name": "Leche entera",
+      "sev": "green",
+    },
+  ],
+  "name": "Leche entera",
+  "noScore": null,
+  "nutrition": {
+    "calories": 61,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": 3.2,
+    "fiber": null,
+    "protein": null,
+    "satFats": 2,
+    "sodium": null,
+    "sugars": 4.6,
+    "transFat": null,
+  },
+  "score": 80,
+  "scoreColor": "#16a34a",
+  "scoreLabel": "EXCELENTE",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Mayonesa 1`] = `
+{
+  "brand": null,
+  "fito": "none",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Extraído mediante procesos industriales con solventes químicos y altas temperaturas. Rico en omega-6 en proporciones no presentes en la alimentación tradicional humana.",
+      "name": "Aceite de girasol",
+      "sev": "red",
+    },
+    {
+      "desc": "Ingrediente base. Esencial para la vida.",
+      "name": "Agua",
+      "sev": "green",
+    },
+    {
+      "desc": "Uno de los alimentos más completos. Proteína de máxima calidad, colina, vitaminas A/D/B12.",
+      "name": "Yema de huevo",
+      "sev": "green",
+    },
+    {
+      "desc": "Conservante natural de fermentación. Regula glucemia y beneficia el microbioma.",
+      "name": "Vinagre",
+      "sev": "green",
+    },
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Mineral esencial. El exceso eleva la presión arterial. Preferir sal marina sin refinar.",
+      "name": "Sal",
+      "sev": "green",
+    },
+    {
+      "desc": "Ácido cítrico natural. Conservante y antioxidante. Sin procesamiento.",
+      "name": "Jugo de limón",
+      "sev": "green",
+    },
+    {
+      "desc": "Conservante no especificado. Sin transparencia sobre el compuesto exacto.",
+      "name": "Conservante",
+      "sev": "orange",
+    },
+  ],
+  "name": "Mayonesa",
+  "noScore": null,
+  "nutrition": {
+    "calories": 420,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": 45,
+    "fiber": null,
+    "protein": null,
+    "satFats": 5,
+    "sodium": 800,
+    "sugars": null,
+    "transFat": null,
+  },
+  "score": 38,
+  "scoreColor": "#f97316",
+  "scoreLabel": "MODERADO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Nutella (etiqueta en inglés de OFF) 1`] = `
+{
+  "brand": null,
+  "fito": "none",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Azúcar refinada. En exceso promueve inflamación, resistencia a insulina y desequilibrio del microbioma.",
+      "name": "Azúcar",
+      "sev": "red",
+    },
+    {
+      "desc": "Grasa de alto rendimiento industrial, refinada a altas temperaturas. Se usa por su costo y su estabilidad al horneado, no por su aporte al alimento.",
+      "name": "Aceite de palma",
+      "sev": "orange",
+    },
+    {
+      "desc": "Fruto seco rico en vitamina E, grasas monoinsaturadas y magnesio.",
+      "name": "Avellanas",
+      "sev": "green",
+    },
+    {
+      "desc": "Superfood real. Flavanoles cardioprotectores, magnesio y teobromina estimulante.",
+      "name": "Cacao",
+      "sev": "green",
+    },
+    {
+      "desc": "Lácteo desgrasado. Pierde vitaminas liposolubles (A, D, K) al quitar la grasa.",
+      "name": "Leche descremada",
+      "sev": "green",
+    },
+    {
+      "desc": "Proteína láctea completa. Alta biodisponibilidad. Todos los aminoácidos esenciales.",
+      "name": "Suero de leche",
+      "sev": "green",
+    },
+    {
+      "desc": "Emulsionante no especificado. Verificar el número E o el origen.",
+      "name": "Lecitina",
+      "sev": "orange",
+    },
+    {
+      "desc": "Especia natural. Real y beneficiosa.",
+      "name": "Vainilla",
+      "sev": "green",
+    },
+  ],
+  "name": "7790000000000",
+  "noScore": null,
+  "nutrition": {
+    "calories": 539,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": 9.6,
+    "sodium": 0,
+    "sugars": 44.2,
+    "transFat": null,
+  },
+  "score": 28,
+  "scoreColor": "#f97316",
+  "scoreLabel": "MODERADO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Papas fritas de paquete 1`] = `
+{
+  "brand": null,
+  "fito": "none",
+  "highlight": "cuestionables",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Tubérculo con vitamina C y potasio. Alto índice glucémico. Preferir con piel.",
+      "name": "Papa",
+      "sev": "green",
+    },
+    {
+      "desc": "Extraído mediante procesos industriales con solventes químicos y altas temperaturas. Rico en omega-6 en proporciones no presentes en la alimentación tradicional humana.",
+      "name": "Aceite de girasol alto oleico",
+      "sev": "red",
+    },
+    {
+      "desc": "Mineral esencial. El exceso eleva la presión arterial. Preferir sal marina sin refinar.",
+      "name": "Sal",
+      "sev": "green",
+    },
+  ],
+  "name": "Papas fritas",
+  "noScore": null,
+  "nutrition": {
+    "calories": 530,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": 32,
+    "fiber": null,
+    "protein": null,
+    "satFats": 3,
+    "sodium": 600,
+    "sugars": null,
+    "transFat": null,
+  },
+  "score": 48,
+  "scoreColor": "#f97316",
+  "scoreLabel": "MODERADO",
+}
+`;
+
+exports[`caracterización — respuesta completa de toProductDetail (T-02) > Yogur natural entero 1`] = `
+{
+  "brand": null,
+  "fito": "fito",
+  "highlight": "beneficiosos",
+  "id": "6f1e2c3d-0000-4000-8000-000000000001",
+  "imageUrl": null,
+  "ingredients": [
+    {
+      "desc": "Lácteo natural. Fuente de proteínas completas, calcio y vitaminas B.",
+      "name": "Leche parcialmente descremada",
+      "sev": "green",
+    },
+    {
+      "desc": "Fermentos lácticos: sin objeciones desde la mirada Fitogenix.",
+      "name": "Fermentos lacticos",
+      "sev": "green",
+    },
+  ],
+  "name": "Yogur natural",
+  "noScore": null,
+  "nutrition": {
+    "calories": 45,
+    "carbs": null,
+    "cholesterol": null,
+    "fats": null,
+    "fiber": null,
+    "protein": null,
+    "satFats": null,
+    "sodium": null,
+    "sugars": 4.7,
+    "transFat": null,
+  },
+  "score": 86,
+  "scoreColor": "#16a34a",
+  "scoreLabel": "EXCELENTE",
+}
+`;

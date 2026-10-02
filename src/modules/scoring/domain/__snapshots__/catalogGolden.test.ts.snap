@@ -1,0 +1,204 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo de cada producto 1`] = `
+"000 · — · Sin datos suficientes (sin-ingredientes) · Sardinas Cumaná
+001 · 67 · Bueno · Arroz blanco Vanguardia
+002 · 15 · Malo · Medallón de Carne Sabor Cebolla x 2 Un 200 Grs P
+003 · 89 · Excelente · Yerba Mate
+004 · — · Sin datos suficientes (sin-ingredientes) · Leche en polvo
+005 · — · Sin datos suficientes (fuera-de-alcance) · Vino Blanco Blend del Enólogo Estancia Mendoza
+006 · 34 · Moderado · Galletitas Sabor Manteca y Chips de Chocolate 12
+007 · — · Sin datos suficientes (sin-identificar) · Maicitos pehuamar
+008 · — · Sin datos suficientes (fuera-de-alcance) · Cápsula De Café Deciso X 55 Grs Cabrales
+009 · — · Sin datos suficientes (sin-ingredientes) · Tomate pelado
+010 · 15 · Malo · Snack matero salado
+011 · — · Sin datos suficientes (sin-identificar) · Chocolate Amargo 53%
+012 · 82 · Excelente · Avena tradicional
+013 · 60 · Bueno · Medallón De Lentejón Canadiense X 4 Un Casa Vega
+014 · 47 · Moderado · Dulce Caba¤a Mico Sauco Seramico X 454 Grs.
+015 · 23 · Malo · Medallones De Carne Finitas Chacra Nuestra 2x5
+016 · — · Sin datos suficientes (sin-ingredientes) · Dulce Rosa Mosqueta
+017 · 10 · Malo · Bombon de chocolate y avellanas Bon o Bon Suprem
+018 · 13 · Malo · Profiteroles Al Cacao X 55 Grs Dolceria Alba
+019 · — · Sin datos suficientes (sin-identificar) · Pitusas
+020 · — · Sin datos suficientes (fuera-de-alcance) · Vino Blanco Torrontés Cafayate
+021 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Lcp Merlot
+022 · 17 · Malo · Naranja
+023 · 5 · Malo · Yogur Descremado Con Fruta Durazno X Ilolay
+024 · 27 · Moderado · Yogurísimo Firme Vainilla
+025 · 89 · Excelente · Café en Grano Armonioso 500 Grs Gimoka
+026 · — · Sin datos suficientes (sin-ingredientes) · Miel
+027 · 65 · Bueno · Dos anclas sal gruesa
+028 · 92 · Excelente · Orégano
+029 · — · Sin datos suficientes (sin-identificar) · Empanada De Carne Pietro X 4u -
+030 · — · Sin datos suficientes (sin-identificar) · Mantecol
+031 · — · Sin datos suficientes (fuera-de-alcance) · Vino Fino Sun.rise Conha Y Toro Cabernet Sauvign
+032 · 89 · Excelente · Nescafé Gold
+033 · 89 · Excelente · Yerba Mate Rosamonte Con Palo Paquete
+034 · 0 · Malo · Helado Sabor Crema Toffee con Corazón de Dulce d
+035 · 13 · Malo · Cereal Cookie Crisp
+036 · — · Sin datos suficientes (fuera-de-alcance) · Cerveza Session Ipa Salta Cautiva
+037 · 82 · Excelente · Avena gruesa Dicomere sin gluten 350 grs
+038 · 17 · Malo · Caramelos Sabor Crema
+039 · — · Sin datos suficientes (fuera-de-alcance) · Cerveza Imperial Stout
+040 · 42 · Moderado · Merengues Medianos de Colores
+041 · 89 · Excelente · Café Lungo Profondo Intensidad 8 x 10 Un Lo'R
+042 · 59 · Bueno · Tirabuzón
+043 · 86 · Excelente · Manteca President Sin Sal Paq
+044 · — · Sin datos suficientes (sin-ingredientes) · Arytza salsa caesar
+045 · — · Sin datos suficientes (fuera-de-alcance) · Vino tinto malbec Terra.
+046 · — · Sin datos suficientes (sin-identificar) · Mini Crackers 5 Semillas
+047 · — · Sin datos suficientes (sin-identificar) · Salsa napolitana
+048 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Toro
+049 · — · Sin datos suficientes (sin-identificar) · Salsa lista knorr portuguesa
+050 · 47 · Moderado · Cañuelas
+051 · — · Sin datos suficientes (fuera-de-alcance) · Vino Rosado La Celia
+052 · 43 · Moderado · Organic Cinnamon Harvest
+053 · — · Sin datos suficientes (sin-identificar) · Pan lactal
+054 · — · Sin datos suficientes (solo-categorias) · Choclo
+055 · — · Sin datos suficientes (sin-identificar) · Anillitos De Vainilla
+056 · 11 · Malo · Formitas de Pollo
+057 · 43 · Moderado · Nachos Snack Style Sabor Queso
+058 · 31 · Moderado · Yogur Entero Tregar Durazno
+059 · 67 · Bueno · TOMATE TRITURADO
+060 · 56 · Bueno · Pasta de mani
+061 · 15 · Malo · Duo - Chocolate con leche y chocolate blanco
+062 · — · Sin datos suficientes (sin-ingredientes) · Galletitas De Avena
+063 · 80 · Excelente · Agua de Coco
+064 · 33 · Moderado · Papas Noisettes - Jamon Y Queso
+065 · — · Sin datos suficientes (fuera-de-alcance) · Vino Bianchi Varietal Malbec
+066 · 33 · Moderado · Chocolina cacao granulado
+067 · 92 · Excelente · Canela Molida 43 Grs Carmencita
+068 · 12 · Malo · Alfajores de Maicena
+069 · 20 · Malo · Medallones de Carne Sabor Parrillero x 4 Un 320 
+070 · — · Sin datos suficientes (solo-categorias) · Salsa Picante Hot Chili Kuhne
+071 · 31 · Moderado · Papas Fritas Sabor Cheddar 72 Grs Saladix
+072 · 55 · Bueno · Limonada Sabor Limón con Cúrcuma Las Brisas
+073 · 21 · Malo · Snacks de Papa sabor Cheddar
+074 · — · Sin datos suficientes (sin-identificar) · Mayonesa con aceite de oliva
+075 · 28 · Moderado · Galletitas Saladas Salvado 208 Grs Cerealitas
+076 · 61 · Bueno · Agua Sin Gas 1.5 Lts Smart Water
+077 · — · Sin datos suficientes (sin-identificar) · Casancrem
+078 · — · Sin datos suficientes (sin-ingredientes) · Galletas Cracker Mediodía
+079 · 51 · Bueno · Arvejas verdes medianas Bonduelle en lata 300 gr
+080 · — · Sin datos suficientes (sin-ingredientes) · Aceite de coco
+081 · 39 · Moderado · Fideos mostachol Lucchetti.
+082 · 15 · Malo · Cappuccino Light
+083 · 20 · Malo · Bolitas De Chocolate Sin Tacc Snuks
+084 · 0 · Malo · Rapiditas
+085 · 82 · Excelente · Quinoa entera Sturla.
+086 · 10 · Malo · Pochoclo Rakan Pulpa De Frutilla X150g
+087 · — · Sin datos suficientes (sin-ingredientes) · Gaseosa Sin Azúcar Sabor Pomelo 1.5 Lts Paso de 
+088 · — · Sin datos suficientes (sin-identificar) · Sal fina light Genser salero.
+089 · 89 · Excelente · Porotos secos remojados Vigente tetra.
+090 · 35 · Moderado · Milanesa De Soja Tipo Casera Granja Del Sol
+091 · 32 · Moderado · Mix Oriental Frutos Secos Cuisine & Co
+092 · 55 · Bueno · Dulce Orgánico Frambuesa Masseube
+093 · 0 · Malo · Madalenas Rellenas Dulce De Leche Bimbo
+094 · — · Sin datos suficientes (sin-identificar) · Lays 20rs
+095 · 15 · Malo · Obleas Wafers Alla Vaniglia Schar
+096 · 11 · Malo · Pan Pre Horneado Mama Cocina Baguetin Multicerea
+097 · — · Sin datos suficientes (sin-ingredientes) · Galletitas Dulces Sabor Vainilla
+098 · 32 · Moderado · Nesquik® Original Polvo Chocolatado X
+099 · — · Sin datos suficientes (sin-identificar) · Envoltinas
+100 · — · Sin datos suficientes (sin-identificar) · Fideos Lucchetti Tallarin Huevo X500g
+101 · 80 · Excelente · Molinillo Cinco Pimientas X 180 Grs Cuisine & Co
+102 · — · Sin datos suficientes (fuera-de-alcance) · Sidra Pehuenia Jengibre
+103 · 47 · Moderado · Dulce de Leche de Cabra 200 Grs Cabaña Piedras B
+104 · 15 · Malo · Saborizador Knorr tipo criollo sobre.
+105 · 98 · Excelente · Agua Mineral Sin Gas Sabor Natural Villavicencio
+106 · 25 · Moderado · Chocolate Semiamargo Sabor Naranja y Almendras 1
+107 · 49 · Moderado · Granola Sabor Coconut y Chocolate 100 Grs Natura
+108 · — · Sin datos suficientes (sin-identificar) · Alfajor
+109 · 0 · Malo · Mozzarella Not Cheese
+110 · — · Sin datos suficientes (fuera-de-alcance) · Cerveza Grolsch Lata X
+111 · 23 · Malo · Yogurt Sabor Vainilla Líquido 500 Grs Las Tres N
+112 · — · Sin datos suficientes (sin-ingredientes) · Espagetti
+113 · 15 · Malo · Galletitas Snacks Gallo Queso
+114 · 24 · Malo · Chocolate Aireado 100 Grs Cofler
+115 · 39 · Moderado · Salsa Curry de Tomates y Leche de Coco Recetas d
+116 · — · Sin datos suficientes (sin-ingredientes) · Durazno en trozos
+117 · 48 · Moderado · Medallones de Calabaza, Avena y Chía
+118 · 51 · Bueno · Condimento Sabor Golden Milk 200 Grs Sri Sri Tat
+119 · 48 · Moderado · Original
+120 · 55 · Bueno · Peras En Mitades Marolio
+121 · 62 · Bueno · Yerba Mate Pomelo
+122 · 95 · Excelente · Huevos de Gallina Color Extra Grande 12 Un
+123 · 80 · Excelente · Fideos tallarín Arcor.
+124 · 11 · Malo · Mini Pitusas sabor Frutilla
+125 · — · Sin datos suficientes (sin-identificar) · Meditación - té
+126 · 16 · Malo · Azúcar Rubia Orgánica 1 Un 330 Grs Beepure
+127 · 61 · Bueno · Puré de Frutas Sabor Manzana Pera y Banana 110 G
+128 · 31 · Moderado · Pre-pizza Los Pibes M.a.m.a.
+129 · 0 · Malo · Yog. Desc. Colchon Maracuya Dahi
+130 · 23 · Malo · Coca zero 1,5l
+131 · 98 · Excelente · Agua Mineral Sin Gas Sierra de los Padres
+132 · 61 · Bueno · Pan rallado Mamá Cocina fortificado.
+133 · 51 · Bueno · Galletas de Arroz Integral Sabor Dulce 100 Grs R
+134 · 31 · Moderado · Salsa Picante Sriracha Tabasco
+135 · 53 · Bueno · Aceite Nucete De Oliva Extra Virgen Premium
+136 · — · Sin datos suficientes (sin-ingredientes) · Tirabuzón Garbanzo
+137 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Malbec La Flor
+138 · 80 · Excelente · Condimento Alicante chicmichurri sobre.
+139 · 49 · Moderado · Colados Nestle Pollo Y Verdura Frasco
+140 · 15 · Malo · Tapas de Empanadas Criolla x 18 Un 450 Grs Signo
+141 · 44 · Moderado · Salsa chimichurri Dos Anclas pet.
+142 · 7 · Malo · Tostadas Sin Sal Criollitas
+143 · — · Sin datos suficientes (sin-identificar) · Mejillones En Aceite Robison Crusoe
+144 · — · Sin datos suficientes (sin-identificar) · Yerba mate sabor hierbas Buenas y Santas 500 grs
+145 · — · Sin datos suficientes (fuera-de-alcance) · Vino Bonarda El Enemigo
+146 · — · Sin datos suficientes (sin-ingredientes) · Ñoquis
+147 · — · Sin datos suficientes (fuera-de-alcance) · Vino Desterrado El Inicio Blend
+148 · — · Sin datos suficientes (sin-ingredientes) · Agua mineralizada
+149 · 14 · Malo · Cereales Sabor Chocolate 180 Grs Cuisine & Co
+150 · 80 · Excelente · Cacao En Polvo Mas Life Superfood
+151 · — · Sin datos suficientes (sin-ingredientes) · Milanesa De Carne
+152 · 12 · Malo · Galletitas Minipolvorita Vai
+153 · 18 · Malo · Chocolate 60% Cacao
+154 · — · Sin datos suficientes (sin-ingredientes) · Quinoa real blanca
+155 · — · Sin datos suficientes (sin-identificar) · Mayonesa Natura chica
+156 · 0 · Malo · Risotto 4 Quesos
+157 · 69 · Bueno · Aceto Balsámico Premium Olitalia
+158 · — · Sin datos suficientes (fuera-de-alcance) · Vodka Sabor Frambuesa Wyborowa
+159 · 92 · Excelente · Aceite de oliva Natura extra virgen selección.
+160 · 5 · Malo · Risotto Basmati Gallo
+161 · — · Sin datos suficientes (sin-identificar) · Hamburguesas Clasicas
+162 · 43 · Moderado · Mermelada Frutos Rojos Selección La Campagnola
+163 · 26 · Moderado · Papas Fritas Sabor Crema y Ciboulette 70 Grs Jul
+164 · — · Sin datos suficientes (fuera-de-alcance) · Vino Malbec X El Cazador
+165 · — · Sin datos suficientes (fuera-de-alcance) · Vino Blanco Malbec Killka
+166 · 22 · Malo · Turrón de Alicante Tradicional 150 Grs Cuisine &
+167 · 10 · Malo · Alfajor Turimar chocolate triple.
+168 · 70 · Bueno · Palmitos En Trozos 400 Grs Cuisine & Co
+169 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Red Blend Emilia
+170 · 29 · Moderado · Yogur Des. Frutilla Tetratop X1kg Ilolay
+171 · 43 · Moderado · Salsa de ají picante Dos Anclas pet.
+172 · 31 · Moderado · Chocolate Cachafaz Con Leche Almendras
+173 · — · Sin datos suficientes (sin-ingredientes) · Whey Protein Premium
+174 · — · Sin datos suficientes (sin-identificar) · Bocaditos
+175 · — · Sin datos suficientes (fuera-de-alcance) · Cerveza Frankerfurt Eschenbancher
+176 · 92 · Excelente · Aceite de oliva
+177 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Corte Crux
+178 · — · Sin datos suficientes (sin-ingredientes) · Chocolate Amargo 70%
+179 · 95 · Excelente · Huevos Color Doña Lala X 12u Carton
+180 · — · Sin datos suficientes (sin-identificar) · Edulcorante Sweet Hileret
+181 · 20 · Malo · Salsa 4 quesos Alicante sobre.
+182 · 16 · Malo · Mermelada
+183 · 0 · Malo · Pepas con chips de chocolate
+184 · — · Sin datos suficientes (fuera-de-alcance) · Fernet Branca
+185 · — · Sin datos suficientes (fuera-de-alcance) · Gin Dry Heredero
+186 · 89 · Excelente · Café Espresso Molido Volcán Juan Valdez Premium
+187 · 52 · Bueno · Leche 0% lactosa
+188 · 62 · Bueno · Jugo Sabor Limón Dos Anclas
+189 · 80 · Excelente · Fideos orecchiette De Cecco en bolsa.
+190 · 16 · Malo · Flan Godet Vainilla
+191 · 10 · Malo · Pan con salvado con semillas de chía y lino
+192 · 75 · Excelente · Cica tirabuzon
+193 · 26 · Moderado · Gallo Snacks Bizcochos De Arroz Tortita Negra.
+194 · 80 · Excelente · Harina de lino Sturla.
+195 · — · Sin datos suficientes (sin-ingredientes) · Fideos
+196 · — · Sin datos suficientes (fuera-de-alcance) · Cerveza Hertog Jan-bot-ml.-500
+197 · 39 · Moderado · Fideos tallarines Lucchetti.
+198 · 28 · Moderado · Gaseosa Sin Azúcar Sabor Lima-limón Sprite
+199 · 6 · Malo · Jugo Sabor Pomelo Cepita"
+`;

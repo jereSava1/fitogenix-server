@@ -1,19 +1,9 @@
 // Uso: npx tsx scripts/score-histogram.ts [--limit 20000]
-//
-// Complementa a audit-scores.ts. Aquel arma una cola de revisión por reglas;
-// éste responde tres preguntas que las reglas no contestan:
-//
-//   1. ¿Cómo se distribuyen los puntajes? En particular, ¿cuántos productos
-//      caen en 70-74? (define si mover el sello de 75 a 70 cambia algo real)
-//   2. ¿Por qué el motor no puntúa el 28.7% del catálogo? Desglose por código.
-//   3. ¿Qué términos no identificados aparecen más? audit-scores.ts ya los
-//      cuenta en CURATION_QUEUE pero nunca los imprime — es la cola de
-//      curaduría, y es la palanca para recuperar catálogo sin tocar el motor.
-//
-// No escribe en la base. Seguro de correr con el ETL en curso.
+// Distribución de puntajes, motivos de "sin puntaje" y los términos no identificados más
+// frecuentes (la cola de curaduría). No escribe en la base.
 import 'dotenv/config';
-import { admin } from './etl/lib/supabaseAdmin';
-import { ftgScoreWithBreakdown, type ProductInput } from '../src/domain/product/ftgEngine';
+import { admin } from '../etl/lib/supabaseAdmin';
+import { scoreProduct, type ProductInput } from '../src/modules/scoring';
 
 const PAGE_SIZE = 1000;
 
@@ -23,7 +13,6 @@ type Row = {
   category: string | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
-  nova_group: number | null;
   additives_tags: string[] | null;
 };
 
@@ -31,7 +20,6 @@ function toInput(r: Row): ProductInput {
   return {
     ingredients_text: r.ingredients_text ?? undefined,
     nutriments: r.nutriments ?? {},
-    nova_group: r.nova_group ?? undefined,
     additives_tags: r.additives_tags ?? [],
     categories: r.category ?? undefined,
   };
@@ -42,7 +30,7 @@ async function fetchAll(limit: number): Promise<Row[]> {
   for (let from = 0; from < limit; from += PAGE_SIZE) {
     const { data, error } = await admin()
       .from('products')
-      .select('barcode, product_name, category, ingredients_text, nutriments, nova_group, additives_tags')
+      .select('barcode, product_name, category, ingredients_text, nutriments, additives_tags')
       .not('ingredients_text', 'is', null)
       .order('barcode')
       .range(from, Math.min(from + PAGE_SIZE, limit) - 1);
@@ -76,7 +64,7 @@ async function main() {
   let scored = 0;
 
   for (const r of rows) {
-    const bd = ftgScoreWithBreakdown(toInput(r));
+    const bd = scoreProduct(toInput(r));
     for (const t of bd.unidentified) unidentified.set(t, (unidentified.get(t) ?? 0) + 1);
 
     if (!bd.scoreAvailable || bd.score == null) {
@@ -141,7 +129,7 @@ async function main() {
 
   // ── 4. La palanca: cola de curaduría ─────────────────────────────────────
   console.log('\n=== ⭐ Cola de curaduría — términos no identificados más frecuentes ===');
-  console.log('    (cada uno que se agregue a ingredientData.ts recupera catálogo\n');
+  console.log('    (cada uno que se agregue a data/ingredients.ts recupera catálogo\n');
   console.log('     sin tocar el motor ni la base)\n');
   const top = [...unidentified.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40);
   const maxU = top[0]?.[1] ?? 1;

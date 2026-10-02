@@ -1,9 +1,8 @@
-// Inyecta aliases en inglés en ingredientData.ts. Idempotente: se puede
-// re-correr sin duplicar. OFF devuelve ingredientes en el idioma del país
-// de origen del producto; el inglés es el más común después del español.
+// Suma aliases en inglés a la tabla de ingredientes del motor (OFF devuelve el idioma del
+// país de origen). Idempotente.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { INGREDIENTS, ADDITIVES } from '../src/domain/product/ingredientData';
+import { INGREDIENTS, ADDITIVES } from '../src/modules/scoring';
 
 // clave = alias español ya existente (localiza la entrada) → aliases EN a sumar
 const EN: Record<string, string[]> = {
@@ -188,7 +187,7 @@ const addLines = Object.entries(ADDITIVES).map(([code, v]) => {
   return `  ${esc(code)}: { name: ${esc(v.name)}, b: '${v.b}'${a}${d} },`;
 });
 
-const path = join(__dirname, '../src/domain/product/ingredientData.ts');
+const path = join(__dirname, '../src/modules/scoring/domain/data/ingredients.ts');
 const src = readFileSync(path, 'utf8');
 const head = src.slice(0, src.indexOf('export const INGREDIENTS'));
 const out = `${head}export const INGREDIENTS: Ingredient[] = [

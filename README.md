@@ -1,175 +1,103 @@
 # fitogenix-server
 
-Backend Fastify de Fitogenix: recibe búsquedas de productos (barcode o nombre),
-resuelve los datos **contra el catálogo propio**, aplica el scoring Fitogénico
-(`ftgEngine`) y cachea el resultado.
+Backend de Fitogenix (Fastify + TypeScript). Resuelve productos por barcode o por nombre **contra el catálogo propio** (Supabase, con Redis adelante), calcula el puntaje con el motor de `src/modules/scoring/` (API pública en su `index.ts`) y guarda los guardados y el historial de cada usuario. El catálogo lo puebla el ETL de `etl/`, fuera del server.
 
-## Arquitectura de lookup — catalog-only
+La documentación completa (auditoría, requisitos, arquitectura objetivo, contratos, decisiones y plan de limpieza) está en [`docs/`](docs/README.md). Este README es el cómo correrlo.
 
-> **Corregido el 2026-08-28.** Este README describía una cascada en vivo
-> `OFF → OBF → Edamam → Claude` como la arquitectura del lookup. Se retiró del
-> camino de request el **2026-08-18** (decisión de producto, ver ADR-002 nota
-> "parte 2" en `fitogenix-agents/BITACORA_DECISIONES.md`), y el README no se
-> actualizó. La tabla de niveles 1a/1b/2/3 que estaba acá ya no describe ninguna
-> ruta de código.
+## Primeros pasos
 
-`POST /products/lookup` → `src/services/productLookupService.ts`. Es un camino
-de **solo lectura**: Redis, después Supabase, y si el producto no está en el
-catálogo, `lookupProduct` devuelve `null` y la ruta responde que todavía no lo
-tenemos. **No hay fallback a proveedores externos ni a IA durante la request.**
+Node 22 (`.nvmrc`).
 
-| Nivel | Fuente | Costo | Notas |
-|---|---|---|---|
-| 0a | Redis (Upstash) | 0 | Caché caliente. No-op limpio si faltan las env vars. |
-| 0b | Supabase `products` | 0 | Caché persistente **y catálogo**. Guarda datos **crudos** y recomputa el score al leer. Por nombre resuelve con el índice trigram de la migración 014. |
-| — | *(sin nivel 1+)* | — | Miss = `null`. El catálogo crece por el ETL, no por el tráfico de búsqueda. |
+```bash
+npm install
+cp .env.example .env    # completar (ver abajo)
+npm run dev             # tsx watch src/main.ts, puerto 3000
+```
 
-Por qué: la cascada agregaba varios round-trips de red secuenciales —era la
-causa principal de que una búsqueda en frío tardara segundos— y duplicaba
-trabajo que el ETL ya hace en batch, con curaduría y sin una request HTTP
-esperando. El docstring de `productLookupService.ts` lo explica en detalle.
+### Variables (`.env`)
 
-`offService.ts`, `openBeautyFactsApi.ts`, `fallbackFoodApi.ts` y
-`claudeService.ts` **siguen existiendo y siguen manteniéndose**: hoy los invoca
-el pipeline de `scripts/etl/` en batch. Todas las fuentes se normalizan a
-`RawOFFProduct` (patrón Adapter) para que `mapRawToProduct` + `ftgEngine`
-scoreen igual sin importar el origen.
+| Variable | Requerida | Para qué |
+|---|---|---|
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | sí | Catálogo, guardados, historial y validación de sesión. Es la secret key (`sb_secret_…`), que opera como `service_role` |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | no | Cache caliente de productos. Sin ellas, el server anda sin Redis |
+| `PORT` | no | Por defecto 3000 |
+| `CORS_ORIGINS` | no | Orígenes web con CORS, separados por coma. Vacía = sin CORS (la app nativa no lo usa) |
+| `TRUST_PROXY` | en deploy | Direcciones de los proxies delante del server, separadas por comas (IPs, CIDR o nombres de `proxy-addr` como `loopback`). En Render: `10.0.0.0/8`. Sin esto, el rate limit por IP ve la del balanceador y todos comparten el límite. Para verificarla: en el log `incoming request`, `remoteAddress` tiene que ser la IP pública del cliente |
+| `LOG_LEVEL` | no | Nivel del logger (`info` por defecto; `silent` en los tests) |
+| `ANTHROPIC_API_KEY` | solo ETL | Enriquecimiento con IA del ETL. El server no la usa |
 
-**Consecuencia operativa:** si el ETL no pobló el catálogo, el usuario no tiene
-resultado. El poblamiento dejó de ser una optimización de costo y pasó a ser
-condición de que el producto funcione.
+## Antes de dar algo por terminado
 
-## Caché (Supabase) — identidad por `products.id`
+```bash
+npm run typecheck    # tsc de src/, etl/ y scripts/ (tsconfig.scripts.json)
+npm run lint:deps    # reglas de dependencias entre módulos (dependency-cruiser); cualquier violación falla
+npm run lint:unused  # código, exports y dependencias sin uso (knip --production, config en knip.json)
+npm run contract:check  # contract/ (OpenAPI y bandas) al día con los schemas y el motor (si falla: npm run contract:generate)
+npm test             # vitest
+```
 
-- **Identidad** (migración 006): `products.id` (uuid). Viaja como `productId`
-  en el payload del lookup y es lo que referencian
-  `saved_products.product_id` y `scan_history.product_id` (el cliente
-  guarda/quita favoritos por `productId`). `cache_key` ya no existe.
-- **Atributos de búsqueda** (ambos UNIQUE nullable):
-  - `barcode` → upsert `onConflict:'barcode'` para productos con código.
-  - `name_key` → upsert `onConflict:'name_key'` para productos resueltos
-    **solo por IA**: el query normalizado (minúsculas, sin acentos, espacios
-    colapsados) **sin prefijo**, con `barcode = null`. OJO semántica:
-    `name_key` guarda el **query** que originó la fila, no el nombre del
-    producto (la fila con `name_key='lays'` puede tener
-    `product_name='Papas Fritas Clásicas'`). La segunda búsqueda idéntica se
-    sirve del cache **sin gastar IA**.
-- **Upgrade name→barcode**: si un producto entró por nombre (fila sin barcode)
-  y después se escanea por barcode, `setCachedProduct` **actualiza esa misma
-  fila** (id conservado, `name_key` queda como alias) en vez de duplicarla —
-  los guardados e historial existentes sobreviven.
-- El upsert al cache ahora se **awaitea** y devuelve el `id` (el payload
-  necesita `productId`); Redis sigue fire-and-forget. Las claves INTERNAS de
-  Redis/in-flight/logs siguen siendo el barcode o `'name:<query>'` — son
-  claves de proceso, no identidad.
-- Se guardan los CRUDOS (`ingredients_text`, `nutriments`, `nova_group`,
-  `additives_tags`) + denormalizados para listados. El score se **recomputa al
-  leer** (puede cambiar entre versiones del motor — columna `engine_version`).
-  Un `nutriments` vacío (`{}`) cuenta como AUSENTE: fila sin ingredientes ni
-  nutrientes reales = cache miss.
-- Unicidad: `UNIQUE(barcode)` y `UNIQUE(name_key)`. `product_name` **no** es
-  único (ver migración 003 — un índice único ahí rompía el cacheo en silencio).
+El CI (`.github/workflows/ci.yml`) corre lo mismo en cada push y PR. Los tests viven al lado del código (`*.test.ts`). Los de caracterización del motor, de auth y de las rutas (etapa 1 del plan) fijan el comportamiento actual: si un cambio los rompe a propósito, se actualizan en el mismo PR con el motivo.
 
-⚠️ Los errores de upsert al cache **solo se loguean** (el lookup ya respondió).
-Si el cacheo "no guarda", buscar `[cacheService] setCachedProduct upsert error`
-en los logs: históricamente los fallos fueron de esquema (columna faltante,
-índice único inesperado) y pasaron desapercibidos por esto.
+## Rutas
 
-## Migraciones (`migrations/`)
+Todas las rutas del contrato llevan el prefijo **`/v1`** (D-44), sin alias de las rutas viejas (D-57). `/health` queda afuera: no es parte del contrato con la app.
 
-Se aplican a mano en el SQL Editor de Supabase (el service-role key vía
-PostgREST no ejecuta DDL). En orden:
+| Ruta | Auth | Qué hace |
+|---|---|---|
+| `POST /v1/products/lookup` `{ query }` | opcional | Busca por barcode (8 a 14 dígitos) o por nombre y responde el detalle (`ProductDetail`). Con sesión, registra el escaneo en el historial. `404 PRODUCT_NOT_IN_CATALOG` si no está en el catálogo |
+| `GET /v1/products/:id` | opcional | Detalle de un producto por su uuid (lo que abre la app desde un guardado o el historial). No registra el escaneo. `404 NOT_FOUND` si no existe |
+| `GET /v1/users/me/saved` | sí | Guardados del usuario: resumen del producto (`ProductSummary`) más `savedAt` |
+| `POST /v1/users/me/saved` `{ productId }` | sí | Guardar (idempotente). `404 NOT_FOUND` si el producto no existe |
+| `DELETE /v1/users/me/saved/:productId` | sí | Quitar un guardado (idempotente) |
+| `GET /v1/users/me/history?limit=` | sí | Historial de escaneos: resumen más `scannedAt` (`limit` entre 1 y 50, por defecto 20) |
+| `DELETE /v1/users/me/history/:productId` | sí | Borrar un producto del historial (idempotente) |
+| `POST /v1/auth/password/forgot` `{ email }` | no | Manda el código para recuperar la contraseña. `202` aunque el email no exista |
+| `POST /v1/auth/password/reset` `{ email, code, newPassword }` | no | Cambia la contraseña con el código. `401 INVALID_CODE` si no sirve; 5 códigos fallidos por email cada 15 min → `429` |
+| `GET /v1/users/me/profile` | sí | Datos personales (`Profile`: nombre, apellido, username, teléfono). `404 NOT_FOUND` si no hay fila |
+| `PATCH /v1/users/me/profile` | sí | Editar solo los campos que se mandan, con las reglas del registro (username `^[a-z0-9_.]+$`, teléfono E.164). `409 USERNAME_TAKEN` si el username es de otro |
+| `DELETE /v1/users/me` | sí | Eliminar la cuenta |
+| `GET /health` | no | Chequeo de vida (el proceso responde) |
+| `GET /health/ready` | no | Listo para atender: 503 si Supabase no responde; informa el estado de Redis |
 
-1. `001_product_cache.sql` — columnas crudas + `UNIQUE(barcode)`.
-2. `002_cache_key.sql` — `cache_key` + backfill + `UNIQUE(cache_key)`.
-3. `003_drop_product_name_unique.sql` — elimina el índice único sobre
-   `product_name` que bloqueaba nombres repetidos.
-4. `004_saved_products.sql` — tabla de guardados por usuario + RLS.
-5. `005_scan_history.sql` — historial de escaneos por usuario + RLS.
-6. `006_product_identity.sql` — identidad por `products.id`: agrega
-   `name_key`, migra `saved_products`/`scan_history` a `product_id` (FK a
-   `products.id`) y **elimina `cache_key`** de las tres tablas.
+Todos los errores tienen la misma forma, `{ error, code }`: `error` es el mensaje para mostrar, en español, y `code` es estable para que la app decida qué hacer (`VALIDATION_ERROR` 400, `UNAUTHENTICATED` / `INVALID_CODE` 401, `NOT_FOUND` / `PRODUCT_NOT_IN_CATALOG` 404, `USERNAME_TAKEN` 409, `RATE_LIMITED` 429, `INTERNAL` 500, `DEPENDENCY_UNAVAILABLE` 503 con `Retry-After` si la base o Supabase Auth no responden). Lo que no responde un handler (validación, rate limit, ruta inexistente, excepciones) lo arma `src/platform/http/errors.ts`; el detalle técnico va solo al log. Un campo de más en un body o en el querystring del historial es un `400 VALIDATION_ERROR`: no se ignora en silencio (D-70).
 
-## Observabilidad
+La sesión es el JWT de Supabase Auth en `Authorization: Bearer <token>` (sin el prefijo `Bearer`, 401). El server lo verifica localmente con las claves públicas del proyecto (JWKS de `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`, en memoria): firma, vencimiento, emisor y audiencia, sin consultar a Supabase en cada request. Si Supabase Auth no responde se siguen usando las últimas claves; sin ninguna, las rutas con sesión responden `503`. `DELETE /v1/users/me` además confirma la sesión con Supabase Auth, así una sesión revocada no puede borrar la cuenta (ADR-0008). El contrato de estas rutas (request, respuestas y errores) está en [`contract/openapi.json`](contract/openapi.json), generado desde los schemas TypeBox de cada módulo, y las bandas del puntaje (cortes, colores, mensajes y sellos) en [`contract/scoring-bands.json`](contract/scoring-bands.json), generado desde el motor; sus cambios, en [`contract/CHANGELOG.md`](contract/CHANGELOG.md). El contrato objetivo (endpoints que faltan: auth, perfil, feedback) está en [`docs/03-contratos.md`](docs/03-contratos.md).
 
-Cada lookup emite una línea JSON:
+## Cómo resuelve un producto
+
+`POST /v1/products/lookup` → `src/modules/catalog/` (caso de uso `application/lookupProduct.ts`), de **solo lectura**: Redis → Supabase. Redis guarda los datos crudos del producto y la respuesta se arma en cada lectura, así que un cambio del motor o del contrato no deja entradas viejas que invalidar. Si no está en el catálogo, responde `404`; no hay fallback a proveedores externos ni a IA durante la request.
+
+- En Supabase se guardan los **datos crudos** (`ingredients_text`, `nutriments`, `additives_tags`…) y el puntaje se **recalcula al leer**, así un cambio del motor no deja puntajes viejos. Una fila sin ingredientes ni nutrientes cuenta como "no está en el catálogo".
+- La identidad del producto es `products.id` (uuid), que viaja como `id` en el detalle y en los listados, y es lo que referencian guardados e historial (el `productId` de `POST /v1/users/me/saved`).
+- Una caída de Supabase responde `503` (nunca "no está"), con 2 s de tope por consulta; Redis tiene 200 ms y, si no responde, se sigue sin él.
+
+Cada lookup deja una línea de log:
 
 ```json
 {"event":"product_lookup","cacheKey":"7622210449283","source":"supabase","dataSource":"off"}
 ```
 
-- `cacheKey` = la clave **interna** de proceso (barcode o `'name:<query>'`),
-  no la identidad del producto (esa es `products.id` / `productId`).
-- `source` = **nivel que sirvió esta request** (`redis`/`supabase` = cache;
-  `catalog` = match por nombre en nuestro propio catálogo;
-  `off`/`obf`/`edamam`/`ai` = fuente en vivo).
-- `dataSource` = **proveedor original del dato**, preservado a través del cache.
-  Permite analítica de origen aunque el producto salga cacheado.
+`source` es el nivel que respondió (`redis`, `supabase` por barcode, `catalog` por nombre) y `dataSource`, la fuente original del dato.
 
-## Variables de entorno (`.env`, ver `.env.example`)
+## Base de datos
 
-| Var | Requerida | Uso |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | sí | Nivel IA (lookup + enriquecimiento). |
-| `SUPABASE_URL` / `SUPABASE_SECRET_KEY` | sí | Caché persistente + auth. |
-| `SERPAPI_API_KEY` | sí | Imagen de fallback (Google Images). |
-| `EDAMAM_APP_ID` / `EDAMAM_APP_KEY` | no | Nivel 2. Producto **"Food Database API"** en developer.edamam.com (las keys de Recipe/Nutrition NO sirven). Sin ellas el nivel se saltea logueado. |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | no | Nivel 0a (Redis). Sin ellas, no-op. |
-| `REMOVE_BG_API_KEY` | no | `/products/image` (quitar fondo). Sin ella el endpoint devuelve 502. |
+`supabase/migrations/legacy/` tiene las migraciones históricas `001` a `015`, que se aplicaron a mano en el SQL Editor y **no reproducen** la base real (hay objetos creados a mano). La base de verdad es `supabase/migrations/`: la baseline `20260929000000_baseline.sql` (el schema de producción, C-05) y, después, cada migración nueva, que se aplica con `supabase db push` siguiendo el checklist del [ADR-0009](docs/adr/0009-migraciones.md). Nunca se pega SQL en el editor. Las consultas y migraciones las corre el responsable del proyecto (D-58); los scripts entregados quedan en [`docs/sql/`](docs/sql/).
 
-## Desarrollo y testing
+## ETL
+
+El ETL (`etl/`, scripts `etl:*` de `package.json`, con su propia config en `etl/config.ts`) ingesta Open Food Facts y supermercados VTEX a `products_staging`, mergea al catálogo y opcionalmente enriquece con IA. No es parte del build del server. Cómo correrlo: [`etl/README.md`](etl/README.md).
+
+## Deploy
+
+Render (plan free), desde `main`, con el `Dockerfile` (D-91; hasta el paso a `main` sigue con el build de Node). Configuración, paso a `main` y rollback: [`docs/deploy.md`](docs/deploy.md).
+
+Forma portable ([ADR-0007](docs/adr/0007-portabilidad-de-hosting.md)): el `Dockerfile` construye una imagen con solo dependencias de producción, configurable por variables de entorno (las de `.env.example`). El CI la construye, la levanta y le pide `/health`.
 
 ```bash
-npm run dev          # tsx watch src/main.ts (puerto 3000)
-npx tsc --noEmit     # typecheck
-npx vitest run       # unit tests
+docker build -t fitogenix-server .
+docker run -p 3000:3000 --env-file .env fitogenix-server
 ```
 
-**Unit tests:** co-locados como `src/**/*.test.ts` (27 archivos entre `src/` y
-`scripts/`; ~345 casos `it()` contados estáticamente el 28/8/2026 — el número
-"119" que figuraba acá quedó viejo, y la suite no se re-corrió en esa sesión).
-Cubren, entre otros:
-- Lookup catalog-only: hit de Redis, hit de Supabase, y **miss = `null` sin
-  cascada a ningún proveedor externo**; si el catálogo lanza, el error se
-  propaga en vez de inventar un fallback; singleflight (requests concurrentes
-  comparten una resolución).
-- Cache: round-trip de `buildCachePayload`/`getCachedProductByBarcode`/
-  `getCachedProductByNameKey`, filas viejas sin crudos (o con `nutriments` `{}`)
-  tratadas como miss, upsert awaiteado que devuelve el `id`, upgrade
-  name→barcode (misma fila, id conservado), fila `name_key` con barcode null.
-- Guardados e historial por `product_id` (upserts idempotentes, FK → 404,
-  listados con embed + score recomputado).
-- Los servicios externos se mockean con `vi.mock` (ver
-  `productLookupService.test.ts` como referencia de estilo).
+## Ramas
 
-**Verificación end-to-end realizada (2026-07-07/08), contra servicios reales.**
-⚠️ **Es anterior al rediseño catalog-only del 18/8:** los tres puntos siguientes
-verificaron la cascada en vivo, que ya no existe en el request path. Se
-conservan como registro histórico de que esos adapters funcionan contra los
-servicios reales —lo que hoy le importa al ETL, que es quien los usa— no como
-descripción del comportamiento actual del endpoint.
-- Supabase: write→read→recompute por barcode y por `name:` verificado con
-  scripts efímeros; hits confirmados desde la UI (`source:"supabase"`, ~3.5x
-  más rápido que el cold path).
-- OBF por la cascada real: barcode `8410757001090` con OFF caído →
-  `{"source":"obf","dataSource":"obf"}`, persistido con `data_source='obf'`.
-  De paso validó la resiliencia (fallo de OFF no crashea, degrada).
-- Edamam: keys validadas en vivo (`049000006346` → 200, "Coca-Cola Can",
-  adapter normalizó 10 nutrientes). El ruteo OFF-miss→OBF-miss→Edamam queda
-  cubierto por unit test (encontrar un barcode ausente de OFF+OBF en vivo
-  quema cuota del free tier sin agregar señal).
-
-Patrón para futuros checks de infraestructura: script efímero en `scripts/`
-con `tsx`, sembrar datos sintéticos (barcode `000000000000x`), verificar, y
-**borrar la fila y el script** al terminar.
-
-## Rutas
-
-- `POST /products/lookup` `{ query }` — lookup principal (devuelve `productId`).
-  Anónimo permitido; con Bearer token registra el escaneo en el historial.
-- `GET /products/image?url=` — proxy de imagen con remove.bg (502 sin key).
-- `DELETE /users/me` — borra la cuenta (requiere JWT de Supabase).
-- `GET /users/me/saved` / `POST /users/me/saved` `{ productId }` /
-  `DELETE /users/me/saved/:productId` — guardados por usuario (JWT; `productId`
-  = uuid de `products`).
-- `GET /users/me/history?limit=` — historial de escaneos (JWT).
+Una rama por tarea. Durante el refactor todo se integra en `fitogenix/refactor-cleanup` y recién al final pasa a `main` (D-59).

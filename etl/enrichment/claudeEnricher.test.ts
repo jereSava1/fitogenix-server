@@ -1,0 +1,126 @@
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RawProduct } from '../../src/modules/catalog';
+
+// SDK de Anthropic simulado: `new Anthropic()` devuelve un objeto con `messages.create()`.
+let mockResponseText = '{}';
+const messagesCreate = vi.fn(async () => ({
+  content: [{ type: 'text', text: mockResponseText }],
+}));
+
+vi.mock('@anthropic-ai/sdk', () => ({
+  // `__esModule: true` para que el interop de default-import no re-envuelva el mock, y
+  // `function` (no arrow) porque se usa con `new`. Si falla cualquiera, el catch de
+  // enrichWithAI se come el error y los tests pasan por la razón equivocada.
+  __esModule: true,
+  default: vi.fn().mockImplementation(function AnthropicMock() {
+    return { messages: { create: messagesCreate } };
+  }),
+}));
+
+type ClaudeServiceModule = typeof import('./claudeEnricher');
+let enrichWithAI: ClaudeServiceModule['enrichWithAI'];
+let ingredientCount: ClaudeServiceModule['ingredientCount'];
+
+beforeAll(async () => {
+  // config.ts exige estas env vars al importarse — mismo patrón que
+  // supabaseProductAdapters.test.ts: seteo dummy + import dinámico DESPUÉS de setearlas.
+  process.env.ANTHROPIC_API_KEY = 'test';
+  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_SECRET_KEY = 'test';
+  ({ enrichWithAI, ingredientCount } = await import('./claudeEnricher'));
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockResponseText = '{}';
+});
+
+function setClaudeResponse(json: unknown): void {
+  mockResponseText = JSON.stringify(json);
+}
+
+describe('enrichWithAI', () => {
+  it('no llama a Claude si ya hay ingredientes y nutrientes clave', async () => {
+    const off: RawProduct = {
+      product_name: 'Producto completo',
+      ingredients_text: 'harina, agua, sal',
+      nutriments: { 'energy-kcal_100g': 300, proteins_100g: 5, carbohydrates_100g: 40 },
+    };
+    const result = await enrichWithAI(off);
+    expect(messagesCreate).not.toHaveBeenCalled();
+    expect(result).toBe(off);
+  });
+
+  // Gate de plausibilidad (nutrientPlausibility.ts) — el corazón de este
+  // cambio: un valor que Claude alucina fuera de rango físico nunca se
+  // guarda como si fuera un dato real, ni siquiera parcialmente.
+  it('descarta un nutriente implausible que Claude propone, pero conserva los plausibles', async () => {
+    setClaudeResponse({
+      nutriments: { 'energy-kcal_100g': 4500, proteins_100g: 8, carbohydrates_100g: 40 },
+    });
+    const off: RawProduct = {
+      product_name: 'Producto sin nutrientes',
+      brands: 'Marca',
+      ingredients_text: 'harina, agua, sal, azúcar',
+    };
+    const result = await enrichWithAI(off);
+    expect(result.nutriments?.['energy-kcal_100g']).toBeUndefined();
+    expect(result.nutriments?.proteins_100g).toBe(8);
+    expect(result.nutriments?.carbohydrates_100g).toBe(40);
+  });
+
+  it('no setea nutriments si TODOS los valores propuestos son implausibles', async () => {
+    setClaudeResponse({ nutriments: { 'energy-kcal_100g': 4500, carbohydrates_100g: 817 } });
+    const off: RawProduct = {
+      product_name: 'Producto raro',
+      ingredients_text: 'harina, agua, sal, azúcar',
+    };
+    const result = await enrichWithAI(off);
+    expect(result.nutriments).toBeUndefined();
+  });
+
+  it('acepta nutrientes dentro de rango normalmente', async () => {
+    setClaudeResponse({ nutriments: { 'energy-kcal_100g': 450, proteins_100g: 8, carbohydrates_100g: 60 } });
+    const off: RawProduct = {
+      product_name: 'Producto normal',
+      ingredients_text: 'harina, agua, sal, azúcar',
+    };
+    const result = await enrichWithAI(off);
+    expect(result.nutriments).toEqual({ 'energy-kcal_100g': 450, proteins_100g: 8, carbohydrates_100g: 60 });
+  });
+
+  it('completa ingredients_text cuando falta', async () => {
+    setClaudeResponse({ ingredients_text: 'agua, sal' });
+    const off: RawProduct = {
+      product_name: 'Producto sin ingredientes',
+      nutriments: { 'energy-kcal_100g': 300, proteins_100g: 5, carbohydrates_100g: 40 },
+    };
+    const result = await enrichWithAI(off);
+    expect(result.ingredients_text).toBe('agua, sal');
+  });
+
+  it('no crashea con JSON inválido de Claude — devuelve el producto sin tocar', async () => {
+    mockResponseText = 'esto no es json';
+    const off: RawProduct = { product_name: 'X' };
+    const result = await enrichWithAI(off);
+    expect(result).toBe(off);
+  });
+
+  it('no llama a Claude si no hay product_name ni brands', async () => {
+    const off: RawProduct = {};
+    const result = await enrichWithAI(off);
+    expect(messagesCreate).not.toHaveBeenCalled();
+    expect(result).toBe(off);
+  });
+});
+
+describe('ingredientCount', () => {
+  it('cuenta ingredientes separados por coma o punto y coma', () => {
+    expect(ingredientCount(undefined)).toBe(0);
+    expect(ingredientCount('')).toBe(0);
+    expect(ingredientCount('   ')).toBe(0);
+    expect(ingredientCount('agua, sal, azúcar')).toBe(3);
+    expect(ingredientCount('agua; sal; azúcar; harina de trigo')).toBe(4);
+    expect(ingredientCount('agua, sal,')).toBe(2);
+  });
+});

@@ -1,0 +1,98 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { requireAnthropicApiKey } from '../config';
+import { findImplausibleNutrients } from '../quality/nutrientPlausibility';
+import type { RawProduct } from '../../src/modules/catalog';
+
+let _client: Anthropic | null = null;
+const client = (): Anthropic => {
+  if (!_client) _client = new Anthropic({ apiKey: requireAnthropicApiKey() });
+  return _client;
+};
+
+const SYSTEM_PROMPT =
+  'Sos una base de datos nutricional experta en productos alimenticios argentinos y latinoamericanos. Respondés SOLO con JSON válido, sin texto adicional. Si no tenés información del producto o no lo reconocés con certeza, respondé con {}.';
+
+// Claude confundía `sodium_100g` con miligramos y el gate de plausibilidad descartaba el
+// dato: el prompt aclara la unidad con un ejemplo de conversión.
+const NUTRIMENT_FIELDS_SPEC =
+  '"nutriments": {"energy-kcal_100g":N,"proteins_100g":N,"carbohydrates_100g":N,"sugars_100g":N,"fat_100g":N,"saturated-fat_100g":N,"fiber_100g":N,"sodium_100g":N} — TODOS los valores en GRAMOS por 100g/100ml, incluido sodium_100g (si la etiqueta real dice "500 mg de sodio" acá va 0.5, no 500 — el sodio de un alimento real casi nunca supera 2-3g/100g salvo casos extremos como caldo concentrado o sal de mesa)';
+
+/** Cuenta rápida de ingredientes declarados: para decidir si pedir más datos, no para puntuar. */
+export function ingredientCount(text?: string): number {
+  if (!text || text.trim().length < 3) return 0;
+  return text.split(/[,;]/).filter((part) => part.trim().length > 1).length;
+}
+
+function hasKeyNuts(n?: Record<string, unknown>): boolean {
+  if (!n) return false;
+  const get = (k: string) => n[`${k}_100g`] ?? n[k];
+  return get('energy-kcal') != null && get('proteins') != null && get('carbohydrates') != null;
+}
+
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.trim().length > 0;
+}
+
+function hasValidNumericField(v: unknown): v is Record<string, unknown> {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    Object.values(v).some((x) => typeof x === 'number' && Number.isFinite(x))
+  );
+}
+
+async function callClaude(prompt: string, maxTokens: number): Promise<string> {
+  const msg = await client().messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: maxTokens,
+    temperature: 0,
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const block = msg.content[0];
+  return block.type === 'text' ? block.text.trim().replace(/```json|```/g, '').trim() : '';
+}
+
+export async function enrichWithAI(off: RawProduct): Promise<RawProduct> {
+  const missingIng = ingredientCount(off.ingredients_text) < 3;
+  const missingNut = !hasKeyNuts(off.nutriments);
+  if (!missingIng && !missingNut) return off;
+
+  const name = [off.product_name, off.brands].filter(Boolean).join(' — ');
+  if (!name.trim()) return off;
+
+  const want: string[] = [];
+  if (missingIng)
+    want.push('"ingredients_text": "lista completa de ingredientes separados por coma, en español"');
+  if (missingNut) want.push(NUTRIMENT_FIELDS_SPEC);
+
+  const prompt = `Producto: "${name}"\n\nDevolvé un JSON con los siguientes campos (solo los que podés completar con precisión):\n${want.join('\n')}\n\nImportante: los valores numéricos de nutrientes son POR 100g o 100ml. No inventes datos si no conocés el producto.`;
+
+  try {
+    const raw = await callClaude(prompt, 300);
+    if (!raw || raw === '{}') return off;
+    const ai = JSON.parse(raw);
+    if (missingIng && isNonEmptyString(ai.ingredients_text)) off.ingredients_text = ai.ingredients_text;
+    if (missingNut && hasValidNumericField(ai.nutriments)) {
+      // Gate de plausibilidad (el mismo de la auditoría): un valor fuera de rango se descarta.
+      const implausible = findImplausibleNutrients(ai.nutriments);
+      if (implausible.length > 0) {
+        for (const { field } of implausible) delete (ai.nutriments as Record<string, unknown>)[field];
+        console.warn(
+          `[claudeService] enrichWithAI: descartado(s) nutriente(s) implausible(s) para "${name}": ${implausible
+            .map((i) => `${i.field}=${i.value}`)
+            .join(', ')}`,
+        );
+      }
+      if (hasValidNumericField(ai.nutriments)) {
+        off.nutriments = { ...(off.nutriments ?? {}), ...ai.nutriments };
+      }
+    }
+    off._aiEnriched = true;
+  } catch {
+    // best-effort — return whatever we had
+  }
+
+  return off;
+}

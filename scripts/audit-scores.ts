@@ -1,18 +1,9 @@
 // Uso: npm run audit:scores [-- --rule <nombre>] [--limit 5000] [--sample 8]
-//
-// Audita el catálogo REAL contra el motor vigente y saca a la superficie los
-// puntajes que no cierran, para que un humano los juzgue.
-//
-// Por qué existe: los tests unitarios detectan regresiones, no errores de
-// criterio. Congelan lo que el motor hace hoy — si hoy está mal, lo congelan
-// mal. La única forma de saber si un puntaje es CORRECTO es que alguien mire
-// el producto y opine. Este script no decide nada: arma la cola de revisión,
-// ordenada por cuánto huele cada caso.
-//
-// No escribe en la base. Es seguro correrlo con el ETL en curso.
+// Cola de revisión humana de puntajes sospechosos del catálogo real: los tests detectan
+// regresiones, no errores de criterio. No escribe en la base.
 import 'dotenv/config';
-import { admin } from './etl/lib/supabaseAdmin';
-import { ftgScoreWithBreakdown, type ProductInput } from '../src/domain/product/ftgEngine';
+import { admin } from '../etl/lib/supabaseAdmin';
+import { scoreProduct, type ProductInput } from '../src/modules/scoring';
 
 const PAGE_SIZE = 1000;
 
@@ -21,10 +12,8 @@ type Row = {
   product_name: string | null;
   brand: string | null;
   category: string | null;
-  score: number | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
-  nova_group: number | null;
   additives_tags: string[] | null;
 };
 
@@ -43,7 +32,6 @@ function toInput(r: Row): ProductInput {
   return {
     ingredients_text: r.ingredients_text ?? undefined,
     nutriments: r.nutriments ?? {},
-    nova_group: r.nova_group ?? undefined,
     additives_tags: r.additives_tags ?? [],
     categories: r.category ?? undefined,
   };
@@ -55,13 +43,9 @@ export const CURATION_QUEUE = new Map<string, number>();
 const DRINK = /bebida|gaseosa|refresco|jugo|soda|drink|beverage/i;
 const PROCESSED_MEAT = /fiambre|salchich|jamón|jamon|mortadela|salame|chorizo|panceta|bacon|embutido/i;
 
-/**
- * Cada regla describe una combinación que, si el motor acertó, tiene una
- * explicación; y si no la tiene, es un error. Ninguna es un veredicto: son
- * preguntas para un humano.
- */
+/** Cada regla es una combinación que necesita explicación: una pregunta, no un veredicto. */
 function analyze(r: Row): Finding[] {
-  const bd = ftgScoreWithBreakdown(toInput(r));
+  const bd = scoreProduct(toInput(r));
   const out: Finding[] = [];
   const base = {
     name: r.product_name ?? '(sin nombre)',
@@ -80,13 +64,12 @@ function analyze(r: Row): Finding[] {
       why: `Excelente con solo ${Math.round(bd.coverage * 100)}% de ingredientes reconocidos.` });
   }
 
-  // Un ultraprocesado en la banda alta necesita justificarse.
-  // NOVA ya no entra al puntaje en v2.1, así que este contraste es una señal
-  // externa: si OFF lo clasificó 4 y nosotros lo pusimos Excelente, uno de los
-  // dos se equivocó y conviene mirarlo.
-  if (r.nova_group === 4 && (bd.score ?? 0) >= 75) {
+  // Marcadores de ultraprocesado y aun así en la banda alta (D-36: el veredicto de
+  // procesamiento del motor reemplaza a NOVA).
+  const markers = bd.processing.markers.length;
+  if (markers > 0 && (bd.score ?? 0) >= 75) {
     out.push({ ...base, rule: 'ultraprocesado-excelente',
-      why: 'NOVA 4 puntuando como Excelente.' });
+      why: `${markers} marcador${markers === 1 ? '' : 'es'} de ultraprocesado puntuando como Excelente.` });
   }
 
   // Bebida azucarada que igual queda bien parada.
@@ -104,9 +87,9 @@ function analyze(r: Row): Finding[] {
   }
 
   // El error opuesto, igual de dañino: castigar un alimento real.
-  if (r.nova_group === 1 && bd.score != null && bd.score < 50) {
+  if (markers === 0 && (r.additives_tags ?? []).length === 0 && bd.score != null && bd.score < 50) {
     out.push({ ...base, rule: 'alimento-real-castigado',
-      why: 'NOVA 1 (alimento mínimamente procesado) por debajo de Bueno.' });
+      why: 'Sin marcadores de ultraprocesado ni aditivos, por debajo de Bueno.' });
   }
 
   // No es error del motor, es calidad de dato — pero define cuánto del
@@ -128,7 +111,7 @@ async function fetchAll(limit: number): Promise<Row[]> {
   for (let from = 0; from < limit; from += PAGE_SIZE) {
     const { data, error } = await admin()
       .from('products')
-      .select('barcode, product_name, brand, category, score, ingredients_text, nutriments, nova_group, additives_tags')
+      .select('barcode, product_name, brand, category, ingredients_text, nutriments, additives_tags')
       .not('ingredients_text', 'is', null)
       .order('barcode')
       .range(from, Math.min(from + PAGE_SIZE, limit) - 1);
