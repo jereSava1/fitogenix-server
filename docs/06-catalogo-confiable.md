@@ -1,6 +1,6 @@
 # Catálogo confiable: plan de trabajo (propuesta para discutir)
 
-> 2026-10-02 · Estado: **propuesta, sin OK**. Reemplaza el "saneamiento en una sesión aparte" de D-42 / DT-01 por un plan concreto, y ordena DT-02, DT-03 y DT-06 detrás de él (D-92).
+> 2026-10-02 · Estado: **propuesta, sin OK** (revisada el mismo día: verificación 100 % automática, sin revisión manual ni fotos subidas a mano; research de fuentes en §3). Reemplaza el "saneamiento en una sesión aparte" de D-42 / DT-01 por un plan concreto, y ordena DT-02, DT-03 y DT-06 detrás de él (D-92).
 
 **Principio:** el puntaje solo puede ser tan bueno como los datos. Primero datos **completos, verificados y con fuente**; después se recalibra el motor. Ningún dato del catálogo puede ser inventado, tampoco por una IA.
 
@@ -18,36 +18,49 @@
 ## 2. Principios (no negociables)
 
 1. **Nada sin fuente.** Cada dato (lista de ingredientes, cada nutriente, porción, contenido neto) se guarda con: fuente, evidencia (URL o foto), fecha de captura y estado (`sin_verificar`, `verificado`, `en_conflicto`).
-2. **La IA no crea datos.** Se apaga el enriquecimiento "de memoria". Si se usa IA, es solo para **transcribir lo que se ve en una evidencia** (por ejemplo, la foto de una etiqueta), y lo transcrito queda `sin_verificar` hasta que lo confirma una persona o una segunda fuente ([PREGUNTA] 2).
-3. **Lo no verificado no se presenta como verdad.** Un producto sin datos verificados suficientes se muestra **"sin puntaje: datos incompletos"** en lugar de un número.
-4. **La etiqueta manda.** Ante un conflicto entre fuentes, gana la etiqueta física (es la declaración legal del fabricante: rotulado obligatorio del Código Alimentario Argentino y Ley 27.642).
+2. **La IA no crea datos.** Se apaga el enriquecimiento "de memoria". Si se usa IA, es solo para **transcribir una evidencia publicada online** (la foto de una etiqueta en OFF o en un supermercado), y esa transcripción cuenta como una fuente más: nunca alcanza sola ([PREGUNTA] 2).
+3. **Sin revisión manual** (decisión del responsable, 2026-10-02): todo se verifica por **consenso automático entre fuentes** y controles de coherencia. Lo que no se puede verificar así no se completa a mano: el producto queda sin puntaje.
+4. **Lo no verificado no se presenta como verdad.** Un producto sin datos verificados suficientes queda **"sin puntaje: datos incompletos"**. Mientras la app está en desarrollo no hay usuarios que lo vean ([PREGUNTA] 1 resuelta).
+5. **Lo más reciente y lo que coincide, gana.** Cada dato guarda su fecha; ante fuentes que difieren, gana el acuerdo entre fuentes independientes y, si no lo hay, el producto queda `en_conflicto` (sin puntaje), sin elegir a mano.
 
-## 3. Fuentes y cómo se verifica un dato
+## 3. Fuentes (research del 2026-10-02) y verificación automática
 
-| Nivel | Fuente | Qué aporta | Confianza |
+Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
+
+| Fuente | Qué trae, verificado | Acceso | Independencia y límites |
 |---|---|---|---|
-| 1 | **Foto de la etiqueta** (propia, de OFF o enviada por usuarios) | Ingredientes, tabla nutricional, porción, contenido neto, octógonos | Máxima: es la evidencia |
-| 2 | **Sitio oficial del fabricante** (Mondelez, Arcor, Molinos, etc.) | Ingredientes y tabla nutricional | Alta |
-| 3 | **Supermercados** (VTEX: Carrefour, Jumbo, Disco, Vea; Coto, Día) | Ingredientes y nutrición copiados del fabricante; precio y foto | Media: a veces desactualizado o mal cargado |
-| 4 | **Open Food Facts** | Todo, cargado por la comunidad; muchas veces con foto de la etiqueta | Media si tiene foto; baja sin foto |
-| 5 | **GS1 Argentina** | Que el código de barras existe, marca, nombre, contenido neto | Alta, pero no trae ingredientes ni nutrición |
-| 6 | **ANMAT / RNPA** | Que el producto está registrado | Alta, pero no trae ingredientes ni nutrición |
-| — | Excluidas | IA generativa, blogs, apps de terceros sin evidencia | — |
+| **Cencosud** (Jumbo, Disco, Vea), API pública de VTEX | **Estructurado:** `Ingredientes`, `Tabla Nutricional` (con porción: "1 unidad = 22 g"), `Sellos` (octógonos y certificaciones), `Contenido` | `GET /api/catalog_system/pub/products/search?fq=alternateIds_Ean:<EAN>`; el ETL ya lo usa (`vtexAdapter`, `enrichCencosud`) | **Las tres tiendas son el mismo backend: cuentan como UNA fuente** |
+| **Open Food Facts** | Ingredientes, nutrición por 100 g, porción, contenido neto; a veces fotos de etiqueta | API (15 lecturas/min por IP) o **volcado diario completo** (mejor para el catálogo entero) | Colaborativo. **Licencia ODbL: atribución y "share-alike"** (si se combina con otra base, la base resultante debería publicarse abierta) → [PREGUNTA] 7 |
+| **Carrefour**, API pública de VTEX | Nombre, marca, **gramaje** (contenido neto), proveedor, fotos | Igual que Cencosud | Sin ingredientes ni nutrición |
+| **ChangoMás** (masonline), VTEX | Descripción, fotos | Igual | Sin datos estructurados |
+| **SEPA / Precios Claros** (datos abiertos del Estado, Res. 12/2016) | EAN, descripción, marca y **presentación** (contenido neto) de ~70.000 productos de 3.600 comercios | Volcado diario abierto (~4 GB) en datos.produccion.gob.ar | Oficial; sin ingredientes ni nutrición. Sirve para validar EAN, marca y contenido neto |
+| **GS1 Argentina** (API de consulta / Verified by GS1) | GTIN, marca, descripción, imagen, **contenido neto** y **detalle de octógonos**, cargados por el **fabricante** | API, **requiere ser socio** de GS1 Argentina | La fuente más autoritativa para contenido neto y octógonos → [PREGUNTA] 8 |
+| **Sitios de fabricantes** | Ingredientes y tabla oficial | Scraping por marca | **Poco confiable como única fuente:** el de Mondelez (`mondelezinternationalnutricionybienestar.com`) ya no responde y la versión indexada listaba una fórmula vieja (con aceite hidrogenado) |
+| Coto, Día | — | No son VTEX públicos; Día devolvió HTML | Investigar más adelante |
+| Excluidas | IA generativa "de memoria", apps de calorías (FatSecret, Fitia), blogs | — | No citan fuente |
 
-**Regla de verificación:** un dato queda `verificado` si (a) hay una foto de etiqueta legible revisada por una persona, o (b) **dos fuentes independientes de nivel 2 a 4 coinciden**. Si difieren, queda `en_conflicto` y va a revisión manual.
+**Verificación automática (sin personas):**
+
+1. **Ingredientes:** se normalizan las listas de cada fuente (nombres canónicos; "lecitina de soja (INS 322)" = un solo ingrediente) y se comparan. `verificado` si **dos fuentes independientes** coinciden en los **3 primeros** y en al menos el **85 %** del resto; si no, `en_conflicto`.
+2. **Nutrición:** `verificado` si dos fuentes independientes coinciden dentro de la tolerancia del rotulado (±20 %) y pasan los controles de coherencia (energía ≈ 4·carbohidratos + 4·proteínas + 9·grasas; azúcares ≤ carbohidratos; sodio presente si hay sal; unidades).
+3. **Octógonos como control cruzado:** los sellos que declara el fabricante o el supermercado (GS1, `Sellos` de Cencosud) tienen que coincidir con los que salen de calcular la Ley 27.642 sobre los nutrientes. Si no coinciden, la nutrición queda `en_conflicto`. Es un verificador automático muy fuerte, porque los sellos los define el fabricante.
+4. **Porción y contenido neto:** de Cencosud, OFF, Carrefour (gramaje), SEPA y GS1; `verificado` con dos que coincidan.
+5. **Fotos de etiqueta publicadas** (si se aprueba la [PREGUNTA] 2): una IA transcribe la foto y esa transcripción entra como **una fuente más** en los pasos 1 a 4. Nunca alcanza sola.
+
+**Lo que esto no resuelve:** un producto que figura en una sola fuente no se puede verificar y queda sin puntaje. El costo de no tener revisión manual es **cobertura, no precisión**. La fase 0 mide cuántos productos tienen al menos dos fuentes.
 
 ## 4. Los cuatro frentes
 
 ### W1 · Lista de ingredientes completa y verificada
 
 - **Objetivo:** la lista tal como figura en la etiqueta, completa, en el orden declarado, con los aditivos con su nombre y su INS.
-- **Cómo:** cruce automático de fuentes (OFF ↔ supermercados ↔ fabricante) por código de barras; si coinciden, `verificado`; si no, a revisión con la foto. Detectores automáticos de listas incompletas (cortadas, sin aditivos cuando el producto es ultraprocesado, con texto de fabricante mezclado: ya existe `etl/lib/qualityHeuristics.ts`).
-- **Hecho cuando:** el producto tiene la lista `verificada` y el motor identifica al menos el X % de sus ingredientes ([PREGUNTA] 4; hoy no hay mínimo, M-1).
+- **Cómo:** cruce automático de fuentes por código de barras (§3); si coinciden, `verificado`; si no, `en_conflicto` (sin puntaje). Detectores automáticos de listas incompletas (cortadas, sin aditivos cuando el producto es ultraprocesado, con texto de fabricante mezclado: ya existe `etl/lib/qualityHeuristics.ts`).
+- **Hecho cuando:** el producto tiene la lista `verificada` y el motor identifica al menos el **70 % de sus ingredientes, incluidos los 3 primeros** (M-1; [PREGUNTA] 4 resuelta, con el agregado de los 3 primeros).
 
 ### W2 · Información nutricional real y por unidad
 
 - **Objetivo:** la tabla nutricional de la etiqueta con **porción declarada, porciones por envase y contenido neto**, además de los valores por 100 g / 100 ml. La app puede mostrar "por porción" y "por envase" (RF-063, DT-03).
-- **Cómo:** mismas fuentes y regla que W1. Controles automáticos de plausibilidad (ya existe `etl/quality/nutrientPlausibility.ts`): energía coherente con macronutrientes (4·carb + 4·prot + 9·grasa ≈ kcal), sodio con sal declarada, azúcares ≤ carbohidratos, unidades (mg contra g).
+- **Cómo:** mismas fuentes y regla que W1, más el control cruzado de octógonos (§3). Controles automáticos de plausibilidad (ya existe `etl/quality/nutrientPlausibility.ts`): energía coherente con macronutrientes (4·carb + 4·prot + 9·grasa ≈ kcal), sodio con sal declarada, azúcares ≤ carbohidratos, unidades (mg contra g).
 - **Hecho cuando:** los nutrientes críticos (energía, azúcares, grasas totales y saturadas, sodio) más porción y contenido neto están `verificados`.
 
 ### W3 · Componentes comunes de los ultraprocesados, con cuánto restan
@@ -74,18 +87,29 @@
 
 | Fase | Qué | Quién | Sale cuando |
 |---|---|---|---|
-| 0 | **Medir.** Consultas sobre el catálogo actual: productos por fuente, cuántos `ai_enriched`, con ingredientes, con nutrición completa, con porción y contenido neto, con foto de etiqueta en OFF | Te paso las consultas, las corrés vos (D-58) | Tenemos los números para dimensionar |
+| 0 | **Medir.** Consultas sobre el catálogo actual (por fuente, cuántos `ai_enriched`, con ingredientes, nutrición, porción y contenido neto) y **cuántos EAN tienen al menos dos fuentes independientes** (Cencosud, OFF, SEPA) | Te paso las consultas, las corrés vos (D-58); el cruce con fuentes externas lo corro yo | Sabemos qué cobertura podemos alcanzar sin manual |
 | 1 | **Cortar la IA generativa.** Sacar `claudeEnricher` del ETL; marcar los `ai_enriched` como `sin_verificar`; decidir qué ve el usuario de esos productos | Yo, con tu OK | El ETL no puede inventar datos |
 | 2 | **Procedencia.** Tablas `product_facts` y la `products` limpia, con migraciones y pruebas | Yo | Cada dato nuevo entra con fuente y estado |
-| 3 | **Verificar por lotes**, empezando por los productos más escaneados y los más vendidos: cruce automático de fuentes y revisión manual de conflictos con la foto | Automático yo; revisión manual vos (o quien definas) | El lote prioritario está `verificado` |
+| 3 | **Verificar todo el catálogo automáticamente**: ingesta de las fuentes de §3 por EAN, normalización, consenso y controles; los conflictos quedan sin puntaje (sin revisión manual) | Yo | Cada producto queda `verificado`, `en_conflicto` o `sin_verificar`, con métricas de cobertura |
 | 4 | **W3 y W4** (en paralelo con la 3): tabla de componentes y descripciones | Yo armo; vos aprobás | Tabla aprobada y descripciones revisadas |
 | 5 | **Recalibrar el motor** con datos verificados: arreglos de PM-08, mínimo de cobertura (M-1), discriminación (M-6), cobertura de puntaje (DT-02) | Yo, con tu OK sobre cada cambio de puntajes | El puntaje discrimina y se apoya en datos verificados |
 
 ## 7. [PREGUNTA]
 
-1. **¿Qué ve el usuario mientras tanto** de los productos sin verificar? (a) el puntaje actual con una marca "datos sin verificar"; (b) "sin puntaje: datos incompletos"; (c) nada hasta verificar.
-2. **IA para transcribir etiquetas:** ¿se permite leer la foto de una etiqueta con IA si una persona confirma lo transcrito, o todo a mano?
-3. **¿Quién hace la revisión manual** de conflictos y fotos, y cuántas horas por semana? Define cuántos productos podemos verificar.
-4. **Cobertura mínima** para emitir puntaje (M-1): ¿qué porcentaje de ingredientes identificados exigimos?
-5. **Primer lote:** ¿los N más escaneados, una categoría (galletitas, bebidas…) o los de un supermercado?
-6. **Fuentes de fabricantes:** ¿hay contacto con alguna marca para pedir fichas técnicas oficiales?
+Resueltas el 2026-10-02: (1) no hay usuarios todavía: lo no verificado queda sin puntaje; (3) **sin revisión manual**: consenso automático; (4) **70 % de ingredientes identificados**, más los **3 primeros** (en una lista ordenada por peso, los primeros son la mayor parte del producto: un 70 % sin el ingrediente principal no alcanza).
+
+Abiertas:
+
+2. **IA para transcribir fotos de etiqueta publicadas online** (OFF, supermercados), contando solo como una fuente más que tiene que coincidir con otra: ¿sí o no?
+5. **Primer lote para medir y ajustar:** ¿los más escaneados, una categoría (galletitas, bebidas…) o todo el catálogo de una vez?
+6. ¿Hay contacto con alguna marca para fichas técnicas oficiales?
+7. **Licencia de Open Food Facts (ODbL):** combinar sus datos con la base propia obliga a publicar esa base como datos abiertos. ¿Lo aceptamos, usamos OFF solo para **verificar** (comparar sin copiar sus valores) o lo consultamos con un abogado?
+8. **GS1 Argentina:** ser socio da acceso a contenido neto y octógonos cargados por el fabricante (la fuente más autoritativa). ¿Fitogenix es o puede ser socio?
+9. **Términos de uso de los supermercados:** las APIs de VTEX son públicas, pero conviene revisar que el uso sistemático no viole sus condiciones.
+
+### Fuentes del research
+
+- [Base SEPA — Datos abiertos de Desarrollo Productivo](https://datos.produccion.gob.ar/dataset?tags=SEPA) · [Precios SEPA (argentina.gob.ar)](https://www.argentina.gob.ar/economia/industria-y-comercio/defensadelconsumidor/precios-sepa)
+- [GS1 Argentina — API de consulta](https://www.gs1.org.ar/Site/EstandaresSoluciones_Bootstrap5/API.html) · [Verified by GS1 (GS1 Argentina)](https://www.gs1.org.ar/Site/Servicios_Bootstrap5/Verified.html)
+- [Open Food Facts — Data, API and SDKs](https://world.openfoodfacts.org/data) · [Documentación de la API](https://openfoodfacts.github.io/openfoodfacts-server/api/) · [Condiciones de uso de la API](https://forum.openfoodfacts.org/t/conditions-to-use-the-open-food-facts-api/443)
+- [Rhodesia en Open Food Facts (77995681)](https://world.openfoodfacts.org/product/77995681/rhodesia-terrabusi)
