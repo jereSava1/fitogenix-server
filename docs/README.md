@@ -8,7 +8,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-91) |
+| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-92) |
 | Probar la app a mano y ver lo que se encontró | [`pruebas-manuales.md`](pruebas-manuales.md) |
 | Deployar, pasar a `main` o volver atrás un deploy | [`deploy.md`](deploy.md) |
 | Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
@@ -18,6 +18,7 @@ Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (s
 | Ver qué falta, qué sobra y qué está roto | [`04-analisis.md`](04-analisis.md) |
 | Ver el plan de trabajo | [`05-plan.md`](05-plan.md) (backlog por etapas + Definition of Done) |
 | Entender el criterio del puntaje y su fundamento | [`dominio-scoring.md`](dominio-scoring.md) |
+| Ver el plan para un catálogo con datos verificados (antes de tocar el puntaje) | [`06-catalogo-confiable.md`](06-catalogo-confiable.md) |
 | Ver lo que se dejó para más adelante | [`deuda-tecnica.md`](deuda-tecnica.md) |
 
 ## Contenido
