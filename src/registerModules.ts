@@ -14,8 +14,8 @@ export const API_PREFIX = '/v1';
 export async function registerModules(app: FastifyInstance): Promise<void> {
   await app.register(
     async (v1) => {
-      // El registro del escaneo se inyecta en catalog (02-arquitectura §3.3): el escaneo
-      // va al historial de user-library. catalog no conoce a user-library.
+      // El registro del escaneo se inyecta en catalog: el escaneo va al historial de
+      // user-library, y catalog no conoce a user-library.
       await registerCatalog(v1, {
         onScan: ({ userId, productId }) => recordScan(userId, productId),
       });

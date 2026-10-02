@@ -1,8 +1,8 @@
 # ADR-0006 · Timeouts, errores de dependencias y health
 
-- **Estado:** Propuesto. **Implementado** en H-01 y H-02 (punto 4, Auth: 503 cuando no hay claves para verificar el token o `DELETE /v1/users/me` no puede confirmar la sesión; el lookup sigue como anónimo). Además de los timeouts, las SELECT desactivan los reintentos de postgrest-js (`.retry(false)`): sin eso, una caída tardaba ~15 s en dar el 503
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** RNF-D01, RNF-D02, RNF-D03, RNF-D05, RNF-U01, [01-requerimientos.md §2.3](../01-requerimientos.md)
+- **Relacionado:** RNF-D01, RNF-D02, RNF-D03, RNF-D05, RNF-U01
 
 ## Contexto
 

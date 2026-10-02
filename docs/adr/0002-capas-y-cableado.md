@@ -1,8 +1,8 @@
 # ADR-0002 · Capas por módulo, puertos y cableado sin contenedor de DI
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** [02-arquitectura.md §3](../02-arquitectura.md), ADR-0001
+- **Relacionado:** ADR-0001, [arquitectura.md](../arquitectura.md)
 
 ## Contexto
 

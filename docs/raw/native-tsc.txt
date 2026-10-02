@@ -1,7 +1,0 @@
-src/app/(tabs)/index.tsx(15,22): error TS2322: Type '"/onboarding"' is not assignable to type 'RelativePathString | ExternalPathString | "/feedback" | `/feedback?${string}` | `/feedback#${string}` | "/help" | `/help?${string}` | `/help#${string}` | "/personal-data" | `/personal-data?${string}` | ... 87 more ... | { ...; }'.
-src/components/ProductIssueModal.tsx(232,19): error TS2551: Property 'absoluteFillObject' does not exist on type 'typeof StyleSheet'. Did you mean 'absoluteFill'?
-src/components/ScoringExplainerModal.tsx(221,19): error TS2551: Property 'absoluteFillObject' does not exist on type 'typeof StyleSheet'. Did you mean 'absoluteFill'?
-src/lib/appleAuth.ts(1,38): error TS2307: Cannot find module 'expo-apple-authentication' or its corresponding type declarations.
-src/screens/OnboardingScreen.tsx(58,3): error TS2322: Type '"mci:food-steak"' is not assignable to type '"build" | "options" | "copy" | "cut" | "resize" | "pause" | "play" | "scan" | "search" | "barcode" | "text" | "shuffle" | "key" | "at" | "time" | "reload" | "navigate" | "push" | ... 1338 more ... | "woman-sharp"'.
-src/screens/ProfileScreen.tsx(210,95): error TS2345: Argument of type '"/location"' is not assignable to parameter of type 'RelativePathString | ExternalPathString | "/feedback" | `/feedback?${string}` | `/feedback#${string}` | "/help" | `/help?${string}` | `/help#${string}` | "/personal-data" | `/personal-data?${string}` | ... 87 more ... | { ...; }'.
-exit=2

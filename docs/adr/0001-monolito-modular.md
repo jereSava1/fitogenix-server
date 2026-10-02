@@ -1,8 +1,8 @@
 # ADR-0001 · Monolito modular con módulos por capacidad
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** [02-arquitectura.md §2](../02-arquitectura.md), ADR-0002, ADR-0004
+- **Relacionado:** ADR-0002, ADR-0004, [arquitectura.md](../arquitectura.md)
 
 ## Contexto
 
@@ -23,7 +23,7 @@ Un **monolito modular**: un solo deploy, con código organizado en módulos por 
 
 Más `src/platform/` (infraestructura compartida, no es un módulo de negocio) y `etl/` fuera del deploy (ADR-0004).
 
-Reglas: un módulo solo se importa por su `index.ts`; sin ciclos entre módulos; dependencias permitidas según el mapa de [02-arquitectura.md §2.1](../02-arquitectura.md). Se verifican con `dependency-cruiser` en CI.
+Reglas: un módulo solo se importa por su `index.ts`; sin ciclos entre módulos; dependencias permitidas según el mapa de [arquitectura.md](../arquitectura.md). Se verifican con `dependency-cruiser` en CI.
 
 ## Alternativas consideradas
 

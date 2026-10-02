@@ -2,7 +2,7 @@
 
 El contrato son dos archivos generados con `npm run contract:generate` ([ADR-0011](../docs/adr/0011-contrato-http-fuente-unica.md)): `contract/openapi.json`, desde los schemas TypeBox de las rutas, y `contract/scoring-bands.json`, las bandas del puntaje desde el motor (D-63). El CI falla si alguno de los archivos commiteados no coincide con lo que se genera (`npm run contract:check`). Todo cambio del archivo se anota acá, con el ítem del plan que lo hizo.
 
-Reglas ([03-contratos.md §B.5](../docs/03-contratos.md)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
+Reglas ([docs/arquitectura.md](../docs/arquitectura.md#contrato-http)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
 ## 0.13.0 — 2026-10-01 · PM-11
 
@@ -137,7 +137,7 @@ Lo que no cumple → `400 VALIDATION_ERROR`. Defensa en profundidad contra XSS s
 **Rompe** (se coordina con native en el mismo release: D-57, sin alias). Native lo acompaña en la rama `feat/k03-v1`.
 
 - **Prefijo `/v1`** en todas las rutas (D-44): `POST /v1/products/lookup`, `GET`/`POST /v1/users/me/saved`, `DELETE /v1/users/me/saved/{productId}`, `GET /v1/users/me/history`, `DELETE /v1/users/me`. Las rutas sin `/v1` responden `404 NOT_FOUND`. `/health` sigue afuera.
-- **Formato único de errores** `ApiError` = `{ error, code }` (03-contratos §B.2). `code` es un enum con los códigos que el server responde hoy (D-69); los demás se suman con el ítem que los empieza a usar:
+- **Formato único de errores** `ApiError` = `{ error, code }`. `code` es un enum con los códigos que el server responde hoy (D-69); los demás se suman con el ítem que los empieza a usar:
 
 | `code` | Status | Cuándo |
 |---|---|---|

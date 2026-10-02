@@ -1,6 +1,6 @@
 # Deuda técnica registrada
 
-> Temas identificados durante la auditoría que **se decidió tratar más adelante**. No entran en el plan de limpieza (Fase 5) salvo como dependencia. Cada ítem dice por qué se difiere y qué lo destraba.
+> Temas que **se decidió tratar más adelante**. Cada ítem dice por qué se difiere y qué lo destraba.
 
 | ID | Tema | Origen | Por qué se difiere | Qué lo destraba | Bloquea |
 |---|---|---|---|---|---|
@@ -9,7 +9,7 @@
 | DT-03 | **Contenido neto y nutrición por envase** (RF-063) | D-37, D-43 | El dato existe en ~5% del catálogo (OFF) y hasta ~16% en el nombre del producto | DT-01 | — |
 | DT-04 | **Hosting propio de imágenes, servidas por HTTPS** | D-49 (pedido del 2026-09-28) | Hoy la app carga las imágenes directo de los hosts de VTEX y Open Food Facts; alcanza para avanzar | Decidir el servicio; se puede hacer junto con DT-01 | — |
 | DT-06 | **Calidad y discriminación del motor** (M-1 a M-8 de [`dominio-scoring.md` §S7](dominio-scoring.md)): puntaje sin gate de cobertura, cola de curaduría descartada, alias faltantes, frescos sin puntaje, el 75 % de los productos en una sola banda, la excepción del art. 7 por aproximación | Relevamiento de `CONTEXT.md` / `NUTRICION.md` (2026-09-29) | No es limpieza: cambia puntajes. Necesita el fundamento de OPS (M-3) y contrastar contra fuentes externas antes de tocar coeficientes | RF-062 / L-05 (refactor del motor) y DT-01 | Publicación en tiendas (un puntaje que no discrimina no cumple su función) |
-| DT-05 | **Destino de la analítica** (RF-047, L-09): hoy los eventos `scan_failed` se descartan | D-61 | La app no está publicada: sin uso real no hay nada que medir, y construirlo ahora es trabajo sin retorno | Tener usuarios reales (beta cerrada o antes de publicar) y F-07 hecho (reusa su rate limit y antispam) | Medir RNF-U04 (tasa de fuera de catálogo) y RNF-P03 (p95 del lado de la app) |
+| DT-05 | **Destino de la analítica** (RF-047, L-09): hoy los eventos `scan_failed` se descartan | D-61 | La app no está publicada: sin uso real no hay nada que medir, y construirlo ahora es trabajo sin retorno | Tener usuarios reales (beta cerrada o antes de publicar) (reusa el rate limit y el antispam del feedback) | Medir RNF-U04 (tasa de fuera de catálogo) y RNF-P03 (p95 del lado de la app) |
 
 ---
 
@@ -19,7 +19,7 @@
 
 La app muestra la `imageUrl` tal como viene de VTEX (Carrefour, Vea, Disco, Jumbo) u Open Food Facts. Riesgos que quedan:
 
-1. **HTTPS:** iOS bloquea por default las imágenes sin HTTPS (App Transport Security). La consulta 8 de [`sql/fase3-schema-real.sql`](sql/fase3-schema-real.sql) mide cuántas `image_url` son `http://`.
+1. **HTTPS:** iOS bloquea por default las imágenes sin HTTPS (App Transport Security). Falta medir cuántas `image_url` son `http://`.
 2. **Dependencia de terceros:** si un supermercado cambia, borra o bloquea sus URLs (hotlinking), la imagen desaparece de la app sin aviso.
 3. **Sin control del tamaño:** se descargan imágenes en la resolución que publique cada fuente, aunque la app las muestre chicas.
 4. **Privacidad:** cada imagen que carga la app es una request del teléfono del usuario a un tercero (con su IP).

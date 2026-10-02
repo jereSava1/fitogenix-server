@@ -1,8 +1,8 @@
 # ADR-0009 · Un solo mecanismo de migraciones + baseline
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** DB-02, D-09, [00-inventario.md §2.7](../00-inventario.md), ADR-0005
+- **Relacionado:** D-09, D-81, ADR-0005
 
 ## Contexto
 
@@ -31,4 +31,4 @@
 
 - **+** La base se puede reconstruir desde el repo (entornos de prueba, CI) y se sabe qué está aplicado.
 - **−** Requiere instalar la CLI de Supabase y tener acceso al proyecto para generar el baseline (**esta máquina no la tiene**).
-- **−** El baseline es un archivo grande que hay que revisar con cuidado: se contrasta con [`raw/supabase-schema.json`](../raw/supabase-schema.json).
+- **−** El baseline es un archivo grande que hay que revisar con cuidado: se contrastó con el schema relevado de producción.

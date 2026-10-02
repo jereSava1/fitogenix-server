@@ -45,7 +45,7 @@ export const Email = () => Type.String({ format: 'email', maxLength: 254 });
 /** Cualquier carácter a propósito: restringirla la debilitaría, y nunca se muestra. */
 export const Password = () => Type.String({ minLength: 8, maxLength: 72 });
 
-// Datos personales, iguales en el registro y en el perfil (03-contratos §B.3.3).
+// Datos personales, iguales en el registro y en el perfil.
 /** Letras de cualquier idioma, espacios, apóstrofe, punto y guion: ni `<`, ni `>`, ni números. */
 export const PersonName = () =>
   Type.String({ minLength: 1, maxLength: 60, pattern: "^\\p{L}[\\p{L}\\p{M} '’.-]*$" });
