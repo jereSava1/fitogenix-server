@@ -19,9 +19,10 @@
 
 1. **Nada sin fuente.** Cada dato (lista de ingredientes, cada nutriente, porción, contenido neto) se guarda con: fuente, evidencia (URL o foto), fecha de captura y estado (`sin_verificar`, `verificado`, `en_conflicto`).
 2. **La IA no crea datos.** Se apaga el enriquecimiento "de memoria". Si se usa IA, es solo para **transcribir una evidencia publicada online** (la foto de una etiqueta en OFF o en un supermercado), y esa transcripción cuenta como una fuente más: nunca alcanza sola ([PREGUNTA] 2).
-3. **Sin revisión manual** (decisión del responsable, 2026-10-02): todo se verifica por **consenso automático entre fuentes** y controles de coherencia. Lo que no se puede verificar así no se completa a mano: el producto queda sin puntaje.
+3. **Sin revisión manual del catálogo** (decisión del responsable, 2026-10-02): todo se verifica por **consenso automático entre fuentes** y controles de coherencia. Lo que no se puede verificar así no se completa a mano: el producto queda sin puntaje. La única revisión manual es la de los productos de control (§7), acotada, para comprobar que el proceso automático no se equivoca (D-95).
 4. **Lo no verificado no se presenta como verdad.** Un producto sin datos verificados suficientes queda **"sin puntaje: datos incompletos"**. Mientras la app está en desarrollo no hay usuarios que lo vean ([PREGUNTA] 1 resuelta).
 5. **Lo más reciente y lo que coincide, gana.** Cada dato guarda su fecha; ante fuentes que difieren, gana el acuerdo entre fuentes independientes y, si no lo hay, el producto queda `en_conflicto` (sin puntaje), sin elegir a mano.
+6. **La referencia es la etiqueta o la marca** (D-95). Un dato cuenta como validado cuando se contrastó con una fuente confiable: la etiqueta del producto (el envase o una foto publicada) o una fuente que viene de la marca (GS1, ficha técnica, sitio del fabricante). Las demás fuentes (supermercados, Open Food Facts) sirven para encontrar el dato y para detectar conflictos, pero dos de ellas que coinciden no reemplazan a la etiqueta.
 
 ## 3. Fuentes (research del 2026-10-02) y verificación automática
 
@@ -38,6 +39,8 @@ Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
 | **Sitios de fabricantes** | Ingredientes y tabla oficial | Scraping por marca | **Poco confiable como única fuente:** el de Mondelez (`mondelezinternationalnutricionybienestar.com`) ya no responde y la versión indexada listaba una fórmula vieja (con aceite hidrogenado) |
 | Coto, Día | — | No son VTEX públicos; Día devolvió HTML | Investigar más adelante |
 | Excluidas | IA generativa "de memoria", apps de calorías (FatSecret, Fitia), blogs | — | No citan fuente |
+
+**Jerarquía de fuentes (principio 6):** primero la etiqueta y lo que viene de la marca (foto de etiqueta, GS1, ficha técnica, sitio del fabricante); después, supermercados y Open Food Facts. Queda por definir en la fase 0 cuántos productos tienen al menos una fuente del primer grupo: de eso depende la cobertura.
 
 **Verificación automática (sin personas):**
 
@@ -119,7 +122,7 @@ Tres objetivos pedidos por el responsable (2026-10-03), cada uno con su forma de
 | Los valores nutricionales son precisos y están validados | Igual, más los controles de coherencia (energía contra macros, azúcares ≤ carbohidratos, sodio con sal) y el cruce con los octógonos declarados. Métrica: % de productos con los 4 macros `verificados` | W2 |
 | La información es legible y útil | Checklist en el teléfono sobre los productos de control: misma tabla nutricional en todos, textos que se leen sin esfuerzo, ningún "ingrediente" que no lo sea, descripciones según la guía de W4 | W4, W5 |
 
-**Productos de control.** Un conjunto fijo de productos reales que se revisa contra el envase después de cada cambio de datos, de parseo o de pantalla. Lo que hoy sale bien tiene que seguir saliendo bien, y lo que sale mal tiene que quedar arreglado o sin puntaje.
+**Productos de control** (aceptado por el responsable el 2026-10-03, D-95). Un conjunto fijo y acotado de productos reales que se revisa contra el envase después de cada cambio de datos, de parseo o de pantalla. Lo que hoy sale bien tiene que seguir saliendo bien, y lo que sale mal tiene que quedar arreglado o sin puntaje.
 
 | Producto | Hoy | Qué falla | Origen |
 |---|---|---|---|
@@ -136,6 +139,8 @@ Faltan los códigos de barras de los demás. El conjunto crece con cada producto
 
 ## 8. [PREGUNTA]
 
+Resuelta el 2026-10-03: (10) **revisión manual acotada a los productos de control**, aceptada; y la validación se hace contra la etiqueta o fuentes de la marca (principio 6, D-95). Esto vuelve más importantes las preguntas 2 (fotos de etiqueta), 6 (fichas de las marcas) y 8 (GS1), que son justamente esas fuentes.
+
 Resueltas el 2026-10-02: (1) no hay usuarios todavía: lo no verificado queda sin puntaje; (3) **sin revisión manual**: consenso automático; (4) **70 % de ingredientes identificados**, más los **3 primeros** (en una lista ordenada por peso, los primeros son la mayor parte del producto: un 70 % sin el ingrediente principal no alcanza).
 
 Abiertas:
@@ -146,7 +151,6 @@ Abiertas:
 7. **Licencia de Open Food Facts (ODbL):** combinar sus datos con la base propia obliga a publicar esa base como datos abiertos. ¿Lo aceptamos, usamos OFF solo para **verificar** (comparar sin copiar sus valores) o lo consultamos con un abogado?
 8. **GS1 Argentina:** ser socio da acceso a contenido neto y octógonos cargados por el fabricante (la fuente más autoritativa). ¿Fitogenix es o puede ser socio?
 9. **Términos de uso de los supermercados:** las APIs de VTEX son públicas, pero conviene revisar que el uso sistemático no viole sus condiciones.
-10. **Productos de control contra el envase:** el principio 3 dice "sin revisión manual" para completar datos. Los productos de control no completan datos: comprueban que el proceso automático no se equivoque. ¿Aceptamos esa revisión manual acotada (unas decenas de productos, con el envase en la mano)? Sin ella, la verificación automática no tiene contra qué medirse.
 
 ### Fuentes del research
 
