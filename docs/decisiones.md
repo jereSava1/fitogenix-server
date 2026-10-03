@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-94**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-95**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -101,3 +101,4 @@ Una decisión nueva toma el siguiente número libre (**D-94**). Si cambia otra, 
 | D-91 | Aviso legal en capas (casilla obligatoria con email; "Al continuar aceptás…" con Google y Apple; línea al pie del resultado), con links a la web | Vigente |
 | D-92 | No se cambian puntajes hasta tener un catálogo verificado y con fuente; ningún dato inventado por IA ([06-catalogo-confiable.md](06-catalogo-confiable.md)) | Vigente |
 | D-93 | Render sigue con el build de Node: no deja cambiar el runtime de un servicio existente. Docker se usa en local y en el CI ([deploy.md](deploy.md)) | Vigente |
+| D-94 | Tabla nutricional: los macronutrientes se muestran siempre; el resto, solo si el producto tiene una cantidad significativa (RF-064) | Pendiente |

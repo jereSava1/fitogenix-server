@@ -29,7 +29,7 @@ La app habla **solo** con el server (D-28). El server usa Supabase (base y Auth)
 | RF-008 | Mostrar la **imagen** del producto | La app carga `imageUrl` directo de la fuente; sin imagen o si falla, placeholder propio. El server no procesa imágenes | ✅ |
 | RF-009 | Ver el **detalle** de un producto por id | `GET /v1/products/{id}` → el mismo detalle que el lookup; id inexistente → 404 | ✅ |
 | RF-063 | Contenido neto y nutrición **por envase** | Se diseña después del catálogo confiable ([06-catalogo-confiable.md](06-catalogo-confiable.md)) | 🗺 |
-| RF-064 | **Tabla nutricional igual en todos los productos** | Todos los productos muestran las mismas filas, en el mismo orden, con los macronutrientes siempre presentes. Un valor sin dato se muestra como "sin dato", no se oculta la fila. Falta definir la lista de filas (PM-24) | ⏳ Hoy la pantalla muestra solo 4 de 6 filas principales, según cuáles tengan dato |
+| RF-064 | **Tabla nutricional con un criterio común** | Los macronutrientes se muestran **siempre**, en el mismo orden, en todos los productos. El resto de los valores se muestra solo si el producto tiene una cantidad significativa (D-94). Falta definir el umbral de "significativa" y qué se ve si un macro no tiene dato | ⏳ Hoy la pantalla muestra solo 4 de 6 filas principales, según cuáles tengan dato (PM-24) |
 
 ### Biblioteca del usuario
 
