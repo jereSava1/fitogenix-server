@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-96**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-97**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -103,3 +103,4 @@ Una decisión nueva toma el siguiente número libre (**D-96**). Si cambia otra, 
 | D-93 | Render sigue con el build de Node: no deja cambiar el runtime de un servicio existente. Docker se usa en local y en el CI ([deploy.md](deploy.md)) | Vigente |
 | D-94 | Tabla nutricional: calorías, proteínas, carbohidratos y grasas totales siempre ("sin dato" si falta); el resto, solo si es mayor que cero (RF-064) | Pendiente |
 | D-95 | Los datos de un producto se validan contra la etiqueta o una fuente de la marca; la única revisión manual es la de un conjunto acotado de productos de control ([06-catalogo-confiable.md](06-catalogo-confiable.md)) | Vigente |
+| D-96 | Una IA puede transcribir fotos de etiqueta publicadas (OFF, supermercados): copia lo que dice la foto, sin completar, y cuenta como fuente de etiqueta. Cada transcripción se hace dos veces y pasa controles automáticos ([06-catalogo-confiable.md](06-catalogo-confiable.md) §6b) | Vigente |

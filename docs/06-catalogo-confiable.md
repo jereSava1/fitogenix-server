@@ -61,7 +61,7 @@ Falta medir en la fase 0 cuántos productos del catálogo tienen al menos una de
 2. **Nutrición:** `verificado` si dos fuentes independientes coinciden dentro de la tolerancia del rotulado (±20 %) y pasan los controles de coherencia (energía ≈ 4·carbohidratos + 4·proteínas + 9·grasas; azúcares ≤ carbohidratos; sodio presente si hay sal; unidades).
 3. **Octógonos como control cruzado:** los sellos que declara el fabricante o el supermercado (GS1, `Sellos` de Cencosud) tienen que coincidir con los que salen de calcular la Ley 27.642 sobre los nutrientes. Si no coinciden, la nutrición queda `en_conflicto`. Es un verificador automático muy fuerte, porque los sellos los define el fabricante.
 4. **Porción y contenido neto:** de Cencosud, OFF, Carrefour (gramaje), SEPA y GS1; `verificado` con dos que coincidan.
-5. **Fotos de etiqueta publicadas** (si se aprueba la [PREGUNTA] 2): una IA transcribe la foto y esa transcripción entra como **una fuente más** en los pasos 1 a 4. Nunca alcanza sola.
+5. **Fotos de etiqueta publicadas** (aprobado, D-96): una IA transcribe la foto y esa transcripción entra como **una fuente más** en los pasos 1 a 4. Nunca alcanza sola.
 
 **Lo que esto no resuelve:** un producto que figura en una sola fuente no se puede verificar y queda sin puntaje. El costo de no tener revisión manual es **cobertura, no precisión**. La fase 0 mide cuántos productos tienen al menos dos fuentes.
 
@@ -125,6 +125,70 @@ Falta medir en la fase 0 cuántos productos del catálogo tienen al menos una de
 | 4 | **W3, W4 y W5** (en paralelo con la 3): tabla de componentes, descripciones y presentación en la app | Yo armo; vos aprobás | Tabla aprobada, descripciones revisadas y productos de control (§7) bien presentados |
 | 5 | **Recalibrar el motor** con datos verificados: arreglos de PM-08, mínimo de cobertura (M-1), discriminación (M-6), cobertura de puntaje (DT-02) | Yo, con tu OK sobre cada cambio de puntajes | El puntaje discrimina y se apoya en datos verificados |
 
+## 6b. Plan de ejecución: verificar todo el catálogo
+
+Detalle de las fases 0 a 3. Todo corre en el ETL (`etl/`), por lotes, y nada toca `products` hasta la fase 3.
+
+### Recorrido de un producto
+
+```mermaid
+flowchart LR
+  A[1 · Juntar evidencia<br/>por código de barras] --> B[2 · Elegir las fotos<br/>que son etiqueta]
+  B --> C[3 · Transcribir<br/>dos veces]
+  C --> D[4 · Controles<br/>automáticos]
+  D --> E[5 · Cruzar con<br/>otras fuentes]
+  E --> F{6 · Estado}
+  F --> V[verificado]
+  F --> X[en_conflicto]
+  F --> S[sin_verificar]
+```
+
+| Paso | Qué hace | Regla |
+|---|---|---|
+| 1 · Juntar evidencia | Por código de barras: fotos y datos de OFF (volcado diario, sin límite de pedidos), Cencosud y Carrefour (VTEX). Se guarda cada foto con su URL, fecha y hash | Nada se descarta: toda evidencia queda registrada, sirva o no |
+| 2 · Elegir las fotos | Una IA clasifica cada foto: ¿tiene lista de ingredientes?, ¿tabla nutricional?, ¿se lee? | Una foto borrosa o cortada se marca `ilegible` y no se transcribe |
+| 3 · Transcribir dos veces | Dos transcripciones independientes de la misma foto. Se copia **lo que dice**, tal cual: texto de ingredientes, cada fila de la tabla con su valor, unidad y %VD, la porción y el contenido neto | Prohibido completar. Lo que no se lee va como `null`. Si las dos transcripciones no coinciden en un número o en la lista de ingredientes, esa foto se descarta |
+| 4 · Controles automáticos | Sobre lo transcripto, sin IA (ver abajo) | Un control que falla deja el dato `en_conflicto` |
+| 5 · Cruzar | La transcripción se compara con los datos estructurados de Cencosud, el texto de OFF y la otra foto, si hay | Si coinciden, sube la confianza. Si difieren (como el sodio de la Tonadita: 12 mg contra 20 mg), `en_conflicto` |
+| 6 · Estado | `verificado`: hay una fuente de etiqueta o de marca, pasó los controles y ninguna fuente la contradice. `en_conflicto`: hay fuentes que difieren. `sin_verificar`: no hay ninguna foto ni fuente de marca | Solo lo `verificado` llega a la app con puntaje |
+
+### Cómo se asegura que una transcripción es correcta
+
+La etiqueta trae información redundante: eso permite detectar errores de lectura sin que nadie mire la foto.
+
+| Control | Qué detecta |
+|---|---|
+| Doble transcripción que coincide | Errores de lectura al azar |
+| kcal contra kJ (la etiqueta trae los dos: 75 kcal = 307 kJ) | Un dígito mal leído en la energía |
+| Valor contra %VD (cada fila trae los dos) | Un dígito o una unidad mal leídos (mg por g) |
+| Energía ≈ 4·carbohidratos + 4·proteínas + 9·grasas | Filas cruzadas o faltantes |
+| Azúcares ≤ carbohidratos; grasas saturadas y trans ≤ grasas totales | Filas cruzadas |
+| Valor por porción contra valor por 100 g, con la porción declarada | Columna equivocada |
+| Octógonos declarados contra los que salen de calcular la Ley 27.642 | Nutrición que no corresponde al producto |
+| Ingredientes: sin rótulos ni leyendas ("Ingredientes:", "libre de gluten", "contiene…"), sin unidades sueltas, sin repetidos | Los errores de PM-17, PM-18 y PM-22 |
+| **Productos de control** (§7), revisados contra el envase | Que todo lo anterior funcione: es la única medición contra la verdad |
+| Muestra al azar por lote, revisada por el responsable (acotada: unas decenas por lote) | Errores sistemáticos que los controles no ven |
+
+### Cómo se llenan los datos
+
+- Cada dato va a `product_facts` (§5) con su fuente, la URL de la foto, la fecha y su estado. Lo transcripto se guarda **tal cual** (por porción, con la unidad de la etiqueta), y el valor por 100 g se calcula aparte con la porción declarada.
+- Nunca se pisa un dato: una evidencia nueva agrega una fila, y la regla del paso 6 decide cuál vale.
+- La `products` limpia se arma solo con datos `verificados`. Los cuatro macros (RF-064) se llenan todos o el producto queda sin puntaje.
+- Cada lote deja un informe: cuántos productos en cada estado, qué controles fallaron más y la lista de conflictos.
+
+### Etapas
+
+| Etapa | Qué | Quién | Sale cuando |
+|---|---|---|---|
+| A · Medir | Consultas sobre el catálogo (cuántos productos, con código de barras, por fuente, `ai_enriched`) y cobertura de fotos sobre una muestra de 500 códigos | Las consultas las corre el responsable (D-58); el cruce con las fuentes, el ETL | Se sabe cuántos productos pueden llegar a `verificado` y cuánto cuesta |
+| B · Productos de control | El responsable transcribe del envase entre 30 y 50 productos (los de §7 y otros de categorías distintas) | Responsable | Hay una verdad contra la que medir |
+| C · Piloto | El recorrido completo sobre los productos de control y 200 más. Se mide el acierto contra el envase | ETL | **100 % de los números** y de los ingredientes de los productos de control coinciden con el envase, o el producto quedó `en_conflicto`. Ningún dato equivocado quedó `verificado` |
+| D · Corte de la IA que inventa | Se saca `claudeEnricher` y los `ai_enriched` pasan a `sin_verificar` | ETL, con OK | El ETL no puede generar datos |
+| E · Lotes | Todo el catálogo por lotes, empezando por los productos más escaneados. Informe y muestra al azar por lote | ETL; la muestra, el responsable | Cada producto tiene estado |
+| F · Publicar | La `products` limpia reemplaza a la actual | Migración, con OK | La app muestra solo datos verificados |
+
+El criterio del piloto es deliberadamente asimétrico: se acepta que un producto quede sin verificar, no se acepta que un dato equivocado quede como verificado.
+
 ## 7. Cómo se comprueba
 
 Tres objetivos pedidos por el responsable (2026-10-03), cada uno con su forma de comprobarlo:
@@ -152,13 +216,12 @@ Faltan los códigos de barras de los demás. El conjunto crece con cada producto
 
 ## 8. [PREGUNTA]
 
-Resuelta el 2026-10-03: (10) **revisión manual acotada a los productos de control**, aceptada; y la validación se hace contra la etiqueta o fuentes de la marca (principio 6, D-95). Esto vuelve más importantes las preguntas 2 (fotos de etiqueta), 6 (fichas de las marcas) y 8 (GS1), que son justamente esas fuentes.
+Resueltas el 2026-10-03: (2) **sí a la IA para transcribir fotos de etiqueta publicadas**: copia lo que dice la foto, no completa nada, y cuenta como fuente de etiqueta (D-96); (10) **revisión manual acotada a los productos de control**, aceptada; y la validación se hace contra la etiqueta o fuentes de la marca (principio 6, D-95). Esto vuelve más importantes las preguntas 2 (fotos de etiqueta), 6 (fichas de las marcas) y 8 (GS1), que son justamente esas fuentes.
 
 Resueltas el 2026-10-02: (1) no hay usuarios todavía: lo no verificado queda sin puntaje; (3) **sin revisión manual**: consenso automático; (4) **70 % de ingredientes identificados**, más los **3 primeros** (en una lista ordenada por peso, los primeros son la mayor parte del producto: un 70 % sin el ingrediente principal no alcanza).
 
 Abiertas:
 
-2. **IA para transcribir fotos de etiqueta publicadas online** (OFF, supermercados), contando solo como una fuente más que tiene que coincidir con otra: ¿sí o no?
 5. **Primer lote para medir y ajustar:** ¿los más escaneados, una categoría (galletitas, bebidas…) o todo el catálogo de una vez?
 6. ¿Hay contacto con alguna marca para fichas técnicas oficiales?
 7. **Licencia de Open Food Facts (ODbL):** combinar sus datos con la base propia obliga a publicar esa base como datos abiertos. ¿Lo aceptamos, usamos OFF solo para **verificar** (comparar sin copiar sus valores) o lo consultamos con un abogado?
