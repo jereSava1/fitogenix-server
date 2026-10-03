@@ -49,7 +49,7 @@ Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
 
 **Lo que esto no resuelve:** un producto que figura en una sola fuente no se puede verificar y queda sin puntaje. El costo de no tener revisión manual es **cobertura, no precisión**. La fase 0 mide cuántos productos tienen al menos dos fuentes.
 
-## 4. Los cuatro frentes
+## 4. Los cinco frentes
 
 ### W1 · Lista de ingredientes completa y verificada
 
@@ -77,6 +77,21 @@ Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
 - **Cómo:** cada descripción con su fuente al lado (campo `source`). Se reescriben las 325 entradas por prioridad (las más frecuentes en el catálogo primero) y el responsable las revisa.
 - **Hecho cuando:** las descripciones de los componentes que cubren el 90 % de las apariciones en el catálogo están reescritas, con fuente y revisadas.
 
+### W5 · Presentación legible y coherente en la app
+
+- **Objetivo:** que lo que se muestra de cada producto se pueda leer y sirva, con el mismo criterio en todos los productos.
+- **Tareas (del testing manual del 2026-10-03):**
+
+| Tarea | Origen |
+|---|---|
+| Tabla nutricional con criterio común: calorías, proteínas, carbohidratos y grasas totales **siempre**, en ese orden; un macro sin dato se muestra como "sin dato". El resto (azúcares, grasas saturadas, grasas trans, fibra, sodio, colesterol) solo si el valor es mayor que cero | RF-064, D-94, PM-24, PM-25 |
+| Letra más grande en ingredientes y descripciones; la cantidad de ingredientes, más grande y con más contraste | PM-20, PM-21, RNF-U11 |
+| Layout del resultado sin puntaje: el texto no se sale del círculo | PM-16 |
+| Imagen del producto tocable, para verla en grande | PM-15 |
+| La búsqueda por nombre se hace con un solo "enter" | PM-19 |
+
+- **Hecho cuando:** los productos de control (§7) se ven con la misma tabla, y el checklist de legibilidad de §7 pasa en el teléfono.
+
 ## 5. Modelo de datos (propuesta)
 
 - **`product_facts`**: un dato por fila, con `product_id`, `field` (ingredientes, energía, azúcares… porción, contenido neto), `value`, `unit`, `basis` (100 g, porción, envase), `source`, `evidence_url`, `captured_at` y `status`.
@@ -91,10 +106,35 @@ Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
 | 1 | **Cortar la IA generativa.** Sacar `claudeEnricher` del ETL; marcar los `ai_enriched` como `sin_verificar`; decidir qué ve el usuario de esos productos | Yo, con tu OK | El ETL no puede inventar datos |
 | 2 | **Procedencia.** Tablas `product_facts` y la `products` limpia, con migraciones y pruebas | Yo | Cada dato nuevo entra con fuente y estado |
 | 3 | **Verificar todo el catálogo automáticamente**: ingesta de las fuentes de §3 por EAN, normalización, consenso y controles; los conflictos quedan sin puntaje (sin revisión manual) | Yo | Cada producto queda `verificado`, `en_conflicto` o `sin_verificar`, con métricas de cobertura |
-| 4 | **W3 y W4** (en paralelo con la 3): tabla de componentes y descripciones | Yo armo; vos aprobás | Tabla aprobada y descripciones revisadas |
+| 4 | **W3, W4 y W5** (en paralelo con la 3): tabla de componentes, descripciones y presentación en la app | Yo armo; vos aprobás | Tabla aprobada, descripciones revisadas y productos de control (§7) bien presentados |
 | 5 | **Recalibrar el motor** con datos verificados: arreglos de PM-08, mínimo de cobertura (M-1), discriminación (M-6), cobertura de puntaje (DT-02) | Yo, con tu OK sobre cada cambio de puntajes | El puntaje discrimina y se apoya en datos verificados |
 
-## 7. [PREGUNTA]
+## 7. Cómo se comprueba
+
+Tres objetivos pedidos por el responsable (2026-10-03), cada uno con su forma de comprobarlo:
+
+| Objetivo | Cómo se comprueba | Frente |
+|---|---|---|
+| La información que se muestra es correcta y está validada | Cada producto con puntaje tiene sus ingredientes en estado `verificado` (dos fuentes independientes que coinciden, §3). Métrica: % del catálogo `verificado`, `en_conflicto` y `sin_verificar` | W1 |
+| Los valores nutricionales son precisos y están validados | Igual, más los controles de coherencia (energía contra macros, azúcares ≤ carbohidratos, sodio con sal) y el cruce con los octógonos declarados. Métrica: % de productos con los 4 macros `verificados` | W2 |
+| La información es legible y útil | Checklist en el teléfono sobre los productos de control: misma tabla nutricional en todos, textos que se leen sin esfuerzo, ningún "ingrediente" que no lo sea, descripciones según la guía de W4 | W4, W5 |
+
+**Productos de control.** Un conjunto fijo de productos reales que se revisa contra el envase después de cada cambio de datos, de parseo o de pantalla. Lo que hoy sale bien tiene que seguir saliendo bien, y lo que sale mal tiene que quedar arreglado o sin puntaje.
+
+| Producto | Hoy | Qué falla | Origen |
+|---|---|---|---|
+| Manteca Tonadita (`7798060850026`) | ✅ Bien | Nada: ingredientes y nutrición coinciden con el envase | PM-23 |
+| Turrón de maní Bariloche | ❌ | Ingredientes falsos: `mg/kg`, maní repetido, "Ngredientes", "(Ins n?322)" | PM-17 |
+| Pan Sacaan | ❌ | Ingredientes que el producto no tiene | PM-18 |
+| Queso rallado Ilolay 120 g | ❌ | Leyendas del envase tomadas como ingredientes: "libre de", "gluten", "pasteurizada", "encimas" | PM-22 |
+| Doritos | ❌ | Sin ingredientes ni puntaje | PM-25 |
+| Protein Bar de Arcor | ⚠ | Nutrición correcta, pero la tabla no muestra carbohidratos ni grasas totales | PM-24 |
+| Monster Punch | ⚠ | Ingredientes correctos que el motor no reconoce | PM-26 |
+| Rhodesia (`77995681`) | ❌ | Puntaje inflado por errores de lectura del motor; sodio 0 teniendo sal | PM-08 |
+
+Faltan los códigos de barras de los demás. El conjunto crece con cada producto que aparezca en las pruebas.
+
+## 8. [PREGUNTA]
 
 Resueltas el 2026-10-02: (1) no hay usuarios todavía: lo no verificado queda sin puntaje; (3) **sin revisión manual**: consenso automático; (4) **70 % de ingredientes identificados**, más los **3 primeros** (en una lista ordenada por peso, los primeros son la mayor parte del producto: un 70 % sin el ingrediente principal no alcanza).
 
@@ -106,6 +146,7 @@ Abiertas:
 7. **Licencia de Open Food Facts (ODbL):** combinar sus datos con la base propia obliga a publicar esa base como datos abiertos. ¿Lo aceptamos, usamos OFF solo para **verificar** (comparar sin copiar sus valores) o lo consultamos con un abogado?
 8. **GS1 Argentina:** ser socio da acceso a contenido neto y octógonos cargados por el fabricante (la fuente más autoritativa). ¿Fitogenix es o puede ser socio?
 9. **Términos de uso de los supermercados:** las APIs de VTEX son públicas, pero conviene revisar que el uso sistemático no viole sus condiciones.
+10. **Productos de control contra el envase:** el principio 3 dice "sin revisión manual" para completar datos. Los productos de control no completan datos: comprueban que el proceso automático no se equivoque. ¿Aceptamos esa revisión manual acotada (unas decenas de productos, con el envase en la mano)? Sin ella, la verificación automática no tiene contra qué medirse.
 
 ### Fuentes del research
 
