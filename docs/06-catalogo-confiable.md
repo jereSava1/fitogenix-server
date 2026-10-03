@@ -40,6 +40,19 @@ Probado en vivo con la Rhodesia (EAN `77995681`) y relevado online:
 | Coto, Día | — | No son VTEX públicos; Día devolvió HTML | Investigar más adelante |
 | Excluidas | IA generativa "de memoria", apps de calorías (FatSecret, Fitia), blogs | — | No citan fuente |
 
+**Dónde hay fotos de etiqueta (probado el 2026-10-03 con la manteca Tonadita `7798060850026` y la Rhodesia `77995681`):**
+
+| Fuente | Qué se encontró | Cómo se accede |
+|---|---|---|
+| **Open Food Facts** | Fotos del envase recortadas y clasificadas: una de ingredientes y una de la tabla nutricional, en los dos productos | Campos `image_ingredients_url` e `image_nutrition_url` de la API, por código de barras |
+| **Jumbo (Cencosud)** | En la Tonadita, la segunda foto es una **placa hecha por la marca** con la tabla nutricional y los ingredientes. La Rhodesia tiene 4 fotos | `items[].images[]` de la API de VTEX, por código de barras |
+| **Carrefour** | Fotos numeradas; en la Rhodesia hay una `_N02`, que por el nombre parece la de nutrición (sin abrir) | Igual |
+| **Fotos de usuarios** | No existe todavía: es RF-061 (leer la etiqueta desde una foto), en el roadmap | — |
+
+Falta medir en la fase 0 cuántos productos del catálogo tienen al menos una de estas fotos.
+
+**Ejemplo de por qué hace falta cruzar:** en la Tonadita, la foto del envase en OFF dice **sodio 12 mg** por porción y la placa de la marca en Jumbo dice **20 mg**. Las dos son "etiqueta"; probablemente son versiones distintas del envase. Con la regla del principio 5, ese dato queda `en_conflicto` hasta saber cuál es la vigente.
+
 **Jerarquía de fuentes (principio 6):** primero la etiqueta y lo que viene de la marca (foto de etiqueta, GS1, ficha técnica, sitio del fabricante); después, supermercados y Open Food Facts. Queda por definir en la fase 0 cuántos productos tienen al menos una fuente del primer grupo: de eso depende la cobertura.
 
 **Verificación automática (sin personas):**
