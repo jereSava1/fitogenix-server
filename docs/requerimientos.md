@@ -29,6 +29,7 @@ La app habla **solo** con el server (D-28). El server usa Supabase (base y Auth)
 | RF-008 | Mostrar la **imagen** del producto | La app carga `imageUrl` directo de la fuente; sin imagen o si falla, placeholder propio. El server no procesa imágenes | ✅ |
 | RF-009 | Ver el **detalle** de un producto por id | `GET /v1/products/{id}` → el mismo detalle que el lookup; id inexistente → 404 | ✅ |
 | RF-063 | Contenido neto y nutrición **por envase** | Se diseña después del catálogo confiable ([06-catalogo-confiable.md](06-catalogo-confiable.md)) | 🗺 |
+| RF-064 | **Tabla nutricional con un criterio común** | Calorías, proteínas, carbohidratos y grasas totales se muestran **siempre**, en ese orden; sin dato, la fila dice "sin dato". El resto solo si el valor es mayor que cero (D-94) | ⏳ Tarea del frente W5 de [06-catalogo-confiable.md](06-catalogo-confiable.md). Hoy la pantalla muestra solo 4 de 6 filas principales (PM-24) |
 
 ### Biblioteca del usuario
 

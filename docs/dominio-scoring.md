@@ -101,6 +101,7 @@ Relevados en `CONTEXT.md §6` y `§8` y re-verificados contra el código el 2026
 | M-6 | **El puntaje casi no discrimina:** medido el 2026-09-19, el 75 % de los productos puntuados cae en la misma banda (la más angosta). No lo arreglan los cortes sino cómo el motor reparte los puntajes | Abierto. Hace falta contrastar contra fuentes externas antes de tocar coeficientes |
 | M-7 | La excepción del art. 7 por aproximación (§S4) | Abierto: medir cuánto diverge del criterio legal antes de cambiar nada |
 | M-8 | ¿El descuento de octógonos sigue los cortes de la norma o los de OPS? Como el octógono ya no se muestra, no hay obligación de seguir a la norma. Hoy sigue a la norma | Sin decidir (producto) |
+| M-9 | **Café torrado:** el motor no distingue un café torrado (tostado con azúcar) de uno tostado. Pedido del responsable (2026-10-03): detectarlo y que pese en el puntaje, porque en algunos países está prohibido | Abierto. Falta la fuente que lo respalde (qué países y qué norma) antes de darle un peso (D-92), y definir cómo se detecta: por la denominación del producto o por el azúcar en los ingredientes |
 | — | El recompute del catálogo por `engine_version` nunca se escribió | **Se vuelve innecesario** con D-35: al eliminar las columnas denormalizadas no queda nada que recalcular en la base |
 
 ## [PREGUNTA]
