@@ -6,6 +6,8 @@
 
 ## 1. Diagnóstico (lo verificado en el código el 2026-10-02)
 
+El diagnóstico completo de la base, con mediciones sobre todo el catálogo y los casos de las pruebas manuales, está en [analisis_BD_Productos.md](analisis_BD_Productos.md) (2026-10-08).
+
 | # | Hallazgo | Evidencia |
 |---|---|---|
 | 1 | **El ETL completa datos con IA "de memoria".** Con `--enrich`, `etl/enrichment/claudeEnricher.ts` le pide a Claude nutrientes e ingredientes de productos que no tienen ("Sos una base de datos nutricional experta…"). No lee ninguna etiqueta: los genera. Esos productos quedan con `ai_enriched = true` | `claudeEnricher.ts · SYSTEM_PROMPT`, `runMerge.ts · enrichWithAI` |

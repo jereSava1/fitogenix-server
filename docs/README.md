@@ -9,6 +9,7 @@ Fuentes de verdad, en este orden: el código que corre, el schema de Supabase y 
 | Ver la API | [`contract/openapi.json`](../contract/openapi.json) |
 | Saber qué se decidió | [decisiones.md](decisiones.md) |
 | Entender el puntaje y su fundamento | [dominio-scoring.md](dominio-scoring.md) |
+| Entender qué problemas tiene la base de productos | [analisis_BD_Productos.md](analisis_BD_Productos.md) |
 | Ver el plan del catálogo verificado | [06-catalogo-confiable.md](06-catalogo-confiable.md) |
 | Ver lo que se dejó para más adelante | [deuda-tecnica.md](deuda-tecnica.md) |
 | Deployar o volver atrás | [deploy.md](deploy.md) |
