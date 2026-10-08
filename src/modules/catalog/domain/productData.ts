@@ -49,7 +49,9 @@ export function extractCategory(categories?: string): string {
     .split(':')
     .pop()!
     .replace(/-/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/(^|[^\p{L}\p{M}\p{N}_])(\p{L})/gu, (_match, prefix: string, char: string) =>
+      prefix + char.toUpperCase(),
+    );
 }
 
 /** El nombre sin paréntesis, corchetes, códigos de barras ni gramajes; sin nombre, `fallback`. */

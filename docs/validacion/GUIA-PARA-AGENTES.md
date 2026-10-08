@@ -2,6 +2,8 @@
 
 Esta guía registra instrucciones de Guille y el acuerdo de revisión manual del 2026-10-08. Leer también `PROCESO-Y-DECISIONES-2026-10-08.md` y la revisión de la corrección activa. No confundir un informe con una autorización para ejecutar sus propuestas.
 
+Punto de entrada del cierre: [ENTREGA-PARA-JERE.md](ENTREGA-PARA-JERE.md), rama local `revision/entrega-correcciones-2026-10-08`. Incluye los nueve archivos de fase A y las implementaciones preparadas. R-01 está aprobada; R-02 mantiene integración y semántica pendientes. La etiqueta es breve, sin detalle opcional. El commit y la publicación se identifican en el manifiesto de entrega; no suponer que lo local está en GitHub.
+
 ## Límites persistentes
 
 1. Supabase solo lectura. No escribir ni siquiera tablas nuevas. No ejecutar migraciones, cargas, enriquecimientos, reparaciones, upserts ni SQL/RPC que puedan modificar datos. Los procesos ETL existentes no quedan autorizados por usarlos como referencia.
@@ -39,6 +41,8 @@ La confirmación es por resultado y alcance. Una opinión favorable general no s
 - Los criterios de consenso del plan requieren unificación. No decidir esa política silenciosamente ni usar ±20 % como aprobación automática entre páginas.
 
 ## Puntaje y pantalla
+
+Preferencia posterior de Guille para R-02: mostrar solo la etiqueta breve de categoría, sin detalle opcional ni recorrido. La categoría no es la marca ni se obtiene de los dígitos del código de barras: procede de los datos asociados al producto. El prototipo selecciona el último nivel de una jerarquía explícita, pero eso no verifica que sea un tipo de alimento preciso. `Mesa Dulce Navideña` puede ser una sección comercial. No inventar un tipo más específico ni presentar esa clasificación como validada; revisar la semántica antes de integrar la pantalla. La clasificación original debe conservarse para el motor.
 
 D-92 mantiene los cambios del puntaje pendientes hasta tener evidencia suficiente. La regla de cobertura propuesta y las reglas del motor actual no son idénticas. Cambiar parsing, deduplicación o alias puede cambiar puntajes aunque no se cambie la fórmula: demostrar y revisar ese impacto antes de introducirlo en el motor.
 

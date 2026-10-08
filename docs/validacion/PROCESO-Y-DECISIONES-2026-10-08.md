@@ -2,6 +2,8 @@
 
 Fecha: 2026-10-08. Responsable de revisión: Guille. Rama local de la primera corrección: `revision/correccion-01-nutricion`. Base del código: `53cbc6e9cf72113f983cdc195dff3030564d68e7`.
 
+Actualización de presentación: Guille descartó el detalle opcional. Mostrar solo etiqueta breve; el prototipo fue ajustado. El estado vigente y la integración pendiente se explican en [ESTADO-ACTUAL-Y-COMO-SE-INTEGRA.md](ESTADO-ACTUAL-Y-COMO-SE-INTEGRA.md). Las propuestas anteriores con recorrido se conservan como historia, no como formato aprobado.
+
 ## Propósito
 
 Convertir el análisis del catálogo en mejoras comprobables, con evidencia y revisión humana por cada solución. Este registro permite que otra persona o agente continúe el trabajo sin repetir la investigación ni tratar las propuestas como decisiones ya aplicadas.
@@ -43,7 +45,7 @@ La rama de código local parte de `etl-validacion`, con el SHA indicado arriba; 
 | Revisión manual por solución | Acordada con el usuario |
 | Orden general | Presentación, evidencia/normalización, ingredientes y finalmente puntaje; cada bloque requiere revisión |
 | R-01: conversión de sodio/colesterol | Aprobada por Guille el 2026-10-08; preparada localmente, no publicada |
-| Categorías con acentos | Próxima corrección propuesta; no implementada en R-01 |
+| R-02: categorías y presentación | Preparada en rama local `revision/correccion-02-categorias`; pendiente de revisión humana. Incluye prevención de errores de acentos y prototipo local de etiqueta breve con detalle jerárquico. La conexión a la app y la reparación de datos históricos siguen pendientes |
 | Cambios del puntaje | D-92 se mantiene: no recalibrar ni alterar reglas del motor en este bloque |
 | Datos ausentes/cero/cualitativos y tabla de pantalla | Propuestas pendientes de revisar con ejemplos; D-94 no se declara resuelta |
 | Dos fuentes frente a una fuente de etiqueta/marca | El plan tiene criterios diferentes; la unificación recomendada sigue pendiente de decisión explícita |
@@ -53,6 +55,10 @@ La rama de código local parte de `etl-validacion`, con el SHA indicado arriba; 
 Las recomendaciones de la investigación son una orientación favorablemente recibida por Guille. No deben interpretarse como permiso para aplicar todas las soluciones, aprobar todos los productos, modificar puntajes o publicar cambios sin su revisión.
 
 El informe de investigación proponía agrupar nutrición y categorías en un primer cambio. Con el acuerdo posterior de revisar cada solución por separado, R-01 contiene solo nutrición y R-02 queda para categorías. Este registro y la revisión activa describen el alcance vigente.
+
+Tras la aprobación de R-01 se conservó en el commit local `76bfd7f` —sin push—. R-02 parte de ese commit. Guille autorizó continuar con categorías mediante “dale segui con eso”; esa autorización permite preparar la solución para revisar, no declararla aprobada ni publicar.
+
+Guille amplió R-02: pidió corregir también cómo se presentan las categorías y ver el resultado conjunto. Se preparó una muestra local con etiqueta breve (`Sal`) y detalle (`Almacén / Sal`), conservando el texto original por separado. No se redujo la categoría usada por el motor ni la almacenada; no se agregaron campos al contrato sin revisar su integración con la app.
 
 ## Registro de productos de control
 
@@ -98,6 +104,8 @@ La evidencia numérica prueba presentación, no veracidad integral del producto.
 Resultado técnico y límites de los chequeos: consultar `REVISION-R01-NUTRICION.md`. Resultado de revisión humana: **aprobado por Guille el 2026-10-08**, con su mensaje “la primera correcion me parece perfecta”. No equivale a autorización para publicar o desplegar ni a aprobación de una corrección del dato original de Doritos.
 
 ## Orden de revisiones siguientes
+
+R-02 está preparada: consultar [REVISION-R02-CATEGORIAS.md](REVISION-R02-CATEGORIAS.md). Al examinar los usos de `extractCategory` se comprobó que la función se llama desde la construcción del payload del ETL, no desde la respuesta de detalle. En la muestra de pruebas hay categorías que ya contienen mayúsculas erróneas. Se conservan como evidencia; este cambio no las reescribe ni aplica una limpieza general que pueda alterar siglas. Ningún proceso de escritura queda autorizado por corregir esa función.
 
 | Revisión | Alcance propuesto | Evidencia para revisar |
 |---|---|---|

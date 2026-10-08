@@ -24,7 +24,7 @@ En el mismo mensaje, Guille indicó que Doritos declara 168 mg de sodio por 25 g
 
 ## Qué se cambió y cómo se comprobó
 
-Rama local: `revision/correccion-01-nutricion`; base: `53cbc6e9cf72113f983cdc195dff3030564d68e7`. Cambio local sin commit ni push.
+Rama local: `revision/correccion-01-nutricion`; base: `53cbc6e9cf72113f983cdc195dff3030564d68e7`. Se preparó sin commit ni push; después de la aprobación de Guille se conservó en el commit local `76bfd7f`. Sigue sin publicar ni desplegar. R-02 parte de ese commit en otra rama.
 
 - `productData.ts`: conversión antes de redondear, una cifra decimal en la unidad de presentación; validación de entradas numéricas y resultados finitos.
 - Nuevo `productData.test.ts`: 21 pruebas de conversión, cero, ausencia, lectura prioritaria, entradas inválidas y conservación del crudo.
