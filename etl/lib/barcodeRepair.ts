@@ -39,3 +39,22 @@ export type DuplicateVerdict = 'borrar' | 'lista';
 export function duplicateVerdict(invalid: RepairRow, other: RepairRow, referenced: boolean): DuplicateVerdict {
   return !hasContent(invalid) && !referenced && other.id !== invalid.id ? 'borrar' : 'lista';
 }
+
+export type DuplicateRow = RepairRow & { brand: string | null; image_url: string | null };
+
+const blank = (v: string | null | undefined) => !v || v.trim() === '';
+
+/** Campos que la fila que queda no tiene y la duplicada sí: se pasan completos, de a uno. El bloque
+ *  de nutrición va entero y solo si trae nutrientes reales y no es imposible. */
+export function fieldsToPass(
+  keeper: DuplicateRow,
+  duplicate: DuplicateRow,
+  nutritionIsUsable: (n: Record<string, unknown> | null) => boolean,
+): Record<string, unknown> {
+  const pass: Record<string, unknown> = {};
+  if (blank(keeper.ingredients_text) && !blank(duplicate.ingredients_text)) pass.ingredients_text = duplicate.ingredients_text;
+  if (!nutritionIsUsable(keeper.nutriments) && nutritionIsUsable(duplicate.nutriments)) pass.nutriments = duplicate.nutriments;
+  if (blank(keeper.brand) && !blank(duplicate.brand)) pass.brand = duplicate.brand;
+  if (blank(keeper.image_url) && !blank(duplicate.image_url)) pass.image_url = duplicate.image_url;
+  return pass;
+}

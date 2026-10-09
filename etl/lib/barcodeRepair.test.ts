@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { duplicateVerdict, hasContent, reproducibleSample, zeroPaddedCandidate, type RepairRow } from './barcodeRepair';
+import { duplicateVerdict, fieldsToPass, hasContent, reproducibleSample, zeroPaddedCandidate, type RepairRow } from './barcodeRepair';
 
 const row = (over: Partial<RepairRow> = {}): RepairRow => ({
   id: 'a', barcode: '70177029661', data_source: 'jumbo', product_name: 'Té', ingredients_text: null, nutriments: null, ...over,
@@ -53,5 +53,27 @@ describe('duplicateVerdict', () => {
   it('va a la lista si tiene datos o la referencian', () => {
     expect(duplicateVerdict(row({ ingredients_text: 'té' }), other, false)).toBe('lista');
     expect(duplicateVerdict(row(), other, true)).toBe('lista');
+  });
+});
+
+describe('fieldsToPass', () => {
+  const usable = (n: Record<string, unknown> | null) => Boolean(n && 'sodium_100g' in n);
+  const base = { id: 'x', barcode: '1', data_source: 'off', product_name: 'p' };
+  const keeper = (over = {}) => ({ ...base, ingredients_text: null, nutriments: null, brand: null, image_url: null, ...over });
+
+  it('pasa lo que a la que queda le falta y la duplicada tiene, campo completo', () => {
+    const dup = keeper({ ingredients_text: 'agua', nutriments: { sodium_100g: 1, fat_100g: 2 }, brand: 'M', image_url: 'http://i' });
+    expect(fieldsToPass(keeper(), dup, usable)).toEqual({
+      ingredients_text: 'agua', nutriments: { sodium_100g: 1, fat_100g: 2 }, brand: 'M', image_url: 'http://i',
+    });
+  });
+
+  it('si las dos lo tienen no pisa nada', () => {
+    const both = keeper({ ingredients_text: 'a', nutriments: { sodium_100g: 1 }, brand: 'M', image_url: 'u' });
+    expect(fieldsToPass(both, keeper({ ingredients_text: 'b', nutriments: { sodium_100g: 9 }, brand: 'N', image_url: 'v' }), usable)).toEqual({});
+  });
+
+  it('no pasa un bloque de nutrición que no sirve', () => {
+    expect(fieldsToPass(keeper(), keeper({ nutriments: { 'nova-group': 4 } }), usable)).toEqual({});
   });
 });
