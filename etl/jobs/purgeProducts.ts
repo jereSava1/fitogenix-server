@@ -23,7 +23,7 @@ import {
 } from '../lib/purgePlan';
 import { REREAD_DEFAULT_DELAY_MS, REREAD_DELAY_MS, rereadNutrition } from '../lib/sourceReread';
 
-const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3', 'ola5-duras'] as const;
+const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3', 'ola5-duras', 'ola4', 'ola5-restaurar'] as const;
 type Ola = (typeof OLAS)[number];
 
 type Plan = {
@@ -60,7 +60,9 @@ async function buildPlan(ola: Ola, input: string): Promise<Plan> {
   const omitidas: Plan['omitidas'] = [];
   let cambios: PlannedChange[];
 
-  if (ola === 'doritos') {
+  if (ola === 'ola4' || ola === 'ola5-restaurar') {
+    throw new Error(`${ola} no se arma acá (etl:fidelity --live-all / etl:ingredients-restore); acá solo se aplica con --plan`);
+  } else if (ola === 'doritos') {
     cambios = planNutrimentValue(
       rows, '7790310983737', 'sodium_100g', 0.664, 0.672,
       'D-97: 168 mg cada 25 g = 672 mg/100 g',
