@@ -3,7 +3,13 @@
 // embebida en el nombre y nutrientes fuera de rango. Reporta para revisión; no corrige.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
-import { checkIngredientsText, findBrandInName, findImplausibleNutrients } from '../lib/qualityHeuristics';
+import {
+  checkIngredientsText,
+  findBrandInName,
+  findImplausibleNutrients,
+  findIngredientsTextIssues,
+  findNutrientInconsistencies,
+} from '../lib/qualityHeuristics';
 
 type ProductRow = {
   id: string;
@@ -72,6 +78,8 @@ async function main() {
   const boilerplateIngredients: Finding[] = [];
   const missingBrandCandidates: Finding[] = [];
   const implausibleNutrients: Finding[] = [];
+  const textIssues: Finding[] = [];
+  const inconsistentNutrients: Finding[] = [];
 
   for (const p of products) {
     const ingCheck = checkIngredientsText(p.ingredients_text);
@@ -94,6 +102,24 @@ async function main() {
       }
     }
 
+    const issues = findIngredientsTextIssues(p.ingredients_text);
+    if (issues.length > 0) {
+      textIssues.push({
+        id: p.id,
+        barcode: p.barcode,
+        detail: [...new Set(issues.map((i) => `${i.rule} (${i.kind})`))].join(', '),
+      });
+    }
+
+    const inconsistent = findNutrientInconsistencies(p.nutriments);
+    if (inconsistent.length > 0) {
+      inconsistentNutrients.push({
+        id: p.id,
+        barcode: p.barcode,
+        detail: inconsistent.map((i) => i.rule).join(', '),
+      });
+    }
+
     const badNutrients = findImplausibleNutrients(p.nutriments);
     if (badNutrients.length > 0) {
       implausibleNutrients.push({
@@ -107,9 +133,15 @@ async function main() {
   printSample('1. ingredients_text con pinta de dirección/boilerplate legal', boilerplateIngredients);
   printSample('2. brand vacío con marca candidata en product_name', missingBrandCandidates);
   printSample('3. nutrientes fuera de rango físico plausible', implausibleNutrients);
+  printSample('4. ingredients_text con texto que no es ingrediente o mal formado', textIssues);
+  printSample('5. relaciones imposibles entre nutrientes', inconsistentNutrients);
 
   const total =
-    boilerplateIngredients.length + missingBrandCandidates.length + implausibleNutrients.length;
+    boilerplateIngredients.length +
+    missingBrandCandidates.length +
+    implausibleNutrients.length +
+    textIssues.length +
+    inconsistentNutrients.length;
   console.log(
     `\n[auditDataQuality] listo. ${total} hallazgo(s) en total (una fila puede aparecer en más de una categoría). Solo lectura — no se tocó nada.`,
   );
