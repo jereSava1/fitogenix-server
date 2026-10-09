@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-103**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-105**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -110,3 +110,5 @@ Una decisión nueva toma el siguiente número libre (**D-103**). Si cambia otra,
 | D-100 | Las filas vacías de `products` (59.893 al 2026-10-08) se quedan: tienen código, nombre, marca e imagen, y son la cola de lo que hay que verificar | Vigente |
 | D-101 | La categoría no se muestra en la app por ahora. El prototipo `scripts/preview-product-categories.ts` no se incorpora | Vigente |
 | D-102 | Los códigos de barras inválidos de `products` se verifican contra la fuente: el UPC-A con el cero inicial recortado se corrige completando ceros hasta 13 dígitos si el verificador valida y la fuente lo confirma; se borra solo lo que la fuente no permite recuperar y nadie referencia. Nunca se calcula un dígito | Hecha |
+| D-103 | Ola 5: el texto del envase que no es un ingrediente (unidades sueltas, rótulo, conservación, frase del colesterol) no se cuenta al leer la lista; las declaraciones "Contiene…" y "Puede contener…" tampoco cuentan para el cálculo pero se muestran al final de `ingredients` en gris, sin cambiar el contrato; se vacía `ingredients_text` solo donde sigue apareciendo texto del fabricante | Hecha |
+| D-104 | Un código inválido que choca con una fila que ya tiene el código completo se resuelve dejando esa fila: se le pasan, completos y sin pisar nada, los campos que le faltan, y se borra la duplicada (nunca si la referencian guardados, historial o reportes) | Hecha |
