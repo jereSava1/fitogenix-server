@@ -45,7 +45,7 @@ export function adaptOffLine(
   line: OffDumpLine,
   countryTags: string[] = DEFAULT_COUNTRY_TAGS,
 ): AdaptedProduct | null {
-  // normalizeBarcode también valida el formato (8-14 dígitos) — un barcode
+  // normalizeBarcode también valida el formato (GTIN-8, 12, 13 o 14 con dígito verificador) — un barcode
   // inválido devuelve null acá.
   const barcode = normalizeBarcode(line.code ?? '');
   if (!barcode) return null;
