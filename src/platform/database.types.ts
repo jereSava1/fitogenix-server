@@ -31,6 +31,25 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"product_facts": {
+                  Row: {
+                    "basis": string | null,"captured_at": string,"created_at": string,"evidence_sha256": string | null,"evidence_url": string | null,"field": string,"id": string,"product_id": string,"reading_id": string | null,"source": string,"status": string,"status_changed_at": string,"unit": string | null,"value_number": number | null,"value_text": string | null
+                  }
+                  Insert: {
+                    "basis"?: string | null,"captured_at": string,"created_at"?: string,"evidence_sha256"?: string | null,"evidence_url"?: string | null,"field": string,"id"?: string,"product_id": string,"reading_id"?: string | null,"source": string,"status"?: string,"status_changed_at"?: string,"unit"?: string | null,"value_number"?: number | null,"value_text"?: string | null
+                  }
+                  Update: {
+                    "basis"?: string | null,"captured_at"?: string,"created_at"?: string,"evidence_sha256"?: string | null,"evidence_url"?: string | null,"field"?: string,"id"?: string,"product_id"?: string,"reading_id"?: string | null,"source"?: string,"status"?: string,"status_changed_at"?: string,"unit"?: string | null,"value_number"?: number | null,"value_text"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_facts_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"product_reports": {
                   Row: {
                     "created_at": string,"id": string,"message": string | null,"product_id": string,"status": string,"type": string,"user_id": string | null
@@ -52,13 +71,13 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "additives_tags": Json | null,"ai_enriched": boolean | null,"barcode": string | null,"brand": string | null,"category": string | null,"created_at": string | null,"data_source": string,"id": string,"image_url": string | null,"ingredients_text": string | null,"nutriments": Json | null,"product_name": string,"updated_at": string | null
+                    "additives_tags": Json | null,"ai_enriched": boolean | null,"barcode": string | null,"brand": string | null,"category": string | null,"created_at": string | null,"data_source": string,"id": string,"image_url": string | null,"ingredients_text": string | null,"nutriments": Json | null,"nutrition_basis": string | null,"product_name": string,"updated_at": string | null
                   }
                   Insert: {
-                    "additives_tags"?: Json | null,"ai_enriched"?: boolean | null,"barcode"?: string | null,"brand"?: string | null,"category"?: string | null,"created_at"?: string | null,"data_source": string,"id"?: string,"image_url"?: string | null,"ingredients_text"?: string | null,"nutriments"?: Json | null,"product_name": string,"updated_at"?: string | null
+                    "additives_tags"?: Json | null,"ai_enriched"?: boolean | null,"barcode"?: string | null,"brand"?: string | null,"category"?: string | null,"created_at"?: string | null,"data_source": string,"id"?: string,"image_url"?: string | null,"ingredients_text"?: string | null,"nutriments"?: Json | null,"nutrition_basis"?: string | null,"product_name": string,"updated_at"?: string | null
                   }
                   Update: {
-                    "additives_tags"?: Json | null,"ai_enriched"?: boolean | null,"barcode"?: string | null,"brand"?: string | null,"category"?: string | null,"created_at"?: string | null,"data_source"?: string,"id"?: string,"image_url"?: string | null,"ingredients_text"?: string | null,"nutriments"?: Json | null,"product_name"?: string,"updated_at"?: string | null
+                    "additives_tags"?: Json | null,"ai_enriched"?: boolean | null,"barcode"?: string | null,"brand"?: string | null,"category"?: string | null,"created_at"?: string | null,"data_source"?: string,"id"?: string,"image_url"?: string | null,"ingredients_text"?: string | null,"nutriments"?: Json | null,"nutrition_basis"?: string | null,"product_name"?: string,"updated_at"?: string | null
                   }
                   Relationships: [
                     
@@ -165,6 +184,7 @@ isOneToOne: false
 "image_url": string | null,
 "ingredients_text": string | null,
 "nutriments": Json | null,
+"nutrition_basis": string | null,
 "product_name": string,
 "updated_at": string | null
             }[]
