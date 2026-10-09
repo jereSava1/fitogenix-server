@@ -8,12 +8,12 @@ describe('adaptVtexProduct', () => {
       brand: 'Don Vicente',
       categories: ['/Almacén/Pastas y Tapas/Fideos y Ñoquis/'],
       items: [
-        { itemId: 'sku1', ean: '7790070714018', images: [{ imageUrl: 'https://img.example/x.jpg' }] },
+        { itemId: 'sku1', ean: '7790070714015', images: [{ imageUrl: 'https://img.example/x.jpg' }] },
       ],
     });
 
     expect(results).toHaveLength(1);
-    expect(results[0].barcode).toBe('7790070714018');
+    expect(results[0].barcode).toBe('7790070714015');
     expect(results[0].raw.product_name).toBe('Fideos Tallarín al Huevo 500 Grs');
     expect(results[0].raw.brands).toBe('Don Vicente');
     expect(results[0].raw.image_url).toBe('https://img.example/x.jpg');
@@ -42,12 +42,12 @@ describe('adaptVtexProduct', () => {
       productName: 'Yerba Mate',
       brand: 'Playadito',
       items: [
-        { itemId: 'sku4', ean: '7790580123456' },
-        { itemId: 'sku5', ean: '7790580654321' },
+        { itemId: 'sku4', ean: '7790580123451' },
+        { itemId: 'sku5', ean: '7790580654320' },
       ],
     });
     expect(results).toHaveLength(2);
-    expect(results.map((r) => r.barcode)).toEqual(['7790580123456', '7790580654321']);
+    expect(results.map((r) => r.barcode)).toEqual(['7790580123451', '7790580654320']);
   });
 
   it('devuelve array vacío si no hay items', () => {
@@ -112,7 +112,7 @@ describe('campos nutricionales de Cencosud', () => {
     const [adapted] = adaptVtexProduct({
       productName: 'Palmeritas',
       brand: 'Marca',
-      items: [{ ean: '7790000000017', images: [{ imageUrl: 'x' }] }],
+      items: [{ ean: '7790000000010', images: [{ imageUrl: 'x' }] }],
       Ingredientes: ["'harina de trigo', 'manteca'"],
       'Tabla Nutricional': ["{'sugars_value': 30, 'sodium_value': 300}"],
     } as Parameters<typeof adaptVtexProduct>[0]);
