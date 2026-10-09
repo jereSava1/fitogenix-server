@@ -4,6 +4,7 @@ import {
   hasImpossibleNutrition,
   planAiCleanup,
   planAiFlagOff,
+  planClearIngredients,
   planNutritionBlock,
   planNutrimentValue,
   type PurgeRow,
@@ -43,6 +44,20 @@ describe('planAiFlagOff', () => {
 
   it('falla si una fila ai_enriched todavía trae datos', () => {
     expect(() => planAiFlagOff([row({ ai_enriched: true })])).toThrow(/vaciar antes/);
+  });
+});
+
+describe('planClearIngredients', () => {
+  it('vacía solo los ids listados y guarda el texto anterior', () => {
+    const rows = [row({ id: 'a', ingredients_text: 'agua RNE 123' }), row({ id: 'b' })];
+    expect(planClearIngredients(rows, ['a'])).toEqual([
+      expect.objectContaining({ id: 'a', before: { ingredients_text: 'agua RNE 123' }, after: { ingredients_text: null } }),
+    ]);
+  });
+
+  it('falla si un id no está o ya no tiene texto', () => {
+    expect(() => planClearIngredients([row()], ['zzz'])).toThrow(/no está/);
+    expect(() => planClearIngredients([row({ ingredients_text: null })], ['id-1'])).toThrow(/ya no tiene/);
   });
 });
 
