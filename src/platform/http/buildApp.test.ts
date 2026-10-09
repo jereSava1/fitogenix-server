@@ -26,6 +26,17 @@ describe('buildApp (M-02)', () => {
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
   });
 
+  it('el preflight permite los métodos que usa la API (PUT, PATCH y DELETE)', async () => {
+    app = await buildApp({}, { corsOrigins: ['https://app.fitogenix.test'] });
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/health',
+      headers: { origin: 'https://app.fitogenix.test', 'access-control-request-method': 'DELETE' },
+    });
+    const allowed = String(res.headers['access-control-allow-methods']);
+    for (const method of ['GET', 'PUT', 'PATCH', 'POST', 'DELETE']) expect(allowed).toContain(method);
+  });
+
   it('con lista, solo esos orígenes (también en el preflight)', async () => {
     app = await buildApp({}, { corsOrigins: ['https://app.fitogenix.test'] });
     const permitido = await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://app.fitogenix.test' } });
