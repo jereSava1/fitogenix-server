@@ -194,3 +194,20 @@ describe('D-99 — el parseo no parte textos que están bien', () => {
     expect(names('agua\nsal')).toEqual(['agua', 'sal']);
   });
 });
+
+// Caracterización antes de sacar lo que no es ingrediente: lo que hoy sale para cada caso.
+describe('caracterización: texto que no es ingrediente', () => {
+  it('unidades sueltas, rótulo con coma, conservación, colesterol y "Contiene" salen como ingredientes', () => {
+    expect(names('harina (hierro 30 mg/kg, ácido fólico 2,2 mg/kg), sal')).toEqual([
+      'hierro 30 mg/kg', 'ácido fólico 2', '2 mg/kg', 'sal',
+    ]);
+    expect(names('agua. INGREDIENTES, QUESO, sal')).toEqual(['agua', 'INGREDIENTES', 'QUESO', 'sal']);
+    expect(names('agua, sal. Mantener en lugar fresco y seco.')).toEqual([
+      'agua', 'sal', 'Mantener en lugar fresco y seco',
+    ]);
+    expect(names('aceite. Este producto, al igual que todos los de origen vegetal, NO CONTIENE COLESTEROL.')).toEqual([
+      'aceite', 'Este producto', 'al igual que todos los de origen vegetal', 'NO CONTIENE COLESTEROL',
+    ]);
+    expect(names('harina, azúcar. CONTIENE LECHE Y SOJA.')).toEqual(['harina', 'azúcar', 'CONTIENE LECHE Y SOJA']);
+  });
+});
