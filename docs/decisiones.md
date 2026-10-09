@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-105**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-115**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -112,3 +112,12 @@ Una decisión nueva toma el siguiente número libre (**D-105**). Si cambia otra,
 | D-102 | Los códigos de barras inválidos de `products` se verifican contra la fuente: el UPC-A con el cero inicial recortado se corrige completando ceros hasta 13 dígitos si el verificador valida y la fuente lo confirma; se borra solo lo que la fuente no permite recuperar y nadie referencia. Nunca se calcula un dígito | Hecha |
 | D-103 | Ola 5: el texto del envase que no es un ingrediente (unidades sueltas, rótulo, conservación, frase del colesterol) no se cuenta al leer la lista; las declaraciones "Contiene…" y "Puede contener…" tampoco cuentan para el cálculo pero se muestran al final de `ingredients` en gris, sin cambiar el contrato; se vacía `ingredients_text` solo donde sigue apareciendo texto del fabricante | Hecha |
 | D-104 | Un código inválido que choca con una fila que ya tiene el código completo se resuelve dejando esa fila: se le pasan, completos y sin pisar nada, los campos que le faltan, y se borra la duplicada (nunca si la referencian guardados, historial o reportes) | Hecha |
+| D-105 | Los EAN-13 de prefijo 20 a 29 (circulación restringida de GS1, uso interno de cada comercio) no son productos: se borraron 142 del catálogo y `normalizeBarcode` los rechaza. El prefijo 02 queda pendiente de revisión | Hecha |
+| D-106 | Ola 4: las tablas nutricionales perdidas por el defecto del merge (T-06) se recuperan de su fuente: 183 filas, bloque entero de una sola fuente, confirmado en vivo | Hecha |
+| D-107 | El parser corta el texto del fabricante al final de la lista; con él se restauran los ingredientes vaciados en la ola 5 que quedan limpios (26 de 57) | Hecha |
+| D-108 | Se borraron del historial las 2 filas que apuntaban a duplicados, para resolver esos pares; los guardados no se tocan | Hecha |
+| D-109 | Las 13 filas con nutrición sin bloque en staging quedan como están hasta verificarlas contra la etiqueta | Vigente |
+| D-110 | Los 66 productos de OFF con dígito verificador malo que se borraron en la ola 2 quedan borrados | Vigente |
+| D-111 | La clave secreta de Supabase no se rota | Vigente |
+| D-112 | GS1 Argentina se descarta como fuente (no es posible asociarse). Open Food Facts: se usa su API gratuita y sus fotos de etiqueta, sin consultar a un abogado; queda pendiente la atribución visible en la app | Vigente |
+| D-113 | El motor se recalibra cuando haya productos con ingredientes completos; hasta entonces D-92 sigue vigente salvo las excepciones de lectura (D-99, D-103, D-107) | Vigente |

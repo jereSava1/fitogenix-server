@@ -178,8 +178,8 @@ Cuatro niveles de validación; solo N2 y N3 cuentan como `verificado`:
 | 1 | Hecha | 99 filas `ai_enriched` con `ingredients_text`, `nutriments` y `additives_tags` en NULL y `ai_enriched` en `false`. No se pudieron rearmar: `products_staging` no tiene datos reales para ninguna |
 | 2 | Hecha (D-102) | 1.742 códigos inválidos: 1.638 corregidos, 87 borrados y 17 en lista (abajo) |
 | 3 | Hecha | 129 filas: 5 con el bloque reemplazado por uno coherente de la fuente, 124 con el bloque en NULL. Nutrición imposible: 129 → 0 |
-| 4 | Sin empezar | Con T-06 mergeada, correr el merge acotado sobre las filas donde lo guardado difiere de la fuente |
-| 5 | Hecha (D-103) | El parser deja de contar lo que no es ingrediente; se vació `ingredients_text` de 57 filas con contaminación dura |
+| 4 | Hecha (D-106) | Comparación con `products_staging` (T-12): 312 filas con la tabla perdida; 183 recuperadas de su fuente (152 la confirman, 31 solo difieren por redondeo), 5 en lista, 124 son las vaciadas en la ola 3 |
+| 5 | Hecha (D-103, D-107) | El parser deja de contar lo que no es ingrediente y corta el texto del fabricante al final; se vació `ingredients_text` de 57 filas y se restauraron 26 |
 | 6 y 7 | Sin empezar | Dependen de D-98 y de las preguntas abiertas |
 
 ### Ola 2: códigos inválidos
@@ -218,6 +218,39 @@ Para 14 de los 16 duplicados quedó una sola fila, la que ya tenía el código c
 
 Lo que queda son declaraciones que el parser no reconoce al principio de una oración (`alergenos`, `sin_gluten`, `fortificacion`), INS repetidos que son parte de la etiqueta y paréntesis de texto OCR; ninguno es contaminación dura.
 
+### Ola 4: nutrición que el ETL arruinó (D-106)
+
+`etl:fidelity` compara el `nutriments` de cada producto con los bloques crudos de `products_staging` (235.746 filas). Sobre las 81.343 filas: A (coincide con una fuente) 16.399, B (tabla real perdida) 312, C (difiere de todas) 6, D (sin bloque en staging) 64.626. En D, 64.613 no tienen nutrición ni tabla en staging y 13 tienen nutrición sin bloque contra el cual verificarla (6 de OFF, 5 de Carrefour, 2 de Jumbo): se dejan hasta verificarlas contra la etiqueta (D-109).
+
+Las 188 filas nuevas de B eran el defecto de T-06: un bloque de OFF sin nutrientes (`nova-group`, estimaciones) le había ganado a la tabla de Jumbo, Vea o Disco. Se releyeron las 188 en vivo y se aplicaron 183 (el bloque entero, de una sola fuente). Quedaron en lista 4 que la fuente ya no publica y 1 con valores distintos. Antes y después: filas con tabla real 15.379 → 15.562; con los cuatro macros 4.086 → 4.086 (las tablas de Cencosud que trae el adaptador no incluyen calorías, proteínas ni carbohidratos).
+
+### Restauración de ingredientes (D-107)
+
+El parser corta ahora el texto del fabricante al final de la lista (`Elaborado por`, `Envasado por`, `Comercializado por`, `RNE`, `RNPA`, `Industria argentina`, `Establecimiento`), solo en el nivel superior y solo si después no siguen ingredientes. Con él, 26 de los 57 textos vaciados en la ola 5 quedaron sin contaminación dura y se restauraron; 31 siguen vacías (la marca aparece en el medio de la lista y siguen ingredientes, como la Pepsi `7791813555049`, o el texto mezcla la tabla nutricional, como la Coca-Cola Light `7790895001451`).
+
+### Historial, duplicados y códigos de circulación restringida (D-108, D-105)
+
+- Se borraron las 2 filas de `scan_history` que apuntaban a `7777777777` y `248464` y se resolvieron los 2 pares (`0007777777777`, `00248464`): quedó una fila por producto.
+- Los EAN-13 de prefijo 20 a 29 son de uso interno de cada comercio (GS1) y no identifican un producto. Se borraron 142 (todos de OFF, fila completa en el plan). `2000000046692` (Oreo) está en `saved_products` y no se tocó. Los 7 de prefijo 02 (3 de OFF, 2 de Disco, 2 de Jumbo) quedaron en lista, pendientes de revisión.
+- `normalizeBarcode` rechaza los EAN-13 de prefijo 20 a 29; el 02 sigue aceptándose hasta la revisión.
+
+### Medición actual
+
+| | Original (2026-10-09) | Ahora |
+|---|---:|---:|
+| Filas | 81.444 | 81.199 |
+| Con ingredientes | 19.299 | 19.075 |
+| Con tabla nutricional real | 15.645 | 15.432 |
+| Con los cuatro macros | 4.273 | 3.962 |
+| Con ingredientes y tabla real | 13.537 | 13.470 |
+| Con ingredientes y los cuatro macros | 2.465 | 2.298 |
+| Vacías (sin ingredientes ni tabla real) | 60.037 | 60.162 |
+
+La caída de filas con datos viene de lo que se borró o se vació por ser inválido o inventado (ola 1: 99, ola 2: 87 y 14 duplicados, ola 3: 124 tablas imposibles, códigos restringidos: 142).
+
 ### Pendiente de Jere
 
 - Correr la migración `20261009150000_indice_staging_merged_into.sql` (índice en `products_staging.merged_into`).
+- Revisar los 7 códigos de prefijo 02 y el guardado de `2000000046692` (Oreo).
+- Atribución visible de Open Food Facts en la app (D-112).
+- Los PRs de Dependabot #6 (typebox 6), #9 (dotenv 18) y #23 (grupo de desarrollo) fallan por cambios de tipos de TypeScript; no se mergearon.
