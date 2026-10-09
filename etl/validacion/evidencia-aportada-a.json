@@ -1,0 +1,2318 @@
+{
+  "phase": "A",
+  "date": "2026-10-08",
+  "approved": false,
+  "applied": false,
+  "database_read_only": true,
+  "github_modified": false,
+  "images": [
+    {
+      "image_number": 1,
+      "sha256": "ff2ce7c71a472068f43ae29390fc9b0fc4690134fcda009ac96a8b799790577b",
+      "source": "imagen_aportada_por_usuario",
+      "source_url": "https://raptornutricion.com/files/productos/raptor-protein-barras_tabla_cookies-cream.webp",
+      "received_date": "2026-10-08",
+      "barcode": null,
+      "flavor": "Cookies & Cream",
+      "approved": false,
+      "applied": false,
+      "portion": {
+        "value": 45,
+        "unit": "g",
+        "description": "1 barra"
+      },
+      "portions_per_package": 16,
+      "ingredients_text": null,
+      "rows": [
+        {
+          "field": "energy-kcal",
+          "unit": "kcal",
+          "per_100g": 402,
+          "per_portion": 181,
+          "daily_value_percent": 9
+        },
+        {
+          "field": "energy-kj",
+          "unit": "kJ",
+          "per_100g": 1685,
+          "per_portion": 758,
+          "daily_value_percent": 9
+        },
+        {
+          "field": "carbohydrates",
+          "unit": "g",
+          "per_100g": 29,
+          "per_portion": 13,
+          "daily_value_percent": 4
+        },
+        {
+          "field": "sugars",
+          "unit": "g",
+          "per_100g": 23,
+          "per_portion": 11,
+          "daily_value_percent": null
+        },
+        {
+          "field": "added-sugars",
+          "unit": "g",
+          "per_100g": 19,
+          "per_portion": 8.7,
+          "daily_value_percent": null
+        },
+        {
+          "field": "proteins",
+          "unit": "g",
+          "per_100g": 34,
+          "per_portion": 15,
+          "daily_value_percent": 27
+        },
+        {
+          "field": "fat",
+          "unit": "g",
+          "per_100g": 17,
+          "per_portion": 7.6,
+          "daily_value_percent": 14
+        },
+        {
+          "field": "saturated-fat",
+          "unit": "g",
+          "per_100g": 8.4,
+          "per_portion": 3.8,
+          "daily_value_percent": 17
+        },
+        {
+          "field": "trans-fat",
+          "unit": "g",
+          "per_100g": 0.4,
+          "per_portion": 0.2,
+          "daily_value_percent": null
+        },
+        {
+          "field": "monounsaturated-fat",
+          "unit": "g",
+          "per_100g": 6.4,
+          "per_portion": 2.9,
+          "daily_value_percent": null
+        },
+        {
+          "field": "polyunsaturated-fat",
+          "unit": "g",
+          "per_100g": 1.3,
+          "per_portion": 0.6,
+          "daily_value_percent": null
+        },
+        {
+          "field": "cholesterol",
+          "unit": "mg",
+          "per_100g": 6.2,
+          "per_portion": 2.8,
+          "daily_value_percent": null
+        },
+        {
+          "field": "fiber",
+          "unit": "g",
+          "per_100g": 7.1,
+          "per_portion": 3.2,
+          "daily_value_percent": 13
+        },
+        {
+          "field": "sodium",
+          "unit": "mg",
+          "per_100g": 387,
+          "per_portion": 174,
+          "daily_value_percent": 7
+        }
+      ],
+      "notes": [
+        "EAN e ingredientes no aparecen en la tabla. El sabor se confirmó mediante la página oficial; vigencia del envase exacto pendiente.",
+        "Se conservan las dos columnas declaradas sin recalcular para forzar coincidencia."
+      ],
+      "product_name": "Raptor Protein Barras",
+      "source_page": "https://raptornutricion.com/productos/raptor-protein-barras.html",
+      "official_image_sha256": "1a2723e828ec5b4c87b6f53ed424dfd4e720e800b6d9b140a8b55878d32654c9",
+      "source_mapping": "Encabezado del sabor y enlace de su tabla en web oficial; comparación visual de todas las cifras con imagen aportada.",
+      "independent_numeric_transcription_matches": true
+    },
+    {
+      "image_number": 2,
+      "sha256": "b2d3864a2da361f01a0a23e0ca7301ff38b96c81ddf2cc63ea563065190aa37f",
+      "source": "imagen_aportada_por_usuario",
+      "source_url": "https://raptornutricion.com/files/productos/raptor-protein-barras_tabla_peanut-butter.webp",
+      "received_date": "2026-10-08",
+      "barcode": null,
+      "flavor": "Peanut Butter",
+      "approved": false,
+      "applied": false,
+      "portion": {
+        "value": 45,
+        "unit": "g",
+        "description": "1 barra"
+      },
+      "portions_per_package": 16,
+      "ingredients_text": null,
+      "rows": [
+        {
+          "field": "energy-kcal",
+          "unit": "kcal",
+          "per_100g": 403,
+          "per_portion": 181,
+          "daily_value_percent": 9
+        },
+        {
+          "field": "energy-kj",
+          "unit": "kJ",
+          "per_100g": 1689,
+          "per_portion": 760,
+          "daily_value_percent": 9
+        },
+        {
+          "field": "carbohydrates",
+          "unit": "g",
+          "per_100g": 28,
+          "per_portion": 13,
+          "daily_value_percent": 4
+        },
+        {
+          "field": "sugars",
+          "unit": "g",
+          "per_100g": 23,
+          "per_portion": 10,
+          "daily_value_percent": null
+        },
+        {
+          "field": "added-sugars",
+          "unit": "g",
+          "per_100g": 19,
+          "per_portion": 8.6,
+          "daily_value_percent": null
+        },
+        {
+          "field": "proteins",
+          "unit": "g",
+          "per_100g": 35,
+          "per_portion": 16,
+          "daily_value_percent": 29
+        },
+        {
+          "field": "fat",
+          "unit": "g",
+          "per_100g": 18,
+          "per_portion": 7.9,
+          "daily_value_percent": 14
+        },
+        {
+          "field": "saturated-fat",
+          "unit": "g",
+          "per_100g": 7.7,
+          "per_portion": 3.5,
+          "daily_value_percent": 16
+        },
+        {
+          "field": "trans-fat",
+          "unit": "g",
+          "per_100g": 0.3,
+          "per_portion": 0.1,
+          "daily_value_percent": null
+        },
+        {
+          "field": "monounsaturated-fat",
+          "unit": "g",
+          "per_100g": 6.5,
+          "per_portion": 2.9,
+          "daily_value_percent": null
+        },
+        {
+          "field": "polyunsaturated-fat",
+          "unit": "g",
+          "per_100g": 2.7,
+          "per_portion": 1.2,
+          "daily_value_percent": null
+        },
+        {
+          "field": "cholesterol",
+          "unit": "mg",
+          "per_100g": 2.2,
+          "per_portion": 1,
+          "daily_value_percent": null
+        },
+        {
+          "field": "fiber",
+          "unit": "g",
+          "per_100g": 7.7,
+          "per_portion": 3.5,
+          "daily_value_percent": 14
+        },
+        {
+          "field": "sodium",
+          "unit": "mg",
+          "per_100g": 362,
+          "per_portion": 163,
+          "daily_value_percent": 7
+        }
+      ],
+      "notes": [
+        "EAN e ingredientes no aparecen en la tabla. El sabor se confirmó mediante la página oficial; vigencia del envase exacto pendiente.",
+        "Se conservan las dos columnas declaradas sin recalcular para forzar coincidencia."
+      ],
+      "product_name": "Raptor Protein Barras",
+      "source_page": "https://raptornutricion.com/productos/raptor-protein-barras.html",
+      "official_image_sha256": "f452fcab90d39538a7ed943e19517781197aee72407271d73af317a39fc08b35",
+      "source_mapping": "Encabezado del sabor y enlace de su tabla en web oficial; comparación visual de todas las cifras con imagen aportada.",
+      "independent_numeric_transcription_matches": true
+    },
+    {
+      "image_number": 3,
+      "sha256": "a683fccaafb84a16a2bc876a3d41d7470c3924c6d316c77670bb471c2d33dfdc",
+      "source": "imagen_aportada_por_usuario",
+      "source_url": "https://raptornutricion.com/files/productos/raptor-protein-barras_tabla_dulce-de-leche.webp",
+      "received_date": "2026-10-08",
+      "barcode": null,
+      "flavor": "Dulce de leche",
+      "approved": false,
+      "applied": false,
+      "portion": {
+        "value": 50,
+        "unit": "g",
+        "description": "1 barra"
+      },
+      "portions_per_package": 16,
+      "ingredients_text": null,
+      "rows": [
+        {
+          "field": "energy-kcal",
+          "unit": "kcal",
+          "per_100g": 404,
+          "per_portion": 202,
+          "daily_value_percent": 10
+        },
+        {
+          "field": "energy-kj",
+          "unit": "kJ",
+          "per_100g": 1695,
+          "per_portion": 848,
+          "daily_value_percent": 10
+        },
+        {
+          "field": "carbohydrates",
+          "unit": "g",
+          "per_100g": 29,
+          "per_portion": 14,
+          "daily_value_percent": 5
+        },
+        {
+          "field": "sugars",
+          "unit": "g",
+          "per_100g": 24,
+          "per_portion": 12,
+          "daily_value_percent": null
+        },
+        {
+          "field": "added-sugars",
+          "unit": "g",
+          "per_100g": 20,
+          "per_portion": 10,
+          "daily_value_percent": null
+        },
+        {
+          "field": "proteins",
+          "unit": "g",
+          "per_100g": 35,
+          "per_portion": 17,
+          "daily_value_percent": 30
+        },
+        {
+          "field": "fat",
+          "unit": "g",
+          "per_100g": 17,
+          "per_portion": 8.6,
+          "daily_value_percent": 16
+        },
+        {
+          "field": "saturated-fat",
+          "unit": "g",
+          "per_100g": 8.5,
+          "per_portion": 4.2,
+          "daily_value_percent": 19
+        },
+        {
+          "field": "trans-fat",
+          "unit": "g",
+          "per_100g": 0.4,
+          "per_portion": 0,
+          "daily_value_percent": null
+        },
+        {
+          "field": "monounsaturated-fat",
+          "unit": "g",
+          "per_100g": 6.7,
+          "per_portion": 3.3,
+          "daily_value_percent": null
+        },
+        {
+          "field": "polyunsaturated-fat",
+          "unit": "g",
+          "per_100g": 1.4,
+          "per_portion": 0.7,
+          "daily_value_percent": null
+        },
+        {
+          "field": "cholesterol",
+          "unit": "mg",
+          "per_100g": 5.8,
+          "per_portion": 2.9,
+          "daily_value_percent": null
+        },
+        {
+          "field": "fiber",
+          "unit": "g",
+          "per_100g": 7,
+          "per_portion": 3.5,
+          "daily_value_percent": 14
+        },
+        {
+          "field": "sodium",
+          "unit": "mg",
+          "per_100g": 390,
+          "per_portion": 195,
+          "daily_value_percent": 8
+        }
+      ],
+      "notes": [
+        "EAN e ingredientes no aparecen en la tabla. El sabor se confirmó mediante la página oficial; vigencia del envase exacto pendiente.",
+        "Se conservan las dos columnas declaradas sin recalcular para forzar coincidencia."
+      ],
+      "product_name": "Raptor Protein Barras",
+      "source_page": "https://raptornutricion.com/productos/raptor-protein-barras.html",
+      "official_image_sha256": "078d2a0955c0dc370375b49bc33554ea97d56c5392d6893ee18ee2361f2eb27a",
+      "source_mapping": "Encabezado del sabor y enlace de su tabla en web oficial; comparación visual de todas las cifras con imagen aportada.",
+      "independent_numeric_transcription_matches": true
+    },
+    {
+      "image_number": 4,
+      "sha256": "00429c81ee8605b87e740916c733f6d06847f2549f45c962b6724c854fdbd657",
+      "source": "imagen_aportada_por_usuario",
+      "source_url": "https://raptornutricion.com/files/productos/raptor-protein-barras_tabla_galleta-limon.webp",
+      "received_date": "2026-10-08",
+      "barcode": null,
+      "flavor": "Galleta de limón",
+      "approved": false,
+      "applied": false,
+      "portion": {
+        "value": 50,
+        "unit": "g",
+        "description": "1 barra"
+      },
+      "portions_per_package": 16,
+      "ingredients_text": null,
+      "rows": [
+        {
+          "field": "energy-kcal",
+          "unit": "kcal",
+          "per_100g": 404,
+          "per_portion": 202,
+          "daily_value_percent": 10
+        },
+        {
+          "field": "energy-kj",
+          "unit": "kJ",
+          "per_100g": 1695,
+          "per_portion": 848,
+          "daily_value_percent": 10
+        },
+        {
+          "field": "carbohydrates",
+          "unit": "g",
+          "per_100g": 29,
+          "per_portion": 14,
+          "daily_value_percent": 5
+        },
+        {
+          "field": "sugars",
+          "unit": "g",
+          "per_100g": 24,
+          "per_portion": 12,
+          "daily_value_percent": null
+        },
+        {
+          "field": "added-sugars",
+          "unit": "g",
+          "per_100g": 20,
+          "per_portion": 10,
+          "daily_value_percent": null
+        },
+        {
+          "field": "proteins",
+          "unit": "g",
+          "per_100g": 35,
+          "per_portion": 17,
+          "daily_value_percent": 30
+        },
+        {
+          "field": "fat",
+          "unit": "g",
+          "per_100g": 17,
+          "per_portion": 8.6,
+          "daily_value_percent": 16
+        },
+        {
+          "field": "saturated-fat",
+          "unit": "g",
+          "per_100g": 8.5,
+          "per_portion": 4.2,
+          "daily_value_percent": 19
+        },
+        {
+          "field": "trans-fat",
+          "unit": "g",
+          "per_100g": 0.4,
+          "per_portion": 0,
+          "daily_value_percent": null
+        },
+        {
+          "field": "monounsaturated-fat",
+          "unit": "g",
+          "per_100g": 6.7,
+          "per_portion": 3.3,
+          "daily_value_percent": null
+        },
+        {
+          "field": "polyunsaturated-fat",
+          "unit": "g",
+          "per_100g": 1.4,
+          "per_portion": 0.7,
+          "daily_value_percent": null
+        },
+        {
+          "field": "cholesterol",
+          "unit": "mg",
+          "per_100g": 5.8,
+          "per_portion": 2.9,
+          "daily_value_percent": null
+        },
+        {
+          "field": "fiber",
+          "unit": "g",
+          "per_100g": 7,
+          "per_portion": 3.5,
+          "daily_value_percent": 14
+        },
+        {
+          "field": "sodium",
+          "unit": "mg",
+          "per_100g": 390,
+          "per_portion": 195,
+          "daily_value_percent": 8
+        }
+      ],
+      "notes": [
+        "EAN e ingredientes no aparecen en la tabla. El sabor se confirmó mediante la página oficial; vigencia del envase exacto pendiente.",
+        "Se conservan las dos columnas declaradas sin recalcular para forzar coincidencia."
+      ],
+      "product_name": "Raptor Protein Barras",
+      "source_page": "https://raptornutricion.com/productos/raptor-protein-barras.html",
+      "official_image_sha256": "10defe2c6328593a74072c2a6f57c040fe95983fab257d4c26135050d36603c9",
+      "source_mapping": "Encabezado del sabor y enlace de su tabla en web oficial; comparación visual de todas las cifras con imagen aportada.",
+      "independent_numeric_transcription_matches": true
+    },
+    {
+      "image_number": 5,
+      "sha256": "0e0813a2f3e7d8474205f70fe990b5c4811cd30d716dd79340471225be3456ac",
+      "source": "imagen_aportada_por_usuario",
+      "source_url": null,
+      "received_date": "2026-10-08",
+      "barcode": null,
+      "flavor": null,
+      "approved": false,
+      "applied": false,
+      "product_name": "Manteca Clásica 200g",
+      "brand": "Tonadita",
+      "portion": {
+        "value": 10,
+        "unit": "g",
+        "description": "1 cuchara de sopa"
+      },
+      "portions_per_package": null,
+      "rows": [
+        {
+          "field": "energy-kcal",
+          "unit": "kcal",
+          "per_portion": 75,
+          "daily_value_percent": 4
+        },
+        {
+          "field": "energy-kj",
+          "unit": "kJ",
+          "per_portion": 307,
+          "daily_value_percent": 4
+        },
+        {
+          "field": "fat",
+          "unit": "g",
+          "per_portion": 8.3,
+          "daily_value_percent": 15
+        },
+        {
+          "field": "saturated-fat",
+          "unit": "g",
+          "per_portion": 5,
+          "daily_value_percent": 23
+        },
+        {
+          "field": "sodium",
+          "unit": "mg",
+          "per_portion": 20,
+          "daily_value_percent": 1
+        }
+      ],
+      "qualitative": {
+        "text": "No aporta cantidades significativas de Carbohidratos, Azúcares Totales, Azúcares Añadidos, Proteínas, Grasas Trans y Fibra Alimentaria",
+        "numeric_value": null
+      },
+      "ingredients_text": "Crema de leche pasteurizada, sal.",
+      "allergen_statement": "CONTIENE DERIVADOS DE LECHE.",
+      "notes": [
+        "Coincide en contenido con la placa Tonadita publicada por Jumbo ya registrada. No es un respaldo independiente adicional.",
+        "No resuelve la foto anterior de 12 mg de sodio/10 g ni muestra EAN o fecha de fórmula."
+      ],
+      "independent_numeric_transcription_matches": true
+    }
+  ],
+  "sacaan": {
+    "source_page": "https://sacaan.com.ar/productos/",
+    "source_url": "https://sacaan.com.ar/wp-content/uploads/2024/07/pan-de-hambuerguesa-valor-nutricional-sacaan.webp",
+    "image_sha256": "ecefc5cbe5df9473a94e2ab064b8d92b0d9757089101cd84f64b3b1b43676ddc",
+    "rows": [
+      {
+        "field": "energy-kcal",
+        "value": 119,
+        "unit": "kcal",
+        "daily_value_percent": 6
+      },
+      {
+        "field": "carbohydrates",
+        "value": 22,
+        "unit": "g",
+        "daily_value_percent": 7
+      },
+      {
+        "field": "saturated-fat",
+        "value": 0.2,
+        "unit": "g",
+        "daily_value_percent": 1
+      },
+      {
+        "field": "sodium",
+        "value": 216,
+        "unit": "mg",
+        "daily_value_percent": 9
+      }
+    ],
+    "portion_visible_in_image": null,
+    "portion_declared_in_page": {
+      "value": 50,
+      "unit": "g",
+      "description": "aprox. 1 unidad"
+    },
+    "barcode": null,
+    "approved": false,
+    "applied": false,
+    "independent_numeric_transcription_matches": true,
+    "limitations": [
+      "El mismo recurso aparece en pan con/sin sésamo, maxi, pan de papa y tapas de empanadas. Esto no prueba que sea erróneo, pero impide dar por comprobada su correspondencia con el EAN del caso.",
+      "No aporta ingredientes ni proteína/grasa total. No reconstruir una tabla completa ni asignar nutrientes a Supabase."
+    ]
+  },
+  "independent_review": {
+    "reviewer": "etiquetas_independiente",
+    "independent": true,
+    "normalization": "Se unen saltos de línea con espacios; rótulos y textos de cantidades conservan la escritura visible. Números JSON en punto decimal, sin cálculos ni conversiones. VD vacío se transcribe null. No se infieren sabores, marcas de imágenes 1 a 4, ni códigos EAN. El VD energético se repite en las dos filas de unidades porque corresponde a una sola celda fuente.",
+    "images": [
+      {
+        "id": 1,
+        "portion": {
+          "value": 45,
+          "unit": "g",
+          "text": "Porción: 45 g (1 barra)."
+        },
+        "servings_per_container": {
+          "value": 16,
+          "text": "Porciones por envase: 16"
+        },
+        "basis": "100g",
+        "rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 402,
+            "unit": "kcal",
+            "text": "402 kcal",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 1685,
+            "unit": "kJ",
+            "text": "1685 kJ",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales",
+            "field": "carbohydrates",
+            "value": 29,
+            "unit": "g",
+            "text": "29 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 23,
+            "unit": "g",
+            "text": "23 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 19,
+            "unit": "g",
+            "text": "19 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 34,
+            "unit": "g",
+            "text": "34 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales",
+            "field": "fat",
+            "value": 17,
+            "unit": "g",
+            "text": "17 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASA SATURADAS",
+            "field": "saturated-fat",
+            "value": 8.4,
+            "unit": "g",
+            "text": "8,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.4,
+            "unit": "g",
+            "text": "0,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 6.4,
+            "unit": "g",
+            "text": "6,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 1.3,
+            "unit": "g",
+            "text": "1,3 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 6.2,
+            "unit": "mg",
+            "text": "6,2 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA/DIETÉTICA",
+            "field": "fiber",
+            "value": 7.1,
+            "unit": "g",
+            "text": "7,1 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 387,
+            "unit": "mg",
+            "text": "387 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          }
+        ],
+        "serving_basis": "porción",
+        "serving_rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 181,
+            "unit": "kcal",
+            "text": "181 kcal",
+            "basis": "porción",
+            "daily_value_percent": 9
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 758,
+            "unit": "kJ",
+            "text": "758 kJ",
+            "basis": "porción",
+            "daily_value_percent": 9
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales",
+            "field": "carbohydrates",
+            "value": 13,
+            "unit": "g",
+            "text": "13 g",
+            "basis": "porción",
+            "daily_value_percent": 4
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 11,
+            "unit": "g",
+            "text": "11 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 8.7,
+            "unit": "g",
+            "text": "8,7 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 15,
+            "unit": "g",
+            "text": "15 g",
+            "basis": "porción",
+            "daily_value_percent": 27
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales",
+            "field": "fat",
+            "value": 7.6,
+            "unit": "g",
+            "text": "7,6 g",
+            "basis": "porción",
+            "daily_value_percent": 14
+          },
+          {
+            "label": "GRASA SATURADAS",
+            "field": "saturated-fat",
+            "value": 3.8,
+            "unit": "g",
+            "text": "3,8 g",
+            "basis": "porción",
+            "daily_value_percent": 17
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.2,
+            "unit": "g",
+            "text": "0,2 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 2.9,
+            "unit": "g",
+            "text": "2,9 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 0.6,
+            "unit": "g",
+            "text": "0,6 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 2.8,
+            "unit": "mg",
+            "text": "2,8 mg",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA/DIETÉTICA",
+            "field": "fiber",
+            "value": 3.2,
+            "unit": "g",
+            "text": "3,2 g",
+            "basis": "porción",
+            "daily_value_percent": 13
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 174,
+            "unit": "mg",
+            "text": "174 mg",
+            "basis": "porción",
+            "daily_value_percent": 7
+          }
+        ],
+        "notes": [
+          "*Valores Diarios con base a una dieta de 2000 kcal u 8400 kJ. Sus valores diarios pueden ser mayores o menores dependiendo de sus necesidades energéticas. Valores de Referencia según MERCOSUR Res. GMC 46/03",
+          "Temperatura: máx. 20°C. Humedad: máx. 60%. MANTENER EN AMBIENTE FRESCO Y SECO."
+        ],
+        "ingredients_visible": false,
+        "barcode_visible": null,
+        "uncertainties": [],
+        "identity": null
+      },
+      {
+        "id": 2,
+        "portion": {
+          "value": 45,
+          "unit": "g",
+          "text": "Porción: 45 g (1 barra)."
+        },
+        "servings_per_container": {
+          "value": 16,
+          "text": "Porciones por envase: 16"
+        },
+        "basis": "100g",
+        "rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 403,
+            "unit": "kcal",
+            "text": "403 kcal",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 1689,
+            "unit": "kJ",
+            "text": "1689 kJ",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales",
+            "field": "carbohydrates",
+            "value": 28,
+            "unit": "g",
+            "text": "28 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 23,
+            "unit": "g",
+            "text": "23 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 19,
+            "unit": "g",
+            "text": "19 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 35,
+            "unit": "g",
+            "text": "35 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales",
+            "field": "fat",
+            "value": 18,
+            "unit": "g",
+            "text": "18 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASA SATURADAS",
+            "field": "saturated-fat",
+            "value": 7.7,
+            "unit": "g",
+            "text": "7,7 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.3,
+            "unit": "g",
+            "text": "0,3 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 6.5,
+            "unit": "g",
+            "text": "6,5 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 2.7,
+            "unit": "g",
+            "text": "2,7 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 2.2,
+            "unit": "mg",
+            "text": "2,2 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA/DIETÉTICA",
+            "field": "fiber",
+            "value": 7.7,
+            "unit": "g",
+            "text": "7,7 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 362,
+            "unit": "mg",
+            "text": "362 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          }
+        ],
+        "serving_basis": "porción",
+        "serving_rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 181,
+            "unit": "kcal",
+            "text": "181 kcal",
+            "basis": "porción",
+            "daily_value_percent": 9
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 760,
+            "unit": "kJ",
+            "text": "760 kJ",
+            "basis": "porción",
+            "daily_value_percent": 9
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales",
+            "field": "carbohydrates",
+            "value": 13,
+            "unit": "g",
+            "text": "13 g",
+            "basis": "porción",
+            "daily_value_percent": 4
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 10,
+            "unit": "g",
+            "text": "10 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 8.6,
+            "unit": "g",
+            "text": "8,6 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 16,
+            "unit": "g",
+            "text": "16 g",
+            "basis": "porción",
+            "daily_value_percent": 29
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales",
+            "field": "fat",
+            "value": 7.9,
+            "unit": "g",
+            "text": "7,9 g",
+            "basis": "porción",
+            "daily_value_percent": 14
+          },
+          {
+            "label": "GRASA SATURADAS",
+            "field": "saturated-fat",
+            "value": 3.5,
+            "unit": "g",
+            "text": "3,5 g",
+            "basis": "porción",
+            "daily_value_percent": 16
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.1,
+            "unit": "g",
+            "text": "0,1 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 2.9,
+            "unit": "g",
+            "text": "2,9 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 1.2,
+            "unit": "g",
+            "text": "1,2 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 1,
+            "unit": "mg",
+            "text": "1 mg",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA/DIETÉTICA",
+            "field": "fiber",
+            "value": 3.5,
+            "unit": "g",
+            "text": "3,5 g",
+            "basis": "porción",
+            "daily_value_percent": 14
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 163,
+            "unit": "mg",
+            "text": "163 mg",
+            "basis": "porción",
+            "daily_value_percent": 7
+          }
+        ],
+        "notes": [
+          "*Valores Diarios con base a una dieta de 2000 kcal u 8400 kJ. Sus valores diarios pueden ser mayores o menores dependiendo de sus necesidades energéticas. Valores de Referencia según MERCOSUR Res. GMC 46/03",
+          "Temperatura: máx. 20°C. Humedad: máx. 60%. MANTENER EN AMBIENTE FRESCO Y SECO."
+        ],
+        "ingredients_visible": false,
+        "barcode_visible": null,
+        "uncertainties": [],
+        "identity": null
+      },
+      {
+        "id": 3,
+        "portion": {
+          "value": 50,
+          "unit": "g",
+          "text": "Porción: 50 g (1 barra)"
+        },
+        "servings_per_container": {
+          "value": 16,
+          "text": "Porciones por envase: 16"
+        },
+        "basis": "100g",
+        "rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 404,
+            "unit": "kcal",
+            "text": "404 kcal",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 1695,
+            "unit": "kJ",
+            "text": "1695 kJ",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales:",
+            "field": "carbohydrates",
+            "value": 29,
+            "unit": "g",
+            "text": "29 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 24,
+            "unit": "g",
+            "text": "24 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 20,
+            "unit": "g",
+            "text": "20 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 35,
+            "unit": "g",
+            "text": "35 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales:",
+            "field": "fat",
+            "value": 17,
+            "unit": "g",
+            "text": "17 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS SATURADAS",
+            "field": "saturated-fat",
+            "value": 8.5,
+            "unit": "g",
+            "text": "8,5 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.4,
+            "unit": "g",
+            "text": "0,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 6.7,
+            "unit": "g",
+            "text": "6,7 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 1.4,
+            "unit": "g",
+            "text": "1,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 5.8,
+            "unit": "mg",
+            "text": "5,8 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA / DIETÉTICA",
+            "field": "fiber",
+            "value": 7,
+            "unit": "g",
+            "text": "7,0 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 390,
+            "unit": "mg",
+            "text": "390 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          }
+        ],
+        "serving_basis": "porción",
+        "serving_rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 202,
+            "unit": "kcal",
+            "text": "202 kcal",
+            "basis": "porción",
+            "daily_value_percent": 10
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 848,
+            "unit": "kJ",
+            "text": "848 kJ",
+            "basis": "porción",
+            "daily_value_percent": 10
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales:",
+            "field": "carbohydrates",
+            "value": 14,
+            "unit": "g",
+            "text": "14 g",
+            "basis": "porción",
+            "daily_value_percent": 5
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 12,
+            "unit": "g",
+            "text": "12 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 10,
+            "unit": "g",
+            "text": "10 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 17,
+            "unit": "g",
+            "text": "17 g",
+            "basis": "porción",
+            "daily_value_percent": 30
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales:",
+            "field": "fat",
+            "value": 8.6,
+            "unit": "g",
+            "text": "8,6 g",
+            "basis": "porción",
+            "daily_value_percent": 16
+          },
+          {
+            "label": "GRASAS SATURADAS",
+            "field": "saturated-fat",
+            "value": 4.2,
+            "unit": "g",
+            "text": "4,2 g",
+            "basis": "porción",
+            "daily_value_percent": 19
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0,
+            "unit": "g",
+            "text": "0 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 3.3,
+            "unit": "g",
+            "text": "3,3 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 0.7,
+            "unit": "g",
+            "text": "0,7 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 2.9,
+            "unit": "mg",
+            "text": "2,9 mg",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA / DIETÉTICA",
+            "field": "fiber",
+            "value": 3.5,
+            "unit": "g",
+            "text": "3,5 g",
+            "basis": "porción",
+            "daily_value_percent": 14
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 195,
+            "unit": "mg",
+            "text": "195 mg",
+            "basis": "porción",
+            "daily_value_percent": 8
+          }
+        ],
+        "notes": [
+          "* % Valores Diarios con base a una dieta de 2000 kcal u 8400kj. Sus valores diarios pueden ser mayores o menores dependiendo de sus necesidades energéticas."
+        ],
+        "ingredients_visible": false,
+        "barcode_visible": null,
+        "uncertainties": [],
+        "identity": null
+      },
+      {
+        "id": 4,
+        "portion": {
+          "value": 50,
+          "unit": "g",
+          "text": "Porción: 50 g (1 barra)"
+        },
+        "servings_per_container": {
+          "value": 16,
+          "text": "Porciones por envase: 16"
+        },
+        "basis": "100g",
+        "rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 404,
+            "unit": "kcal",
+            "text": "404 kcal",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 1695,
+            "unit": "kJ",
+            "text": "1695 kJ",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales:",
+            "field": "carbohydrates",
+            "value": 29,
+            "unit": "g",
+            "text": "29 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 24,
+            "unit": "g",
+            "text": "24 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 20,
+            "unit": "g",
+            "text": "20 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 35,
+            "unit": "g",
+            "text": "35 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales:",
+            "field": "fat",
+            "value": 17,
+            "unit": "g",
+            "text": "17 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS SATURADAS",
+            "field": "saturated-fat",
+            "value": 8.5,
+            "unit": "g",
+            "text": "8,5 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0.4,
+            "unit": "g",
+            "text": "0,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 6.7,
+            "unit": "g",
+            "text": "6,7 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 1.4,
+            "unit": "g",
+            "text": "1,4 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 5.8,
+            "unit": "mg",
+            "text": "5,8 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA / DIETÉTICA",
+            "field": "fiber",
+            "value": 7,
+            "unit": "g",
+            "text": "7,0 g",
+            "basis": "100g",
+            "daily_value_percent": null
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 390,
+            "unit": "mg",
+            "text": "390 mg",
+            "basis": "100g",
+            "daily_value_percent": null
+          }
+        ],
+        "serving_basis": "porción",
+        "serving_rows": [
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kcal",
+            "value": 202,
+            "unit": "kcal",
+            "text": "202 kcal",
+            "basis": "porción",
+            "daily_value_percent": 10
+          },
+          {
+            "label": "VALOR ENERGÉTICO",
+            "field": "energy-kj",
+            "value": 848,
+            "unit": "kJ",
+            "text": "848 kJ",
+            "basis": "porción",
+            "daily_value_percent": 10
+          },
+          {
+            "label": "CARBOHIDRATOS DISP. de los cuales:",
+            "field": "carbohydrates",
+            "value": 14,
+            "unit": "g",
+            "text": "14 g",
+            "basis": "porción",
+            "daily_value_percent": 5
+          },
+          {
+            "label": "AZÚCARES TOTALES",
+            "field": "sugars",
+            "value": 12,
+            "unit": "g",
+            "text": "12 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "AZÚCARES AÑADIDOS",
+            "field": "added-sugars",
+            "value": 10,
+            "unit": "g",
+            "text": "10 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "PROTEÍNAS",
+            "field": "proteins",
+            "value": 17,
+            "unit": "g",
+            "text": "17 g",
+            "basis": "porción",
+            "daily_value_percent": 30
+          },
+          {
+            "label": "GRASAS TOTALES de las cuales:",
+            "field": "fat",
+            "value": 8.6,
+            "unit": "g",
+            "text": "8,6 g",
+            "basis": "porción",
+            "daily_value_percent": 16
+          },
+          {
+            "label": "GRASAS SATURADAS",
+            "field": "saturated-fat",
+            "value": 4.2,
+            "unit": "g",
+            "text": "4,2 g",
+            "basis": "porción",
+            "daily_value_percent": 19
+          },
+          {
+            "label": "GRASAS TRANS",
+            "field": "trans-fat",
+            "value": 0,
+            "unit": "g",
+            "text": "0 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS MONOINSATURADAS",
+            "field": "monounsaturated-fat",
+            "value": 3.3,
+            "unit": "g",
+            "text": "3,3 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "GRASAS POLIINSATURADAS",
+            "field": "polyunsaturated-fat",
+            "value": 0.7,
+            "unit": "g",
+            "text": "0,7 g",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "COLESTEROL",
+            "field": "cholesterol",
+            "value": 2.9,
+            "unit": "mg",
+            "text": "2,9 mg",
+            "basis": "porción",
+            "daily_value_percent": null
+          },
+          {
+            "label": "FIBRA ALIMENTARIA / DIETÉTICA",
+            "field": "fiber",
+            "value": 3.5,
+            "unit": "g",
+            "text": "3,5 g",
+            "basis": "porción",
+            "daily_value_percent": 14
+          },
+          {
+            "label": "SODIO",
+            "field": "sodium",
+            "value": 195,
+            "unit": "mg",
+            "text": "195 mg",
+            "basis": "porción",
+            "daily_value_percent": 8
+          }
+        ],
+        "notes": [
+          "* % Valores Diarios con base a una dieta de 2000 kcal u 8400kj. Sus valores diarios pueden ser mayores o menores dependiendo de sus necesidades energéticas."
+        ],
+        "ingredients_visible": false,
+        "barcode_visible": null,
+        "uncertainties": [],
+        "identity": null
+      },
+      {
+        "id": 5,
+        "label_text": "Tonadita. Manteca Clásica 200g",
+        "net_content": {
+          "value": 200,
+          "unit": "g",
+          "text": "Manteca Clásica 200g"
+        },
+        "portion": {
+          "value": 10,
+          "unit": "g",
+          "text": "Porción 10 g (1 cuchara de sopa)"
+        },
+        "servings_per_container": null,
+        "basis": "porción",
+        "rows": [
+          {
+            "label": "Valor Energético",
+            "field": "energy-kcal",
+            "value": 75,
+            "unit": "kcal",
+            "daily_value_percent": 4,
+            "text": "75 kcal = 307 kJ"
+          },
+          {
+            "label": "Valor Energético",
+            "field": "energy-kj",
+            "value": 307,
+            "unit": "kJ",
+            "daily_value_percent": 4
+          },
+          {
+            "label": "Grasas Totales",
+            "field": "fat",
+            "value": 8.3,
+            "unit": "g",
+            "daily_value_percent": 15,
+            "text": "8,3 g"
+          },
+          {
+            "label": "Grasas Saturadas",
+            "field": "saturated-fat",
+            "value": 5,
+            "unit": "g",
+            "daily_value_percent": 23,
+            "text": "5 g"
+          },
+          {
+            "label": "Sodio",
+            "field": "sodium",
+            "value": 20,
+            "unit": "mg",
+            "daily_value_percent": 1,
+            "text": "20 mg"
+          }
+        ],
+        "qualitative": [
+          "No aporta cantidades significativas de Carbohidratos, Azúcares Totales, Azúcares Añadidos, Proteínas, Grasas Trans y Fibra Alimentaria"
+        ],
+        "ingredients_text": "Ingredientes: Crema de leche pasteurizada, sal.",
+        "allergen_text": "CONTIENE DERIVADOS DE LECHE.",
+        "notes": [
+          "*% Valores diarios con base a una dieta de 2.000 kcal u 8.400 kJ. Sus valores diarios pueden ser mayores o menores dependiendo de sus necesidades energéticas.",
+          "Conservar refrigerado entre 2 y 8°C.",
+          "Lote/Vencimiento: ver en el envase."
+        ],
+        "barcode_visible": null,
+        "uncertainties": [
+          "No se indican porciones por envase en la imagen."
+        ]
+      },
+      {
+        "id": 6,
+        "portion": null,
+        "basis": null,
+        "rows": [
+          {
+            "label": "Valor energético",
+            "field": "energy-kcal",
+            "value": 119,
+            "unit": "kcal",
+            "daily_value_percent": 6,
+            "text": "119 kcal"
+          },
+          {
+            "label": "Carbo-hidratos",
+            "field": "carbohydrates",
+            "value": 22,
+            "unit": "g",
+            "daily_value_percent": 7,
+            "text": "22 g"
+          },
+          {
+            "label": "Grasas saturadas",
+            "field": "saturated-fat",
+            "value": 0.2,
+            "unit": "g",
+            "daily_value_percent": 1,
+            "text": "0.2 g"
+          },
+          {
+            "label": "Sodio",
+            "field": "sodium",
+            "value": 216,
+            "unit": "mg",
+            "daily_value_percent": 9,
+            "text": "216 mg"
+          }
+        ],
+        "uncertainties": [
+          "No se muestra porción ni base de cantidades en la imagen. No se infieren."
+        ],
+        "ingredients_visible": false,
+        "barcode_visible": null
+      }
+    ],
+    "comparison_images_3_4": {
+      "nutritional_differences": [],
+      "text_differences": [],
+      "notes": "Mismos valores por 100 g y por porción, mismas unidades, VD, porción y porciones por envase. Las dos imágenes muestran Grasas trans 0,4 g por 100 g y 0 g por porción; se conserva literalmente sin corregir por cálculo. Cambia el tamaño/resolución visual."
+    }
+  },
+  "comparison_checks": [
+    {
+      "image_number": 1,
+      "status": "coincide",
+      "scope": "porción, filas numéricas, unidades y %VD; para Arcor también porciones/envase"
+    },
+    {
+      "image_number": 2,
+      "status": "coincide",
+      "scope": "porción, filas numéricas, unidades y %VD; para Arcor también porciones/envase"
+    },
+    {
+      "image_number": 3,
+      "status": "coincide",
+      "scope": "porción, filas numéricas, unidades y %VD; para Arcor también porciones/envase"
+    },
+    {
+      "image_number": 4,
+      "status": "coincide",
+      "scope": "porción, filas numéricas, unidades y %VD; para Arcor también porciones/envase"
+    },
+    {
+      "image_number": 5,
+      "status": "coincide",
+      "scope": "porción, filas numéricas, unidades y %VD; para Arcor también porciones/envase"
+    }
+  ],
+  "protein_database_candidates": [
+    {
+      "barcode_candidate": "7790580124731",
+      "name": "Protein Bar",
+      "identity_confirmed": false,
+      "against_peanut_butter": [
+        {
+          "field": "energy-kcal_100g",
+          "current": 403,
+          "official_declared_value": 403,
+          "unit": "kcal",
+          "status": "coincide"
+        },
+        {
+          "field": "energy-kj_100g",
+          "current": null,
+          "official_declared_value": 1689,
+          "unit": "kJ",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "current": 28,
+          "official_declared_value": 28,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "sugars_100g",
+          "current": 23,
+          "official_declared_value": 23,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "added-sugars_100g",
+          "current": 19,
+          "official_declared_value": 19,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "proteins_100g",
+          "current": 35,
+          "official_declared_value": 35,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "fat_100g",
+          "current": 18,
+          "official_declared_value": 18,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "current": 7.7,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "trans-fat_100g",
+          "current": 0.3,
+          "official_declared_value": 0.3,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "monounsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 6.5,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "polyunsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 2.7,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "cholesterol_100g",
+          "current": 0.0022,
+          "official_declared_value": 0.0022,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "fiber_100g",
+          "current": 7.7,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "sodium_100g",
+          "current": 0.362,
+          "official_declared_value": 0.362,
+          "unit": "g",
+          "status": "coincide"
+        }
+      ]
+    },
+    {
+      "barcode_candidate": "7790580128197",
+      "name": "Raptor Plant Protein Chocolate Y Avellanas",
+      "identity_confirmed": false,
+      "against_peanut_butter": [
+        {
+          "field": "energy-kcal_100g",
+          "current": 407,
+          "official_declared_value": 403,
+          "unit": "kcal",
+          "status": "diferente"
+        },
+        {
+          "field": "energy-kj_100g",
+          "current": null,
+          "official_declared_value": 1689,
+          "unit": "kJ",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "current": 37.8,
+          "official_declared_value": 28,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "sugars_100g",
+          "current": 31.1,
+          "official_declared_value": 23,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "added-sugars_100g",
+          "current": null,
+          "official_declared_value": 19,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "proteins_100g",
+          "current": 26.7,
+          "official_declared_value": 35,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "fat_100g",
+          "current": 17.3,
+          "official_declared_value": 18,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "current": 6,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "trans-fat_100g",
+          "current": null,
+          "official_declared_value": 0.3,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "monounsaturated-fat_100g",
+          "current": 5.56,
+          "official_declared_value": 6.5,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "polyunsaturated-fat_100g",
+          "current": 2.89,
+          "official_declared_value": 2.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "cholesterol_100g",
+          "current": null,
+          "official_declared_value": 0.0022,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "fiber_100g",
+          "current": 2.89,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "sodium_100g",
+          "current": 0.167,
+          "official_declared_value": 0.362,
+          "unit": "g",
+          "status": "diferente"
+        }
+      ]
+    },
+    {
+      "barcode_candidate": "7790580137991",
+      "name": "Raptor Whey Protein",
+      "identity_confirmed": false,
+      "against_peanut_butter": [
+        {
+          "field": "energy-kcal_100g",
+          "current": 394,
+          "official_declared_value": 403,
+          "unit": "kcal",
+          "status": "diferente"
+        },
+        {
+          "field": "energy-kj_100g",
+          "current": null,
+          "official_declared_value": 1689,
+          "unit": "kJ",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "current": 11,
+          "official_declared_value": 28,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "sugars_100g",
+          "current": 6.6,
+          "official_declared_value": 23,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "added-sugars_100g",
+          "current": null,
+          "official_declared_value": 19,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "proteins_100g",
+          "current": 71,
+          "official_declared_value": 35,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "fat_100g",
+          "current": 7.2,
+          "official_declared_value": 18,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "current": 4.6,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "trans-fat_100g",
+          "current": 0.3,
+          "official_declared_value": 0.3,
+          "unit": "g",
+          "status": "coincide"
+        },
+        {
+          "field": "monounsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 6.5,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "polyunsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 2.7,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "cholesterol_100g",
+          "current": 0.14,
+          "official_declared_value": 0.0022,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "fiber_100g",
+          "current": null,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "sodium_100g",
+          "current": 0.169,
+          "official_declared_value": 0.362,
+          "unit": "g",
+          "status": "diferente"
+        }
+      ]
+    },
+    {
+      "barcode_candidate": "7790580138554",
+      "name": "Raptor Protein",
+      "identity_confirmed": false,
+      "against_peanut_butter": [
+        {
+          "field": "energy-kcal_100g",
+          "current": 402,
+          "official_declared_value": 403,
+          "unit": "kcal",
+          "status": "diferente"
+        },
+        {
+          "field": "energy-kj_100g",
+          "current": 1680,
+          "official_declared_value": 1689,
+          "unit": "kJ",
+          "status": "diferente"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "current": 28.9,
+          "official_declared_value": 28,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "sugars_100g",
+          "current": 22.2,
+          "official_declared_value": 23,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "added-sugars_100g",
+          "current": 19.1,
+          "official_declared_value": 19,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "proteins_100g",
+          "current": 35.6,
+          "official_declared_value": 35,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "fat_100g",
+          "current": 17.6,
+          "official_declared_value": 18,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "current": 7.78,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "trans-fat_100g",
+          "current": 0.222,
+          "official_declared_value": 0.3,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "monounsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 6.5,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "polyunsaturated-fat_100g",
+          "current": null,
+          "official_declared_value": 2.7,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "cholesterol_100g",
+          "current": null,
+          "official_declared_value": 0.0022,
+          "unit": "g",
+          "status": "falta_en_base"
+        },
+        {
+          "field": "fiber_100g",
+          "current": 7.78,
+          "official_declared_value": 7.7,
+          "unit": "g",
+          "status": "diferente"
+        },
+        {
+          "field": "sodium_100g",
+          "current": 0.362,
+          "official_declared_value": 0.362,
+          "unit": "g",
+          "status": "coincide"
+        }
+      ]
+    }
+  ],
+  "identity_confirmed": false,
+  "notes": [
+    "Las coincidencias de nutrientes no prueban que un EAN corresponda a un sabor.",
+    "Imágenes 3 y 4 tienen números idénticos y corresponden a sabores distintos según la web oficial.",
+    "La tabla Peanut Butter declara barra de 45 g; el registro OFF candidato previamente consultado declara 50 g. No fusionar ambas versiones.",
+    "La nueva placa Tonadita repite la evidencia de 20 mg por 10 g ya documentada; no resuelve el conflicto con 12 mg."
+  ]
+}
