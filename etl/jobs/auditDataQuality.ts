@@ -1,8 +1,14 @@
-// Uso: npm run etl:audit-quality
+// Uso: npm run etl:audit-quality -- [--input export.jsonl] [--out marcas.jsonl]
 // Auditoría de `products`, solo lectura: ingredientes con pinta de boilerplate, marca vacía
 // embebida en el nombre y nutrientes fuera de rango. Reporta para revisión; no corrige.
+// Con --out deja una fila por producto con sus marcas (y `<out>.resumen.json` con los conteos);
+// con --input audita un export de `etl:export-products` en vez de leer la base.
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
-import { admin } from '../lib/supabaseAdmin';
+import { createWriteStream } from 'node:fs';
+import { once } from 'node:events';
+import { writeFile } from 'node:fs/promises';
+import { auditProduct, summarizeAudit, type AuditRecord } from '../lib/auditRow';
+import { forEachProductPage, readJsonl, sha256OfFile } from '../lib/productsExport';
 import {
   checkIngredientsText,
   findBrandInName,
@@ -16,32 +22,23 @@ type ProductRow = {
   barcode: string | null;
   product_name: string | null;
   brand: string | null;
+  data_source: string | null;
+  ai_enriched: boolean | null;
   ingredients_text: string | null;
   nutriments: Record<string, unknown> | null;
 };
 
-async function fetchAllProducts(): Promise<ProductRow[]> {
-  const client = admin();
-  const pageSize = 1000;
-  let from = 0;
+const COLUMNS = 'id, barcode, product_name, brand, data_source, ai_enriched, ingredients_text, nutriments';
+
+async function fetchAllProducts(input?: string): Promise<ProductRow[]> {
   const all: ProductRow[] = [];
-
-  for (;;) {
-    const { data, error } = await client
-      .from('products')
-      .select('id, barcode, product_name, brand, ingredients_text, nutriments')
-      .range(from, from + pageSize - 1);
-
-    if (error) {
-      console.error('[auditDataQuality] error leyendo products:', error.message);
-      break;
-    }
-    const rows = (data ?? []) as ProductRow[];
-    all.push(...rows);
-    if (rows.length < pageSize) break;
-    from += pageSize;
+  if (input) {
+    for await (const row of readJsonl(input)) all.push(row as unknown as ProductRow);
+  } else {
+    await forEachProductPage(COLUMNS, (rows) => {
+      all.push(...(rows as unknown as ProductRow[]));
+    });
   }
-
   return all;
 }
 
@@ -59,8 +56,34 @@ function printSample(title: string, items: Finding[], limit = 10): void {
   if (items.length > limit) console.log(`  ... y ${items.length - limit} más (no impreso acá).`);
 }
 
+function argValue(name: string): string | undefined {
+  const idx = process.argv.indexOf(name);
+  return idx >= 0 ? process.argv[idx + 1] : undefined;
+}
+
+async function writeMarks(products: ProductRow[], out: string, input?: string): Promise<void> {
+  const records: AuditRecord[] = [];
+  const stream = createWriteStream(out, { flags: 'wx' });
+  for (const p of products) {
+    const record = auditProduct(p);
+    records.push(record);
+    if (!stream.write(`${JSON.stringify(record)}\n`)) await once(stream, 'drain');
+  }
+  stream.end();
+  await once(stream, 'finish');
+  const summary = {
+    generado: new Date().toISOString(),
+    origen: input ? { archivo: input, sha256: await sha256OfFile(input) } : 'base (lectura directa)',
+    conteos: summarizeAudit(records),
+  };
+  await writeFile(`${out}.resumen.json`, `${JSON.stringify(summary, null, 2)}\n`, { flag: 'wx' });
+  console.log(`[auditDataQuality] marcas por producto -> ${out} (${records.length} filas)`);
+}
+
 async function main() {
-  const products = await fetchAllProducts();
+  const input = argValue('--input');
+  const out = argValue('--out');
+  const products = await fetchAllProducts(input);
   console.log(`[auditDataQuality] ${products.length} productos escaneados`);
 
   // Diccionario de marcas desde la propia tabla. `brand` también tiene basura: se exigen
@@ -129,6 +152,8 @@ async function main() {
       });
     }
   }
+
+  if (out) await writeMarks(products, out, input);
 
   printSample('1. ingredients_text con pinta de dirección/boilerplate legal', boilerplateIngredients);
   printSample('2. brand vacío con marca candidata en product_name', missingBrandCandidates);
