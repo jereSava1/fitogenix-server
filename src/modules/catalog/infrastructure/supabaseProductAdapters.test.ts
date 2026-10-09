@@ -100,6 +100,13 @@ describe('buildCachePayload', () => {
 });
 
 describe('rowToCachedRaw', () => {
+  it('lee la base de la nutrición solo si es 100g o 100ml (una fila sin la columna sigue andando)', () => {
+    const fila = { id: 'x', ingredients_text: 'agua', nutriments: { sugars_100g: 1 } };
+    expect(cache.rowToCachedRaw({ ...fila, nutrition_basis: '100ml' })?.raw.nutrition_basis).toBe('100ml');
+    expect(cache.rowToCachedRaw({ ...fila, nutrition_basis: 'kg' })?.raw).not.toHaveProperty('nutrition_basis');
+    expect(cache.rowToCachedRaw(fila)?.raw).not.toHaveProperty('nutrition_basis');
+  });
+
   const fullRow: Record<string, unknown> = {
     id: 'uuid-galletitas',
     barcode: '7790001',

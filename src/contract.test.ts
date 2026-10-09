@@ -90,9 +90,9 @@ const ESCANEO = { product_id: PRODUCT_ID, scanned_at: '2026-07-14T12:00:00+00:00
 const PERFIL_FILA = { first_name: 'Ana', last_name: 'Pérez', username: 'ana.p', phone: '+5491123456789' };
 const RESPUESTAS_ONBOARDING = { goals: ['energy'], symptoms: [], diets: [], allergies: [], avoid: [], source: null };
 
-/** Los 12 campos de `ProductDetail` y los 7 de `ProductSummary`. */
+/** Los 13 campos de `ProductDetail` y los 7 de `ProductSummary`. */
 const CAMPOS_RESUMEN = ['id', 'name', 'brand', 'imageUrl', 'score', 'scoreLabel', 'scoreColor'];
-const CAMPOS_DETALLE = [...CAMPOS_RESUMEN, 'noScore', 'fito', 'highlight', 'ingredients', 'nutrition'];
+const CAMPOS_DETALLE = [...CAMPOS_RESUMEN, 'noScore', 'fito', 'highlight', 'ingredients', 'nutrition', 'nutritionBasis'];
 
 const contract = JSON.parse(
   readFileSync(join(__dirname, '../contract/openapi.json'), 'utf8'),
@@ -577,7 +577,7 @@ describe('contrato — /v1 y errores uniformes (K-03)', () => {
 });
 
 describe('contrato — forma del producto y campos de más (K-04, D-70)', () => {
-  it('el lookup y GET /products/:id responden los 12 campos del detalle, el mismo objeto', async () => {
+  it('el lookup y GET /products/:id responden los 13 campos del detalle, el mismo objeto', async () => {
     const lookup = (await call('POST', '/v1/products/lookup', { payload: { query: FILA.barcode } })).json();
     const detalle = (await call('GET', `/v1/products/${PRODUCT_ID}`)).json();
     expect(Object.keys(lookup).sort()).toEqual([...CAMPOS_DETALLE].sort());

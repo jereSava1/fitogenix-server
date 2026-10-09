@@ -13,6 +13,7 @@ import {
   type Severity,
 } from '../../scoring';
 import type { ProductDetail, ProductSummary } from '../application/productResponse';
+import type { NutritionBasis } from '../domain/rawProduct';
 
 const STRING = Type.String();
 const NULLABLE_STRING = Nullable(Type.String());
@@ -76,6 +77,8 @@ export const ProductDetailSchema = Type.Object(
     // §7 — en el orden de la etiqueta, con su severidad y el porqué.
     ingredients: Type.Array(Type.Object({ name: STRING, sev: SeveritySchema, desc: STRING })),
     nutrition: Type.Object(nutritionProperties),
+    // Sobre qué base está `nutrition`; `null` si la fuente no lo dice. Nunca se convierte ml a g.
+    nutritionBasis: Type.Unsafe<NutritionBasis | null>({ type: ['string', 'null'], enum: ['100g', '100ml', null] }),
   },
   { $id: 'ProductDetail' },
 );

@@ -11,7 +11,7 @@ import {
   type Severity,
 } from '../../scoring';
 import { cleanName, extractNutrition } from '../domain/productData';
-import type { RawProduct } from '../domain/rawProduct';
+import type { NutritionBasis, RawProduct } from '../domain/rawProduct';
 import type { CachedProductRow } from './ports';
 
 /** Un producto en un listado: lo justo para la fila de la lista. */
@@ -49,6 +49,8 @@ export interface ProductDetail extends ProductSummary {
    *  usuario B2C. */
   ingredients: ProductIngredient[];
   nutrition: NutritionFacts;
+  /** Sobre qué base está `nutrition`: por 100 g o por 100 ml. `null` si la fuente no lo dice. */
+  nutritionBasis: NutritionBasis | null;
 }
 
 /** La identidad con la que se presenta un crudo: el uuid de la fila y el
@@ -101,5 +103,6 @@ export function toProductDetail(raw: RawProduct, identity: ProductIdentity): Pro
       ...breakdown.allergenWarnings.map((name) => ({ name, sev: 'gray' as const, desc: ALLERGEN_DECLARATION_DESC })),
     ],
     nutrition: extractNutrition(raw.nutriments),
+    nutritionBasis: raw.nutrition_basis ?? null,
   };
 }
