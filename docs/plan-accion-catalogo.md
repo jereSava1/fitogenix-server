@@ -248,9 +248,18 @@ El parser corta ahora el texto del fabricante al final de la lista (`Elaborado p
 
 La caída de filas con datos viene de lo que se borró o se vació por ser inválido o inventado (ola 1: 99, ola 2: 87 y 14 duplicados, ola 3: 124 tablas imposibles, códigos restringidos: 142).
 
+### Ronda 6: sodio, tabla de la app, líquidos y `product_facts` (D-115 a D-118)
+
+- **Sodio** (mergeado): `extractNutrition` devuelve el sodio en mg enteros y el colesterol con un decimal, convirtiendo antes de redondear.
+- **Tabla nutricional de la app** (mergeada en native, se ve con el próximo build): todos los nutrientes con dato, sin tope de cuatro, en este orden: calorías, proteínas, carbohidratos, grasas totales, azúcares, grasas saturadas, grasas trans, fibra, sodio, colesterol.
+- **Migración** `supabase/migrations/20261009180000_product_facts_y_base_nutricional.sql` (mergeada, **la corre Jere**): tabla `product_facts` (un dato observado por fila, con fuente, evidencia y estado; solo se agregan filas) y columna `products.nutrition_basis` (`100g` o `100ml`, nula si la fuente no lo dice).
+- **Líquidos por 100 ml** (PRs abiertos, esperan la migración): el ETL conserva la base que publica Cencosud (`basic_unit_name`) junto con el bloque de nutrición elegido (server#43); el detalle del producto expone `nutritionBasis`, contrato 0.14.0 (server#44); la app titula la tabla "por 100 ml" o "por 100 g" (native#15). OFF no declara la base de forma explícita: queda nula.
+- **Relleno simulado** (no aplicado; plan `base-nutricional-relleno-plan.json`) sobre las 15.432 filas con tabla real: `100ml` 1.320 (Jumbo 914, Carrefour 184, Vea 137, Disco 85), `100g` 8.411 y nula 5.701 (OFF 5.353 y 348 de Cencosud que ya no publican la tabla). Se aplica después de la migración y de mergear el ETL.
+- **Orden después de la migración:** `supabase db push` → mergear server#43 → server#44 → native#15 → aplicar el relleno.
+
 ### Pendiente de Jere
 
-- Correr la migración `20261009150000_indice_staging_merged_into.sql` (índice en `products_staging.merged_into`).
+- Correr las migraciones `20261009150000_indice_staging_merged_into.sql` (índice en `products_staging.merged_into`) y `20261009180000_product_facts_y_base_nutricional.sql` con `supabase db push`.
 - Revisar los 7 códigos de prefijo 02 y el guardado de `2000000046692` (Oreo).
 - Atribución visible de Open Food Facts en la app (D-112).
 - Los PRs de Dependabot #6 (typebox 6), #9 (dotenv 18) y #23 (grupo de desarrollo) fallan por cambios de tipos de TypeScript; no se mergearon.
