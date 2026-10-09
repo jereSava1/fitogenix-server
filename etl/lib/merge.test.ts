@@ -21,6 +21,19 @@ describe('mergeRawProducts', () => {
     expect(result.image_url).toBe('https://img.example/x.jpg');
   });
 
+  it('un nutriments con solo nova-group no le gana a una tabla real de otra fuente', () => {
+    const result = mergeRawProducts([
+      { source: 'off', raw: { nutriments: { 'nova-group': 4 } } },
+      { source: 'cencosud', raw: { nutriments: { 'energy-kcal_100g': 250, sodium_100g: 0.3 } } },
+    ]);
+    expect(result.nutriments).toEqual({ 'energy-kcal_100g': 250, sodium_100g: 0.3 });
+  });
+
+  it('sin ninguna tabla real, nutriments queda sin dato', () => {
+    const result = mergeRawProducts([{ source: 'off', raw: { nutriments: { 'nova-group': 4 } } }]);
+    expect(result.nutriments).toBeUndefined();
+  });
+
   it('nutriments es un bloque atómico de una sola fuente, no se mezcla campo a campo', () => {
     const result = mergeRawProducts([
       { source: 'off', raw: { nutriments: { 'energy-kcal_100g': 100, 'proteins_100g': 5 } } },

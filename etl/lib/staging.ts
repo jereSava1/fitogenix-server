@@ -121,7 +121,7 @@ export type StagingRowFull = {
 };
 
 /** Todas las filas (cualquier estado) de un lote de barcodes. Traer solo `pending` dejaría
- *  filas huérfanas sin `merged_into` y, con --enrich, Claude las re-levantaría pisando datos
+ *  filas huérfanas sin `merged_into` y el merge las re-levantaría pisando datos
  *  reales. */
 export async function fetchRowsForBarcodes(barcodes: string[]): Promise<Map<string, StagingRowFull[]>> {
   const byBarcode = new Map<string, StagingRowFull[]>();
