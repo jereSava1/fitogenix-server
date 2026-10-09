@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-97**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-102**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -104,3 +104,8 @@ Una decisión nueva toma el siguiente número libre (**D-97**). Si cambia otra, 
 | D-94 | Tabla nutricional: calorías, proteínas, carbohidratos y grasas totales siempre ("sin dato" si falta); el resto, solo si es mayor que cero (RF-064) | Pendiente |
 | D-95 | Los datos de un producto se validan contra la etiqueta o una fuente de la marca; la única revisión manual es la de un conjunto acotado de productos de control ([06-catalogo-confiable.md](06-catalogo-confiable.md)) | Vigente |
 | D-96 | Una IA puede transcribir fotos de etiqueta publicadas (OFF, supermercados): copia lo que dice la foto, sin completar, y cuenta como fuente de etiqueta. Cada transcripción se hace dos veces y pasa controles automáticos ([06-catalogo-confiable.md](06-catalogo-confiable.md) §6b) | Vigente |
+| D-97 | Se confía en el dato que aportó Guille para los dos casos de sodio: Tonadita `7798060850026` son 200 mg/100 g (la base ya tiene 0,2 g) y Doritos `7790310983737` son 672 mg/100 g (la base tiene 0,664 g y pasa a 0,672 g) | Pendiente (Doritos se corrige en la purga) |
+| D-98 | Un dato es `verificado` cuando hay una fuente de etiqueta o de marca, con identidad confirmada, que pasa los controles, y ninguna fuente la contradice. La doble transcripción controla la lectura y no cuenta como segunda fuente. Resuelve la contradicción entre §3 y §6b de [06-catalogo-confiable.md](06-catalogo-confiable.md) | Vigente |
+| D-99 | El parseo de ingredientes (`scoring/domain/cleaning.ts`) se arregla aunque cambien los puntajes: corrige la lectura, no el criterio. Es una excepción acotada a D-92, con informe de puntajes antes y después ([plan-accion-catalogo.md](plan-accion-catalogo.md)) | Pendiente |
+| D-100 | Las filas vacías de `products` (59.893 al 2026-10-08) se quedan: tienen código, nombre, marca e imagen, y son la cola de lo que hay que verificar | Vigente |
+| D-101 | La categoría no se muestra en la app por ahora. El prototipo `scripts/preview-product-categories.ts` no se incorpora | Vigente |

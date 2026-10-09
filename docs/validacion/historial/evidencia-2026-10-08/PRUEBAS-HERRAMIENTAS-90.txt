@@ -1,0 +1,550 @@
+TAP version 13
+# Subtest: EAN repetido conserva ambas filas y señala ambigüedad sin mezclar recetas
+ok 1 - EAN repetido conserva ambas filas y señala ambigüedad sin mezclar recetas
+  ---
+  duration_ms: 12.406
+  type: 'test'
+  ...
+# Subtest: sodio 3900 g se señala, no se corrige a una cifra deseada
+ok 2 - sodio 3900 g se señala, no se corrige a una cifra deseada
+  ---
+  duration_ms: 0.8485
+  type: 'test'
+  ...
+# Subtest: azúcar y grasas saturadas superiores a sus totales se señalan
+ok 3 - azúcar y grasas saturadas superiores a sus totales se señalan
+  ---
+  duration_ms: 0.3392
+  type: 'test'
+  ...
+# Subtest: pequeñas diferencias de redondeo no generan alerta de relación
+ok 4 - pequeñas diferencias de redondeo no generan alerta de relación
+  ---
+  duration_ms: 0.2792
+  type: 'test'
+  ...
+# Subtest: suma de macros no suma fibra ni azúcar otra vez
+ok 5 - suma de macros no suma fibra ni azúcar otra vez
+  ---
+  duration_ms: 0.3784
+  type: 'test'
+  ...
+# Subtest: unidad metadata dudosa se conserva, sin convertir dos veces
+ok 6 - unidad metadata dudosa se conserva, sin convertir dos veces
+  ---
+  duration_ms: 0.3512
+  type: 'test'
+  ...
+# Subtest: ingredientes conservan advertencias y original exactamente
+ok 7 - ingredientes conservan advertencias y original exactamente
+  ---
+  duration_ms: 1.688
+  type: 'test'
+  ...
+# Subtest: identidad de posición es reproducible, sin EAN inventado ni colisión por nombre
+ok 8 - identidad de posición es reproducible, sin EAN inventado ni colisión por nombre
+  ---
+  duration_ms: 1.2184
+  type: 'test'
+  ...
+# Subtest: entrada inválida y barcode numérico son rechazados
+ok 9 - entrada inválida y barcode numérico son rechazados
+  ---
+  duration_ms: 1.1713
+  type: 'test'
+  ...
+# Subtest: muestra de 200 se divide en cuatro lotes locales sin pérdida
+ok 10 - muestra de 200 se divide en cuatro lotes locales sin pérdida
+  ---
+  duration_ms: 8.2165
+  type: 'test'
+  ...
+# Subtest: alertas no validan productos incompletos; ausencia no se inventa
+ok 11 - alertas no validan productos incompletos; ausencia no se inventa
+  ---
+  duration_ms: 0.713
+  type: 'test'
+  ...
+# Subtest: CLI protege originales y no permite sobrescrituras
+ok 12 - CLI protege originales y no permite sobrescrituras
+  ---
+  duration_ms: 44.7893
+  type: 'test'
+  ...
+# Subtest: sal coincide solo con sal; no deriva ni sobrescribe sodio
+ok 13 - sal coincide solo con sal; no deriva ni sobrescribe sodio
+  ---
+  duration_ms: 2.9452
+  type: 'test'
+  ...
+# Subtest: porción en descripción no prueba base de la tabla
+ok 14 - porción en descripción no prueba base de la tabla
+  ---
+  duration_ms: 0.5518
+  type: 'test'
+  ...
+# Subtest: cifra nueva es candidata sin normalizar
+ok 15 - cifra nueva es candidata sin normalizar
+  ---
+  duration_ms: 0.3654
+  type: 'test'
+  ...
+# Subtest: ficha mezclada con otro producto bloquea aun con base explícita
+ok 16 - ficha mezclada con otro producto bloquea aun con base explícita
+  ---
+  duration_ms: 0.37
+  type: 'test'
+  ...
+# Subtest: ausencia en la fuente no invalida el código
+ok 17 - ausencia en la fuente no invalida el código
+  ---
+  duration_ms: 0.5374
+  type: 'test'
+  ...
+# Subtest: rechaza códigos desconocidos, repetidos, números y URL distinta
+ok 18 - rechaza códigos desconocidos, repetidos, números y URL distinta
+  ---
+  duration_ms: 0.9145
+  type: 'test'
+  ...
+# Subtest: rechaza unidades incompatibles y números no finitos o negativos
+ok 19 - rechaza unidades incompatibles y números no finitos o negativos
+  ---
+  duration_ms: 0.6358
+  type: 'test'
+  ...
+# Subtest: conserva original y solo comprueba coincidencia de extracto por caja y espacios
+ok 20 - conserva original y solo comprueba coincidencia de extracto por caja y espacios
+  ---
+  duration_ms: 0.3689
+  type: 'test'
+  ...
+# Subtest: archivos de comparación no pueden reemplazar entrada ni una salida existente
+ok 21 - archivos de comparación no pueden reemplazar entrada ni una salida existente
+  ---
+  duration_ms: 93.7314
+  type: 'test'
+  ...
+# Subtest: Tonadita: conserva la declaración también dentro del texto, sin proponer retirarla
+ok 22 - Tonadita: conserva la declaración también dentro del texto, sin proponer retirarla
+  ---
+  duration_ms: 8.6469
+  type: 'test'
+  ...
+# Subtest: lista legítima con componentes anidados queda intacta
+ok 23 - lista legítima con componentes anidados queda intacta
+  ---
+  duration_ms: 1.6643
+  type: 'test'
+  ...
+# Subtest: sal, vitaminas y enriquecimiento no se borran por ser palabras legales
+ok 24 - sal, vitaminas y enriquecimiento no se borran por ser palabras legales
+  ---
+  duration_ms: 0.2815
+  type: 'test'
+  ...
+# Subtest: sin gluten se conserva como declaración, sin borrar el gluten ingrediente
+ok 25 - sin gluten se conserva como declaración, sin borrar el gluten ingrediente
+  ---
+  duration_ms: 0.4084
+  type: 'test'
+  ...
+# Subtest: INS repetidos se señalan sin deduplicar y cambiar el puntaje
+ok 26 - INS repetidos se señalan sin deduplicar y cambiar el puntaje
+  ---
+  duration_ms: 0.27
+  type: 'test'
+  ...
+# Subtest: sucralosa con cantidad válida se señala sin quitar el ingrediente
+ok 27 - sucralosa con cantidad válida se señala sin quitar el ingrediente
+  ---
+  duration_ms: 1.9507
+  type: 'test'
+  ...
+# Subtest: unidad suelta se señala sin reinterpretar una cifra
+ok 28 - unidad suelta se señala sin reinterpretar una cifra
+  ---
+  duration_ms: 0.2443
+  type: 'test'
+  ...
+# Subtest: una unidad suelta requiere revisión; una cantidad no prueba basura
+ok 29 - una unidad suelta requiere revisión; una cantidad no prueba basura
+  ---
+  duration_ms: 0.2024
+  type: 'test'
+  ...
+# Subtest: cantidades decimales con coma y espacios se conservan
+ok 30 - cantidades decimales con coma y espacios se conservan
+  ---
+  duration_ms: 1.229
+  type: 'test'
+  ...
+# Subtest: unidad sin número entre paréntesis no se trata como cantidad explícita
+ok 31 - unidad sin número entre paréntesis no se trata como cantidad explícita
+  ---
+  duration_ms: 0.5503
+  type: 'test'
+  ...
+# Subtest: cantidad sin ingrediente asociado permanece pendiente
+ok 32 - cantidad sin ingrediente asociado permanece pendiente
+  ---
+  duration_ms: 0.2035
+  type: 'test'
+  ...
+# Subtest: cantidad en paréntesis sin cerrar no permite limpieza parcial
+ok 33 - cantidad en paréntesis sin cerrar no permite limpieza parcial
+  ---
+  duration_ms: 0.1973
+  type: 'test'
+  ...
+# Subtest: advertencia desconocida se conserva sin adivinar su categoría
+ok 34 - advertencia desconocida se conserva sin adivinar su categoría
+  ---
+  duration_ms: 0.2355
+  type: 'test'
+  ...
+# Subtest: quitar solo el rótulo mantiene toda la advertencia de leche
+ok 35 - quitar solo el rótulo mantiene toda la advertencia de leche
+  ---
+  duration_ms: 1.0015
+  type: 'test'
+  ...
+# Subtest: alérgenos con ingredientes adicionales mantienen ambos fragmentos
+ok 36 - alérgenos con ingredientes adicionales mantienen ambos fragmentos
+  ---
+  duration_ms: 0.1945
+  type: 'test'
+  ...
+# Subtest: una declaración sola no se convierte en receta
+ok 37 - una declaración sola no se convierte en receta
+  ---
+  duration_ms: 0.1662
+  type: 'test'
+  ...
+# Subtest: un salto dentro de un ingrediente no lo convierte en dos
+ok 38 - un salto dentro de un ingrediente no lo convierte en dos
+  ---
+  duration_ms: 0.1487
+  type: 'test'
+  ...
+# Subtest: art. no se divide ni se transforma en ingrediente nuevo
+ok 39 - art. no se divide ni se transforma en ingrediente nuevo
+  ---
+  duration_ms: 0.175
+  type: 'test'
+  ...
+# Subtest: no inventa correcciones de OCR ni INS
+ok 40 - no inventa correcciones de OCR ni INS
+  ---
+  duration_ms: 0.258
+  type: 'test'
+  ...
+# Subtest: paréntesis incompletos impiden una propuesta parcial
+ok 41 - paréntesis incompletos impiden una propuesta parcial
+  ---
+  duration_ms: 0.2081
+  type: 'test'
+  ...
+# Subtest: paréntesis cerrados antes de abrir también son ambiguos
+ok 42 - paréntesis cerrados antes de abrir también son ambiguos
+  ---
+  duration_ms: 0.1671
+  type: 'test'
+  ...
+# Subtest: rótulo inicial claro se separa sin reescribir la lista
+ok 43 - rótulo inicial claro se separa sin reescribir la lista
+  ---
+  duration_ms: 0.1819
+  type: 'test'
+  ...
+# Subtest: el rótulo solo no inventa lista vacía como corrección
+ok 44 - el rótulo solo no inventa lista vacía como corrección
+  ---
+  duration_ms: 0.3163
+  type: 'test'
+  ...
+# Subtest: frase de colesterol no es una lista de alérgenos
+ok 45 - frase de colesterol no es una lista de alérgenos
+  ---
+  duration_ms: 0.217
+  type: 'test'
+  ...
+# Subtest: fortificación con unidades queda preservada para revisión
+ok 46 - fortificación con unidades queda preservada para revisión
+  ---
+  duration_ms: 0.2328
+  type: 'test'
+  ...
+# Subtest: alérgenos pegados a ingredientes adicionales no permiten borrar la cola
+ok 47 - alérgenos pegados a ingredientes adicionales no permiten borrar la cola
+  ---
+  duration_ms: 0.2684
+  type: 'test'
+  ...
+# Subtest: alérgenos entre paréntesis no se extraen de un ingrediente compuesto
+ok 48 - alérgenos entre paréntesis no se extraen de un ingrediente compuesto
+  ---
+  duration_ms: 0.3621
+  type: 'test'
+  ...
+# Subtest: varios alérgenos explícitos conservan la declaración completa
+ok 49 - varios alérgenos explícitos conservan la declaración completa
+  ---
+  duration_ms: 0.1846
+  type: 'test'
+  ...
+# Subtest: instrucciones y fabricante se detectan pero no se recortan a ciegas
+ok 50 - instrucciones y fabricante se detectan pero no se recortan a ciegas
+  ---
+  duration_ms: 0.2219
+  type: 'test'
+  ...
+# Subtest: ausencia permanece ausencia, sin reconstrucción por nombre
+ok 51 - ausencia permanece ausencia, sin reconstrucción por nombre
+  ---
+  duration_ms: 0.5952
+  type: 'test'
+  ...
+# Subtest: las posiciones recuperan exactamente cada fragmento original
+ok 52 - las posiciones recuperan exactamente cada fragmento original
+  ---
+  duration_ms: 0.1899
+  type: 'test'
+  ...
+# Subtest: segunda pasada no produce nuevas limpiezas en una propuesta aceptable
+ok 53 - segunda pasada no produce nuevas limpiezas en una propuesta aceptable
+  ---
+  duration_ms: 1.6695
+  type: 'test'
+  ...
+# Subtest: datos aplicados o esquema desconocido son rechazados
+ok 54 - datos aplicados o esquema desconocido son rechazados
+  ---
+  duration_ms: 0.3741
+  type: 'test'
+  ...
+# Subtest: la identidad ambigua de A se conserva agrupada, sin repartir fórmulas entre EAN
+ok 55 - la identidad ambigua de A se conserva agrupada, sin repartir fórmulas entre EAN
+  ---
+  duration_ms: 0.6374
+  type: 'test'
+  ...
+# Subtest: rótulo seguido solo por alérgenos no genera una receta
+ok 56 - rótulo seguido solo por alérgenos no genera una receta
+  ---
+  duration_ms: 0.1873
+  type: 'test'
+  ...
+# Subtest: identidades vacías o duplicadas se rechazan antes de comparar
+ok 57 - identidades vacías o duplicadas se rechazan antes de comparar
+  ---
+  duration_ms: 0.3138
+  type: 'test'
+  ...
+# Subtest: códigos numéricos no permiten perder ceros iniciales
+ok 58 - códigos numéricos no permiten perder ceros iniciales
+  ---
+  duration_ms: 0.6934
+  type: 'test'
+  ...
+# Subtest: fase A incompleta o con campo duplicado se rechaza
+ok 59 - fase A incompleta o con campo duplicado se rechaza
+  ---
+  duration_ms: 0.3692
+  type: 'test'
+  ...
+# Subtest: CLI conserva input, genera salida nueva y rechaza sobrescritura
+ok 60 - CLI conserva input, genera salida nueva y rechaza sobrescritura
+  ---
+  duration_ms: 97.1995
+  type: 'test'
+  ...
+# Subtest: Tonadita: 20 mg por 10 g equivale a 200 mg por 100 g
+ok 61 - Tonadita: 20 mg por 10 g equivale a 200 mg por 100 g
+  ---
+  duration_ms: 3.0524
+  type: 'test'
+  ...
+# Subtest: Doritos: calcula 672 sin resolver ni aplicar la discrepancia con 664
+ok 62 - Doritos: calcula 672 sin resolver ni aplicar la discrepancia con 664
+  ---
+  duration_ms: 0.2308
+  type: 'test'
+  ...
+# Subtest: unidades explícitas se convierten y base de ml permanece ml
+ok 63 - unidades explícitas se convierten y base de ml permanece ml
+  ---
+  duration_ms: 0.2575
+  type: 'test'
+  ...
+# Subtest: no infiere base, densidad ni convierte kJ en kcal
+ok 64 - no infiere base, densidad ni convierte kJ en kcal
+  ---
+  duration_ms: 1.3021
+  type: 'test'
+  ...
+# Subtest: rechaza negativos, infinitos y desbordamientos
+ok 65 - rechaza negativos, infinitos y desbordamientos
+  ---
+  duration_ms: 0.5212
+  type: 'test'
+  ...
+# Subtest: campos desconocidos, repetidos o sin evidencia son rechazados
+ok 66 - campos desconocidos, repetidos o sin evidencia son rechazados
+  ---
+  duration_ms: 0.335
+  type: 'test'
+  ...
+# Subtest: conserva original y cero explícito; no añade nutrientes ausentes
+ok 67 - conserva original y cero explícito; no añade nutrientes ausentes
+  ---
+  duration_ms: 0.3302
+  type: 'test'
+  ...
+# Subtest: CLI protege entrada, salida y evidencia duplicada
+ok 68 - CLI protege entrada, salida y evidencia duplicada
+  ---
+  duration_ms: 90.8782
+  type: 'test'
+  ...
+# Subtest: registra aceptación humana del número sin falsear base ni verificación
+ok 69 - registra aceptación humana del número sin falsear base ni verificación
+  ---
+  duration_ms: 5.0761
+  type: 'test'
+  ...
+# Subtest: faltantes se apartan sin copiarlos al estándar nutricional
+ok 70 - faltantes se apartan sin copiarlos al estándar nutricional
+  ---
+  duration_ms: 0.5691
+  type: 'test'
+  ...
+# Subtest: una coincidencia nueva no se atribuye como aceptación humana
+ok 71 - una coincidencia nueva no se atribuye como aceptación humana
+  ---
+  duration_ms: 0.5536
+  type: 'test'
+  ...
+# Subtest: conflicto de ficha excluye incluso números coincidentes
+ok 72 - conflicto de ficha excluye incluso números coincidentes
+  ---
+  duration_ms: 0.7384
+  type: 'test'
+  ...
+# Subtest: diferencias quedan pendientes, no se corrigen con la web
+ok 73 - diferencias quedan pendientes, no se corrigen con la web
+  ---
+  duration_ms: 0.4299
+  type: 'test'
+  ...
+# Subtest: convierte gramos de sodio y colesterol antes de cualquier presentación
+ok 74 - convierte gramos de sodio y colesterol antes de cualquier presentación
+  ---
+  duration_ms: 0.2954
+  type: 'test'
+  ...
+# Subtest: cero explícito se conserva, ausencia no se rellena con cero
+ok 75 - cero explícito se conserva, ausencia no se rellena con cero
+  ---
+  duration_ms: 0.2996
+  type: 'test'
+  ...
+# Subtest: sal no se convierte ni reemplaza un sodio ausente
+ok 76 - sal no se convierte ni reemplaza un sodio ausente
+  ---
+  duration_ms: 0.225
+  type: 'test'
+  ...
+# Subtest: valores sin sufijo de base no se consideran por 100 g
+ok 77 - valores sin sufijo de base no se consideran por 100 g
+  ---
+  duration_ms: 0.8126
+  type: 'test'
+  ...
+# Subtest: rechaza valores negativos, booleanos, infinitos y coma ambigua
+ok 78 - rechaza valores negativos, booleanos, infinitos y coma ambigua
+  ---
+  duration_ms: 3.1549
+  type: 'test'
+  ...
+# Subtest: texto decimal explícito se admite; no cambia originales ni infiere ml
+ok 79 - texto decimal explícito se admite; no cambia originales ni infiere ml
+  ---
+  duration_ms: 1.567
+  type: 'test'
+  ...
+# Subtest: completitud de formato no equivale a verificación de etiqueta
+ok 80 - completitud de formato no equivale a verificación de etiqueta
+  ---
+  duration_ms: 0.2266
+  type: 'test'
+  ...
+# Subtest: lotes de 50 preservan registros agrupados sin duplicar ni perder entradas
+ok 81 - lotes de 50 preservan registros agrupados sin duplicar ni perder entradas
+  ---
+  duration_ms: 0.9618
+  type: 'test'
+  ...
+# Subtest: ejecución genera informe nuevo y protege entradas y salida existente
+ok 82 - ejecución genera informe nuevo y protege entradas y salida existente
+  ---
+  duration_ms: 43.7555
+  type: 'test'
+  ...
+# Subtest: sodio almacena 0.2 g, no 200 g
+ok 83 - sodio almacena 0.2 g, no 200 g
+  ---
+  duration_ms: 1.1515
+  type: 'test'
+  ...
+# Subtest: colesterol almacena 2.2 mg como 0.0022 g
+ok 84 - colesterol almacena 2.2 mg como 0.0022 g
+  ---
+  duration_ms: 0.1662
+  type: 'test'
+  ...
+# Subtest: entrada en gramos no se multiplica de nuevo
+ok 85 - entrada en gramos no se multiplica de nuevo
+  ---
+  duration_ms: 0.1315
+  type: 'test'
+  ...
+# Subtest: base ml bloquea formato legacy y permanece ml
+ok 86 - base ml bloquea formato legacy y permanece ml
+  ---
+  duration_ms: 0.1341
+  type: 'test'
+  ...
+# Subtest: no añade campos ausentes y conserva cero
+ok 87 - no añade campos ausentes y conserva cero
+  ---
+  duration_ms: 0.1319
+  type: 'test'
+  ...
+# Subtest: calorías conservan clave y unidad existentes
+ok 88 - calorías conservan clave y unidad existentes
+  ---
+  duration_ms: 0.1742
+  type: 'test'
+  ...
+# Subtest: Doritos referencia candidata 0.672 g no está aplicada
+ok 89 - Doritos referencia candidata 0.672 g no está aplicada
+  ---
+  duration_ms: 0.1432
+  type: 'test'
+  ...
+# Subtest: panel y otros campos permanecen intactos
+ok 90 - panel y otros campos permanecen intactos
+  ---
+  duration_ms: 0.7825
+  type: 'test'
+  ...
+1..90
+# tests 90
+# suites 0
+# pass 90
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 985.7466

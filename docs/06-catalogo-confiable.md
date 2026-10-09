@@ -23,7 +23,7 @@ El diagnóstico completo de la base, con mediciones sobre todo el catálogo y lo
 2. **La IA no crea datos.** Se apaga el enriquecimiento "de memoria". Si se usa IA, es solo para **transcribir una evidencia publicada online** (la foto de una etiqueta en OFF o en un supermercado), y esa transcripción cuenta como una fuente más: nunca alcanza sola ([PREGUNTA] 2).
 3. **Sin revisión manual del catálogo** (decisión del responsable, 2026-10-02): todo se verifica por **consenso automático entre fuentes** y controles de coherencia. Lo que no se puede verificar así no se completa a mano: el producto queda sin puntaje. La única revisión manual es la de los productos de control (§7), acotada, para comprobar que el proceso automático no se equivoca (D-95).
 4. **Lo no verificado no se presenta como verdad.** Un producto sin datos verificados suficientes queda **"sin puntaje: datos incompletos"**. Mientras la app está en desarrollo no hay usuarios que lo vean ([PREGUNTA] 1 resuelta).
-5. **Lo más reciente y lo que coincide, gana.** Cada dato guarda su fecha; ante fuentes que difieren, gana el acuerdo entre fuentes independientes y, si no lo hay, el producto queda `en_conflicto` (sin puntaje), sin elegir a mano.
+5. **Lo más reciente y lo que coincide, gana.** Cada dato guarda su fecha; ante fuentes que difieren, gana la fuente de etiqueta o de marca si ninguna la contradice (D-98) y, si hay contradicción, el producto queda `en_conflicto` (sin puntaje), sin elegir a mano.
 6. **La referencia es la etiqueta o la marca** (D-95). Un dato cuenta como validado cuando se contrastó con una fuente confiable: la etiqueta del producto (el envase o una foto publicada) o una fuente que viene de la marca (GS1, ficha técnica, sitio del fabricante). Las demás fuentes (supermercados, Open Food Facts) sirven para encontrar el dato y para detectar conflictos, pero dos de ellas que coinciden no reemplazan a la etiqueta.
 
 ## 3. Fuentes (research del 2026-10-02) y verificación automática
@@ -57,12 +57,12 @@ Falta medir en la fase 0 cuántos productos del catálogo tienen al menos una de
 
 **Jerarquía de fuentes (principio 6):** primero la etiqueta y lo que viene de la marca (foto de etiqueta, GS1, ficha técnica, sitio del fabricante); después, supermercados y Open Food Facts. Queda por definir en la fase 0 cuántos productos tienen al menos una fuente del primer grupo: de eso depende la cobertura.
 
-**Verificación automática (sin personas):**
+**Verificación automática (sin personas).** Regla vigente (D-98): un dato es `verificado` cuando hay una fuente de etiqueta o de marca, con la identidad del producto confirmada, que pasa los controles de coherencia, y ninguna otra fuente la contradice. La doble transcripción de una foto controla la lectura; no cuenta como segunda fuente. Un supermercado o Open Food Facts que coinciden no reemplazan a la etiqueta. Esta regla prevalece sobre los pasos de abajo y sobre §6b donde digan "dos fuentes".
 
-1. **Ingredientes:** se normalizan las listas de cada fuente (nombres canónicos; "lecitina de soja (INS 322)" = un solo ingrediente) y se comparan. `verificado` si **dos fuentes independientes** coinciden en los **3 primeros** y en al menos el **85 %** del resto; si no, `en_conflicto`.
-2. **Nutrición:** `verificado` si dos fuentes independientes coinciden dentro de la tolerancia del rotulado (±20 %) y pasan los controles de coherencia (energía ≈ 4·carbohidratos + 4·proteínas + 9·grasas; azúcares ≤ carbohidratos; sodio presente si hay sal; unidades).
+1. **Ingredientes:** se normalizan las listas de cada fuente (nombres canónicos; "lecitina de soja (INS 322)" = un solo ingrediente) y se comparan. `verificado` si la fuente de etiqueta o de marca pasa los controles y las demás fuentes coinciden con ella en los **3 primeros** y en al menos el **85 %** del resto; si alguna difiere, `en_conflicto`.
+2. **Nutrición:** `verificado` si la fuente de etiqueta o de marca pasa los controles de coherencia (energía ≈ 4·carbohidratos + 4·proteínas + 9·grasas; azúcares ≤ carbohidratos; sodio presente si hay sal; unidades) y ninguna otra fuente se aparta más de la tolerancia del rotulado (±20 %).
 3. **Octógonos como control cruzado:** los sellos que declara el fabricante o el supermercado (GS1, `Sellos` de Cencosud) tienen que coincidir con los que salen de calcular la Ley 27.642 sobre los nutrientes. Si no coinciden, la nutrición queda `en_conflicto`. Es un verificador automático muy fuerte, porque los sellos los define el fabricante.
-4. **Porción y contenido neto:** de Cencosud, OFF, Carrefour (gramaje), SEPA y GS1; `verificado` con dos que coincidan.
+4. **Porción y contenido neto:** de Cencosud, OFF, Carrefour (gramaje), SEPA y GS1; `verificado` si la fuente de etiqueta o de marca lo trae y ninguna otra lo contradice.
 5. **Fotos de etiqueta publicadas** (aprobado, D-96): una IA transcribe la foto y esa transcripción entra como **una fuente más** en los pasos 1 a 4. Nunca alcanza sola.
 
 **Lo que esto no resuelve:** un producto que figura en una sola fuente no se puede verificar y queda sin puntaje. El costo de no tener revisión manual es **cobertura, no precisión**. La fase 0 mide cuántos productos tienen al menos dos fuentes.
@@ -197,7 +197,7 @@ Tres objetivos pedidos por el responsable (2026-10-03), cada uno con su forma de
 
 | Objetivo | Cómo se comprueba | Frente |
 |---|---|---|
-| La información que se muestra es correcta y está validada | Cada producto con puntaje tiene sus ingredientes en estado `verificado` (dos fuentes independientes que coinciden, §3). Métrica: % del catálogo `verificado`, `en_conflicto` y `sin_verificar` | W1 |
+| La información que se muestra es correcta y está validada | Cada producto con puntaje tiene sus ingredientes en estado `verificado` (una fuente de etiqueta o de marca que pasa los controles y ninguna que la contradiga, D-98). Métrica: % del catálogo `verificado`, `en_conflicto` y `sin_verificar` | W1 |
 | Los valores nutricionales son precisos y están validados | Igual, más los controles de coherencia (energía contra macros, azúcares ≤ carbohidratos, sodio con sal) y el cruce con los octógonos declarados. Métrica: % de productos con los 4 macros `verificados` | W2 |
 | La información es legible y útil | Checklist en el teléfono sobre los productos de control: misma tabla nutricional en todos, textos que se leen sin esfuerzo, ningún "ingrediente" que no lo sea, descripciones según la guía de W4 | W4, W5 |
 

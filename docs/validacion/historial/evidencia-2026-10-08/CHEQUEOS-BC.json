@@ -1,0 +1,22 @@
+[
+  {
+    "command": "node --import tsx --test (seis archivos explícitos de validación B/C)",
+    "exit_code": 0
+  },
+  {
+    "command": "vitest run src/modules/catalog/routes/panelFormat.integration.test.ts",
+    "exit_code": 0
+  },
+  {
+    "command": "npm run typecheck",
+    "exit_code": 0
+  },
+  {
+    "command": "npm run lint:deps",
+    "exit_code": 0
+  },
+  {
+    "command": "npm run lint:unused",
+    "exit_code": 0
+  }
+]
