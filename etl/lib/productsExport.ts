@@ -8,16 +8,18 @@ import { admin } from './supabaseAdmin';
 
 const PAGE_SIZE = 1000;
 
-export async function forEachProductPage(
+/** Lee una tabla completa por páginas ordenadas por id (keyset). Solo lectura. */
+export async function forEachTablePage(
+  table: string,
   columns: string,
   onPage: (rows: Record<string, unknown>[]) => Promise<void> | void,
 ): Promise<void> {
   let lastId: string | null = null;
   for (;;) {
-    let query = admin().from('products').select(columns).order('id').limit(PAGE_SIZE);
+    let query = admin().from(table).select(columns).order('id').limit(PAGE_SIZE);
     if (lastId) query = query.gt('id', lastId);
     const { data, error } = await query;
-    if (error) throw new Error(`no pude leer products: ${error.message}`);
+    if (error) throw new Error(`no pude leer ${table}: ${error.message}`);
     const rows = (data ?? []) as unknown as Record<string, unknown>[];
     if (rows.length === 0) return;
     await onPage(rows);
@@ -26,14 +28,21 @@ export async function forEachProductPage(
   }
 }
 
+export const forEachProductPage = (
+  columns: string,
+  onPage: (rows: Record<string, unknown>[]) => Promise<void> | void,
+) => forEachTablePage('products', columns, onPage);
+
 /** Escribe una fila por línea (JSONL) y devuelve cuántas y el SHA-256 del archivo. */
 export async function writeProductsJsonl(
   outPath: string,
+  table = 'products',
+  columns = '*',
 ): Promise<{ rows: number; sha256: string }> {
   const out = createWriteStream(outPath, { flags: 'wx' });
   const hash = createHash('sha256');
   let rows = 0;
-  await forEachProductPage('*', async (page) => {
+  await forEachTablePage(table, columns, async (page) => {
     for (const row of page) {
       const line = `${JSON.stringify(row)}\n`;
       hash.update(line);
