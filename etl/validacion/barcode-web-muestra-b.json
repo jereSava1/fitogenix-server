@@ -1,0 +1,372 @@
+{
+  "phase": "B",
+  "date_recorded": "2026-10-08",
+  "method": "lectura_manual_asistida_de_paginas_publicas_en_navegador",
+  "api_used": false,
+  "new_supabase_query": false,
+  "applied": false,
+  "verified": false,
+  "coverage_claim": "11_codigos_conocidos_de_fase_A_no_catalogo_completo",
+  "source_independence": "no_demostrada",
+  "note": "Nutrients contiene correspondencias de campo para comparar, NO valores normalizados por 100 g; nutrition_basis null bloquea su aplicación. Extractos seleccionados, no captura íntegra de página.",
+  "records": [
+    {
+      "barcode": "7790787002931",
+      "control_id": "ilolay-120",
+      "url": "https://www.barcodelookup.com/7790787002931",
+      "status": "ficha_encontrada",
+      "visible_title": "Queso Rallado Ilolay",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_description": "Queso rallado ilolay. Country of origin: Spain.",
+      "ingredients_snippet": "Sint Sin T.a.c.c. Queso Rallad0, Libre De Gluten, Sin Tacc.",
+      "nutrients": [],
+      "issues": [
+        "Repite Rallad0 y Sint del texto observado; no resuelve OCR.",
+        "País declarado Spain: pendiente verificar con el envase."
+      ]
+    },
+    {
+      "barcode": "7790787018031",
+      "control_id": "ilolay-otro",
+      "url": "https://www.barcodelookup.com/7790787018031",
+      "status": "ficha_encontrada",
+      "visible_title": "Queso Rallado",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_brand": "Ilolay",
+      "visible_description": "Queso Rallado. Serving size: 10 g. Country of origin: Argentina.",
+      "visible_nutrition": "Energy 500 kcal, Fat 29 g, Saturated Fat 18 g, Carbohydrates 6 g, Protein 41 g, Salt 1.1 g.",
+      "declared_serving_g": 10,
+      "nutrients": [
+        {
+          "field": "energy-kcal_100g",
+          "value": 500,
+          "unit": "kcal"
+        },
+        {
+          "field": "fat_100g",
+          "value": 29,
+          "unit": "g"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "value": 18,
+          "unit": "g"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "value": 6,
+          "unit": "g"
+        },
+        {
+          "field": "proteins_100g",
+          "value": 41,
+          "unit": "g"
+        },
+        {
+          "field": "salt_100g",
+          "value": 1.1,
+          "unit": "g"
+        }
+      ],
+      "issues": [
+        "No se muestra lista de ingredientes ni tamaño del envase."
+      ]
+    },
+    {
+      "barcode": "7790787251780",
+      "control_id": "ilolay-40",
+      "url": "https://www.barcodelookup.com/7790787251780",
+      "status": "ficha_encontrada",
+      "visible_title": "Queso Rallado",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_brand": "Ilolay",
+      "visible_description": "Queso rallado. Serving size: 10g. Labels: En:green-dot. Country of origin: Spain.",
+      "visible_size": "40g",
+      "ingredients_snippet": "Quesos De Pasta Dura (leche Parcialmente Descremada Pasteurizada, Cultivos De Bacterias Lácticas Específicas, Cloruro De Sodio, Cloruro De Calcio, Enzimas Coagulantes)",
+      "visible_nutrition": "Energy 45 kcal (188 kJ), Fat 2.9 g, Saturated Fat 1.8 g, Carbohydrates 0.6 g, Protein 4.1 g, Salt 0.11 g.",
+      "declared_serving_g": 10,
+      "nutrients": [
+        {
+          "field": "energy-kcal_100g",
+          "value": 45,
+          "unit": "kcal"
+        },
+        {
+          "field": "fat_100g",
+          "value": 2.9,
+          "unit": "g"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "value": 1.8,
+          "unit": "g"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "value": 0.6,
+          "unit": "g"
+        },
+        {
+          "field": "proteins_100g",
+          "value": 4.1,
+          "unit": "g"
+        },
+        {
+          "field": "salt_100g",
+          "value": 0.11,
+          "unit": "g"
+        },
+        {
+          "field": "energy-kj_100g",
+          "value": 188,
+          "unit": "kJ"
+        }
+      ],
+      "issues": [
+        "Cifras nuevas en la captura; no asumir que son por 100 g.",
+        "País declarado Spain: pendiente verificar con el envase."
+      ]
+    },
+    {
+      "barcode": "7790787251803",
+      "control_id": "ilolay-carrefour",
+      "url": "https://www.barcodelookup.com/7790787251803",
+      "status": "no_encontrado_en_fuente",
+      "visible_message": "Barcode Doesn't Exist in Our Database",
+      "barcode_is_invalid": null
+    },
+    {
+      "barcode": "7793890001846",
+      "control_id": "sacaan",
+      "url": "https://www.barcodelookup.com/7793890001846",
+      "status": "ficha_encontrada",
+      "visible_title": "Pan De Hamburguesa Sacaan",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_description": "Pan de hamburguesa sacaan. Country of origin: Argentina.",
+      "ingredients_snippet": "Aguo, Imaf, Levadura, Gluten De Trigo, Sal, Aceite Vegetal Alta Oleico, Emulsionantes: Ins 4821 Y Ins 71",
+      "nutrients": [],
+      "issues": [
+        "Repite OCR Aguo, Imaf, INS 4821, INS 71; sin nueva lista nutricional visible."
+      ]
+    },
+    {
+      "barcode": "7792430608637",
+      "control_id": "bariloche-135",
+      "url": "https://www.barcodelookup.com/7792430608637",
+      "status": "no_encontrado_en_fuente",
+      "visible_message": "Barcode Doesn't Exist in Our Database",
+      "barcode_is_invalid": null
+    },
+    {
+      "barcode": "7792430608651",
+      "control_id": "bariloche-80",
+      "url": "https://www.barcodelookup.com/7792430608651",
+      "status": "no_encontrado_en_fuente",
+      "visible_message": "Barcode Doesn't Exist in Our Database",
+      "barcode_is_invalid": null
+    },
+    {
+      "barcode": "7790310983737",
+      "control_id": "doritos",
+      "url": "https://www.barcodelookup.com/7790310983737",
+      "status": "ficha_encontrada",
+      "visible_title": "Doritos",
+      "visible_brand": "Doritos,Pepsico",
+      "visible_description": "Doritos. Serving size: 25 g. Country of origin: Argentina.",
+      "visible_nutrition": "Energy 504 kcal (2110 kJ), Fat 32 g, Saturated Fat 3.6 g, Carbohydrates 48 g, Sugars 2.4 g, Fiber 8.8 g, Protein 5.6 g, Salt 1.66 g.",
+      "nutrition_basis": null,
+      "declared_serving_g": 25,
+      "salt_is_sodium": false,
+      "independence_from_other_sources": "no_demostrada",
+      "verified": false,
+      "blockers": [
+        "No se explicita si la lista nutricional es por 100 g o por la porcion mencionada en la descripcion.",
+        "Salt es sal, no sodium: no copiar 1.66 al campo de sodio.",
+        "No se comprobo sabor, tamano de envase, formula vigente ni procedencia por nutriente.",
+        "Una coincidencia con OFF u otro sitio no prueba fuentes independientes."
+      ],
+      "identity_verified": false,
+      "nutrients": [
+        {
+          "field": "energy-kcal_100g",
+          "value": 504,
+          "unit": "kcal"
+        },
+        {
+          "field": "fat_100g",
+          "value": 32,
+          "unit": "g"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "value": 3.6,
+          "unit": "g"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "value": 48,
+          "unit": "g"
+        },
+        {
+          "field": "proteins_100g",
+          "value": 5.6,
+          "unit": "g"
+        },
+        {
+          "field": "salt_100g",
+          "value": 1.66,
+          "unit": "g"
+        },
+        {
+          "field": "energy-kj_100g",
+          "value": 2110,
+          "unit": "kJ"
+        },
+        {
+          "field": "sugars_100g",
+          "value": 2.4,
+          "unit": "g"
+        },
+        {
+          "field": "fiber_100g",
+          "value": 8.8,
+          "unit": "g"
+        }
+      ]
+    },
+    {
+      "barcode": "77995681",
+      "control_id": "rhodesia",
+      "url": "https://www.barcodelookup.com/77995681",
+      "status": "ficha_encontrada",
+      "visible_title": "Rhodesia",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_manufacturer": "LEGO",
+      "visible_description": "Rhodesia. Serving size: 21g. Allergens: En:gluten,en:soybeans. Country of origin: Argentina.",
+      "visible_size": "22 g",
+      "ingredients_snippet": "Azúcar, Aceite Vegetal, Harina De Trigo Enriquecida (harina De Trigo, Hierro, ácido Fólico, Vitamina B1, Vitamina B2, Niacina)",
+      "visible_nutrition": "Energy 548 kcal (2290 kJ), Fat 29 g, Saturated Fat 15.7 g, Monounsaturated Fat 9.05 g, Polyunsaturated Fat 3.33 g, Cholesterol 0.000952 g, Carbohydrates 66.7 g, Sugars 47.6 g, Fiber 3.33 g, Protein 4.76 g, Salt 0.0524 g.",
+      "declared_serving_g": 21,
+      "nutrients": [
+        {
+          "field": "energy-kcal_100g",
+          "value": 548,
+          "unit": "kcal"
+        },
+        {
+          "field": "fat_100g",
+          "value": 29,
+          "unit": "g"
+        },
+        {
+          "field": "saturated-fat_100g",
+          "value": 15.7,
+          "unit": "g"
+        },
+        {
+          "field": "carbohydrates_100g",
+          "value": 66.7,
+          "unit": "g"
+        },
+        {
+          "field": "proteins_100g",
+          "value": 4.76,
+          "unit": "g"
+        },
+        {
+          "field": "salt_100g",
+          "value": 0.0524,
+          "unit": "g"
+        },
+        {
+          "field": "energy-kj_100g",
+          "value": 2290,
+          "unit": "kJ"
+        },
+        {
+          "field": "sugars_100g",
+          "value": 47.6,
+          "unit": "g"
+        },
+        {
+          "field": "fiber_100g",
+          "value": 3.33,
+          "unit": "g"
+        },
+        {
+          "field": "cholesterol_100g",
+          "value": 0.000952,
+          "unit": "g"
+        }
+      ],
+      "identity_conflict": true,
+      "issues": [
+        "Fabricante LEGO y atributos MPN 75292 / ASIN B0849GZMZH; características de nave Star Wars mezcladas con alimento.",
+        "Porción 21 g y tamaño 22 g: revisar; no aplicar esta ficha."
+      ]
+    },
+    {
+      "barcode": "0070847017332",
+      "control_id": "monster",
+      "url": "https://www.barcodelookup.com/0070847017332",
+      "status": "ficha_encontrada",
+      "visible_title": "Monster Punch",
+      "nutrition_basis": null,
+      "identity_verified": false,
+      "verified": false,
+      "visible_brand": "Monster Energy",
+      "visible_barcode_formats": "UPC-A 070847017332, EAN-13 0070847017332",
+      "visible_description": "Monster Punch. Serving size: 200 ml. Country of origin: Mexico.",
+      "visible_size": "474 ml",
+      "ingredients_snippet": "Sucralosa (5mg/100g)",
+      "visible_nutrition": "Carbohydrates 12.9 g, Sugars 11.5 g, Salt 0.152 g, Vitamin B2 0.0007 g, Vitamin PP 0.0048 g, Vitamin B6 0.0008 g, Vitamin B12 0.0000024 g.",
+      "declared_serving_ml": 200,
+      "nutrients": [
+        {
+          "field": "carbohydrates_100g",
+          "value": 12.9,
+          "unit": "g"
+        },
+        {
+          "field": "sugars_100g",
+          "value": 11.5,
+          "unit": "g"
+        },
+        {
+          "field": "salt_100g",
+          "value": 0.152,
+          "unit": "g"
+        }
+      ],
+      "other_nutrients_raw": [
+        "Vitamin B2 0.0007 g",
+        "Vitamin PP 0.0048 g",
+        "Vitamin B6 0.0008 g",
+        "Vitamin B12 0.0000024 g"
+      ],
+      "issues": [
+        "Ficha del mercado México; no demuestra fórmula argentina vigente.",
+        "No asumir 100 ml ni convertir 100 g a 100 ml."
+      ]
+    },
+    {
+      "barcode": "7798060850026",
+      "control_id": "tonadita",
+      "url": "https://www.barcodelookup.com/7798060850026",
+      "status": "no_encontrado_en_fuente",
+      "visible_message": "Barcode Doesn't Exist in Our Database",
+      "barcode_is_invalid": null,
+      "note": "La ficha no existe en esta fuente; no se invalida el codigo ni su evidencia de fase A."
+    }
+  ]
+}

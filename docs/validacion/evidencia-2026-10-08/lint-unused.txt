@@ -1,0 +1,4 @@
+
+> fitogenix-server@1.0.0 lint:unused
+> knip --production
+

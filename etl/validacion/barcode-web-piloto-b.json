@@ -1,0 +1,42 @@
+{
+  "phase": "B",
+  "date_recorded": "2026-10-08",
+  "method": "lectura_acotada_de_paginas_publicas_en_navegador",
+  "api_used": false,
+  "new_supabase_query": false,
+  "applied": false,
+  "verified": false,
+  "coverage_claim": "dos_codigos_de_la_muestra_existente_no_todo_el_catalogo",
+  "records": [
+    {
+      "barcode": "7798060850026",
+      "control_id": "tonadita",
+      "url": "https://www.barcodelookup.com/7798060850026",
+      "status": "no_encontrado_en_fuente",
+      "visible_message": "Barcode Doesn't Exist in Our Database",
+      "barcode_is_invalid": null,
+      "note": "La ficha no existe en esta fuente; no se invalida el codigo ni su evidencia de fase A."
+    },
+    {
+      "barcode": "7790310983737",
+      "control_id": "doritos",
+      "url": "https://www.barcodelookup.com/7790310983737",
+      "status": "ficha_encontrada_comparacion_pendiente",
+      "visible_title": "Doritos",
+      "visible_brand": "Doritos,Pepsico",
+      "visible_description": "Doritos. Serving size: 25 g. Country of origin: Argentina.",
+      "visible_nutrition": "Energy 504 kcal (2110 kJ), Fat 32 g, Saturated Fat 3.6 g, Carbohydrates 48 g, Sugars 2.4 g, Fiber 8.8 g, Protein 5.6 g, Salt 1.66 g.",
+      "nutrition_basis": null,
+      "declared_serving_g": 25,
+      "salt_is_sodium": false,
+      "independence_from_other_sources": "no_demostrada",
+      "verified": false,
+      "blockers": [
+        "No se explicita si la lista nutricional es por 100 g o por la porcion mencionada en la descripcion.",
+        "Salt es sal, no sodium: no copiar 1.66 al campo de sodio.",
+        "No se comprobo sabor, tamano de envase, formula vigente ni procedencia por nutriente.",
+        "Una coincidencia con OFF u otro sitio no prueba fuentes independientes."
+      ]
+    }
+  ]
+}

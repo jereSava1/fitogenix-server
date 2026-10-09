@@ -1,0 +1,4 @@
+
+> fitogenix-server@1.0.0 typecheck
+> tsc --noEmit && tsc -p tsconfig.scripts.json
+
