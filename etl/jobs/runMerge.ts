@@ -1,6 +1,6 @@
-// Uso: npm run etl:merge -- [--limit 200] [--enrich]
+// Uso: npm run etl:merge -- [--limit 200] [--retry-discarded]
 // Staging `pending` → merge por barcode → gate de completitud → upsert en `products`, de a
-// lotes. --enrich usa Claude (gasta tokens: no correr sin límite sin OK).
+// lotes. Nunca completa datos con IA (D-92).
 import 'dotenv/config'; // carga .env — este job corre standalone, no pasa por main.ts
 import { admin } from '../lib/supabaseAdmin';
 
@@ -17,16 +17,14 @@ import { mergeRawProducts, primarySourceOf } from '../lib/merge';
 import type { RawProduct } from '../../src/modules/catalog';
 import { isComplete } from '../lib/completeness';
 import { buildCachePayload } from '../../src/modules/catalog';
-import { enrichWithAI } from '../enrichment/claudeEnricher';
 
 function parseArgs() {
   const args = process.argv.slice(2);
   const limitIdx = args.indexOf('--limit');
   return {
     limit: limitIdx >= 0 ? Number(args[limitIdx + 1]) : 200,
-    enrich: args.includes('--enrich'),
     // Reintenta las filas que quedaron `discarded_incomplete` con la regla
-    // vieja (previa a la migración 010), sin gastar IA: hoy esa falta de
+    // vieja (previa a la migración 010): hoy esa falta de
     // ingredientes ya no descarta el producto, solo lo marca.
     retryDiscarded: args.includes('--retry-discarded'),
   };
@@ -62,16 +60,14 @@ async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, Ra
 }
 
 async function main() {
-  const { limit, enrich, retryDiscarded } = parseArgs();
-  const includeDiscarded = enrich || retryDiscarded;
-  console.log(`[runMerge] limit=${limit} enrich=${enrich ? 'SÍ (gasta tokens de Claude)' : 'no'}`);
+  const { limit, retryDiscarded } = parseArgs();
+  const includeDiscarded = retryDiscarded;
+  console.log(`[runMerge] limit=${limit}`);
 
-  // Con --enrich también se reintentan los `discarded_incomplete`: Claude puede completarlos.
   const barcodes = await fetchPendingBarcodes(limit, includeDiscarded);
   console.log(`[runMerge] ${barcodes.length} barcodes para procesar${includeDiscarded ? ' (incluye descartes previos)' : ''}`);
 
   let merged = 0;
-  let enrichedCount = 0;
   let discarded = 0;
   let procesados = 0;
 
@@ -83,7 +79,7 @@ async function main() {
     const payloads: Record<string, unknown>[] = [];
     // barcode -> filas que hay que marcar y con qué estado, una vez que
     // sepamos el id del producto resultante.
-    const pending: { barcode: string; rows: StagingRowFull[]; incomplete: boolean; wasEnriched: boolean }[] = [];
+    const pending: { barcode: string; rows: StagingRowFull[]; incomplete: boolean }[] = [];
 
     for (const barcode of chunk) {
       const allRows = rowsByBarcode.get(barcode) ?? [];
@@ -103,26 +99,19 @@ async function main() {
         ...allRows.map((r) => ({ source: r.source, raw: r.raw })),
         ...(existing ? [{ source: 'existing', raw: existing }] : []),
       ];
-      let combined = mergeRawProducts(entries, barcode);
-      let wasEnriched = false;
+      const combined = mergeRawProducts(entries, barcode);
 
       // Gate de DATOS vs. gate de SCORING (migración 010). Que no alcance para
       // puntuar no significa que el producto no sirva: el nombre, la marca y la
       // imagen son lo que le permite al usuario reconocer lo que escaneó.
       let incomplete = false;
-      if (!isComplete(combined)) {
-        if (enrich) {
-          combined = await enrichWithAI(combined);
-          wasEnriched = true;
-        }
-        incomplete = !isComplete(combined);
-      }
+      if (!isComplete(combined)) incomplete = true;
 
       const payload = buildCachePayload(combined, barcode);
       // El origen es la fuente de más prioridad del merge (off, vtex…).
       payload.data_source = primarySourceOf(entries);
       payloads.push(payload);
-      pending.push({ barcode, rows: trigger, incomplete, wasEnriched });
+      pending.push({ barcode, rows: trigger, incomplete });
     }
 
     if (payloads.length === 0) continue;
@@ -145,8 +134,7 @@ async function main() {
     const updates = pending.flatMap((p) => {
       const mergedInto = idByBarcode.get(p.barcode);
       if (!mergedInto) return [];
-      const status = (p.incomplete ? 'merged_incomplete' : p.wasEnriched ? 'enriched' : 'merged') as
-        'merged' | 'merged_incomplete' | 'enriched';
+      const status = p.incomplete ? ('merged_incomplete' as const) : ('merged' as const);
       return p.rows.map((row) => ({ row, status, mergedInto }));
     });
     await markStagingRowsBulk(updates);
@@ -154,7 +142,6 @@ async function main() {
     for (const p of pending) {
       merged++;
       if (p.incomplete) discarded++;
-      if (p.wasEnriched) enrichedCount++;
     }
     procesados += chunk.length;
 
@@ -164,7 +151,7 @@ async function main() {
   }
 
   console.log(
-    `[runMerge] listo. escritos=${merged} · de esos, sin datos para puntuar=${discarded} · enriquecidos con IA=${enrichedCount}`,
+    `[runMerge] listo. escritos=${merged} · de esos, sin datos para puntuar=${discarded}`,
   );
   if (discarded > 0) {
     console.log(

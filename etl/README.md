@@ -1,11 +1,10 @@
 # ETL — poblamiento masivo del catálogo
 
-Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawProduct` y `buildCachePayload` de la API pública de catalog (`src/modules/catalog/index.ts`) y el motor de `scoring`, sin duplicarlos; del server no importa nada más (regla `etl-solo-apis-publicas` de `lint:deps`). Tiene su propia config (`config.ts`: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` y, solo para enriquecer con IA, `ANTHROPIC_API_KEY`). No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts de `scripts/`. Hasta M-08 vivía en `scripts/etl/`.
+Código del ETL (este README es el cómo correrlo; la arquitectura objetivo está en [`docs/adr/0004-etl-fuera-del-runtime.md`](../docs/adr/0004-etl-fuera-del-runtime.md)). Vive acá, dentro de `fitogenix-server`, no en un repo aparte: reusa `RawProduct` y `buildCachePayload` de la API pública de catalog (`src/modules/catalog/index.ts`) y el motor de `scoring`, sin duplicarlos; del server no importa nada más (regla `etl-solo-apis-publicas` de `lint:deps`). Tiene su propia config (`config.ts`: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` y, solo para la limpieza con IA de `etl:fix-quality`, `ANTHROPIC_API_KEY`). No es parte del build de producción (`npm run build` solo compila `src/`) — corre standalone vía `tsx`, igual que los scripts de `scripts/`. Hasta M-08 vivía en `scripts/etl/`.
 
 ```
 etl/
 ├── config.ts       # env del ETL (no usa la del server)
-├── enrichment/     # claudeEnricher.ts: completa datos faltantes con IA (enrichWithAI)
 ├── quality/        # nutrientPlausibility.ts: rangos físicos plausibles
 ├── adapters/       # fuente cruda → RawProduct (nunca escriben nada)
 │   ├── offAdapter.ts
@@ -37,14 +36,11 @@ npm run etl:all
 # Con un país LATAM adicional:
 npm run etl:all -- --countries argentina,chile
 
-# Incluyendo enrichment con Claude (confirmá el volumen antes — gasta tokens):
-npm run etl:all -- --enrich
-
 # Evitar que el Mac se duerma a mitad de camino (recomendado, puede tardar):
 caffeinate -i npm run etl:all
 ```
 
-Hace, en orden: descarga el dump de OFF si no existe ya en `/tmp/off-products.jsonl.gz` (se salta el paso si ya está — no vuelve a bajar 11GB cada vez), `etl:off`, los 4 `etl:vtex` (Carrefour/Jumbo/Disco/Vea), `etl:merge`, `etl:stats`, y `etl:check-dupes`. Un solo comando, te avisa al final. `--enrich` sigue siendo opt-in explícito (ver "Nunca" más abajo) — `etl:all` NO lo prende solo.
+Hace, en orden: descarga el dump de OFF si no existe ya en `/tmp/off-products.jsonl.gz` (se salta el paso si ya está — no vuelve a bajar 11GB cada vez), `etl:off`, los 4 `etl:vtex` (Carrefour/Jumbo/Disco/Vea), `etl:merge`, `etl:stats`, y `etl:check-dupes`. Un solo comando, te avisa al final.
 
 ## Requisitos
 
@@ -70,19 +66,13 @@ npm run etl:vtex -- --domain www.jumbo.com.ar --source jumbo --pages 3 --pageSiz
 npm run etl:vtex -- --domain www.disco.com.ar --source disco --pages 3 --pageSize 50
 npm run etl:vtex -- --domain www.vea.com.ar --source vea --pages 3 --pageSize 50
 
-# 3. Merge — sin --enrich primero (no gasta tokens), para ver cuánto quedó completo solo con lo que trajimos:
+# 3. Merge (no completa datos con IA: D-92). Para ver cuánto quedó completo solo con lo que trajimos:
 npm run etl:merge -- --limit 200
 
 # 4. Verificar qué pasó:
 npm run etl:stats
 
-# 5. Recién si el resultado se ve bien y el volumen de "incompletos" lo justifica,
-#    correr merge de nuevo CON enrichment (confirmar antes con el Agente de Datos —
-#    esto gasta tokens de Claude):
-npm run etl:merge -- --limit 200 --enrich
-npm run etl:stats
-
-# 6. Chequear que ningún producto haya quedado duplicado:
+# 5. Chequear que ningún producto haya quedado duplicado:
 npm run etl:check-dupes
 ```
 
@@ -138,7 +128,7 @@ npm run etl:fix-quality -- --limit 200 --apply
 ```
 
 Nunca reescribe un campo con un dato INVENTADO — Claude (`lib/qualityAI.ts`,
-Haiku, separado de `enrichment/claudeEnricher.ts`, que completa datos faltantes al mergear) se
+Haiku) se
 usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
 
 - **brand vacío**: primero el diccionario determinístico (gratis). Si la
@@ -149,8 +139,8 @@ usa solo para CLASIFICAR y EXTRAER texto que ya está en la fila:
   porción real de ingredientes de la de fabricante/dirección/RNE-RNPA. La
   real queda en `ingredients_text`; la de fabricante se descarta (D-41). Si no hay nada rescatable,
   `ingredients_text` se anula — la fila vuelve a pasar por el gate de
-  completitud + `runMerge.ts` que ya existe (se re-busca un dato real antes
-  de recurrir a `--enrich`), nunca queda con un valor inventado.
+  completitud + `runMerge.ts` que ya existe (se re-busca un dato real en las
+  fuentes), nunca queda con un valor inventado.
 
 ## Verificar sin correr nada (directo en el SQL Editor de Supabase)
 
@@ -168,6 +158,6 @@ from products order by updated_at desc limit 10;
 
 ## Nunca
 
-- Correr `etl:merge -- --enrich` sin límite y sin haber confirmado presupuesto con el responsable del proyecto — gasta tokens de Claude en lote.
+- Completar datos faltantes con IA: se sacó del ETL (D-92). La IA solo transcribe etiquetas publicadas (D-96).
 - Subir el `.env` a git (ya está en `.gitignore`, verificado).
 - Escalar `--pages`/`--limit` a valores grandes antes de revisar los resultados del subconjunto chico.

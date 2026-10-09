@@ -1,4 +1,5 @@
 import type { RawProduct } from '../../src/modules/catalog';
+import { hasNutrientData } from './completeness';
 
 export type StagingEntry = { source: string; raw: RawProduct };
 
@@ -47,6 +48,10 @@ function isUsable(field: keyof RawProduct, v: unknown, barcode?: string): boolea
     case 'image_url':
     case 'image_front_url':
       return /^https?:\/\//i.test(s);
+
+    case 'nutriments':
+      // Un bloque sin nutrientes (solo `nova-group`, por ejemplo) no le gana a una tabla real.
+      return hasNutrientData(v as Record<string, unknown>);
 
     case 'ingredients_text':
       // Mismo umbral que el gate de completitud: menos que esto no es una
