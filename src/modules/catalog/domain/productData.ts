@@ -11,12 +11,16 @@ const EMPTY_NUTRITION: NutritionFacts = {
 export function extractNutrition(nutriments?: Record<string, unknown>): NutritionFacts {
   if (!nutriments) return EMPTY_NUTRITION;
 
-  const read = (key: string): number | null => {
+  const read = (key: string, scale = 1): number | null => {
     const raw = nutriments[`${key}_100g`] ?? nutriments[key];
-    if (raw == null || Number.isNaN(Number(raw))) return null;
-    return Math.round(parseFloat(String(raw)) * 10) / 10;
+    if (typeof raw !== 'number' && typeof raw !== 'string') return null;
+    if (typeof raw === 'string' && raw.trim() === '') return null;
+    const value = Number(raw) * scale;
+    if (!Number.isFinite(value)) return null;
+    // Convertir antes de redondear: 0,046 g debe conservarse como 46 mg.
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isFinite(rounded) ? rounded : null;
   };
-  const toMilligrams = (value: number | null) => (value != null ? Math.round(value * 1000) : null);
 
   return {
     calories: read('energy-kcal'),
@@ -25,10 +29,10 @@ export function extractNutrition(nutriments?: Record<string, unknown>): Nutritio
     sugars: read('sugars'),
     fats: read('fat'),
     satFats: read('saturated-fat'),
-    sodium: toMilligrams(read('sodium')),
+    sodium: read('sodium', 1000),
     fiber: read('fiber'),
     transFat: read('trans-fat'),
-    cholesterol: toMilligrams(read('cholesterol')),
+    cholesterol: read('cholesterol', 1000),
   };
 }
 
@@ -45,7 +49,9 @@ export function extractCategory(categories?: string): string {
     .split(':')
     .pop()!
     .replace(/-/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/(^|[^\p{L}\p{M}\p{N}_])(\p{L})/gu, (_match, prefix: string, char: string) =>
+      prefix + char.toUpperCase(),
+    );
 }
 
 /** El nombre sin paréntesis, corchetes, códigos de barras ni gramajes; sin nombre, `fallback`. */

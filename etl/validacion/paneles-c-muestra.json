@@ -1,0 +1,21 @@
+[
+  {
+    "evidence_id": "tonadita-foto-aportada-porcion-10g",
+    "product": "Manteca Clásica Tonadita 200 g",
+    "provenance": "Foto aportada por Guille en esta conversación; confirmación explícita de sodio 20 mg. No se infieren ceros a partir de cantidades no significativas.",
+    "basis": {"amount": 10, "unit": "g"},
+    "nutrients": [
+      {"field": "calories", "value": 75, "unit": "kcal"},
+      {"field": "fats", "value": 8.3, "unit": "g"},
+      {"field": "satFats", "value": 5, "unit": "g"},
+      {"field": "sodium", "value": 20, "unit": "mg"}
+    ]
+  },
+  {
+    "evidence_id": "doritos-referencia-usuario-168mg-25g",
+    "product": "Doritos; referencia para contraste",
+    "provenance": "Guille indicó supuestamente 168 mg por 25 g; se prueba el cálculo, sin dar por resuelta la fuente/fórmula frente a la captura de 664 mg/100 g.",
+    "basis": {"amount": 25, "unit": "g"},
+    "nutrients": [{"field": "sodium", "value": 168, "unit": "mg"}]
+  }
+]
