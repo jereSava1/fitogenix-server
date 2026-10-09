@@ -1,6 +1,7 @@
 // §6 "Antes de evaluar: limpiar la lista": parseo del rotulado, en el orden del documento
 // (alérgenos, traducción, normalización, "y/o", paréntesis).
 
+import { codeNamesAdditive } from './catalog';
 import { normalizeText } from './text';
 import {
   ALLERGEN_PREAMBLE,
@@ -48,18 +49,116 @@ function splitAllergenWarnings(text: string): AllergenSplit {
 }
 
 /* ────────────────────────────────────────────────────────────
+   Texto del envase que no es un ingrediente (se lee, no se toca la base)
+   ──────────────────────────────────────────────────────────── */
+
+const LOOSE_UNITS = /\b(?:\d+(?:[.,]\d+)?\s*)?(?:mg\s*\/\s*kg|mg\s*\/\s*100\s*g|g\s*\/\s*100\s*g)\b/giu;
+const LABEL_HEADING = /(^|[\r\n.;])\s*ingredientes\s*[:,]\s*/giu;
+const STORAGE_PHRASE =
+  /\b(?:mantener en lugar (?:fresco|seco)|conservar refrigerado|una vez abierto|mantener refrigerado)\b[^.\r\n;]*[.;]?/giu;
+const NO_CHOLESTEROL =
+  /\beste producto, al igual que todos los de origen vegetal,\s*no contiene colesterol\s*[.]?/giu;
+const CONTAINS_DECLARATION = /(^|[.;\r\n])(\s*)(contiene(?:n)?\s+[^.;\r\n]+)[.;]?/giu;
+
+function depthAt(text: string, position: number): number {
+  let depth = 0;
+  for (const char of text.slice(0, position)) {
+    if (char === '(' || char === '[') depth++;
+    if (char === ')' || char === ']') depth--;
+  }
+  return depth;
+}
+
+/** Unidades sueltas ("hierro 30 mg/kg"): salen. Una cantidad pegada a su ingrediente dentro del
+ *  paréntesis ("sucralosa (5mg/100g)") es información y se conserva. */
+function removeLooseUnits(text: string): string {
+  return text.replace(LOOSE_UNITS, (match, offset: number) => {
+    const before = text.slice(0, offset);
+    const after = text.slice(offset + match.length);
+    const quantityOfIngredient =
+      depthAt(text, offset) === 1 &&
+      /^\d/u.test(match) &&
+      /(?:^|[,;])\s*[\p{L}\p{M}][\p{L}\p{M}\s-]*\(\s*$/u.test(before) &&
+      /^\s*\)/u.test(after);
+    return quantityOfIngredient ? match : ' ';
+  });
+}
+
+const MANUFACTURER_TAIL =
+  /\b(?:elaborado por|elaborado en|envasado por|comercializado por|rne|rnpa|industria argentina|establecimiento)\b/giu;
+
+/** Desde la marca del fabricante hasta el final no es ingrediente ("Elaborado por: Coca-Cola…, RNE…").
+ *  Solo en el nivel superior y solo si después no sigue ningún ingrediente: si la marca está al
+ *  principio o en el medio de la lista, no se corta. */
+function cutManufacturerTail(text: string, resolves: ResolvesPredicate): string {
+  for (const match of text.matchAll(MANUFACTURER_TAIL)) {
+    const at = match.index ?? 0;
+    if (depthAt(text, at) !== 0) continue;
+    if (splitPlain(text.slice(at)).some(resolves)) return text;
+    return text.slice(0, at);
+  }
+  return text;
+}
+
+/** "Contiene leche y soja.": es una declaración del envase, no un ingrediente. Solo en el nivel
+ *  superior y sin tocar "no contiene". Devuelve el texto sin ellas y las declaraciones tal cual. */
+function extractContainsDeclarations(text: string): { rest: string; declarations: string[] } {
+  const declarations: string[] = [];
+  const rest = text.replace(CONTAINS_DECLARATION, (match, lead: string, _space: string, phrase: string, offset: number) => {
+    const at = offset + lead.length;
+    if (depthAt(text, at) !== 0 || /\bno\s*$/iu.test(text.slice(0, at))) return match;
+    declarations.push(phrase.trim());
+    return lead;
+  });
+  return { rest, declarations };
+}
+
+/* ────────────────────────────────────────────────────────────
    Paso 3 — Normalizar y separar
    ──────────────────────────────────────────────────────────── */
 
 /** Separadores de §6.3 más dos del rotulado real: ". " (sin tocar decimales) y ":" en medio
- *  de la lista (OCR). El guion solo con espacios alrededor ("E-471" es uno). */
-const SEPARATORS = /[,;:\r\n]|\s[-–—]\s|\.(?=\s|$)/;
+ *  de la lista (OCR). El guion solo con espacios alrededor ("E-471" es uno). La "y" solo separa
+ *  dos códigos de aditivo ("INS 4821 y INS 471"). */
+const SEPARATORS =
+  /[,;\r\n]|\s[-–—]\s|\.(?=\s|$)|(?<=\b(?:e|ins)\s?\d{3,4}[a-d]?)\s+y\s+(?=(?:e|ins)\s?\d{3,4})/i;
 
-function splitFragments(text: string): string[] {
+/** Las funciones de aditivo que el rotulado escribe antes de nombrarlo: "Emulsionantes: …". */
+const ADDITIVE_FUNCTION =
+  /^(?:emulsionantes?|conservadores?|conservantes?|aromatizantes?|saborizantes?|colorantes?|estabilizantes?|antioxidantes?|acidulantes?|acidificantes?|espesantes?|reguladores? de acidez|humectantes?|edulcorantes?|gelificantes?|antiaglutinantes?)\b/i;
+
+function splitPlain(text: string): string[] {
   return text
     .split(SEPARATORS)
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
+}
+
+/** "Función: aditivo" y "aditivo: códigos" se leen como "función (aditivo)", igual que con
+ *  paréntesis: si lo de después resuelve, el encabezado cede. Cualquier otro ":" es un
+ *  separador del OCR ("cacao: canela"). */
+function splitColon(piece: string, resolves: ResolvesPredicate): Fragment[] {
+  const at = piece.indexOf(':');
+  if (at < 0) return [{ text: piece, nested: false }];
+
+  const head = piece.slice(0, at).trim();
+  const rest = splitPlain(piece.slice(at + 1)).flatMap((part) => splitColon(part, resolves).map((f) => f.text));
+  const restIsCodes = rest.length > 0 && rest.every((part) => ADDITIVE_CODE.test(part));
+  const isFunction = ADDITIVE_FUNCTION.test(head) && !/,|\sy\s/i.test(head);
+
+  if (isFunction && rest.some(resolves)) return rest.map((text) => ({ text, nested: true }));
+  if (restIsCodes && rest.some(resolves)) {
+    // "lecitina de soja: ins 322, ins 476": si el código es el mismo aditivo que el nombre, se conserva el nombre.
+    // Si no coincide con ninguno, el encabezado es una función ("emu", "mejorador") y cede.
+    const others = rest.filter((code) => !codeNamesAdditive(code, head));
+    const kept = others.length < rest.length ? [{ text: head, nested: false }] : [];
+    return [...kept, ...others.map((text) => ({ text, nested: true }))];
+  }
+  return [head, ...rest].filter((part) => part.length > 0).map((text) => ({ text, nested: false }));
+}
+
+function splitFragments(text: string, resolves: ResolvesPredicate): Fragment[] {
+  return splitPlain(text).flatMap((piece) => splitColon(piece, resolves));
 }
 
 interface StrippedFragment {
@@ -132,7 +231,7 @@ function flattenParentheses(text: string, resolves: ResolvesPredicate): Fragment
     if (!pending || dropContainer) return;
     // El buffer puede traer más de un ingrediente adentro cuando el separador
     // no fue una coma (dos puntos, guion suelto): se vuelve a partir acá.
-    for (const part of splitFragments(pending)) out.push({ text: part, nested: false });
+    out.push(...splitFragments(pending, resolves));
   };
 
   for (const char of text) {
@@ -147,7 +246,7 @@ function flattenParentheses(text: string, resolves: ResolvesPredicate): Fragment
       depth -= 1;
       if (depth > 0) { inner += char; continue; }
 
-      const parts = splitFragments(inner);
+      const parts = splitFragments(inner, resolves).map((f) => f.text);
       const isSublist = parts.some(resolves);
       flush(isSublist);
       if (isSublist) for (const part of parts) out.push({ text: part, nested: true });
@@ -163,7 +262,7 @@ function flattenParentheses(text: string, resolves: ResolvesPredicate): Fragment
 
   // Paréntesis sin cerrar: no se pierde el contenido.
   if (depth > 0 && inner.trim()) {
-    for (const part of splitFragments(inner)) out.push({ text: part, nested: true });
+    for (const part of splitFragments(inner, resolves)) out.push({ text: part.text, nested: true });
   }
   flush(false);
 
@@ -181,9 +280,19 @@ export function cleanIngredientList(
 ): CleanedList {
   const source = (ingredientsText ?? '')
     .replace(/<[^>]+>/g, ' ')
-    .replace(INGREDIENTS_PREAMBLE, '');
+    .replace(INGREDIENTS_PREAMBLE, '')
+    // "art." es una abreviatura ("aroma art. a vainilla"): su punto no separa.
+    .replace(/\bart\.(?=\s)/gi, 'art')
+    // Un salto de línea después de un conector es el corte de renglón del OCR, no un separador.
+    .replace(/\b(de|del|con|en|al|la|el|los|las|para|sin|por)[ \t]*\r?\n[ \t]*(?=\p{L})/giu, '$1 ')
+    .replace(NO_CHOLESTEROL, ' ')
+    .replace(STORAGE_PHRASE, ' ')
+    .replace(LABEL_HEADING, '$1 ');
 
-  const { list, warnings } = splitAllergenWarnings(source);
+  const { rest, declarations } = extractContainsDeclarations(removeLooseUnits(source));
+  const { list: untrimmed, warnings: traces } = splitAllergenWarnings(rest);
+  const list = cutManufacturerTail(untrimmed, resolves);
+  const warnings = [...declarations, ...traces];
 
   const items: CleanIngredient[] = [];
   const certificationsRemoved: string[] = [];

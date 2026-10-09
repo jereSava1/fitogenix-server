@@ -1,0 +1,32 @@
+{
+  "permission_reported_by": null,
+  "permission_scope": "sin_permiso_scraping_mensaje_previo_rectificado_por_Guille",
+  "total": 81444,
+  "previous_completed": 15,
+  "new_completed": 10,
+  "completed": 25,
+  "found": 9,
+  "not_found": 16,
+  "blocked_attempts": 1,
+  "not_attempted": 81418,
+  "pending": 81419,
+  "pending_batches": 1629,
+  "last_batch": 19,
+  "status": "scraping_detenido_evaluacion_de_api_pendiente",
+  "background_worker_running": false,
+  "terms_permission_pending": true,
+  "database_writes": false,
+  "published": false,
+  "previous_coverage_sha256": "5370bd5b23b2ae43a759d01d08a6c42eb56aeb92ccb2272e34cc0fbd004766c0",
+  "checks": [
+    "81.444 filas conservadas",
+    "25 resueltas + 81.419 pendientes = 81.444",
+    "403 distinto de no encontrado",
+    "tandas completas sin omisiones ni códigos repetidos"
+  ],
+  "permission_correction": "El usuario aclara malentendido: no existe permiso del dueño",
+  "source_scraping_permission": false,
+  "api_purchased": false,
+  "api_called": false,
+  "api_recommendation": "prueba_oficial_acotada_antes_de_pagar_barrido_completo"
+}

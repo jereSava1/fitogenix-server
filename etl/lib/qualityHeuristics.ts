@@ -31,6 +31,132 @@ export function checkIngredientsText(text: string | null | undefined): Ingredien
   return { suspect: reasons.length > 0, reasons };
 }
 
+export type IngredientsIssueRule =
+  | 'rotulo'
+  | 'alergenos'
+  | 'conservacion'
+  | 'fabricante'
+  | 'sin_colesterol'
+  | 'fortificacion'
+  | 'sin_gluten'
+  | 'unidades'
+  | 'abreviatura'
+  | 'parentesis'
+  | 'saltos'
+  | 'ins_repetido';
+
+/** `declaracion`: texto legítimo del envase (alérgenos, "sin TACC") que no es ingrediente.
+ *  `contaminacion`: texto de otra parte de la etiqueta. `estructura`: el formato del texto está roto. */
+export type IngredientsIssueKind = 'declaracion' | 'contaminacion' | 'estructura';
+
+export type IngredientsIssue = {
+  rule: IngredientsIssueRule;
+  kind: IngredientsIssueKind;
+  fragment: string;
+  start: number;
+  end: number;
+};
+
+type TextRule = { rule: IngredientsIssueRule; kind: IngredientsIssueKind; pattern: RegExp };
+
+const TEXT_RULES: TextRule[] = [
+  { rule: 'rotulo', kind: 'contaminacion', pattern: /(?:^|[\r\n])\s*ingredientes\s*[:,]/giu },
+  {
+    rule: 'alergenos',
+    kind: 'declaracion',
+    pattern: /\b(?:contiene(?:n)?|puede(?:n)? contener(?: trazas de)?)\s+[^.\r\n;]+[.;]?/giu,
+  },
+  {
+    rule: 'conservacion',
+    kind: 'contaminacion',
+    pattern:
+      /\b(?:mantener en lugar (?:fresco|seco)|conservar refrigerado|una vez abierto|mantener refrigerado)\b[^.\r\n;]*[.;]?/giu,
+  },
+  {
+    rule: 'fabricante',
+    kind: 'contaminacion',
+    pattern: /\b(?:elaborado por|elaborado en|industria argentina|RNE|RNPA|establecimiento)\b[^.\r\n;]*[.;]?/giu,
+  },
+  {
+    rule: 'sin_colesterol',
+    kind: 'declaracion',
+    pattern: /\bEste producto, al igual que todos los de origen vegetal,\s*NO CONTIENE COLESTEROL\s*[.]?/giu,
+  },
+  { rule: 'fortificacion', kind: 'declaracion', pattern: /\bseg[uú]n la ley\b[^\r\n]*/giu },
+  { rule: 'sin_gluten', kind: 'declaracion', pattern: /\b(?:sin T\.?A\.?C\.?C\.?|libre de\s+gluten)\b/giu },
+  {
+    rule: 'unidades',
+    kind: 'contaminacion',
+    pattern: /\b(?:\d+(?:[.,]\d+)?\s*)?(?:mg\s*\/\s*kg|mg\s*\/\s*100\s*g|g\s*\/\s*100\s*g)\b/giu,
+  },
+  // "art. a vainilla": el punto de la abreviatura parte el ingrediente en el parseo.
+  { rule: 'abreviatura', kind: 'estructura', pattern: /\bart\.(?=\s)/giu },
+];
+
+function parenthesisDepthAt(text: string, position: number): number {
+  let depth = 0;
+  for (const char of text.slice(0, position)) {
+    if (char === '(') depth++;
+    if (char === ')') depth--;
+  }
+  return depth;
+}
+
+function hasBalancedParentheses(text: string): boolean {
+  let depth = 0;
+  for (const char of text) {
+    if (char === '(') depth++;
+    if (char === ')' && --depth < 0) return false;
+  }
+  return depth === 0;
+}
+
+/** Texto de `ingredients_text` que no es ingrediente o está mal formado, con la posición de cada
+ *  hallazgo. No decide qué hacer con la fila: las declaraciones de alérgenos son legítimas y
+ *  vaciar el texto por ellas sería un error. No toca `checkIngredientsText`, que usa `etl:fix-quality`. */
+export function findIngredientsTextIssues(text: string | null | undefined): IngredientsIssue[] {
+  if (!text || !text.trim()) return [];
+  const issues: IngredientsIssue[] = [];
+
+  for (const { rule, kind, pattern } of TEXT_RULES) {
+    for (const match of text.matchAll(pattern)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+      // "NO contiene gluten" no declara un alérgeno.
+      if (rule === 'alergenos' && /\bno\s*$/iu.test(text.slice(0, start))) continue;
+      // "sucralosa (5mg/100g)": una cantidad dentro del paréntesis de su ingrediente es información.
+      if (
+        rule === 'unidades' &&
+        parenthesisDepthAt(text, start) === 1 &&
+        /^\d/u.test(match[0]) &&
+        /(?:^|[,;])\s*[\p{L}\p{M}][\p{L}\p{M}\s-]*\(\s*$/u.test(text.slice(0, start)) &&
+        /^\s*\)/u.test(text.slice(end))
+      ) {
+        continue;
+      }
+      issues.push({ rule, kind, fragment: match[0], start, end });
+    }
+  }
+
+  if (!hasBalancedParentheses(text)) {
+    issues.push({ rule: 'parentesis', kind: 'estructura', fragment: text, start: 0, end: text.length });
+  }
+  if (/[\r\n]/u.test(text)) {
+    issues.push({ rule: 'saltos', kind: 'estructura', fragment: text, start: 0, end: text.length });
+  }
+
+  const seenCodes = new Set<string>();
+  for (const match of text.matchAll(/\bINS\s*(?:n[°º]?\s*)?(\d+[a-z]?)/giu)) {
+    const code = match[1].toLowerCase();
+    if (seenCodes.has(code)) {
+      const start = match.index ?? 0;
+      issues.push({ rule: 'ins_repetido', kind: 'estructura', fragment: match[0], start, end: start + match[0].length });
+    }
+    seenCodes.add(code);
+  }
+  return issues;
+}
+
 /** Una marca conocida (de otras filas) como palabra completa en `product_name`. Las más
  *  largas primero, para que "Molinos Río de la Plata" le gane a "La". */
 export function findBrandInName(
@@ -53,4 +179,9 @@ export function findBrandInName(
 }
 
 // Re-export: el chequeo de rangos vive en quality/nutrientPlausibility.ts.
-export { findImplausibleNutrients, type ImplausibleNutrient } from '../quality/nutrientPlausibility';
+export {
+  findImplausibleNutrients,
+  findNutrientInconsistencies,
+  type ImplausibleNutrient,
+  type NutrientInconsistency,
+} from '../quality/nutrientPlausibility';

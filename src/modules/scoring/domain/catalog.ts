@@ -59,3 +59,14 @@ export function descriptionFor(text: string): string | null {
 export function findAdditive(tag: string): Additive | undefined {
   return ADDITIVES[tag];
 }
+
+/** ¿Este código ("INS 322", "E-322i") es el mismo aditivo que `name` ("lecitina de soja")? */
+export function codeNamesAdditive(code: string, name: string): boolean {
+  const match = /^(?:e|ins)\s?-?(\d{3,4})\s?([a-d])?$/i.exec(code.trim());
+  if (!match) return false;
+  const haystack = normalizeText(name);
+  return [`en:e${match[1]}${(match[2] ?? '').toLowerCase()}`, `en:e${match[1]}`].some((tag) => {
+    const additive = findAdditive(tag);
+    return additive != null && haystack.includes(normalizeText(additive.name));
+  });
+}

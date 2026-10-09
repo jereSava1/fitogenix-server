@@ -80,6 +80,8 @@ export function toProductSummary(raw: RawProduct, identity: ProductIdentity): Pr
   return summaryOf(raw, identity, scoreProduct(raw).score);
 }
 
+const ALLERGEN_DECLARATION_DESC = 'Declaración de alérgenos del envase';
+
 export function toProductDetail(raw: RawProduct, identity: ProductIdentity): ProductDetail {
   const breakdown = scoreProduct(raw);
   const { fito, highlight } = presentScore(breakdown.score);
@@ -93,7 +95,11 @@ export function toProductDetail(raw: RawProduct, identity: ProductIdentity): Pro
     // Del MISMO breakdown, no de una segunda pasada: la posición de cada
     // ingrediente y su resta son parte del cálculo, así que la lista siempre
     // le corresponde al puntaje que se muestra.
-    ingredients: breakdown.ingredients.map(({ name, sev, desc }) => ({ name, sev, desc })),
+    ingredients: [
+      ...breakdown.ingredients.map(({ name, sev, desc }) => ({ name, sev, desc })),
+      // Las declaraciones de alérgenos del envase no cuentan para el puntaje, pero siguen visibles.
+      ...breakdown.allergenWarnings.map((name) => ({ name, sev: 'gray' as const, desc: ALLERGEN_DECLARATION_DESC })),
+    ],
     nutrition: extractNutrition(raw.nutriments),
   };
 }

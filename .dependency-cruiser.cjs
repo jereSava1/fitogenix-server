@@ -1,10 +1,6 @@
 /**
- * Reglas de dependencias entre módulos y capas (docs/02-arquitectura.md §6,
- * ADR-0001, ADR-0002). Se corre con `npm run lint:deps` y en CI.
- *
- * Todas las reglas están en `error` desde M-10 (docs/05-plan.md): durante la
- * etapa 4 estuvieron en `warn` mientras se armaba src/modules/ de a un módulo
- * por PR. Una violación nueva rompe el CI.
+ * Reglas de dependencias entre módulos y capas (docs/arquitectura.md, ADR-0001,
+ * ADR-0002). Se corre con `npm run lint:deps` y en CI; una violación rompe el CI.
  */
 
 /** Módulos de negocio bajo src/modules/. */
@@ -73,7 +69,7 @@ module.exports = {
       name: 'catalog-no-conoce-consumidores',
       severity: 'error',
       comment:
-        'catalog no importa user-library, account ni feedback. El registro del escaneo se inyecta desde main.ts (02-arquitectura.md §3.3).',
+        'catalog no importa user-library, account ni feedback. El registro del escaneo se inyecta desde registerModules.ts.',
       from: { path: '^src/modules/catalog/' },
       to: { path: '^src/modules/(user-library|account|auth|feedback)/' },
     },

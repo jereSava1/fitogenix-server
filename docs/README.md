@@ -1,43 +1,40 @@
-# Documentación de fitogenix-server
+# Documentación
 
-Auditoría, requisitos, arquitectura objetivo y plan de limpieza de Fitogenix (server + app native), elaborados el 2026-09-28 sobre `main`.
-
-**Fuentes de verdad**, en este orden: el código que efectivamente corre, el schema real de Supabase y las decisiones registradas acá. Los documentos del repo `fitogenix-agents` (CONTEXT, BITÁCORA, ADRs `ADR-00x`, tareas FTG-*) **no** son fuente de verdad.
-
-## Por dónde empezar
+Fuentes de verdad, en este orden: el código que corre, el schema de Supabase y estos documentos. El repo `fitogenix-agents` (CONTEXT, BITÁCORA, ADRs de tres dígitos, tareas FTG-*) **no** es fuente de verdad.
 
 | Si querés… | Leé |
 |---|---|
-| Saber qué se decidió y por qué | [`decisiones.md`](decisiones.md) (índice único, D-01 a D-92) |
-| Probar la app a mano y ver lo que se encontró | [`pruebas-manuales.md`](pruebas-manuales.md) |
-| Deployar, pasar a `main` o volver atrás un deploy | [`deploy.md`](deploy.md) |
-| Entender cómo está el sistema hoy | [`00-inventario.md`](00-inventario.md) |
-| Saber qué tiene que hacer el sistema | [`01-requerimientos.md`](01-requerimientos.md) |
-| Ver cómo se va a organizar el server | [`02-arquitectura.md`](02-arquitectura.md) y [`adr/`](adr/README.md) |
-| Ver la API y los datos (endpoints, campos, tablas) | [`03-contratos.md`](03-contratos.md) |
-| Ver qué falta, qué sobra y qué está roto | [`04-analisis.md`](04-analisis.md) |
-| Ver el plan de trabajo | [`05-plan.md`](05-plan.md) (backlog por etapas + Definition of Done) |
-| Entender el criterio del puntaje y su fundamento | [`dominio-scoring.md`](dominio-scoring.md) |
-| Ver el plan para un catálogo con datos verificados (antes de tocar el puntaje) | [`06-catalogo-confiable.md`](06-catalogo-confiable.md) |
-| Ver lo que se dejó para más adelante | [`deuda-tecnica.md`](deuda-tecnica.md) |
+| Saber qué tiene que hacer el sistema y qué falta | [requerimientos.md](requerimientos.md) |
+| Entender cómo está armado (server, base, contrato, ETL) | [arquitectura.md](arquitectura.md) y [adr/](adr/README.md) |
+| Ver la API | [`contract/openapi.json`](../contract/openapi.json) |
+| Saber qué se decidió | [decisiones.md](decisiones.md) |
+| Entender el puntaje y su fundamento | [dominio-scoring.md](dominio-scoring.md) |
+| Entender qué problemas tiene la base de productos | [analisis_BD_Productos.md](analisis_BD_Productos.md) |
+| Ver el plan del catálogo verificado | [06-catalogo-confiable.md](06-catalogo-confiable.md) |
+| Ver el plan de acción y de purga del catálogo, a partir del trabajo de Guille | [plan-accion-catalogo.md](plan-accion-catalogo.md) y [validacion/README.md](validacion/README.md) |
+| Ver lo que se dejó para más adelante | [deuda-tecnica.md](deuda-tecnica.md) |
+| Deployar o volver atrás | [deploy.md](deploy.md) |
+| Probar la app a mano | [pruebas-manuales.md](pruebas-manuales.md) y [checklist-accesibilidad.md](checklist-accesibilidad.md) |
 
-## Contenido
+La arquitectura de la app está en su repo: `fitogenix-native/docs/arquitectura.md`.
 
-| Ruta | Qué es |
-|---|---|
-| `00-inventario.md` … `05-plan.md` | Un documento por fase de la auditoría |
-| `decisiones.md` | Registro único de decisiones |
-| `dominio-scoring.md` | Qué evalúa el motor, cómo se arma el puntaje, bandas y sello, los octógonos y la norma que los fundamenta, y los temas abiertos del motor |
-| `deploy.md` | Deploy con Docker en Render, protección de `main`, paso del refactor a `main` y rollback (R-06) |
-| `checklist-accesibilidad.md` | Checklist manual de F-13 (VoiceOver, TalkBack, letra grande y reducir movimiento) |
-| `deuda-tecnica.md` | Temas diferidos (catálogo limpio, cobertura del 95%, contenido neto, hosting de imágenes, analítica, calidad del motor) |
-| `adr/` | Decisiones de arquitectura (ADR-0001 a ADR-0011) con contexto, alternativas y consecuencias |
-| `borradores/dependency-cruiser.cjs` | Borrador original de las reglas de dependencias (ya copiado a la raíz como `.dependency-cruiser.cjs` en M-01) |
-| `sql/fase3-schema-real.sql` | Consultas de solo lectura usadas para relevar Supabase |
-| `sql/c05/` | C-05: procedimiento para generar la baseline de migraciones con la CLI de Supabase |
-| `sql/u01/` | U-01: verificación, cambio y rollback para cerrar el catálogo a la anon key, con el procedimiento y las pruebas |
-| `raw/` | Salidas crudas de herramientas (knip, madge, tsc, vitest, dependency-cruiser), schema real de Supabase, migración 015 aplicada en producción y el patch del arreglo de paginación del ETL |
+## Definition of Done
 
-## Regla de mantenimiento
+Un PR está terminado cuando:
 
-Todo cambio de código que altere algo descrito acá (un endpoint, un campo, una tabla, una decisión) actualiza el documento correspondiente **en el mismo PR**. La regla completa ("Definition of Done") está en `05-plan.md`.
+1. **Tests:** pasan, incluidos los de las zonas de alto riesgo (scoring y auth). Si un cambio rompe a propósito un test de caracterización, el test se actualiza en el mismo PR, con el motivo. Nunca se borra para que pase.
+2. **CI verde:** typecheck, tests, `lint:deps`, `lint:unused`, `contract:check`, imagen Docker y migraciones. En native: `tsc`, lint, knip, `contract:check` y tests.
+3. **Tamaño:** menos de ~400 líneas de diff sin contar renombres, y se puede revertir con `git revert`.
+4. **Contrato:** si cambia un endpoint, se regenera `contract/` y se actualiza `contract/CHANGELOG.md`. Native regenera sus tipos en un PR enlazado.
+5. **Base:** toda migración vive en `supabase/migrations/`, con su rollback escrito, RLS activo y sin grants para `anon` (ADR-0009).
+6. **Docs en el mismo PR:**
+   - Si cambia un requisito → [requerimientos.md](requerimientos.md).
+   - Si cambia un módulo, una tabla o una regla de arquitectura → [arquitectura.md](arquitectura.md).
+   - Si se decide algo nuevo → una fila en [decisiones.md](decisiones.md), y un ADR si es de arquitectura.
+   - Si algo se difiere → [deuda-tecnica.md](deuda-tecnica.md).
+7. **Seguridad:** sin secretos en el código, en los logs ni en `docs/`. Toda variable nueva va documentada en `.env.example`.
+8. **Revisión:** los PRs que tocan scoring, auth, el contrato o la base tienen una revisión explícita de esas partes.
+
+## Otros archivos
+
+- `sql/b03-rollback.sql`: ejemplo de SQL de vuelta para una migración.

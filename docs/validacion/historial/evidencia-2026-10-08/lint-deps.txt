@@ -1,0 +1,7 @@
+
+> fitogenix-server@1.0.0 lint:deps
+> depcruise src scripts etl --config .dependency-cruiser.cjs
+
+
+✔ no dependency violations found (229 modules, 729 dependencies cruised)
+

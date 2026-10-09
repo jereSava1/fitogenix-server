@@ -1,8 +1,7 @@
 # Dominio del puntaje: qué evalúa el motor y con qué fundamento
 
-> Fecha: 2026-09-29 · Verificado contra `fitogenix/refactor-cleanup` (motor `ENGINE_VERSION` = `ftg-rubric-v2.3`).
-> Rutas: `scoring/…` es `src/modules/scoring/domain/…` desde M-03 (antes `src/domain/product/scoring/…`); la API pública del motor es `src/modules/scoring/index.ts`.
-> Reemplaza como fuente a `fitogenix-agents/docs/CONTEXT.md` (§1–§3, §8) y `fitogenix-agents/nutricion/NUTRICION.md`, que **no son fuente de verdad** (ver [README](README.md)). De ahí se trajo solo lo que se verificó contra el código y no choca con [`decisiones.md`](decisiones.md); lo que choca queda al final como [PREGUNTA].
+> Motor `ENGINE_VERSION` = `ftg-rubric-v2.3`. Las rutas `scoring/…` son `src/modules/scoring/domain/…`; la API pública es `src/modules/scoring/index.ts`.
+> Los documentos de `fitogenix-agents` no son fuente: de ahí se trajo solo lo verificado contra el código. Lo que choca con [`decisiones.md`](decisiones.md) queda al final como [PREGUNTA].
 > **Regla:** los umbrales **vigentes** no se transcriben acá; viven en el código y se citan por archivo + símbolo. Los valores de la §S4 son **los de la norma** (la fuente contra la que se contrasta el código), no la implementación.
 
 ## §S1 — Qué evalúa Fitogenix, y qué no
@@ -14,6 +13,9 @@
 ## §S2 — Cómo se arma el puntaje
 
 - El puntaje es una **función de la lista de ingredientes**: parte de una base, resta por impacto y por posición de cada ingrediente, aplica un modificador de procesamiento (por marcadores de ultraprocesado en el texto, **no** por `nova_group`), los techos y las anulaciones, y clampea. Los nutrientes restan a través de los octógonos (§S4).
+- **Lectura de la lista (D-99, 2026-10-09):** el parseo (`cleaning.ts`) no separa el punto de `art.`; lee `Función: aditivo` y `aditivo: códigos` como `función (aditivo)`, separa dos códigos unidos por `y` y no corta un renglón que termina en un conector (`de`, `con`…). `additives_tags` no repite un aditivo que el texto ya nombra por su código (`INS 322` = `E322i`; `E150d` ≠ `INS 150a`). Cambió la lectura, no el criterio: ver el informe de puntajes en el PR.
+- **Texto del envase que no es ingrediente (ola 5, 2026-10-09):** el parseo no cuenta unidades sueltas (`30 mg/kg`), el rótulo `INGREDIENTES,`, las frases de conservación ni la frase del colesterol. Las declaraciones `Contiene…` y `Puede contener…` (nivel superior, sin `no`) tampoco cuentan para el puntaje, la posición ni la cobertura, pero se devuelven al final de `ingredients` con `sev: gray` y la descripción "Declaración de alérgenos del envase" (sin cambiar el contrato). El texto de la base no se toca.
+- **Texto del fabricante al final (2026-10-09):** desde `Elaborado por/en`, `Envasado por`, `Comercializado por`, `RNE`, `RNPA`, `Industria argentina` o `Establecimiento` hasta el final no es ingrediente. Solo en el nivel superior y solo si después no sigue ningún ingrediente; si la marca está al principio o en el medio de la lista, no se corta.
 - **Todos los coeficientes** están en `scoring/constants.ts`; la ejecución, en `scoring/steps.ts` y `scoring/pipeline.ts`.
 - **Todo puntaje es reconstruible:** `breakdown.steps` es la salida principal y `scoring/ledger.ts · ScoreLedger` hace imposible mover el número sin registrar el paso. Lo verifican `calibration.test.ts · expectStepsReconstructScore` y los goldens (`regression.test.ts`, `catalogGolden.test.ts`).
 - **No se inventa:** un ingrediente que no está en la tabla (`scoring/data/ingredients.ts`, `scoring/rubric/`) queda **no identificado**, con su costo y su techo. No se estima por analogía.
@@ -24,7 +26,7 @@
 - Bandas, sello y estado salen **del mismo lugar y con los mismos cortes**: `scoring/constants.ts · TIERS`, con `EXCELLENT_FROM` y `BAD_BELOW` derivados de ahí. Se presentan con `scoring/presentation.ts` (`getScoreLabel`, `getScoreTagline`, `getSello`, `resolveProductStatus`).
 - **El sello es una propiedad de la banda:** la banda más alta lleva el sello positivo, la más baja el negativo, y las del medio van sin sello. Mover el sello es mover un borde de banda.
 - **`null` es una banda, no un cero:** sin datos suficientes no hay puntaje, se muestra su propio mensaje (`NO_DATA_TIER`) y no hay sello.
-- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63. Desde K-08 el server las publica en `contract/scoring-bands.json`, armado por `scoring.scoringBands()` con estos mismos cortes; desde K-09 native las lee solo desde `src/api/scoringBands.ts`, y un test falla si aparece un corte en otro archivo.
+- **Solo el server calcula.** La app muestra lo que recibe; cómo le llegan las bandas: D-62 y D-63. El server las publica en `contract/scoring-bands.json`, armado por `scoring.scoringBands()` con estos mismos cortes, y native las lee solo desde `src/api/scoringBands.ts`, y un test falla si aparece un corte en otro archivo.
 - Por qué la regla existe: hubo tres criterios distintos para la misma decisión (bandas, estado y sello con cortes propios) y un producto salía "Bueno" y "Fitogénico" a la vez (encabezado de `scoring/presentation.ts`).
 
 ## §S4 — Los octógonos: insumo interno del puntaje
@@ -102,6 +104,7 @@ Relevados en `CONTEXT.md §6` y `§8` y re-verificados contra el código el 2026
 | M-6 | **El puntaje casi no discrimina:** medido el 2026-09-19, el 75 % de los productos puntuados cae en la misma banda (la más angosta). No lo arreglan los cortes sino cómo el motor reparte los puntajes | Abierto. Hace falta contrastar contra fuentes externas antes de tocar coeficientes |
 | M-7 | La excepción del art. 7 por aproximación (§S4) | Abierto: medir cuánto diverge del criterio legal antes de cambiar nada |
 | M-8 | ¿El descuento de octógonos sigue los cortes de la norma o los de OPS? Como el octógono ya no se muestra, no hay obligación de seguir a la norma. Hoy sigue a la norma | Sin decidir (producto) |
+| M-9 | **Café torrado:** el motor no distingue un café torrado (tostado con azúcar) de uno tostado. Pedido del responsable (2026-10-03): detectarlo y que pese en el puntaje, porque en algunos países está prohibido | Abierto. Falta la fuente que lo respalde (qué países y qué norma) antes de darle un peso (D-92), y definir cómo se detecta: por la denominación del producto o por el azúcar en los ingredientes |
 | — | El recompute del catálogo por `engine_version` nunca se escribió | **Se vuelve innecesario** con D-35: al eliminar las columnas denormalizadas no queda nada que recalcular en la base |
 
 ## [PREGUNTA]

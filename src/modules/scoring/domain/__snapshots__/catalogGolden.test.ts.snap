@@ -23,12 +23,12 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 019 · — · Sin datos suficientes (sin-identificar) · Pitusas
 020 · — · Sin datos suficientes (fuera-de-alcance) · Vino Blanco Torrontés Cafayate
 021 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Lcp Merlot
-022 · 17 · Malo · Naranja
+022 · 20 · Malo · Naranja
 023 · 5 · Malo · Yogur Descremado Con Fruta Durazno X Ilolay
-024 · 27 · Moderado · Yogurísimo Firme Vainilla
+024 · 30 · Moderado · Yogurísimo Firme Vainilla
 025 · 89 · Excelente · Café en Grano Armonioso 500 Grs Gimoka
 026 · — · Sin datos suficientes (sin-ingredientes) · Miel
-027 · 65 · Bueno · Dos anclas sal gruesa
+027 · 68 · Bueno · Dos anclas sal gruesa
 028 · 92 · Excelente · Orégano
 029 · — · Sin datos suficientes (sin-identificar) · Empanada De Carne Pietro X 4u -
 030 · — · Sin datos suficientes (sin-identificar) · Mantecol
@@ -47,11 +47,11 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 043 · 86 · Excelente · Manteca President Sin Sal Paq
 044 · — · Sin datos suficientes (sin-ingredientes) · Arytza salsa caesar
 045 · — · Sin datos suficientes (fuera-de-alcance) · Vino tinto malbec Terra.
-046 · — · Sin datos suficientes (sin-identificar) · Mini Crackers 5 Semillas
+046 · 16 · Malo · Mini Crackers 5 Semillas
 047 · — · Sin datos suficientes (sin-identificar) · Salsa napolitana
 048 · — · Sin datos suficientes (fuera-de-alcance) · Vino Tinto Toro
 049 · — · Sin datos suficientes (sin-identificar) · Salsa lista knorr portuguesa
-050 · 47 · Moderado · Cañuelas
+050 · 49 · Moderado · Cañuelas
 051 · — · Sin datos suficientes (fuera-de-alcance) · Vino Rosado La Celia
 052 · 43 · Moderado · Organic Cinnamon Harvest
 053 · — · Sin datos suficientes (sin-identificar) · Pan lactal
@@ -67,14 +67,14 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 063 · 80 · Excelente · Agua de Coco
 064 · 33 · Moderado · Papas Noisettes - Jamon Y Queso
 065 · — · Sin datos suficientes (fuera-de-alcance) · Vino Bianchi Varietal Malbec
-066 · 33 · Moderado · Chocolina cacao granulado
+066 · 36 · Moderado · Chocolina cacao granulado
 067 · 92 · Excelente · Canela Molida 43 Grs Carmencita
-068 · 12 · Malo · Alfajores de Maicena
+068 · 15 · Malo · Alfajores de Maicena
 069 · 20 · Malo · Medallones de Carne Sabor Parrillero x 4 Un 320 
 070 · — · Sin datos suficientes (solo-categorias) · Salsa Picante Hot Chili Kuhne
-071 · 31 · Moderado · Papas Fritas Sabor Cheddar 72 Grs Saladix
+071 · 32 · Moderado · Papas Fritas Sabor Cheddar 72 Grs Saladix
 072 · 55 · Bueno · Limonada Sabor Limón con Cúrcuma Las Brisas
-073 · 21 · Malo · Snacks de Papa sabor Cheddar
+073 · 35 · Moderado · Snacks de Papa sabor Cheddar
 074 · — · Sin datos suficientes (sin-identificar) · Mayonesa con aceite de oliva
 075 · 28 · Moderado · Galletitas Saladas Salvado 208 Grs Cerealitas
 076 · 61 · Bueno · Agua Sin Gas 1.5 Lts Smart Water
@@ -83,7 +83,7 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 079 · 51 · Bueno · Arvejas verdes medianas Bonduelle en lata 300 gr
 080 · — · Sin datos suficientes (sin-ingredientes) · Aceite de coco
 081 · 39 · Moderado · Fideos mostachol Lucchetti.
-082 · 15 · Malo · Cappuccino Light
+082 · 18 · Malo · Cappuccino Light
 083 · 20 · Malo · Bolitas De Chocolate Sin Tacc Snuks
 084 · 0 · Malo · Rapiditas
 085 · 82 · Excelente · Quinoa entera Sturla.
@@ -120,18 +120,18 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 116 · — · Sin datos suficientes (sin-ingredientes) · Durazno en trozos
 117 · 48 · Moderado · Medallones de Calabaza, Avena y Chía
 118 · 51 · Bueno · Condimento Sabor Golden Milk 200 Grs Sri Sri Tat
-119 · 48 · Moderado · Original
+119 · 55 · Bueno · Original
 120 · 55 · Bueno · Peras En Mitades Marolio
 121 · 62 · Bueno · Yerba Mate Pomelo
 122 · 95 · Excelente · Huevos de Gallina Color Extra Grande 12 Un
 123 · 80 · Excelente · Fideos tallarín Arcor.
-124 · 11 · Malo · Mini Pitusas sabor Frutilla
+124 · 15 · Malo · Mini Pitusas sabor Frutilla
 125 · — · Sin datos suficientes (sin-identificar) · Meditación - té
 126 · 16 · Malo · Azúcar Rubia Orgánica 1 Un 330 Grs Beepure
 127 · 61 · Bueno · Puré de Frutas Sabor Manzana Pera y Banana 110 G
 128 · 31 · Moderado · Pre-pizza Los Pibes M.a.m.a.
 129 · 0 · Malo · Yog. Desc. Colchon Maracuya Dahi
-130 · 23 · Malo · Coca zero 1,5l
+130 · 32 · Moderado · Coca zero 1,5l
 131 · 98 · Excelente · Agua Mineral Sin Gas Sierra de los Padres
 132 · 61 · Bueno · Pan rallado Mamá Cocina fortificado.
 133 · 51 · Bueno · Galletas de Arroz Integral Sabor Dulce 100 Grs R
@@ -143,7 +143,7 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 139 · 49 · Moderado · Colados Nestle Pollo Y Verdura Frasco
 140 · 15 · Malo · Tapas de Empanadas Criolla x 18 Un 450 Grs Signo
 141 · 44 · Moderado · Salsa chimichurri Dos Anclas pet.
-142 · 7 · Malo · Tostadas Sin Sal Criollitas
+142 · 10 · Malo · Tostadas Sin Sal Criollitas
 143 · — · Sin datos suficientes (sin-identificar) · Mejillones En Aceite Robison Crusoe
 144 · — · Sin datos suficientes (sin-identificar) · Yerba mate sabor hierbas Buenas y Santas 500 grs
 145 · — · Sin datos suficientes (fuera-de-alcance) · Vino Bonarda El Enemigo
@@ -154,7 +154,7 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 150 · 80 · Excelente · Cacao En Polvo Mas Life Superfood
 151 · — · Sin datos suficientes (sin-ingredientes) · Milanesa De Carne
 152 · 12 · Malo · Galletitas Minipolvorita Vai
-153 · 18 · Malo · Chocolate 60% Cacao
+153 · 21 · Malo · Chocolate 60% Cacao
 154 · — · Sin datos suficientes (sin-ingredientes) · Quinoa real blanca
 155 · — · Sin datos suficientes (sin-identificar) · Mayonesa Natura chica
 156 · 0 · Malo · Risotto 4 Quesos
@@ -192,7 +192,7 @@ exports[`golden sobre la muestra del catálogo (T-03) > puntaje, banda y motivo 
 188 · 62 · Bueno · Jugo Sabor Limón Dos Anclas
 189 · 80 · Excelente · Fideos orecchiette De Cecco en bolsa.
 190 · 16 · Malo · Flan Godet Vainilla
-191 · 10 · Malo · Pan con salvado con semillas de chía y lino
+191 · 25 · Moderado · Pan con salvado con semillas de chía y lino
 192 · 75 · Excelente · Cica tirabuzon
 193 · 26 · Moderado · Gallo Snacks Bizcochos De Arroz Tortita Negra.
 194 · 80 · Excelente · Harina de lino Sturla.

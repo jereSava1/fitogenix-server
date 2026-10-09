@@ -1,9 +1,9 @@
 # ADR-0003 · Scoring como dominio puro y única fuente de presentación del puntaje
 
-- **Estado:** Propuesto. Implementado: el motor como dominio puro (M-03) y `presentScore` (K-04, 2026-09-29)
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** [02-arquitectura.md §2.2 y §5.1](../02-arquitectura.md), RF-005, RF-062, D-25
-- **Riesgo:** ALTO. Todo cambio requiere los tests de caracterización del paso 1 del plan.
+- **Relacionado:** RF-005, RF-062, D-25, [dominio-scoring.md](../dominio-scoring.md)
+- **Riesgo:** ALTO: todo cambio va con tests de caracterización.
 
 ## Contexto
 

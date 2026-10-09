@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {buildLegacyCandidate} from './puente-panel-backend-c.mjs';
+const panel=()=>({evidence_id:'prueba-local',basis:{amount:10,unit:'g'},nutrients:[{field:'sodium',value:20,unit:'mg'}]});
+test('sodio almacena 0.2 g, no 200 g',()=>{const r=buildLegacyCandidate(panel());assert.equal(r.legacy_candidate.sodium_100g,0.2);assert.equal(r.apply_authorized,false);});
+test('colesterol almacena 2.2 mg como 0.0022 g',()=>{const p=panel();p.basis.amount=100;p.nutrients=[{field:'cholesterol',value:2.2,unit:'mg'}];assert.equal(buildLegacyCandidate(p).legacy_candidate.cholesterol_100g,0.0022);});
+test('entrada en gramos no se multiplica de nuevo',()=>{const p=panel();p.basis.amount=100;p.nutrients=[{field:'sodium',value:0.046,unit:'g'}];assert.equal(buildLegacyCandidate(p).legacy_candidate.sodium_100g,0.046);});
+test('base ml bloquea formato legacy y permanece ml',()=>{const p=panel();p.basis={amount:200,unit:'ml'};const r=buildLegacyCandidate(p);assert.equal(r.normalized.target_basis.unit,'ml');assert.equal(r.legacy_candidate,null);});
+test('no añade campos ausentes y conserva cero',()=>{const p=panel();p.nutrients[0].value=0;const c=buildLegacyCandidate(p).legacy_candidate;assert.equal(c.sodium_100g,0);assert.equal(Object.hasOwn(c,'fiber_100g'),false);});
+test('calorías conservan clave y unidad existentes',()=>{const p=panel();p.nutrients=[{field:'calories',value:75,unit:'kcal'}];const c=buildLegacyCandidate(p).legacy_candidate;assert.equal(c['energy-kcal_100g'],750);assert.equal(c['energy-kcal_unit'],'kcal');});
+test('Doritos referencia candidata 0.672 g no está aplicada',()=>{const p=panel();p.basis.amount=25;p.nutrients[0].value=168;const r=buildLegacyCandidate(p);assert.equal(r.legacy_candidate.sodium_100g,0.672);assert.equal(r.applied,false);});
+test('panel y otros campos permanecen intactos',()=>{const p=panel(),before=structuredClone(p),base={fiber_100g:3.2};const merged={...base,...buildLegacyCandidate(p).legacy_candidate};assert.equal(merged.fiber_100g,3.2);assert.deepEqual(base,{fiber_100g:3.2});assert.deepEqual(p,before);});

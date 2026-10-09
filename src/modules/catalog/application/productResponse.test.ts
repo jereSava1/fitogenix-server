@@ -102,3 +102,23 @@ describe('identidad, nombre, marca e imagen (K-04)', () => {
     }
   });
 });
+
+describe('declaraciones de alérgenos del envase', () => {
+  const detalle = toProductDetail(
+    { product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar, sal. CONTIENE TRIGO Y LECHE. Puede contener trazas de soja' },
+    IDENTIDAD,
+  );
+
+  it('quedan al final de la lista, en gris y con la descripción fija', () => {
+    expect(detalle.ingredients.slice(-2)).toEqual([
+      { name: 'CONTIENE TRIGO Y LECHE', sev: 'gray', desc: 'Declaración de alérgenos del envase' },
+      { name: 'Puede contener trazas de soja', sev: 'gray', desc: 'Declaración de alérgenos del envase' },
+    ]);
+  });
+
+  it('no cambian el puntaje: es el mismo con y sin la declaración', () => {
+    const sin = toProductDetail({ product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar, sal' }, IDENTIDAD);
+    expect(detalle.fito).toEqual(sin.fito);
+    expect(detalle.ingredients).toHaveLength(sin.ingredients.length + 2);
+  });
+});

@@ -1,0 +1,1020 @@
+{
+  "phase": "A",
+  "applied": false,
+  "approved": false,
+  "checks": [
+    {
+      "image_id": "ilolay120-ingredientes",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "sacaan-ingredientes",
+      "check": "doble_transcripcion",
+      "status": "pendiente",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "check": "doble_transcripcion",
+      "status": "pendiente",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "monster-ingredientes",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "tonadita-off",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "ilolay40-ingredientes",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "ilolay-otro-frente",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "monster-raw1",
+      "check": "doble_transcripcion",
+      "status": "pendiente",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "monster-raw3",
+      "check": "doble_transcripcion",
+      "status": "acreditada",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "monster-raw5",
+      "check": "doble_transcripcion",
+      "status": "pendiente",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "monster-raw6",
+      "check": "doble_transcripcion",
+      "status": "pendiente",
+      "visual_reads": 2
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "carbohydrates",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "sugars",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "added-sugars",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "proteins",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "trans-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "fiber",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "added-sugars <= sugars",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "trans-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 45,
+      "kj": 188,
+      "kj_from_kcal": 188.28,
+      "relative_difference": 0.0014871468026343804
+    },
+    {
+      "image_id": "ilolay40-nutricion",
+      "check": "energia contra macros",
+      "status": "informativo_no_reemplaza_valor_de_etiqueta",
+      "kcal": 45,
+      "calculated_kcal": 44.89999999999999
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "carbohydrates",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "sugars",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "proteins",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "trans-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "fiber",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "trans-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 126,
+      "kj": 527,
+      "kj_from_kcal": 527.184,
+      "relative_difference": 0.00034902424959780474
+    },
+    {
+      "image_id": "doritos-nutricion",
+      "check": "energia contra macros",
+      "status": "informativo_no_reemplaza_valor_de_etiqueta",
+      "kcal": 126,
+      "calculated_kcal": 125.6
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "carbohydrates",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "sugars",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "proteins",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "monounsaturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "polyunsaturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "cholesterol",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "fiber",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 522,
+      "kj": 2188,
+      "kj_from_kcal": 2184.0480000000002,
+      "relative_difference": 0.0018094840406436903
+    },
+    {
+      "image_id": "rhodesia-nutricion",
+      "check": "energia contra macros",
+      "status": "informativo_no_reemplaza_valor_de_etiqueta",
+      "kcal": 522,
+      "calculated_kcal": 518.8
+    },
+    {
+      "image_id": "tonadita-off",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-off",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 75,
+      "kj": 307,
+      "kj_from_kcal": 313.8,
+      "relative_difference": 0.021669853409815205
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "tonadita-jumbo",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 75,
+      "kj": 307,
+      "kj_from_kcal": 313.8,
+      "relative_difference": 0.021669853409815205
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "energy-kj",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "energy-kcal",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "saturated-fat",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "carbohydrates",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "sugars",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "fiber",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "proteins",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "sodium",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "vitamin-b2",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "vitamin-b3",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "vitamin-b6",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "vitamin-b12",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "taurine",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "ginseng",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "caffeine",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "l-carnitine",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "field": "guarana",
+      "check": "numero_no_negativo",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "check": "saturated-fat <= fat",
+      "status": "pasa"
+    },
+    {
+      "image_id": "monster-raw3",
+      "check": "kJ contra kcal",
+      "status": "informativo_sin_umbral_aprobado",
+      "kcal": 101,
+      "kj": 423,
+      "kj_from_kcal": 422.584,
+      "relative_difference": 0.0009844196656759291
+    },
+    {
+      "image_id": "monster-raw3",
+      "check": "energia contra macros",
+      "status": "informativo_no_reemplaza_valor_de_etiqueta",
+      "kcal": 101,
+      "calculated_kcal": 103.6
+    },
+    {
+      "product_id": "ilolay-120",
+      "source_url": "https://www.jumbo.com.ar/queso-rallado-ilolay-120-gr/p",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 18,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-120",
+      "source_url": "https://www.jumbo.com.ar/queso-rallado-ilolay-120-gr/p",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-otro",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790787018031.json",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 0,
+        "carbohydrates": 6
+      }
+    },
+    {
+      "product_id": "ilolay-otro",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790787018031.json",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 18,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/078/725/1780/nutrition_es.18.full.jpg",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 0,
+        "carbohydrates": 6
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/078/725/1780/nutrition_es.18.full.jpg",
+      "basis": "100 g",
+      "check": "added-sugars <= sugars",
+      "status": "pasa",
+      "values": {
+        "added-sugars": 0,
+        "sugars": 0
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/078/725/1780/nutrition_es.18.full.jpg",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 18,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/078/725/1780/nutrition_es.18.full.jpg",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790787251780.json",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 0,
+        "carbohydrates": 0.6
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790787251780.json",
+      "basis": "100 g",
+      "check": "added-sugars <= sugars",
+      "status": "pasa",
+      "values": {
+        "added-sugars": 0,
+        "sugars": 0
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790787251780.json",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 1.8,
+        "fat": 2.9
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://www.jumbo.com.ar/queso-rallado-ilolay/p",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 18,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "ilolay-40",
+      "source_url": "https://www.jumbo.com.ar/queso-rallado-ilolay/p",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 29
+      }
+    },
+    {
+      "product_id": "bariloche-135",
+      "source_url": "https://www.jumbo.com.ar/turron-de-mani-bariloche-x-135-gr/p",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 2,
+        "fat": 14
+      }
+    },
+    {
+      "product_id": "bariloche-135",
+      "source_url": "https://www.jumbo.com.ar/turron-de-mani-bariloche-x-135-gr/p",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 14
+      }
+    },
+    {
+      "product_id": "bariloche-80",
+      "source_url": "https://www.jumbo.com.ar/turron-de-mani-flow-pack-x-80-gr-bariloche/p",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 2,
+        "fat": 14
+      }
+    },
+    {
+      "product_id": "bariloche-80",
+      "source_url": "https://www.jumbo.com.ar/turron-de-mani-flow-pack-x-80-gr-bariloche/p",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 14
+      }
+    },
+    {
+      "product_id": "doritos",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/031/098/3737/nutrition_es.5.full.jpg",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 2.4,
+        "carbohydrates": 48
+      }
+    },
+    {
+      "product_id": "doritos",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/031/098/3737/nutrition_es.5.full.jpg",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 3.6,
+        "fat": 32
+      }
+    },
+    {
+      "product_id": "doritos",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/031/098/3737/nutrition_es.5.full.jpg",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 32
+      }
+    },
+    {
+      "product_id": "doritos",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790310983737.json",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 2.4,
+        "carbohydrates": 48
+      }
+    },
+    {
+      "product_id": "doritos",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/7790310983737.json",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 3.6,
+        "fat": 32
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://images.openfoodfacts.org/images/products/000/007/799/5681/nutrition_es.26.full.jpg",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 45,
+        "carbohydrates": 62
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://images.openfoodfacts.org/images/products/000/007/799/5681/nutrition_es.26.full.jpg",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 15,
+        "fat": 28
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/77995681.json",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 47.6190476190476,
+        "carbohydrates": 66.6666666666667
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/77995681.json",
+      "basis": "100 g",
+      "check": "added-sugars <= sugars",
+      "status": "falla",
+      "values": {
+        "added-sugars": 53.31,
+        "sugars": 47.6190476190476
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/77995681.json",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 15.7142857142857,
+        "fat": 29.047619047619
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://www.jumbo.com.ar/oblea-clasica-22-gr-rhodesia/p",
+      "basis": "100 g",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 45.45,
+        "carbohydrates": 63.64
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://www.jumbo.com.ar/oblea-clasica-22-gr-rhodesia/p",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 15,
+        "fat": 27.27
+      }
+    },
+    {
+      "product_id": "rhodesia",
+      "source_url": "https://www.jumbo.com.ar/oblea-clasica-22-gr-rhodesia/p",
+      "basis": "100 g",
+      "check": "trans-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "trans-fat": 0,
+        "fat": 27.27
+      }
+    },
+    {
+      "product_id": "monster",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/0070847017332.json",
+      "basis": "100 ml",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 11.5,
+        "carbohydrates": 12.95
+      }
+    },
+    {
+      "product_id": "monster",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/0070847017332.json",
+      "basis": "100 ml",
+      "check": "added-sugars <= sugars",
+      "status": "falla",
+      "values": {
+        "added-sugars": 23,
+        "sugars": 11.5
+      }
+    },
+    {
+      "product_id": "monster",
+      "source_url": "https://world.openfoodfacts.org/api/v2/product/0070847017332.json",
+      "basis": "100 ml",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 0,
+        "fat": 0
+      }
+    },
+    {
+      "product_id": "monster",
+      "source_url": "https://images.openfoodfacts.org/images/products/007/084/701/7332/3.jpg",
+      "basis": "100 ml",
+      "check": "sugars <= carbohydrates",
+      "status": "pasa",
+      "values": {
+        "sugars": 11.5,
+        "carbohydrates": 12.95
+      }
+    },
+    {
+      "product_id": "monster",
+      "source_url": "https://images.openfoodfacts.org/images/products/007/084/701/7332/3.jpg",
+      "basis": "100 ml",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 0,
+        "fat": 0
+      }
+    },
+    {
+      "product_id": "tonadita",
+      "source_url": "https://images.openfoodfacts.org/images/products/779/806/085/0026/nutrition_es.15.full.jpg",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 50,
+        "fat": 83
+      }
+    },
+    {
+      "product_id": "tonadita",
+      "source_url": "https://jumboargentina.vteximg.com.br/arquivos/ids/919134/7798060850026-1.jpg?v=639174803205400000",
+      "basis": "100 g",
+      "check": "saturated-fat <= fat",
+      "status": "pasa",
+      "values": {
+        "saturated-fat": 50,
+        "fat": 83
+      }
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "independent_transcriptions_pending": 5
+  },
+  "limitations": [
+    "No compara octógonos legales: requiere identificar mercado, fecha y criterios del equipo.",
+    "No aprueba etiquetas por cercanía de kcal y kJ ni por fórmula energética.",
+    "Los hashes registran la imagen, no prueban que el envase esté vigente."
+  ]
+}

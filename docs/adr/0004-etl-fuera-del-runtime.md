@@ -1,8 +1,8 @@
 # ADR-0004 · El ETL fuera del runtime, con config propia
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado · implementado
 - **Fecha:** 2026-09-28
-- **Relacionado:** [02-arquitectura.md §2.2 y §5.4](../02-arquitectura.md), D-05, D-19
+- **Relacionado:** D-05, D-19, [etl/README.md](../../etl/README.md)
 
 ## Contexto
 

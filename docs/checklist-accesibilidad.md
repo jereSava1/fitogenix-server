@@ -1,6 +1,6 @@
-# Checklist manual de accesibilidad (F-13, RNF-U11)
+# Checklist manual de accesibilidad (RNF-U11)
 
-Lo que los tests de native no pueden ver: lectores de pantalla reales, letra grande en el dispositivo y "reducir movimiento" en animaciones que no corren en el entorno de tests. Se hace en un iPhone (VoiceOver) y en un Android (TalkBack), con la app compilada de `fitogenix/refactor-cleanup` de native.
+Lo que los tests de native no pueden ver: lectores de pantalla reales, letra grande en el dispositivo y "reducir movimiento" en animaciones que no corren en el entorno de tests. Se hace en un iPhone (VoiceOver) y en un Android (TalkBack), con la app compilada desde `main` de native.
 
 Anotá en cada fila ✅ o lo que falló (pantalla + control + qué dijo o hizo).
 
@@ -28,10 +28,10 @@ iOS: Ajustes → Accesibilidad → Pantalla y tamaño del texto → Texto más g
 
 | # | Pantalla | Qué tiene que pasar |
 |---|---|---|
-| 14 | Inicio (P-07) | Los nombres de los últimos escaneos se leen en hasta 3 líneas; nada se superpone |
-| 15 | Escanear (P-08) | Los mensajes (permiso, fuera de catálogo, error) se leen completos |
-| 16 | Resultado (P-09) | Nombre, marca, puntaje, ingredientes y nutrición se leen completos; se puede scrollear hasta el final |
-| 17 | Historial (P-10) | Los nombres se leen en hasta 3 líneas; los botones de Recientes / Guardados no se cortan |
+| 14 | Inicio | Los nombres de los últimos escaneos se leen en hasta 3 líneas; nada se superpone |
+| 15 | Escanear | Los mensajes (permiso, fuera de catálogo, error) se leen completos |
+| 16 | Resultado | Nombre, marca, puntaje, ingredientes y nutrición se leen completos; se puede scrollear hasta el final |
+| 17 | Historial | Los nombres se leen en hasta 3 líneas; los botones de Recientes / Guardados no se cortan |
 
 ## 3. Reducir movimiento
 
@@ -44,6 +44,6 @@ iOS: Ajustes → Accesibilidad → Movimiento → Reducir movimiento. Android: A
 | 20 | Resultado | El dial muestra el puntaje sin llenarse de a poco; guardar no hace rebotar el ícono; las secciones se abren sin animación |
 | 21 | Modales ("Cómo puntuamos", "Reportar problema", selector de país en el registro) | Aparecen sin deslizarse desde abajo |
 
-## Fuera de F-13
+## Fuera de este checklist
 
-El contraste AA (4,5:1) que pide RNF-U11 no se revisó en F-13: queda pendiente de una pasada de diseño.
+El contraste AA (4,5:1) que pide RNF-U11 no se revisó todavía: queda pendiente de una pasada de diseño.

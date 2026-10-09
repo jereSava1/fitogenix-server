@@ -140,3 +140,136 @@ describe('§6.4 — resolver "y/o"', () => {
     expect(c.items[0].alternatives).toEqual(['aceite de girasol', 'soja']);
   });
 });
+
+// D-99: el parseo lee bien los casos de P3 de docs/analisis_BD_Productos.md. Antes de este
+// cambio salían partidos (el commit anterior fija esa salida).
+describe('D-99 — el parseo no parte textos que están bien', () => {
+  it('el punto de "art." no separa', () => {
+    expect(names('agua, aromatizante/saborizante aroma art. a vainilla')).toEqual([
+      'agua', 'aromatizante/saborizante aroma art a vainilla',
+    ]);
+  });
+
+  it('"art." con y sin punto da la misma lista', () => {
+    expect(names('azúcar, aroma art. a vainilla')).toEqual(names('azúcar, aroma art a vainilla'));
+  });
+
+  it('si un nombre y un código son el mismo aditivo, se conserva el nombre', () => {
+    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('lecitina de soja: ins 322')).toEqual(['lecitina de soja']);
+  });
+
+  it('un código de otro aditivo no se pierde, y un encabezado que no coincide con ninguno cede', () => {
+    expect(names('lecitina de soja: ins 322, ins 476')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('emu: ins 471')).toEqual(['ins 471']);
+  });
+
+  it('"Función: aditivo" no deja la función como ingrediente y separa los códigos', () => {
+    expect(names('Emulsionantes: INS 4821 y INS 471')).toEqual(['INS 4821', 'INS 471']);
+    expect(names('Emulsionantes: INS 4821 y INS 471')).toEqual(names('Emulsionantes (INS 4821, INS 471)'));
+    expect(names('aromatizante idéntico al natural: vainillina')).toEqual(['vainillina']);
+  });
+
+  it('una función sola, sin nada que resuelva después, se conserva', () => {
+    expect(names('agua, aromatizante')).toEqual(['agua', 'aromatizante']);
+    expect(names('conservador: xyz')).toEqual(['conservador', 'xyz']);
+  });
+
+  it('un encabezado con más de una función no cede', () => {
+    expect(names('saborizante de queso y colorante: tartrazina')).toEqual([
+      'saborizante de queso y colorante', 'tartrazina',
+    ]);
+  });
+
+  it('el ":" del OCR entre ingredientes sigue separando', () => {
+    expect(names('cacao: canela')).toEqual(['cacao', 'canela']);
+  });
+
+  it('la "y" entre palabras que no son códigos no separa', () => {
+    expect(names('sal y pimienta')).toEqual(['sal y pimienta']);
+  });
+
+  it('un salto de línea después de un conector no parte el ingrediente', () => {
+    expect(names('Gluten de\nTrigo')).toEqual(['Gluten de Trigo']);
+    expect(names('agua\nsal')).toEqual(['agua', 'sal']);
+  });
+});
+
+// Lo que no es ingrediente (unidades sueltas, rótulo, conservación, colesterol, "Contiene") no se
+// cuenta. Antes de este cambio salía como ingrediente (el commit anterior fija esa salida).
+describe('texto del envase que no es un ingrediente', () => {
+  it('las unidades sueltas salen', () => {
+    expect(names('harina (hierro 30 mg/kg, ácido fólico 2,2 mg/kg), sal')).toEqual([
+      'hierro', 'ácido fólico', 'sal',
+    ]);
+  });
+
+  it('una cantidad pegada a su ingrediente dentro del paréntesis se conserva', () => {
+    expect(names('agua, sucralosa (5mg/100g), sal')).toContain('sucralosa');
+  });
+
+  it('el rótulo "INGREDIENTES," sale', () => {
+    expect(names('agua. INGREDIENTES, QUESO, sal')).toEqual(['agua', 'QUESO', 'sal']);
+    expect(names('agua. Ingredientes: queso, sal')).toEqual(['queso', 'sal']);
+  });
+
+  it('las frases de conservación salen', () => {
+    expect(names('agua, sal. Mantener en lugar fresco y seco.')).toEqual(['agua', 'sal']);
+    expect(names('agua, sal. Una vez abierto, conservar refrigerado.')).toEqual(['agua', 'sal']);
+  });
+
+  it('la frase del colesterol sale', () => {
+    expect(names('aceite. Este producto, al igual que todos los de origen vegetal, NO CONTIENE COLESTEROL.')).toEqual([
+      'aceite',
+    ]);
+  });
+});
+
+describe('declaraciones "Contiene…": no son ingredientes pero se conservan', () => {
+  it('quedan aparte, tal como figuran', () => {
+    const c = clean('harina, azúcar. CONTIENE LECHE Y SOJA.');
+    expect(c.items.map((i) => i.raw)).toEqual(['harina', 'azúcar']);
+    expect(c.allergenWarnings).toEqual(['CONTIENE LECHE Y SOJA']);
+  });
+
+  it('conviven con "puede contener"', () => {
+    const c = clean('harina. Contiene gluten. Puede contener trazas de maní');
+    expect(c.items.map((i) => i.raw)).toEqual(['harina']);
+    expect(c.allergenWarnings[0]).toBe('Contiene gluten');
+    expect(c.allergenWarnings).toHaveLength(2);
+  });
+
+  it('dentro de un paréntesis o tras "no" no son una declaración', () => {
+    expect(clean('leche (contiene lactosa), sal').allergenWarnings).toEqual([]);
+    expect(clean('agua. No contiene gluten').allergenWarnings).toEqual([]);
+  });
+});
+
+describe('texto del fabricante al final de la lista', () => {
+  it('desde "Elaborado por", "Envasado por", "Comercializado por", RNE, RNPA o "Industria argentina" no es ingrediente', () => {
+    for (const marca of [
+      'Elaborado por: Coca-Cola FEMSA S.A., Av. Alcorta 3606, CABA',
+      'Envasado por Molinos SA, Ruta 9 km 50',
+      'Comercializado por INC S.A. Ayacucho 1055',
+      'RNE N° 02-034.547 RNPA 21-100657',
+      'Industria argentina. Establecimiento 1234',
+    ]) {
+      expect(names(`agua, azúcar, sal ${marca}`)).toEqual(['agua', 'azúcar', 'sal']);
+    }
+  });
+
+  it('si después de la marca siguen ingredientes, no corta', () => {
+    expect(names('Elaborado por Molinos SA, harina de trigo, azúcar, sal')).toContain('azúcar');
+    expect(names('agua, RNE 123, harina de trigo, azúcar')).toContain('harina de trigo');
+  });
+
+  it('dentro de un paréntesis no corta', () => {
+    expect(names('agua, leche (RNE 123), sal')).toContain('sal');
+  });
+
+  it('"puede contener" sigue yendo a las advertencias aunque haya fabricante antes', () => {
+    const c = clean('agua, sal. Elaborado por X SA. Puede contener trazas de soja');
+    expect(c.items.map((i) => i.raw)).toEqual(['agua', 'sal']);
+    expect(c.allergenWarnings).toHaveLength(1);
+  });
+});
