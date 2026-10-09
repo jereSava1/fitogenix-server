@@ -17,7 +17,11 @@ export async function buildApp(
 
   // Sin orígenes, sin CORS: un navegador desde otra página no puede usar la API.
   const origins = http.corsOrigins ?? [];
-  await app.register(cors, { origin: origins.length > 0 ? origins : false });
+  // `methods` explícito: @fastify/cors 11 bajó el default a GET, HEAD y POST y la API usa PUT, PATCH y DELETE.
+  await app.register(cors, {
+    origin: origins.length > 0 ? origins : false,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  });
 
   await app.register(rateLimit, {
     max: 60,
