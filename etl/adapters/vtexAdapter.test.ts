@@ -62,6 +62,17 @@ describe('adaptVtexProduct', () => {
     expect(results).toHaveLength(1);
     expect(results[0].barcode).toBe('0012345678905');
   });
+
+  it('completa con ceros un EAN de 11 dígitos con verificador válido y descarta el que no valida', () => {
+    const results = adaptVtexProduct({
+      productName: 'Té',
+      items: [
+        { itemId: 'a', ean: '70177029661' },
+        { itemId: 'b', ean: '70177029662' },
+      ],
+    });
+    expect(results.map((r) => r.barcode)).toEqual(['0070177029661']);
+  });
 });
 
 // Cencosud (Jumbo/Disco/Vea) sí publica ingredientes y tabla nutricional.
