@@ -1,5 +1,5 @@
 // Uso (simulación por defecto, no escribe nada en la base):
-//   npm run etl:purge -- <doritos|ola1|ola3> --input export.jsonl --out-dir dir
+//   npm run etl:purge -- <doritos|doritos-sal|ola1|ola1-flag|ola3> --input export.jsonl --out-dir dir
 // Deja `<ola>-plan.json` con las filas afectadas y los valores de antes y de después.
 // Para aplicar lo revisado:
 //   npm run etl:purge -- <ola> --plan dir/<ola>-plan.json --out-dir dir --apply
@@ -14,6 +14,7 @@ import {
   decideNutritionBlock,
   hasImpossibleNutrition,
   planAiCleanup,
+  planAiFlagOff,
   planNutritionBlock,
   planNutrimentValue,
   type PlannedChange,
@@ -21,7 +22,7 @@ import {
 } from '../lib/purgePlan';
 import { REREAD_DEFAULT_DELAY_MS, REREAD_DELAY_MS, rereadNutrition } from '../lib/sourceReread';
 
-const OLAS = ['doritos', 'ola1', 'ola3'] as const;
+const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3'] as const;
 type Ola = (typeof OLAS)[number];
 
 type Plan = {
@@ -63,6 +64,13 @@ async function buildPlan(ola: Ola, input: string): Promise<Plan> {
       rows, '7790310983737', 'sodium_100g', 0.664, 0.672,
       'D-97: 168 mg cada 25 g = 672 mg/100 g',
     );
+  } else if (ola === 'doritos-sal') {
+    cambios = planNutrimentValue(
+      rows, '7790310983737', 'salt_100g', 1.66, 1.68,
+      'coherente con sodium_100g 0,672 (sal = sodio x 2,5)',
+    );
+  } else if (ola === 'ola1-flag') {
+    cambios = planAiFlagOff(rows);
   } else if (ola === 'ola1') {
     cambios = planAiCleanup(rows);
   } else {

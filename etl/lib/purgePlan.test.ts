@@ -3,6 +3,7 @@ import {
   decideNutritionBlock,
   hasImpossibleNutrition,
   planAiCleanup,
+  planAiFlagOff,
   planNutritionBlock,
   planNutrimentValue,
   type PurgeRow,
@@ -29,6 +30,19 @@ describe('planAiCleanup', () => {
       before: { ingredients_text: 'harina', additives_tags: ['en:e330'] },
       after: { ingredients_text: null, nutriments: null, additives_tags: null },
     });
+  });
+});
+
+describe('planAiFlagOff', () => {
+  it('pasa a false solo las filas ai_enriched ya vaciadas', () => {
+    const rows = [row(), row({ id: 'id-2', ai_enriched: true, ingredients_text: null, nutriments: null })];
+    expect(planAiFlagOff(rows)).toEqual([
+      expect.objectContaining({ id: 'id-2', before: { ai_enriched: true }, after: { ai_enriched: false } }),
+    ]);
+  });
+
+  it('falla si una fila ai_enriched todavía trae datos', () => {
+    expect(() => planAiFlagOff([row({ ai_enriched: true })])).toThrow(/vaciar antes/);
   });
 });
 
