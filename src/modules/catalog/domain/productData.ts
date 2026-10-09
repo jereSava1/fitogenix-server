@@ -11,14 +11,15 @@ const EMPTY_NUTRITION: NutritionFacts = {
 export function extractNutrition(nutriments?: Record<string, unknown>): NutritionFacts {
   if (!nutriments) return EMPTY_NUTRITION;
 
-  const read = (key: string, scale = 1): number | null => {
+  const read = (key: string, scale = 1, decimals = 1): number | null => {
     const raw = nutriments[`${key}_100g`] ?? nutriments[key];
     if (typeof raw !== 'number' && typeof raw !== 'string') return null;
     if (typeof raw === 'string' && raw.trim() === '') return null;
     const value = Number(raw) * scale;
     if (!Number.isFinite(value)) return null;
     // Convertir antes de redondear: 0,046 g debe conservarse como 46 mg.
-    const rounded = Math.round(value * 10) / 10;
+    const factor = 10 ** decimals;
+    const rounded = Math.round(value * factor) / factor;
     return Number.isFinite(rounded) ? rounded : null;
   };
 
@@ -29,10 +30,10 @@ export function extractNutrition(nutriments?: Record<string, unknown>): Nutritio
     sugars: read('sugars'),
     fats: read('fat'),
     satFats: read('saturated-fat'),
-    sodium: read('sodium', 1000),
+    sodium: read('sodium', 1000, 0), // mg enteros
     fiber: read('fiber'),
     transFat: read('trans-fat'),
-    cholesterol: read('cholesterol', 1000),
+    cholesterol: read('cholesterol', 1000, 1), // mg con un decimal
   };
 }
 

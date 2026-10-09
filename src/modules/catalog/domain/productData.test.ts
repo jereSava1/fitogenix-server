@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { extractNutrition } from './productData';
 
+describe('formato del sodio y el colesterol', () => {
+  it('el sodio sale en mg enteros, convirtiendo antes de redondear', () => {
+    expect(extractNutrition({ sodium_100g: 0.3624 }).sodium).toBe(362);
+    expect(extractNutrition({ sodium_100g: 0.0465 }).sodium).toBe(47);
+    expect(extractNutrition({ sodium_100g: 0.0004 }).sodium).toBe(0);
+  });
+
+  it('el colesterol conserva un decimal', () => {
+    expect(extractNutrition({ cholesterol_100g: 0.01234 }).cholesterol).toBe(12.3);
+  });
+
+  it('el resto de los nutrientes sigue con un decimal', () => {
+    expect(extractNutrition({ proteins_100g: 9.333333 }).protein).toBe(9.3);
+  });
+});
+
 describe('conversión nutricional para presentación', () => {
   it.each([
     ['sodium', 0.046, 46],
