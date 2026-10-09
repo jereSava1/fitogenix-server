@@ -140,3 +140,30 @@ describe('§6.4 — resolver "y/o"', () => {
     expect(c.items[0].alternatives).toEqual(['aceite de girasol', 'soja']);
   });
 });
+
+// Caracterización del parseo antes de D-99: fija lo que hoy sale para los casos de P3 y P4 de
+// docs/analisis_BD_Productos.md. Cada caso roto se actualiza en el commit que lo arregla.
+describe('caracterización: P3, el parseo parte mal textos que están bien', () => {
+  it('"art." se toma como separador', () => {
+    expect(names('agua, aromatizante/saborizante aroma art. a vainilla')).toEqual([
+      'agua', 'aromatizante/saborizante aroma art', 'a vainilla',
+    ]);
+  });
+
+  it('los dos puntos separan al aditivo de su propio código', () => {
+    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual([
+      'lecitina de soja', 'ins 322', 'ins 476',
+    ]);
+  });
+
+  it('la función del aditivo queda como un ingrediente más', () => {
+    expect(names('Emulsionantes: INS 4821 y INS 471')).toEqual(['Emulsionantes', 'INS 4821 y INS 471']);
+    expect(names('aromatizante idéntico al natural: vainillina')).toEqual([
+      'aromatizante idéntico al natural', 'vainillina',
+    ]);
+  });
+
+  it('un salto de línea en medio de un ingrediente lo parte', () => {
+    expect(names('Gluten de\nTrigo')).toEqual(['Gluten de', 'Trigo']);
+  });
+});
