@@ -117,7 +117,7 @@ Una decisión nueva toma el siguiente número libre (**D-115**). Si cambia otra,
 | D-107 | El parser corta el texto del fabricante al final de la lista; con él se restauran los ingredientes vaciados en la ola 5 que quedan limpios (26 de 57) | Hecha |
 | D-108 | Se borraron del historial las 2 filas que apuntaban a duplicados, para resolver esos pares; los guardados no se tocan | Hecha |
 | D-109 | Las 13 filas con nutrición sin bloque en staging quedan como están hasta verificarlas contra la etiqueta | Vigente |
-| D-110 | Los 66 productos de OFF con dígito verificador malo que se borraron en la ola 2 quedan borrados | Vigente |
+| D-110 | Los 67 productos de OFF con dígito verificador malo que se borraron en la ola 2 (66 con datos) quedan borrados | Vigente |
 | D-111 | La clave secreta de Supabase no se rota | Vigente |
 | D-112 | GS1 Argentina se descarta como fuente (no es posible asociarse). Open Food Facts: se usa su API gratuita y sus fotos de etiqueta, sin consultar a un abogado; queda pendiente la atribución visible en la app | Vigente |
 | D-113 | El motor se recalibra cuando haya productos con ingredientes completos; hasta entonces D-92 sigue vigente salvo las excepciones de lectura (D-99, D-103, D-107) | Vigente |
