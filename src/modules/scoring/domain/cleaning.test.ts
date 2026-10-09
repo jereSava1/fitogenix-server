@@ -195,19 +195,52 @@ describe('D-99 — el parseo no parte textos que están bien', () => {
   });
 });
 
-// Caracterización antes de sacar lo que no es ingrediente: lo que hoy sale para cada caso.
-describe('caracterización: texto que no es ingrediente', () => {
-  it('unidades sueltas, rótulo con coma, conservación, colesterol y "Contiene" salen como ingredientes', () => {
+// Lo que no es ingrediente (unidades sueltas, rótulo, conservación, colesterol, "Contiene") no se
+// cuenta. Antes de este cambio salía como ingrediente (el commit anterior fija esa salida).
+describe('texto del envase que no es un ingrediente', () => {
+  it('las unidades sueltas salen', () => {
     expect(names('harina (hierro 30 mg/kg, ácido fólico 2,2 mg/kg), sal')).toEqual([
-      'hierro 30 mg/kg', 'ácido fólico 2', '2 mg/kg', 'sal',
+      'hierro', 'ácido fólico', 'sal',
     ]);
-    expect(names('agua. INGREDIENTES, QUESO, sal')).toEqual(['agua', 'INGREDIENTES', 'QUESO', 'sal']);
-    expect(names('agua, sal. Mantener en lugar fresco y seco.')).toEqual([
-      'agua', 'sal', 'Mantener en lugar fresco y seco',
-    ]);
+  });
+
+  it('una cantidad pegada a su ingrediente dentro del paréntesis se conserva', () => {
+    expect(names('agua, sucralosa (5mg/100g), sal')).toContain('sucralosa');
+  });
+
+  it('el rótulo "INGREDIENTES," sale', () => {
+    expect(names('agua. INGREDIENTES, QUESO, sal')).toEqual(['agua', 'QUESO', 'sal']);
+    expect(names('agua. Ingredientes: queso, sal')).toEqual(['queso', 'sal']);
+  });
+
+  it('las frases de conservación salen', () => {
+    expect(names('agua, sal. Mantener en lugar fresco y seco.')).toEqual(['agua', 'sal']);
+    expect(names('agua, sal. Una vez abierto, conservar refrigerado.')).toEqual(['agua', 'sal']);
+  });
+
+  it('la frase del colesterol sale', () => {
     expect(names('aceite. Este producto, al igual que todos los de origen vegetal, NO CONTIENE COLESTEROL.')).toEqual([
-      'aceite', 'Este producto', 'al igual que todos los de origen vegetal', 'NO CONTIENE COLESTEROL',
+      'aceite',
     ]);
-    expect(names('harina, azúcar. CONTIENE LECHE Y SOJA.')).toEqual(['harina', 'azúcar', 'CONTIENE LECHE Y SOJA']);
+  });
+});
+
+describe('declaraciones "Contiene…": no son ingredientes pero se conservan', () => {
+  it('quedan aparte, tal como figuran', () => {
+    const c = clean('harina, azúcar. CONTIENE LECHE Y SOJA.');
+    expect(c.items.map((i) => i.raw)).toEqual(['harina', 'azúcar']);
+    expect(c.allergenWarnings).toEqual(['CONTIENE LECHE Y SOJA']);
+  });
+
+  it('conviven con "puede contener"', () => {
+    const c = clean('harina. Contiene gluten. Puede contener trazas de maní');
+    expect(c.items.map((i) => i.raw)).toEqual(['harina']);
+    expect(c.allergenWarnings[0]).toBe('Contiene gluten');
+    expect(c.allergenWarnings).toHaveLength(2);
+  });
+
+  it('dentro de un paréntesis o tras "no" no son una declaración', () => {
+    expect(clean('leche (contiene lactosa), sal').allergenWarnings).toEqual([]);
+    expect(clean('agua. No contiene gluten').allergenWarnings).toEqual([]);
   });
 });
