@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-102**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-103**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -109,3 +109,4 @@ Una decisión nueva toma el siguiente número libre (**D-102**). Si cambia otra,
 | D-99 | El parseo de ingredientes (`scoring/domain/cleaning.ts`) se arregla aunque cambien los puntajes: corrige la lectura, no el criterio. Es una excepción acotada a D-92, con informe de puntajes antes y después ([plan-accion-catalogo.md](plan-accion-catalogo.md)) | Hecha |
 | D-100 | Las filas vacías de `products` (59.893 al 2026-10-08) se quedan: tienen código, nombre, marca e imagen, y son la cola de lo que hay que verificar | Vigente |
 | D-101 | La categoría no se muestra en la app por ahora. El prototipo `scripts/preview-product-categories.ts` no se incorpora | Vigente |
+| D-102 | Los códigos de barras inválidos de `products` se verifican contra la fuente: el UPC-A con el cero inicial recortado se corrige completando ceros hasta 13 dígitos si el verificador valida y la fuente lo confirma; se borra solo lo que la fuente no permite recuperar y nadie referencia. Nunca se calcula un dígito | Hecha |
