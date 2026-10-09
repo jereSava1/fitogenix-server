@@ -1,5 +1,5 @@
 // Config del ETL: Supabase se exige al cargar; ANTHROPIC_API_KEY solo cuando se usa
-// el enriquecimiento con IA (`requireAnthropicApiKey`).
+// la limpieza con IA (`requireAnthropicApiKey`).
 
 const required = (key: string): string => {
   const val = process.env[key];
@@ -19,7 +19,7 @@ export const config = {
 
 export function requireAnthropicApiKey(): string {
   if (!config.anthropicApiKey) {
-    throw new Error('Missing required env var: ANTHROPIC_API_KEY (lo usa el ETL de enriquecimiento con IA)');
+    throw new Error('Missing required env var: ANTHROPIC_API_KEY (lo usa la limpieza con IA del ETL)');
   }
   return config.anthropicApiKey;
 }
