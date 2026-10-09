@@ -12,7 +12,7 @@ import { once } from 'node:events';
 import { normalizeBarcode } from '../lib/barcode';
 import { hasNutrientData } from '../lib/completeness';
 import { reproducibleSample } from '../lib/barcodeRepair';
-import { classifyFidelity, hasFourMacros, nutrientValues, type Block, type SourceBlock } from '../lib/fidelity';
+import { classifyFidelity, diffCause, hasFourMacros, nutrientValues, type Block, type SourceBlock } from '../lib/fidelity';
 import { mergeRawProducts } from '../lib/merge';
 import { readJsonl, sha256OfFile } from '../lib/productsExport';
 import { hasImpossibleNutrition } from '../lib/purgePlan';
@@ -172,9 +172,42 @@ async function live(planPath: string, outDir: string): Promise<void> {
   console.log(JSON.stringify({ muestra: sample.length, resultado: tally }));
 }
 
+/** Relee todos los cambios propuestos. Se aplican los que la fuente confirma o de los que solo difiere
+ *  por redondeo; el resto queda en lista. Deja `ola4-aplicar.json`, para `etl:purge ola4 --apply`. */
+async function liveAll(planPath: string, outDir: string): Promise<void> {
+  const plan = JSON.parse(await readFile(planPath, 'utf8')) as { cambios: PlanEntry[] };
+  const cambios: object[] = [];
+  const omitidas: { id: string; barcode: string | null; motivo: string }[] = [];
+  const tally: Record<string, number> = {};
+  for (const e of plan.cambios) {
+    const code = e.barcodeFuente ?? e.barcode;
+    let veredicto = 'error';
+    let detalle = '';
+    if (code && e.fuente !== '?') {
+      const r = await rereadNutrition(e.fuente, code);
+      await new Promise((res) => setTimeout(res, REREAD_DELAY_MS[e.fuente] ?? REREAD_DEFAULT_DELAY_MS));
+      if (r.status !== 'ok') detalle = r.status === 'error' ? r.message : r.status;
+      else if (!hasNutrientData(r.nutriments)) veredicto = 'sin_tabla_en_vivo';
+      else if (sameNutrients(r.nutriments, e.after.nutriments)) veredicto = 'confirma';
+      else {
+        const cause = diffCause(e.after.nutriments, r.nutriments);
+        veredicto = cause === 'redondeo' ? 'solo_redondeo' : `difiere_${cause}`;
+      }
+    }
+    tally[veredicto] = (tally[veredicto] ?? 0) + 1;
+    if (veredicto === 'confirma' || veredicto === 'solo_redondeo') {
+      cambios.push({ id: e.id, barcode: e.barcode, reason: `tabla perdida (ola 4); la fuente (${e.fuente}) ${veredicto === 'confirma' ? 'confirma' : 'coincide salvo redondeo con'} el bloque de staging`, before: e.before, after: e.after });
+    } else omitidas.push({ id: e.id, barcode: e.barcode, motivo: `${veredicto}${detalle ? `: ${detalle}` : ''}` });
+  }
+  await writeFile(join(outDir, 'ola4-aplicar.json'), `${JSON.stringify({ ola: 'ola4', generado: new Date().toISOString(), origen: null, cambios, omitidas }, null, 2)}\n`, { flag: 'wx' });
+  console.log(JSON.stringify({ relecturas: plan.cambios.length, resultado: tally, seAplican: cambios.length, enLista: omitidas.length }));
+}
+
 async function main() {
   const outDir = argValue('--out-dir');
   if (!outDir) throw new Error('Falta --out-dir');
+  const liveAllPlan = argValue('--live-all');
+  if (liveAllPlan) return liveAll(liveAllPlan, outDir);
   const livePlan = argValue('--live');
   if (livePlan) return live(livePlan, outDir);
   const input = argValue('--input');
