@@ -9,6 +9,7 @@ La app no se deploya desde acá: sale por las tiendas.
 | Rama de producción | `main` |
 | Hosting | Render, plan free. Build `npm install && npm run build`, start `node dist/main.js` (D-93: Render no deja pasar a Docker un servicio existente) |
 | Docker | El `Dockerfile` se usa en local y en el CI (job `docker`), y sirve para mover el server a cualquier proveedor ([ADR-0007](adr/0007-portabilidad-de-hosting.md)) |
+| Imagen base | El `Dockerfile` toma `node:22-alpine` de `public.ecr.aws/docker/library` (espejo oficial de Docker Hub, misma imagen y variante) desde 2026-10-09, porque Docker Hub devolvía 429 (límite de descargas anónimas) a los runners del CI. Para volver atrás: cambiar los dos `FROM` a `node:22-alpine`. Render no usa el `Dockerfile` (D-93) |
 | Cuándo deploya | Automático después de que pase el CI en `main` (Auto-Deploy: *After CI Checks Pass*) |
 | Salud | Health Check Path: `/health`. `/health/ready` es para mirar a mano: si Render lo usara, una caída de Supabase reiniciaría el server sin motivo |
 | Apagado | Con SIGTERM termina los requests en curso y sale |
