@@ -84,6 +84,22 @@ function removeLooseUnits(text: string): string {
   });
 }
 
+const MANUFACTURER_TAIL =
+  /\b(?:elaborado por|elaborado en|envasado por|comercializado por|rne|rnpa|industria argentina|establecimiento)\b/giu;
+
+/** Desde la marca del fabricante hasta el final no es ingrediente ("Elaborado por: Coca-Cola…, RNE…").
+ *  Solo en el nivel superior y solo si después no sigue ningún ingrediente: si la marca está al
+ *  principio o en el medio de la lista, no se corta. */
+function cutManufacturerTail(text: string, resolves: ResolvesPredicate): string {
+  for (const match of text.matchAll(MANUFACTURER_TAIL)) {
+    const at = match.index ?? 0;
+    if (depthAt(text, at) !== 0) continue;
+    if (splitPlain(text.slice(at)).some(resolves)) return text;
+    return text.slice(0, at);
+  }
+  return text;
+}
+
 /** "Contiene leche y soja.": es una declaración del envase, no un ingrediente. Solo en el nivel
  *  superior y sin tocar "no contiene". Devuelve el texto sin ellas y las declaraciones tal cual. */
 function extractContainsDeclarations(text: string): { rest: string; declarations: string[] } {
@@ -274,7 +290,8 @@ export function cleanIngredientList(
     .replace(LABEL_HEADING, '$1 ');
 
   const { rest, declarations } = extractContainsDeclarations(removeLooseUnits(source));
-  const { list, warnings: traces } = splitAllergenWarnings(rest);
+  const { list: untrimmed, warnings: traces } = splitAllergenWarnings(rest);
+  const list = cutManufacturerTail(untrimmed, resolves);
   const warnings = [...declarations, ...traces];
 
   const items: CleanIngredient[] = [];

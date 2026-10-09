@@ -244,3 +244,32 @@ describe('declaraciones "Contiene…": no son ingredientes pero se conservan', (
     expect(clean('agua. No contiene gluten').allergenWarnings).toEqual([]);
   });
 });
+
+describe('texto del fabricante al final de la lista', () => {
+  it('desde "Elaborado por", "Envasado por", "Comercializado por", RNE, RNPA o "Industria argentina" no es ingrediente', () => {
+    for (const marca of [
+      'Elaborado por: Coca-Cola FEMSA S.A., Av. Alcorta 3606, CABA',
+      'Envasado por Molinos SA, Ruta 9 km 50',
+      'Comercializado por INC S.A. Ayacucho 1055',
+      'RNE N° 02-034.547 RNPA 21-100657',
+      'Industria argentina. Establecimiento 1234',
+    ]) {
+      expect(names(`agua, azúcar, sal ${marca}`)).toEqual(['agua', 'azúcar', 'sal']);
+    }
+  });
+
+  it('si después de la marca siguen ingredientes, no corta', () => {
+    expect(names('Elaborado por Molinos SA, harina de trigo, azúcar, sal')).toContain('azúcar');
+    expect(names('agua, RNE 123, harina de trigo, azúcar')).toContain('harina de trigo');
+  });
+
+  it('dentro de un paréntesis no corta', () => {
+    expect(names('agua, leche (RNE 123), sal')).toContain('sal');
+  });
+
+  it('"puede contener" sigue yendo a las advertencias aunque haya fabricante antes', () => {
+    const c = clean('agua, sal. Elaborado por X SA. Puede contener trazas de soja');
+    expect(c.items.map((i) => i.raw)).toEqual(['agua', 'sal']);
+    expect(c.allergenWarnings).toHaveLength(1);
+  });
+});
