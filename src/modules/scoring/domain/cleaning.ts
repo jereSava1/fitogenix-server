@@ -49,6 +49,55 @@ function splitAllergenWarnings(text: string): AllergenSplit {
 }
 
 /* ────────────────────────────────────────────────────────────
+   Texto del envase que no es un ingrediente (se lee, no se toca la base)
+   ──────────────────────────────────────────────────────────── */
+
+const LOOSE_UNITS = /\b(?:\d+(?:[.,]\d+)?\s*)?(?:mg\s*\/\s*kg|mg\s*\/\s*100\s*g|g\s*\/\s*100\s*g)\b/giu;
+const LABEL_HEADING = /(^|[\r\n.;])\s*ingredientes\s*[:,]\s*/giu;
+const STORAGE_PHRASE =
+  /\b(?:mantener en lugar (?:fresco|seco)|conservar refrigerado|una vez abierto|mantener refrigerado)\b[^.\r\n;]*[.;]?/giu;
+const NO_CHOLESTEROL =
+  /\beste producto, al igual que todos los de origen vegetal,\s*no contiene colesterol\s*[.]?/giu;
+const CONTAINS_DECLARATION = /(^|[.;\r\n])(\s*)(contiene(?:n)?\s+[^.;\r\n]+)[.;]?/giu;
+
+function depthAt(text: string, position: number): number {
+  let depth = 0;
+  for (const char of text.slice(0, position)) {
+    if (char === '(' || char === '[') depth++;
+    if (char === ')' || char === ']') depth--;
+  }
+  return depth;
+}
+
+/** Unidades sueltas ("hierro 30 mg/kg"): salen. Una cantidad pegada a su ingrediente dentro del
+ *  paréntesis ("sucralosa (5mg/100g)") es información y se conserva. */
+function removeLooseUnits(text: string): string {
+  return text.replace(LOOSE_UNITS, (match, offset: number) => {
+    const before = text.slice(0, offset);
+    const after = text.slice(offset + match.length);
+    const quantityOfIngredient =
+      depthAt(text, offset) === 1 &&
+      /^\d/u.test(match) &&
+      /(?:^|[,;])\s*[\p{L}\p{M}][\p{L}\p{M}\s-]*\(\s*$/u.test(before) &&
+      /^\s*\)/u.test(after);
+    return quantityOfIngredient ? match : ' ';
+  });
+}
+
+/** "Contiene leche y soja.": es una declaración del envase, no un ingrediente. Solo en el nivel
+ *  superior y sin tocar "no contiene". Devuelve el texto sin ellas y las declaraciones tal cual. */
+function extractContainsDeclarations(text: string): { rest: string; declarations: string[] } {
+  const declarations: string[] = [];
+  const rest = text.replace(CONTAINS_DECLARATION, (match, lead: string, _space: string, phrase: string, offset: number) => {
+    const at = offset + lead.length;
+    if (depthAt(text, at) !== 0 || /\bno\s*$/iu.test(text.slice(0, at))) return match;
+    declarations.push(phrase.trim());
+    return lead;
+  });
+  return { rest, declarations };
+}
+
+/* ────────────────────────────────────────────────────────────
    Paso 3 — Normalizar y separar
    ──────────────────────────────────────────────────────────── */
 
@@ -219,9 +268,14 @@ export function cleanIngredientList(
     // "art." es una abreviatura ("aroma art. a vainilla"): su punto no separa.
     .replace(/\bart\.(?=\s)/gi, 'art')
     // Un salto de línea después de un conector es el corte de renglón del OCR, no un separador.
-    .replace(/\b(de|del|con|en|al|la|el|los|las|para|sin|por)[ \t]*\r?\n[ \t]*(?=\p{L})/giu, '$1 ');
+    .replace(/\b(de|del|con|en|al|la|el|los|las|para|sin|por)[ \t]*\r?\n[ \t]*(?=\p{L})/giu, '$1 ')
+    .replace(NO_CHOLESTEROL, ' ')
+    .replace(STORAGE_PHRASE, ' ')
+    .replace(LABEL_HEADING, '$1 ');
 
-  const { list, warnings } = splitAllergenWarnings(source);
+  const { rest, declarations } = extractContainsDeclarations(removeLooseUnits(source));
+  const { list, warnings: traces } = splitAllergenWarnings(rest);
+  const warnings = [...declarations, ...traces];
 
   const items: CleanIngredient[] = [];
   const certificationsRemoved: string[] = [];

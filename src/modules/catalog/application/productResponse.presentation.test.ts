@@ -13,6 +13,7 @@ vi.mock('../../scoring', async (importOriginal) => {
       scoreAvailable: forcedScore.value != null,
       noScore: forcedScore.value == null ? { code: 'sin-ingredientes', message: 'sin datos' } : null,
       ingredients: [],
+      allergenWarnings: [],
     }),
   };
 });
