@@ -179,7 +179,7 @@ Cuatro niveles de validación; solo N2 y N3 cuentan como `verificado`:
 | 2 | Hecha (D-102) | 1.742 códigos inválidos: 1.638 corregidos, 87 borrados y 17 en lista (abajo) |
 | 3 | Hecha | 129 filas: 5 con el bloque reemplazado por uno coherente de la fuente, 124 con el bloque en NULL. Nutrición imposible: 129 → 0 |
 | 4 | Sin empezar | Con T-06 mergeada, correr el merge acotado sobre las filas donde lo guardado difiere de la fuente |
-| 5 | Solo lista | Tabla de abajo. Lo decide Jere |
+| 5 | Hecha (D-103) | El parser deja de contar lo que no es ingrediente; se vació `ingredients_text` de 57 filas con contaminación dura |
 | 6 y 7 | Sin empezar | Dependen de D-98 y de las preguntas abiertas |
 
 ### Ola 2: códigos inválidos
@@ -188,26 +188,36 @@ El 93 % (1.614 de 1.742) eran de 11 dígitos, casi todos de Jumbo, Disco, Carref
 
 - **Corregidos (1.638):** `barcode` pasa a 13 dígitos. Muestra de 100 filas de VTEX tomada por `id` (una de cada N): 0 fallas.
 - **Borrados (87), con la fila completa en el plan:** 67 de OFF con dígito verificador malo cuya fuente publica el mismo código inválido; 19 duplicados vacíos de una fila que ya tiene el código completo; 1 que la fuente no publica con un GTIN válido. Ninguno estaba en guardados, historial ni reportes. 142 filas de `products_staging` apuntaban a las borradas (`merged_into` pasa a NULL).
-- **En lista (17):** 15 que chocan con una fila que ya tiene el código completo y la inválida tiene datos (se comparan lado a lado antes de decidir); `248464` (Casancrem), que OFF publica como `00248464` y esa fila ya existe; y `2000000046692`, un código de balanza que referencian guardados o historial.
+- **En lista (17):** 15 que chocan con una fila que ya tiene el código completo y la inválida tiene datos; `248464` (Casancrem), que OFF publica como `00248464` y esa fila ya existe; y `2000000046692`, un código de balanza que referencian guardados o historial. De esos 16 duplicados, 14 se resolvieron después (D-104); quedan `7777777777` y `248464`, referenciados desde `scan_history`, y el código de balanza.
 - El ETL ya no descarta esos códigos: los completa (#26).
 
-### Ola 5: texto de ingredientes contaminado, medido de nuevo con el parseo nuevo
+### Duplicados de la ola 2 (D-104)
 
-2.203 filas tienen algún hallazgo. En 1.395 al menos una regla sigue produciendo un ingrediente falso después del parseo nuevo, y en 87 sigue una contaminación dura (fabricante, conservación, rótulo o frase de colesterol). "Siguen" se mide mirando si la lista parseada todavía contiene un fragmento de esa regla (método aproximado). No se aplicó nada.
+Para 14 de los 16 duplicados quedó una sola fila, la que ya tenía el código completo. Se le pasaron, completos y sin pisar nada, los campos que le faltaban y la duplicada tenía (nutrición entera en 10 pares, imagen en 12, ingredientes en 2, marca en ninguno) y se borró la duplicada con su fila completa en el plan. Los dos que quedan, `7777777777` y `248464`, los referencia `scan_history`: no se borran. `2000000046692` (código de balanza) no se tocó.
 
-| Regla | Clase | Filas | Siguen dando ingredientes falsos | Ya no son problema | Tres ejemplos (código de barras) | Recomendación |
-|---|---|---:|---:|---:|---|---|
-| `alergenos` | declaracion | 1030 | 841 | 189 | 7790045823568 (Avena tradicional), 7791324157534 (Pitusas), 77971586 (Casancrem) | **Dejar.** Es una declaración legítima. Que el parser saque "Contiene…" de la lista de ingredientes (hoy 841 la muestran como ingrediente); no es un vaciado. |
-| `saltos` | estructura | 582 | 51 | 531 | 7791813555049 (Pepsi), 7796041124012 (Harina 0000), 7795373010420 (Eumicel) | **Dejar.** El parser nuevo ya une los renglones cortados; revisar a mano los 51 que siguen. |
-| `ins_repetido` | estructura | 543 | 209 | 334 | 7793890256536 (Madalenas Rellenas Dul), 7792180008688 (Pan Pre Horneado Mama), 7798048730364 (Pepas con chips de cho) | **Dejar.** El mismo INS aparece con su función y con su nombre; es la etiqueta, no un error de texto. Lo trata la deduplicación del motor. |
-| `unidades` | contaminacion | 420 | 326 | 94 | 7791324157534 (Pitusas), 7790199603894 (Mini Crackers 5 Semill), 7791664006196 (Envoltinas) | **Limpiar mecánicamente.** Son cantidades de fortificación ("hierro 30 mg/kg"): quitar `n mg/kg` del fragmento en el parser, sin tocar la base. |
-| `parentesis` | estructura | 383 | 228 | 155 | 7896292316348 (Salsa napolitana), 7794000598898 (Salsa lista knorr port), 7798115090209 (Pan lactal) | **Revisar; vaciar solo si hay otra marca.** Mezcla OCR roto (etiquetas enteras en otro idioma) con paréntesis sin cerrar legítimos. Vaciar únicamente si además tiene fabricante, conservación o rótulo que sigue. |
-| `rotulo` | contaminacion | 236 | 12 | 224 | 0810886011133 (Palmeritas de hojaldre), 7790787002931 (Queso rallado x 120), 0041580750008 (CEREZAS DESHUESADAS AL) | **Limpiar mecánicamente.** El parser ya saca "Ingredientes:"; los 12 que siguen son "INGREDIENTES," con coma: ampliar el patrón. |
-| `fabricante` | contaminacion | 131 | 56 | 75 | 7791813555049 (Pepsi), 7792981062025 (7792981062025), 7798316700396 (Aceite girasol Primor) | **Vaciar (o cortar a mano).** Es texto de otra parte de la etiqueta (dirección, RNE, RNPA) pegado a la lista; no se arregla con reglas. |
-| `sin_gluten` | declaracion | 60 | 39 | 21 | 7798061190312 (Aceite de oliva), 7798415092033 (7798415092033), 7790787002931 (Queso rallado x 120) | **Dejar.** Declaración legítima; el parser puede sacarla de la lista. |
-| `conservacion` | contaminacion | 36 | 25 | 11 | 7790380270027 (Mantecol), 7794000598898 (Salsa lista knorr port), 7798060852945 (Queso con Crema Light) | **Limpiar mecánicamente.** Frases fijas ("Mantener en lugar fresco…"): cortar desde la frase en el parser. |
-| `abreviatura` | estructura | 22 | 0 | 22 |  | **Dejar.** Resuelto por el parser nuevo (0 siguen). |
-| `fortificacion` | declaracion | 20 | 16 | 4 | 7796989008542 (Pan Lactal Tipo Artesa), 7798004241132 (Biscuit con chips de c), 7792052174527 (THE WAFERS STICKS Sabo) | **Dejar.** Declaración legítima ("Según la Ley 25.630…"); sacarla de la lista en el parser. |
-| `sin_colesterol` | declaracion | 4 | 4 | 0 | 7790272001050 (Aceite de girasol Natu), 7793890011999 (Pan), 7793890001846 (Pan de hamburguesa sac) | **Limpiar mecánicamente.** Frase fija de 4 filas; el parser la saca. |
+### Ola 5: texto de ingredientes contaminado (D-103)
 
-Orden sugerido: limpiar mecánicamente las cuatro reglas marcadas (en el parser, sin tocar la base), vaciar `ingredients_text` solo de las 87 filas con contaminación dura que sigue, y dejar el resto.
+- **Parser (solo lectura, la base no se toca):** no cuenta unidades sueltas (`30 mg/kg`), el rótulo `INGREDIENTES,`, las frases de conservación ni la frase del colesterol. Las declaraciones `Contiene…` y `Puede contener…` no cuentan para el puntaje, la posición ni la cobertura, pero se devuelven al final de `ingredients` con `sev: gray` y la descripción "Declaración de alérgenos del envase". 943 de 21.354 productos con datos tienen una. Sobre el catálogo cambiaron 206 puntajes, todos explicados por esas reglas.
+- **Base:** `ingredients_text` en NULL en 57 filas donde, con el parser nuevo, seguía apareciendo texto del fabricante como ingrediente (todas de OFF, 48 con nutrición, que no se tocó).
+- **Medición final** (copia posterior a todo): 2.146 filas con algún hallazgo; en 686 sigue habiendo algún ingrediente falso por alguna regla, y en 0 contaminación dura.
+
+| Regla | Clase | Filas | Siguen | Ya no |
+|---|---|---:|---:|---:|
+| `alergenos` | declaración | 1005 | 248 | 757 |
+| `saltos` | estructura | 552 | 43 | 509 |
+| `ins_repetido` | estructura | 542 | 208 | 334 |
+| `unidades` | contaminación | 413 | 12 | 401 |
+| `parentesis` | estructura | 366 | 215 | 151 |
+| `rotulo` | contaminación | 226 | 0 | 226 |
+| `fabricante` | contaminación | 74 | 0 | 74 |
+| `sin_gluten` | declaración | 53 | 35 | 18 |
+| `conservacion` | contaminación | 29 | 0 | 29 |
+| `abreviatura` | estructura | 22 | 0 | 22 |
+| `fortificacion` | declaración | 20 | 16 | 4 |
+| `sin_colesterol` | declaración | 4 | 0 | 4 |
+
+Lo que queda son declaraciones que el parser no reconoce al principio de una oración (`alergenos`, `sin_gluten`, `fortificacion`), INS repetidos que son parte de la etiqueta y paréntesis de texto OCR; ninguno es contaminación dura.
+
+### Pendiente de Jere
+
+- Correr la migración `20261009150000_indice_staging_merged_into.sql` (índice en `products_staging.merged_into`).
