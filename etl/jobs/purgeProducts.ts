@@ -1,5 +1,5 @@
 // Uso (simulación por defecto, no escribe nada en la base):
-//   npm run etl:purge -- <doritos|doritos-sal|ola1|ola1-flag|ola3> --input export.jsonl --out-dir dir
+//   npm run etl:purge -- <doritos|doritos-sal|ola1|ola1-flag|ola3|ola5-duras> --input export.jsonl --out-dir dir
 // Deja `<ola>-plan.json` con las filas afectadas y los valores de antes y de después.
 // Para aplicar lo revisado:
 //   npm run etl:purge -- <ola> --plan dir/<ola>-plan.json --out-dir dir --apply
@@ -15,6 +15,7 @@ import {
   hasImpossibleNutrition,
   planAiCleanup,
   planAiFlagOff,
+  planClearIngredients,
   planNutritionBlock,
   planNutrimentValue,
   type PlannedChange,
@@ -22,7 +23,7 @@ import {
 } from '../lib/purgePlan';
 import { REREAD_DEFAULT_DELAY_MS, REREAD_DELAY_MS, rereadNutrition } from '../lib/sourceReread';
 
-const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3'] as const;
+const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3', 'ola5-duras'] as const;
 type Ola = (typeof OLAS)[number];
 
 type Plan = {
@@ -69,6 +70,11 @@ async function buildPlan(ola: Ola, input: string): Promise<Plan> {
       rows, '7790310983737', 'salt_100g', 1.66, 1.68,
       'coherente con sodium_100g 0,672 (sal = sodio x 2,5)',
     );
+  } else if (ola === 'ola5-duras') {
+    const idsPath = argValue('--ids');
+    if (!idsPath) throw new Error('ola5-duras exige --ids <json con [{id}]>');
+    const ids = (JSON.parse(await readFile(idsPath, 'utf8')) as { id: string }[]).map((x) => x.id);
+    cambios = planClearIngredients(rows, ids);
   } else if (ola === 'ola1-flag') {
     cambios = planAiFlagOff(rows);
   } else if (ola === 'ola1') {

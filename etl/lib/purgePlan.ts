@@ -58,6 +58,23 @@ export function planAiFlagOff(rows: PurgeRow[]): PlannedChange[] {
     });
 }
 
+/** Ola 5: vaciar `ingredients_text` de las filas listadas (texto del fabricante pegado a la lista). */
+export function planClearIngredients(rows: PurgeRow[], ids: string[]): PlannedChange[] {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.map((id) => {
+    const row = byId.get(id);
+    if (!row) throw new Error(`${id}: no está en la copia`);
+    if (!row.ingredients_text?.trim()) throw new Error(`${id}: ya no tiene ingredients_text`);
+    return {
+      id,
+      barcode: row.barcode,
+      reason: 'texto del fabricante pegado a la lista de ingredientes (ola 5)',
+      before: { ingredients_text: row.ingredients_text },
+      after: { ingredients_text: null },
+    };
+  });
+}
+
 /** Un valor de `nutriments` cambiado en una sola fila, buscada por código de barras. */
 export function planNutrimentValue(
   rows: PurgeRow[],
