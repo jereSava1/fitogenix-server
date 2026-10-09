@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-115**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-119**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -121,3 +121,7 @@ Una decisión nueva toma el siguiente número libre (**D-115**). Si cambia otra,
 | D-111 | La clave secreta de Supabase no se rota | Vigente |
 | D-112 | GS1 Argentina se descarta como fuente (no es posible asociarse). Open Food Facts: se usa su API gratuita y sus fotos de etiqueta, sin consultar a un abogado; queda pendiente la atribución visible en la app | Vigente |
 | D-113 | El motor se recalibra cuando haya productos con ingredientes completos; hasta entonces D-92 sigue vigente salvo las excepciones de lectura (D-99, D-103, D-107) | Vigente |
+| D-115 | Formato del sodio: mg enteros; el colesterol, mg con un decimal. Se sigue convirtiendo antes de redondear | Hecha |
+| D-116 | La tabla nutricional de la app muestra todos los nutrientes que tengan dato, sin tope, en este orden: calorías, proteínas, carbohidratos, grasas totales, azúcares, grasas saturadas, grasas trans, fibra, sodio, colesterol | Hecha (se ve con el próximo build) |
+| D-117 | Líquidos: `products.nutrition_basis` (`100g` o `100ml`, nula si la fuente no lo dice) guarda la base de la nutrición y la app dice "por 100 ml" o "por 100 g". Nunca se convierte ml a g, y no va dentro de `nutriments` (ese bloque se compara entero con las fuentes) | Pendiente (necesita la migración) |
+| D-118 | `product_facts`: tabla de datos observados con fuente y evidencia (06-catalogo-confiable.md §5), dueño ETL, sin acceso directo para `anon` ni `authenticated`; nunca se pisa un dato, la evidencia nueva agrega una fila | Pendiente (necesita la migración) |
