@@ -1,0 +1,224 @@
+[
+  {
+    "id": "tonadita",
+    "evidence_id": "tonadita-foto-aportada-porcion-10g",
+    "status": "simulacion_de_etiqueta_aportada",
+    "expected_sodium_mg": 200,
+    "raw_before": {
+      "product_name": "Manteca Tonadita 200 g",
+      "ingredients_text": "Crema de leche pasteurizada, sal CONTIENE DERIVADOS DE LECHE.",
+      "nutriments": {
+        "fat_100g": 83,
+        "sodium_100g": 0.2,
+        "energy-kcal_100g": 750,
+        "saturated-fat_100g": 50
+      }
+    },
+    "raw_candidate": {
+      "product_name": "Manteca Tonadita 200 g",
+      "ingredients_text": "Crema de leche pasteurizada, sal CONTIENE DERIVADOS DE LECHE.",
+      "nutriments": {
+        "fat_100g": 83,
+        "sodium_100g": 0.2,
+        "energy-kcal_100g": 750,
+        "saturated-fat_100g": 50,
+        "energy-kcal_unit": "kcal",
+        "fat_unit": "g",
+        "saturated-fat_unit": "g",
+        "sodium_unit": "g"
+      }
+    },
+    "candidate": {
+      "evidence_id": "tonadita-foto-aportada-porcion-10g",
+      "normalized": {
+        "evidence_id": "tonadita-foto-aportada-porcion-10g",
+        "original_basis": {
+          "amount": 10,
+          "unit": "g"
+        },
+        "target_basis": {
+          "amount": 100,
+          "unit": "g"
+        },
+        "fields": [
+          {
+            "field": "calories",
+            "original_value": 75,
+            "original_unit": "kcal",
+            "value": 750,
+            "unit": "kcal",
+            "target_basis": {
+              "amount": 100,
+              "unit": "g"
+            },
+            "formula": {
+              "unit_factor": 1,
+              "portion_factor": 10
+            },
+            "verified": false,
+            "applied": false
+          },
+          {
+            "field": "fats",
+            "original_value": 8.3,
+            "original_unit": "g",
+            "value": 83,
+            "unit": "g",
+            "target_basis": {
+              "amount": 100,
+              "unit": "g"
+            },
+            "formula": {
+              "unit_factor": 1,
+              "portion_factor": 10
+            },
+            "verified": false,
+            "applied": false
+          },
+          {
+            "field": "satFats",
+            "original_value": 5,
+            "original_unit": "g",
+            "value": 50,
+            "unit": "g",
+            "target_basis": {
+              "amount": 100,
+              "unit": "g"
+            },
+            "formula": {
+              "unit_factor": 1,
+              "portion_factor": 10
+            },
+            "verified": false,
+            "applied": false
+          },
+          {
+            "field": "sodium",
+            "original_value": 20,
+            "original_unit": "mg",
+            "value": 200,
+            "unit": "mg",
+            "target_basis": {
+              "amount": 100,
+              "unit": "g"
+            },
+            "formula": {
+              "unit_factor": 1,
+              "portion_factor": 10
+            },
+            "verified": false,
+            "applied": false
+          }
+        ],
+        "conversion_checked": true,
+        "label_verified": false,
+        "apply_authorized": false,
+        "applied": false
+      },
+      "legacy_candidate": {
+        "energy-kcal_100g": 750,
+        "energy-kcal_unit": "kcal",
+        "fat_100g": 83,
+        "fat_unit": "g",
+        "saturated-fat_100g": 50,
+        "saturated-fat_unit": "g",
+        "sodium_100g": 0.2,
+        "sodium_unit": "g"
+      },
+      "blockers": [],
+      "candidate_scope": "formato_para_simulacion_no_aprobacion_del_dato",
+      "applied": false,
+      "apply_authorized": false
+    },
+    "applied": false
+  },
+  {
+    "id": "doritos",
+    "evidence_id": "doritos-referencia-usuario-168mg-25g",
+    "status": "referencia_pendiente_no_aplicar",
+    "expected_sodium_mg": 672,
+    "raw_before": {
+      "product_name": "Doritos queso 135 g",
+      "nutriments": {
+        "fat_100g": 32,
+        "salt_100g": 1.66,
+        "fiber_100g": 8.8,
+        "energy_100g": 2110,
+        "sodium_100g": 0.664,
+        "sugars_100g": 2.4,
+        "proteins_100g": 5.6,
+        "energy-kj_100g": 2110,
+        "trans-fat_100g": 0,
+        "energy-kcal_100g": 504,
+        "carbohydrates_100g": 48,
+        "saturated-fat_100g": 3.6,
+        "nutrition-score-fr_100g": 12
+      }
+    },
+    "raw_candidate": {
+      "product_name": "Doritos queso 135 g",
+      "nutriments": {
+        "fat_100g": 32,
+        "salt_100g": 1.66,
+        "fiber_100g": 8.8,
+        "energy_100g": 2110,
+        "sodium_100g": 0.672,
+        "sugars_100g": 2.4,
+        "proteins_100g": 5.6,
+        "energy-kj_100g": 2110,
+        "trans-fat_100g": 0,
+        "energy-kcal_100g": 504,
+        "carbohydrates_100g": 48,
+        "saturated-fat_100g": 3.6,
+        "nutrition-score-fr_100g": 12,
+        "sodium_unit": "g"
+      }
+    },
+    "candidate": {
+      "evidence_id": "doritos-referencia-usuario-168mg-25g",
+      "normalized": {
+        "evidence_id": "doritos-referencia-usuario-168mg-25g",
+        "original_basis": {
+          "amount": 25,
+          "unit": "g"
+        },
+        "target_basis": {
+          "amount": 100,
+          "unit": "g"
+        },
+        "fields": [
+          {
+            "field": "sodium",
+            "original_value": 168,
+            "original_unit": "mg",
+            "value": 672,
+            "unit": "mg",
+            "target_basis": {
+              "amount": 100,
+              "unit": "g"
+            },
+            "formula": {
+              "unit_factor": 1,
+              "portion_factor": 4
+            },
+            "verified": false,
+            "applied": false
+          }
+        ],
+        "conversion_checked": true,
+        "label_verified": false,
+        "apply_authorized": false,
+        "applied": false
+      },
+      "legacy_candidate": {
+        "sodium_100g": 0.672,
+        "sodium_unit": "g"
+      },
+      "blockers": [],
+      "candidate_scope": "formato_para_simulacion_no_aprobacion_del_dato",
+      "applied": false,
+      "apply_authorized": false
+    },
+    "applied": false
+  }
+]

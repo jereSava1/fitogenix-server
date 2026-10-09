@@ -35,6 +35,12 @@ const DERIVADAS = [
 ] as const;
 
 describe('fila que escribe el ETL en products (caracterización K-04)', () => {
+  it.each(['Lácteos', 'Almacén > Sal'])('prepara %s sin romper acentos ni modificar el crudo', (category) => {
+    const raw = Object.freeze({ categories: category });
+    expect(buildCachePayload(raw, '7790000000000').category).toBe(category);
+    expect(raw.categories).toBe(category);
+  });
+
   const filas = muestra.map((row, i) => {
     const raw = rawDe(row, i);
     const barcode = String(7790000000000 + i);

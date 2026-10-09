@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
+import {join,resolve,relative,isAbsolute} from 'node:path';
+import {tmpdir} from 'node:os';
+import {auditRows,runAudit} from './auditar-catalogo-bc.mjs';
+import {diagnoseNutrition} from './diagnosticar-nutricion-c.mjs';
+const hash='a'.repeat(64);
+test('EAN repetido conserva ambas filas y señala ambigüedad sin mezclar recetas',()=>{
+ const rows=[{barcode:'7790310983737',ingredients_text:'Agua'},{barcode:'7790310983737',ingredients_text:'Sal'}];
+ const r=auditRows(rows,hash);assert.equal(r.summary.rows_with_identity_issues,2);assert.deepEqual(r.results.map(x=>x.text.original),['Agua','Sal']);assert.ok(r.results.every(x=>x.identity_issues.includes('barcode_repetido_en_archivo')));
+});
+test('sodio 3900 g se señala, no se corrige a una cifra deseada',()=>{const r=diagnoseNutrition({sodium_100g:3900});assert.ok(r.issues.some(i=>i.rule==='fuera_de_rango'));assert.equal(r.fields.find(f=>f.field==='sodium').original,3900);assert.equal(r.fields.find(f=>f.field==='sodium').value,3900000);assert.equal(r.ready_by_format_and_checks,false);});
+test('azúcar y grasas saturadas superiores a sus totales se señalan',()=>{const r=diagnoseNutrition({sugars_100g:20,carbohydrates_100g:10,'saturated-fat_100g':15,fat_100g:5});assert.equal(r.issues.filter(i=>i.rule==='relacion_inconsistente').length,2);});
+test('pequeñas diferencias de redondeo no generan alerta de relación',()=>{assert.equal(diagnoseNutrition({sugars_100g:10.05,carbohydrates_100g:10}).issues.length,0);});
+test('suma de macros no suma fibra ni azúcar otra vez',()=>{assert.equal(diagnoseNutrition({proteins_100g:30,carbohydrates_100g:50,fat_100g:10,sugars_100g:40,fiber_100g:20}).issues.length,0);assert.ok(diagnoseNutrition({proteins_100g:60,carbohydrates_100g:60,fat_100g:10}).issues.some(i=>i.rule==='suma_macros_mayor_a_100'));});
+test('unidad metadata dudosa se conserva, sin convertir dos veces',()=>{const r=diagnoseNutrition({sodium_100g:0.046,sodium_unit:'mg'});assert.ok(r.issues.some(i=>i.rule==='unidad_metadata_por_aclarar'));assert.equal(r.fields.find(f=>f.field==='sodium').value,46);assert.equal(r.ready_by_format_and_checks,false);});
+test('ingredientes conservan advertencias y original exactamente',()=>{const row={product_name:'Manteca',ingredients_text:'Crema de leche, sal CONTIENE DERIVADOS DE LECHE.',nutriments:{sodium_100g:0.2}},before=structuredClone(row),r=auditRows([row],hash);assert.deepEqual(row,before);assert.equal(r.results[0].text.original,row.ingredients_text);assert.equal(r.results[0].text.proposed_text,null);assert.equal(r.results[0].verified,false);});
+test('identidad de posición es reproducible, sin EAN inventado ni colisión por nombre',()=>{const rows=[{product_name:'Igual'},{product_name:'Igual'}],r=auditRows(rows,hash);assert.notEqual(r.results[0].id,r.results[1].id);assert.equal(r.results[0].barcode,null);assert.deepEqual(auditRows(rows,hash),r);assert.notEqual(auditRows(rows,'b'.repeat(64)).results[0].id,r.results[0].id);});
+test('entrada inválida y barcode numérico son rechazados',()=>{assert.throws(()=>auditRows({},hash));assert.throws(()=>auditRows([null],hash));assert.throws(()=>auditRows([{barcode:70847017332}],hash));assert.throws(()=>auditRows([{ingredients_text:2}],hash));assert.throws(()=>auditRows([],'abc'));});
+test('muestra de 200 se divide en cuatro lotes locales sin pérdida',()=>{const r=auditRows(Array.from({length:200},()=>({ingredients_text:null})),hash);assert.deepEqual(r.batches.map(b=>b.records.length),[50,50,50,50]);assert.equal(new Set(r.batches.flatMap(b=>b.records.map(p=>p.id))).size,200);assert.equal(r.summary.text_counts.sin_dato,200);assert.equal(r.applied,false);});
+test('alertas no validan productos incompletos; ausencia no se inventa',()=>{const r=diagnoseNutrition({});assert.equal(r.issues.length,0);assert.equal(r.ready_by_format_and_checks,false);assert.equal(r.fields.find(f=>f.field==='sodium').value,null);});
+test('CLI protege originales y no permite sobrescrituras',async()=>{const dir=await mkdtemp(join(tmpdir(),'fitogenix-auditoria-'));try{const input=join(dir,'a.json'),out=join(dir,'b.json'),text=JSON.stringify([{product_name:'Prueba',ingredients_text:null}]);await writeFile(input,text);assert.equal((await runAudit(input,out)).records,1);assert.equal(await readFile(input,'utf8'),text);await assert.rejects(runAudit(input,out),/EEXIST/);await assert.rejects(runAudit(input,input),/distinta/);}finally{const inside=relative(resolve(tmpdir()),resolve(dir));assert.ok(inside&&!inside.startsWith('..')&&!isAbsolute(inside)&&inside.startsWith('fitogenix-auditoria-'));await rm(dir,{recursive:true,force:true});}});
