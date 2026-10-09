@@ -86,7 +86,9 @@ function additivesFromTags(
   for (const tag of tags) {
     const code = tag.replace(/^en:/, '');
     const known = findAdditive(tag);
-    if (alreadyOnLabel(code, known?.name)) continue;
+    // "e322i" no tiene entrada propia: el nombre de "e322" ya dice si la etiqueta lo nombra.
+    const nameForCheck = known?.name ?? findAdditive(`en:${code.replace(/(?<=\d)i{1,3}$/, '')}`)?.name;
+    if (alreadyOnLabel(code, nameForCheck)) continue;
 
     const raw = known?.name ?? code.toUpperCase();
     const byRubric = rubricImpact(code);
