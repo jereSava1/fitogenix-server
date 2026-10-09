@@ -171,6 +171,13 @@ describe('D-99 — un aditivo en el texto y en additives_tags cuenta una vez', (
     expect(conTag('en:e322').ingredients).toHaveLength(sin.ingredients.length);
   });
 
+  it('el tag con variante romana no repite al aditivo que la etiqueta nombra por su nombre', () => {
+    const porNombre = (tags: string[]) =>
+      scoreProduct({ ingredients_text: 'agua, azúcar, lecitina de soja', additives_tags: tags, nutriments: { 'energy-kcal_100g': 100 } });
+    expect(porNombre(['en:e322', 'en:e322i']).ingredients).toHaveLength(porNombre([]).ingredients.length);
+    expect(porNombre(['en:e322i']).score).toBe(porNombre([]).score);
+  });
+
   it('un tag de otro aditivo sí se suma', () => {
     expect(conTag('en:e211').ingredients.length).toBeGreaterThan(sin.ingredients.length);
   });
