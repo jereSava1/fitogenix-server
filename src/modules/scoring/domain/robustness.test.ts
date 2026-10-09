@@ -157,6 +157,25 @@ describe('listas mal formadas de OFF y de los retailers', () => {
   });
 });
 
+describe('D-99 — un aditivo en el texto y en additives_tags cuenta una vez', () => {
+  const sin = scoreProduct({ ingredients_text: 'agua, azúcar, ins 322', nutriments: { 'energy-kcal_100g': 100 } });
+  const conTag = (tag: string) =>
+    scoreProduct({ ingredients_text: 'agua, azúcar, ins 322', additives_tags: [tag], nutriments: { 'energy-kcal_100g': 100 } });
+
+  it('el tag con variante (e322i) no repite al "ins 322" del texto', () => {
+    expect(conTag('en:e322i').score).toBe(sin.score);
+    expect(conTag('en:e322i').ingredients).toHaveLength(sin.ingredients.length);
+  });
+
+  it('el tag del mismo código sin variante tampoco', () => {
+    expect(conTag('en:e322').ingredients).toHaveLength(sin.ingredients.length);
+  });
+
+  it('un tag de otro aditivo sí se suma', () => {
+    expect(conTag('en:e211').ingredients.length).toBeGreaterThan(sin.ingredients.length);
+  });
+});
+
 describe('additives_tags alimentan el puntaje', () => {
   // OFF normaliza los aditivos a en:eXXX — es el dato más confiable que
   // tenemos, inmune al OCR del rotulado.
