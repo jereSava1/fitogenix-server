@@ -55,6 +55,18 @@ describe('normalizeBarcode', () => {
   });
 });
 
+describe('códigos de circulación restringida', () => {
+  it('rechaza los EAN-13 de prefijo 20 a 29', () => {
+    expect(normalizeBarcode('2000000046693')).toBeNull();
+    expect(normalizeBarcode('2596536000006')).toBeNull();
+  });
+
+  it('acepta el prefijo 02 (pendiente) y el UPC-A de 12 dígitos que empieza con 2', () => {
+    expect(normalizeBarcode('0212345678909')).toBe('0212345678909');
+    expect(normalizeBarcode('212345678909')).toBe('0212345678909');
+  });
+});
+
 describe('hasValidGtinCheckDigit', () => {
   it('acepta códigos reales de Tonadita y Doritos', () => {
     expect(hasValidGtinCheckDigit('7798060850026')).toBe(true);

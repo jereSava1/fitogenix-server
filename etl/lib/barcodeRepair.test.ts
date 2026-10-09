@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { duplicateVerdict, fieldsToPass, hasContent, reproducibleSample, zeroPaddedCandidate, type RepairRow } from './barcodeRepair';
+import { duplicateVerdict, fieldsToPass, isRestrictedCirculationCode, hasContent, reproducibleSample, zeroPaddedCandidate, type RepairRow } from './barcodeRepair';
 
 const row = (over: Partial<RepairRow> = {}): RepairRow => ({
   id: 'a', barcode: '70177029661', data_source: 'jumbo', product_name: 'Té', ingredients_text: null, nutriments: null, ...over,
@@ -75,5 +75,20 @@ describe('fieldsToPass', () => {
 
   it('no pasa un bloque de nutrición que no sirve', () => {
     expect(fieldsToPass(keeper(), keeper({ nutriments: { 'nova-group': 4 } }), usable)).toEqual({});
+  });
+});
+
+describe('isRestrictedCirculationCode', () => {
+  it('reconoce los EAN-13 de prefijo 20 a 29', () => {
+    expect(isRestrictedCirculationCode('2000000046692')).toBe(true);
+    expect(isRestrictedCirculationCode('2912345678908')).toBe(true);
+  });
+
+  it('no marca el prefijo 02 (pendiente) ni los demás', () => {
+    expect(isRestrictedCirculationCode('0212345678905')).toBe(false);
+    expect(isRestrictedCirculationCode('7798060850026')).toBe(false);
+    expect(isRestrictedCirculationCode('0012345678905')).toBe(false);
+    expect(isRestrictedCirculationCode('212345678905')).toBe(false);
+    expect(isRestrictedCirculationCode(null)).toBe(false);
   });
 });

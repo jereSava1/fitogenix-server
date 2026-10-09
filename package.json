@@ -33,6 +33,7 @@
     "etl:fix-barcodes": "tsx etl/jobs/fixBarcodes.ts",
     "etl:merge-duplicates": "tsx etl/jobs/mergeDuplicateCodes.ts",
     "etl:fidelity": "tsx etl/jobs/fidelity.ts",
+    "etl:retire-codes": "tsx etl/jobs/retireCodes.ts",
     "etl:purge": "tsx etl/jobs/purgeProducts.ts",
     "etl:audit-quality": "tsx etl/jobs/auditDataQuality.ts",
     "etl:fix-quality": "tsx etl/jobs/fixDataQuality.ts"
