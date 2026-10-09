@@ -1,6 +1,7 @@
 // §6 "Antes de evaluar: limpiar la lista": parseo del rotulado, en el orden del documento
 // (alérgenos, traducción, normalización, "y/o", paréntesis).
 
+import { codeNamesAdditive } from './catalog';
 import { normalizeText } from './text';
 import {
   ALLERGEN_PREAMBLE,
@@ -71,24 +72,28 @@ function splitPlain(text: string): string[] {
 /** "Función: aditivo" y "aditivo: códigos" se leen como "función (aditivo)", igual que con
  *  paréntesis: si lo de después resuelve, el encabezado cede. Cualquier otro ":" es un
  *  separador del OCR ("cacao: canela"). */
-function splitColon(piece: string, resolves: ResolvesPredicate): { parts: string[]; sublist: boolean } {
+function splitColon(piece: string, resolves: ResolvesPredicate): Fragment[] {
   const at = piece.indexOf(':');
-  if (at < 0) return { parts: [piece], sublist: false };
+  if (at < 0) return [{ text: piece, nested: false }];
 
   const head = piece.slice(0, at).trim();
-  const rest = splitPlain(piece.slice(at + 1)).flatMap((part) => splitColon(part, resolves).parts);
+  const rest = splitPlain(piece.slice(at + 1)).flatMap((part) => splitColon(part, resolves).map((f) => f.text));
   const restIsCodes = rest.length > 0 && rest.every((part) => ADDITIVE_CODE.test(part));
-  if (((ADDITIVE_FUNCTION.test(head) && !/,|\sy\s/i.test(head)) || restIsCodes) && rest.some(resolves)) {
-    return { parts: rest, sublist: true };
+  const isFunction = ADDITIVE_FUNCTION.test(head) && !/,|\sy\s/i.test(head);
+
+  if (isFunction && rest.some(resolves)) return rest.map((text) => ({ text, nested: true }));
+  if (restIsCodes && rest.some(resolves)) {
+    // "lecitina de soja: ins 322, ins 476": si el código es el mismo aditivo que el nombre, se conserva el nombre.
+    // Si no coincide con ninguno, el encabezado es una función ("emu", "mejorador") y cede.
+    const others = rest.filter((code) => !codeNamesAdditive(code, head));
+    const kept = others.length < rest.length ? [{ text: head, nested: false }] : [];
+    return [...kept, ...others.map((text) => ({ text, nested: true }))];
   }
-  return { parts: [head, ...rest].filter((part) => part.length > 0), sublist: false };
+  return [head, ...rest].filter((part) => part.length > 0).map((text) => ({ text, nested: false }));
 }
 
 function splitFragments(text: string, resolves: ResolvesPredicate): Fragment[] {
-  return splitPlain(text).flatMap((piece) => {
-    const { parts, sublist } = splitColon(piece, resolves);
-    return parts.map((part) => ({ text: part, nested: sublist }));
-  });
+  return splitPlain(text).flatMap((piece) => splitColon(piece, resolves));
 }
 
 interface StrippedFragment {

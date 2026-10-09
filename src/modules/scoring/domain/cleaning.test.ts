@@ -154,11 +154,14 @@ describe('D-99 — el parseo no parte textos que están bien', () => {
     expect(names('azúcar, aroma art. a vainilla')).toEqual(names('azúcar, aroma art a vainilla'));
   });
 
-  it('"aditivo: códigos" se lee igual que "aditivo (códigos)"', () => {
-    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual(['ins 322', 'ins 476']);
-    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual(
-      names('emulsionante (ins 322, ins 476)'),
-    );
+  it('si un nombre y un código son el mismo aditivo, se conserva el nombre', () => {
+    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('lecitina de soja: ins 322')).toEqual(['lecitina de soja']);
+  });
+
+  it('un código de otro aditivo no se pierde, y un encabezado que no coincide con ninguno cede', () => {
+    expect(names('lecitina de soja: ins 322, ins 476')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('emu: ins 471')).toEqual(['ins 471']);
   });
 
   it('"Función: aditivo" no deja la función como ingrediente y separa los códigos', () => {
