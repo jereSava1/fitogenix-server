@@ -166,3 +166,22 @@ Cuatro niveles de validación; solo N2 y N3 cuentan como `verificado`:
 **Qué se puede hacer ya, sin ninguna decisión:** ola 0, T-02, T-05, T-06, T-10 y T-11. Las olas 1 a 5 son deterministas y se cierran con herramientas que casi están; la ola 6 es el trabajo largo del plan 06 y depende de las [PREGUNTA] 6 y 7.
 
 **Qué no hace este plan:** no cambia el criterio del puntaje (D-92), no completa datos faltantes y no borra las filas vacías.
+
+## 9. Estado de la ejecución (2026-10-09)
+
+**Mergeado a `main`:** #12 (análisis y plan 06), #14 (R-01, R-02, herramientas y datos de `etl/validacion/`; T-01 y T-02 en código) y #13 (documentación de Guille ordenada, D-97 a D-101). Tag `archivo/validacion-2026-10-08` en `9a291cc`.
+
+**PRs abiertos, verdes y sin mergear:** #15 (T-05), #16 (T-06), #17 (T-07), #18 (T-10), #19 (T-11 y `etl:export-products`), #20 (T-09, D-99; zona de scoring, pide revisión), #21 (`etl:purge`). #19 y #21 incluyen los commits de #15, #16 y #18 para quedar verdes solos.
+
+| Ola | Estado | Resultado |
+|---|---|---|
+| 0 | Hecha | Copia de `products` con SHA-256 fuera del repo, T-11 sobre las 81.444 filas; los conteos coinciden con los de §1 (la diferencia está en las filas vacías: 60.037 contra 59.893, porque se cuentan solo los nutrientes reales) |
+| Doritos | Hecha | `sodium_100g` 0,664 → 0,672 (D-97). `salt_100g` sigue en 1,66 (con 0,672 de sodio serían 1,68) |
+| 1 | Hecha | 99 filas `ai_enriched` con `ingredients_text`, `nutriments` y `additives_tags` en NULL. No se pudieron rearmar: `products_staging` no tiene datos reales para ninguna. La marca `ai_enriched` sigue en `true` en esas filas |
+| 2 | En lista | Falta decidir los 1.675 códigos de longitud no estándar (la lista está en las marcas de T-11). Los 67 con dígito malo no se borraron: no se borra ninguna fila en esta corrida |
+| 3 | Hecha | 129 filas: 5 con el bloque reemplazado por uno coherente de la fuente, 124 con el bloque en NULL. Nutrición imposible: 129 → 0 |
+| 4 | Sin empezar | Con T-06 mergeada, correr el merge acotado sobre las filas donde lo guardado difiere de la fuente |
+| 5 | Solo lista | 2.218 filas con algún hallazgo de texto; 532 son solo declaraciones (alérgenos, sin TACC…) y no se vacían; 1.686 con texto de otra parte de la etiqueta o mal formado. Lo decide Jere con la lista |
+| 6 y 7 | Sin empezar | Dependen de D-98 y de las preguntas abiertas |
+
+**Caché:** el server usa Redis (Upstash) si están `UPSTASH_REDIS_REST_*`, con 7 días de vida por producto (`lookupProduct.ts`). Un producto que ya se escaneó puede seguir mostrando el dato anterior hasta que venza o se lo recargue. No se vació ninguna caché.
