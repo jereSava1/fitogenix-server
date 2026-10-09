@@ -62,7 +62,20 @@ function additivesFromTags(
   tags: readonly string[],
   fromLabel: readonly EvaluatedIngredient[],
 ): EvaluatedIngredient[] {
+  // Códigos que la etiqueta ya nombra ("INS 322", "E-322i", "ins n° 322"), con su variante si la dice.
+  const labelCodes = fromLabel.flatMap((t) =>
+    [...`${t.item.raw} ${t.display}`.toLowerCase().matchAll(/\b(?:ins|e)[\s-]*(?:n[°º]?\s*)?(\d{3,4})\s?([a-d]?)/g)]
+      .map((m) => ({ number: m[1], variant: m[2] })),
+  );
+  // "E322i" y "INS 322" son el mismo aditivo; "E150d" y "INS 150a" no.
+  const codeOnLabel = (code: string) => {
+    const tag = /^e(\d{3,4})([a-d]?)/.exec(code);
+    if (!tag) return false;
+    return labelCodes.some((c) => c.number === tag[1] && (!c.variant || !tag[2] || c.variant === tag[2]));
+  };
+
   const alreadyOnLabel = (code: string, name: string | undefined) =>
+    codeOnLabel(code) ||
     fromLabel.some((t) => {
       const haystack = `${normalizeText(t.item.raw)} ${normalizeText(t.display)}`;
       return haystack.includes(code) || (name != null && haystack.includes(normalizeText(name)));

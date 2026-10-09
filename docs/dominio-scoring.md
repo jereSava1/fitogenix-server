@@ -13,6 +13,7 @@
 ## §S2 — Cómo se arma el puntaje
 
 - El puntaje es una **función de la lista de ingredientes**: parte de una base, resta por impacto y por posición de cada ingrediente, aplica un modificador de procesamiento (por marcadores de ultraprocesado en el texto, **no** por `nova_group`), los techos y las anulaciones, y clampea. Los nutrientes restan a través de los octógonos (§S4).
+- **Lectura de la lista (D-99, 2026-10-09):** el parseo (`cleaning.ts`) no separa el punto de `art.`; lee `Función: aditivo` y `aditivo: códigos` como `función (aditivo)`, separa dos códigos unidos por `y` y no corta un renglón que termina en un conector (`de`, `con`…). `additives_tags` no repite un aditivo que el texto ya nombra por su código (`INS 322` = `E322i`; `E150d` ≠ `INS 150a`). Cambió la lectura, no el criterio: ver el informe de puntajes en el PR.
 - **Todos los coeficientes** están en `scoring/constants.ts`; la ejecución, en `scoring/steps.ts` y `scoring/pipeline.ts`.
 - **Todo puntaje es reconstruible:** `breakdown.steps` es la salida principal y `scoring/ledger.ts · ScoreLedger` hace imposible mover el número sin registrar el paso. Lo verifican `calibration.test.ts · expectStepsReconstructScore` y los goldens (`regression.test.ts`, `catalogGolden.test.ts`).
 - **No se inventa:** un ingrediente que no está en la tabla (`scoring/data/ingredients.ts`, `scoring/rubric/`) queda **no identificado**, con su costo y su techo. No se estima por analogía.

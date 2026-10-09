@@ -140,3 +140,57 @@ describe('§6.4 — resolver "y/o"', () => {
     expect(c.items[0].alternatives).toEqual(['aceite de girasol', 'soja']);
   });
 });
+
+// D-99: el parseo lee bien los casos de P3 de docs/analisis_BD_Productos.md. Antes de este
+// cambio salían partidos (el commit anterior fija esa salida).
+describe('D-99 — el parseo no parte textos que están bien', () => {
+  it('el punto de "art." no separa', () => {
+    expect(names('agua, aromatizante/saborizante aroma art. a vainilla')).toEqual([
+      'agua', 'aromatizante/saborizante aroma art a vainilla',
+    ]);
+  });
+
+  it('"art." con y sin punto da la misma lista', () => {
+    expect(names('azúcar, aroma art. a vainilla')).toEqual(names('azúcar, aroma art a vainilla'));
+  });
+
+  it('si un nombre y un código son el mismo aditivo, se conserva el nombre', () => {
+    expect(names('emulsionante (lecitina de soja: ins 322, ins 476)')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('lecitina de soja: ins 322')).toEqual(['lecitina de soja']);
+  });
+
+  it('un código de otro aditivo no se pierde, y un encabezado que no coincide con ninguno cede', () => {
+    expect(names('lecitina de soja: ins 322, ins 476')).toEqual(['lecitina de soja', 'ins 476']);
+    expect(names('emu: ins 471')).toEqual(['ins 471']);
+  });
+
+  it('"Función: aditivo" no deja la función como ingrediente y separa los códigos', () => {
+    expect(names('Emulsionantes: INS 4821 y INS 471')).toEqual(['INS 4821', 'INS 471']);
+    expect(names('Emulsionantes: INS 4821 y INS 471')).toEqual(names('Emulsionantes (INS 4821, INS 471)'));
+    expect(names('aromatizante idéntico al natural: vainillina')).toEqual(['vainillina']);
+  });
+
+  it('una función sola, sin nada que resuelva después, se conserva', () => {
+    expect(names('agua, aromatizante')).toEqual(['agua', 'aromatizante']);
+    expect(names('conservador: xyz')).toEqual(['conservador', 'xyz']);
+  });
+
+  it('un encabezado con más de una función no cede', () => {
+    expect(names('saborizante de queso y colorante: tartrazina')).toEqual([
+      'saborizante de queso y colorante', 'tartrazina',
+    ]);
+  });
+
+  it('el ":" del OCR entre ingredientes sigue separando', () => {
+    expect(names('cacao: canela')).toEqual(['cacao', 'canela']);
+  });
+
+  it('la "y" entre palabras que no son códigos no separa', () => {
+    expect(names('sal y pimienta')).toEqual(['sal y pimienta']);
+  });
+
+  it('un salto de línea después de un conector no parte el ingrediente', () => {
+    expect(names('Gluten de\nTrigo')).toEqual(['Gluten de Trigo']);
+    expect(names('agua\nsal')).toEqual(['agua', 'sal']);
+  });
+});
