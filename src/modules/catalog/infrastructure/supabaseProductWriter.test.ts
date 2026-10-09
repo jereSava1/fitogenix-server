@@ -62,8 +62,14 @@ describe('fila que escribe el ETL en products (caracterización K-04)', () => {
       expect(fila.additives_tags).toEqual(raw.additives_tags ?? null);
       expect(typeof fila.updated_at).toBe('string');
       expect(Object.keys(fila).sort()).toEqual(
-        [...DERIVADAS, 'ingredients_text', 'nutriments', 'additives_tags', 'updated_at'].sort(),
+        [...DERIVADAS, 'ingredients_text', 'nutriments', 'nutrition_basis', 'additives_tags', 'updated_at'].sort(),
       );
+      // Las fuentes de la muestra no declaran base: queda nula.
+      expect(fila.nutrition_basis).toBeNull();
     }
+  });
+
+  it('la base de la nutrición, si la fuente la declara, se guarda tal cual', () => {
+    expect(etlRowFor({ nutriments: { sugars_100g: 1 }, nutrition_basis: '100ml' }, '7790000000000').nutrition_basis).toBe('100ml');
   });
 });

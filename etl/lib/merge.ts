@@ -90,13 +90,20 @@ export function mergeRawProducts(entries: StagingEntry[], barcode?: string): Raw
     return undefined;
   };
 
+  // La base viaja con el bloque de nutrición, de la misma fuente: nunca se mezcla.
+  const nutriments = pick('nutriments');
+  const basis = nutriments
+    ? entries.find((e) => e.raw.nutriments === nutriments)?.raw.nutrition_basis
+    : undefined;
+
   return {
     product_name: pick('product_name'),
     brands: pick('brands'),
     image_url: pick('image_url'),
     image_front_url: pick('image_front_url'),
     ingredients_text: pick('ingredients_text'),
-    nutriments: pick('nutriments'), // bloque atómico — ver comentario arriba
+    nutriments, // bloque atómico — ver comentario arriba
+    ...(basis ? { nutrition_basis: basis } : {}),
     additives_tags: pick('additives_tags'),
     labels_tags: pick('labels_tags'),
     categories: pick('categories'),

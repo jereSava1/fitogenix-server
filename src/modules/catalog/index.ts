@@ -20,7 +20,7 @@ export type { OnScan };
 export { buildCachePayload } from './infrastructure/supabaseProductWriter';
 
 export type { ProductDetail, ProductSummary } from './application/productResponse';
-export type { RawProduct } from './domain/rawProduct';
+export type { NutritionBasis, RawProduct } from './domain/rawProduct';
 
 /** Registra `POST /products/lookup` y `GET /products/:id` con los adaptadores
  *  reales. `onScan` lo arma `registerModules` con user-library (catalog no lo

@@ -14,7 +14,7 @@ import {
   type StagingRowFull,
 } from '../lib/staging';
 import { mergeRawProducts, primarySourceOf } from '../lib/merge';
-import type { RawProduct } from '../../src/modules/catalog';
+import type { NutritionBasis, RawProduct } from '../../src/modules/catalog';
 import { isComplete } from '../lib/completeness';
 import { buildCachePayload } from '../../src/modules/catalog';
 
@@ -37,7 +37,7 @@ async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, Ra
 
   const { data, error } = await admin()
     .from('products')
-    .select('barcode, product_name, brand, category, image_url, ingredients_text, nutriments, additives_tags')
+    .select('barcode, product_name, brand, category, image_url, ingredients_text, nutriments, nutrition_basis, additives_tags')
     .in('barcode', barcodes);
 
   if (error || !data) {
@@ -53,6 +53,7 @@ async function fetchExistingProducts(barcodes: string[]): Promise<Map<string, Ra
       image_url: (r.image_url as string) ?? undefined,
       ingredients_text: (r.ingredients_text as string) ?? undefined,
       nutriments: (r.nutriments as Record<string, unknown>) ?? undefined,
+      nutrition_basis: (r.nutrition_basis as NutritionBasis | null) ?? undefined,
       additives_tags: (r.additives_tags as string[]) ?? undefined,
     });
   }

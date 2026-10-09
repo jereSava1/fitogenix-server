@@ -14,6 +14,7 @@ export function buildCachePayload(raw: RawProduct, barcode: string): Record<stri
     image_url: raw.image_front_url ?? raw.image_url ?? null,
     ingredients_text: raw.ingredients_text ?? null,
     nutriments: raw.nutriments ?? null,
+    nutrition_basis: raw.nutrition_basis ?? null,
     additives_tags: raw.additives_tags ?? null,
     data_source: 'off', // runMerge lo pisa con la fuente principal
     ai_enriched: raw._aiEnriched === true,
