@@ -39,7 +39,7 @@
     "etl:fix-quality": "tsx etl/jobs/fixDataQuality.ts"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.2",
+    "@fastify/cors": "^11.3.1",
     "@fastify/rate-limit": "^11.2.0",
     "@fastify/type-provider-typebox": "^5.2.0",
     "@sinclair/typebox": "^0.34.52",
