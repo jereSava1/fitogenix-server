@@ -1,0 +1,74 @@
+{
+  "phase": "C",
+  "method": "funciones_puras_del_backend_real_en_memoria",
+  "fixture_sha256": "0056b7c88adc2131646249b9f8b327fbfa6750855245455f91283068c7d9fe87",
+  "database_access": false,
+  "database_writes": false,
+  "applied": false,
+  "results": [
+    {
+      "id": "tonadita",
+      "evidence_id": "tonadita-foto-aportada-porcion-10g",
+      "status": "simulacion_de_etiqueta_aportada",
+      "before": {
+        "calories": 750,
+        "protein": null,
+        "carbs": null,
+        "sugars": null,
+        "fats": 83,
+        "satFats": 50,
+        "sodium": 200,
+        "fiber": null,
+        "transFat": null,
+        "cholesterol": null
+      },
+      "after": {
+        "calories": 750,
+        "protein": null,
+        "carbs": null,
+        "sugars": null,
+        "fats": 83,
+        "satFats": 50,
+        "sodium": 200,
+        "fiber": null,
+        "transFat": null,
+        "cholesterol": null
+      },
+      "source_row_changed": false,
+      "applied": false,
+      "apply_authorized": false
+    },
+    {
+      "id": "doritos",
+      "evidence_id": "doritos-referencia-usuario-168mg-25g",
+      "status": "referencia_pendiente_no_aplicar",
+      "before": {
+        "calories": 504,
+        "protein": 5.6,
+        "carbs": 48,
+        "sugars": 2.4,
+        "fats": 32,
+        "satFats": 3.6,
+        "sodium": 664,
+        "fiber": 8.8,
+        "transFat": 0,
+        "cholesterol": null
+      },
+      "after": {
+        "calories": 504,
+        "protein": 5.6,
+        "carbs": 48,
+        "sugars": 2.4,
+        "fats": 32,
+        "satFats": 3.6,
+        "sodium": 672,
+        "fiber": 8.8,
+        "transFat": 0,
+        "cholesterol": null
+      },
+      "source_row_changed": false,
+      "applied": false,
+      "apply_authorized": false
+    }
+  ]
+}

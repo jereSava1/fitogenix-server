@@ -1,0 +1,976 @@
+{
+  "date": "2026-10-08",
+  "capture_started_at": "2026-10-09T01:29:27.804Z",
+  "capture_completed_at": "2026-10-09T01:30:12.475Z",
+  "capture_manifest_sha256": "7d5a908d7959df32f3acd337718a2336560c017d082a1d5ab14dfb689ed0ecfc",
+  "coverage": "todas_las_filas_de_captura_actual",
+  "atomic_snapshot": false,
+  "count_matches_start": true,
+  "database_writes": false,
+  "external_barcodes_consulted_this_run": 0,
+  "totals": {
+    "rows": 81444,
+    "barcode_counts": {
+      "formato_gtin_y_digito_coinciden": 79702,
+      "longitud_no_gtin_estandar": 1675,
+      "digito_gtin_no_coincide": 67
+    },
+    "duplicate_exact_barcodes": 0,
+    "text_counts": {
+      "sin_dato": 62145,
+      "sin_hallazgos_del_detector": 17032,
+      "revision_necesaria": 2083,
+      "conservado_sin_limpieza": 152,
+      "propuesta_pendiente_revision": 31,
+      "sin_lista_utilizable": 1
+    },
+    "ingredient_invalid_type": 0,
+    "nutrition_invalid_shape": 0,
+    "nutrition_complete_by_format": 1904,
+    "nutrition_with_alerts": 1523,
+    "nutrition_ready_by_checks": 1222,
+    "nutrition_alert_counts": {
+      "unidad_metadata_por_aclarar": 1582,
+      "suma_macros_mayor_a_100": 27,
+      "base_no_explicita": 981,
+      "fuera_de_rango": 94,
+      "relacion_inconsistente": 40
+    },
+    "missing_required_counts": {
+      "calories": 66219,
+      "protein": 67288,
+      "carbs": 76957,
+      "sugars": 69667,
+      "fats": 67354,
+      "satFats": 68662,
+      "sodium": 67584,
+      "fiber": 69067
+    },
+    "source_counts": {
+      "jumbo": 41834,
+      "disco": 15563,
+      "off": 7834,
+      "carrefour": 11330,
+      "vea": 4883
+    },
+    "ai_enriched_true": 99
+  },
+  "examples": {
+    "ingredientes_revision": [
+      {
+        "id": "0018d995-b0e2-4cb9-b8d6-079744af0945",
+        "barcode": "7790045823568",
+        "name": "Avena tradicional",
+        "detail": [
+          "alergenos"
+        ]
+      },
+      {
+        "id": "002cfd59-2e8f-4bcc-acf3-e3e82dd10ac0",
+        "barcode": "7791324157534",
+        "name": "Pitusas",
+        "detail": [
+          "alergenos",
+          "unidades",
+          "parentesis"
+        ]
+      },
+      {
+        "id": "00335a62-bc13-4ac2-9130-5ef6ddf56081",
+        "barcode": "7790787960354",
+        "name": "Yogur Descremado Con Fruta Durazno X Ilolay",
+        "detail": [
+          "ins_repetido"
+        ]
+      },
+      {
+        "id": "0040edc7-1695-40eb-835d-d0c92837c1a5",
+        "barcode": "7790380270027",
+        "name": "Mantecol",
+        "detail": [
+          "alergenos",
+          "conservacion",
+          "fabricante",
+          "saltos"
+        ]
+      },
+      {
+        "id": "0069a826-f306-4d5a-b0fc-107e355c58b6",
+        "barcode": "7790199603894",
+        "name": "Mini Crackers 5 Semillas",
+        "detail": [
+          "alergenos",
+          "conservacion",
+          "unidades"
+        ]
+      }
+    ],
+    "nutricion_unidad_metadata_por_aclarar": [
+      {
+        "id": "003328fa-b1eb-4720-84a3-0fa11e73dac3",
+        "barcode": "7790580141967",
+        "name": "Naranja",
+        "detail": {
+          "rule": "unidad_metadata_por_aclarar",
+          "fields": [
+            "sodium"
+          ],
+          "observed_unit": "mg",
+          "expected_storage_unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0059de2f-585d-435b-8f7f-9bee5006a833",
+        "barcode": "7790070318329",
+        "name": "Tirabuzón",
+        "detail": {
+          "rule": "unidad_metadata_por_aclarar",
+          "fields": [
+            "sodium"
+          ],
+          "observed_unit": "mg",
+          "expected_storage_unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0059de2f-585d-435b-8f7f-9bee5006a833",
+        "barcode": "7790070318329",
+        "name": "Tirabuzón",
+        "detail": {
+          "rule": "unidad_metadata_por_aclarar",
+          "fields": [
+            "cholesterol"
+          ],
+          "observed_unit": "mg",
+          "expected_storage_unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "007d76ca-1929-4e8d-826a-c7fc29b51ea7",
+        "barcode": "7792180001528",
+        "name": "Cañuelas",
+        "detail": {
+          "rule": "unidad_metadata_por_aclarar",
+          "fields": [
+            "sodium"
+          ],
+          "observed_unit": "mg",
+          "expected_storage_unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "009ada52-d122-4133-b97d-8b6abac11796",
+        "barcode": "7790580103354",
+        "name": "Duo - Chocolate con leche y chocolate blanco",
+        "detail": {
+          "rule": "unidad_metadata_por_aclarar",
+          "fields": [
+            "sodium"
+          ],
+          "observed_unit": "mg",
+          "expected_storage_unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      }
+    ],
+    "barcode_longitud_no_gtin_estandar": [
+      {
+        "id": "0048abd2-8045-4668-b88a-be66a1ab9a8d",
+        "barcode": "70177029661",
+        "name": "Te Twininsg En Hebras Darjeeling",
+        "detail": null
+      },
+      {
+        "id": "0049d9c8-0e78-49c3-a805-8daaa86565d2",
+        "barcode": "22644043724",
+        "name": "Cafe Arabe Najjar A La Turca Ca Tipo A La Turca Agregados C/cardamomo",
+        "detail": null
+      },
+      {
+        "id": "005aa219-fbc1-4f7f-a954-4c329fafdab4",
+        "barcode": "77901421425",
+        "name": "Manteca President Sin Sal Paq",
+        "detail": null
+      },
+      {
+        "id": "00c7bb25-d911-41fc-b2b7-6bf7de236eb2",
+        "barcode": "54881012423",
+        "name": "Té Verde Ahmad Tea Frambuesa Y Granada X 20 Sa",
+        "detail": null
+      },
+      {
+        "id": "014c4615-af35-4cbf-ae3c-9cc74f501174",
+        "barcode": "76625212005",
+        "name": "Galletas de Arroz Integral Sabor Dulce 100 Grs Riski-Dit",
+        "detail": null
+      }
+    ],
+    "nutricion_suma_macros_mayor_a_100": [
+      {
+        "id": "009ada52-d122-4133-b97d-8b6abac11796",
+        "barcode": "7790580103354",
+        "name": "Duo - Chocolate con leche y chocolate blanco",
+        "detail": {
+          "rule": "suma_macros_mayor_a_100",
+          "fields": [
+            "protein",
+            "carbs",
+            "fats"
+          ],
+          "value": 107.4,
+          "tolerance_g": 1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "04f62b06-799b-4e44-a341-3e84dc3d4431",
+        "barcode": "7613287292896",
+        "name": "Dolca suave",
+        "detail": {
+          "rule": "suma_macros_mayor_a_100",
+          "fields": [
+            "protein",
+            "carbs",
+            "fats"
+          ],
+          "value": 677,
+          "tolerance_g": 1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "07a8c569-56c0-4338-a5aa-d914078145cb",
+        "barcode": "7798178801828",
+        "name": "Chocolate",
+        "detail": {
+          "rule": "suma_macros_mayor_a_100",
+          "fields": [
+            "protein",
+            "carbs",
+            "fats"
+          ],
+          "value": 833.75,
+          "tolerance_g": 1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "13945512-1f08-41f9-83ec-a000f05fe1b7",
+        "barcode": "8697439304261",
+        "name": "جوز الهند",
+        "detail": {
+          "rule": "suma_macros_mayor_a_100",
+          "fields": [
+            "protein",
+            "carbs",
+            "fats"
+          ],
+          "value": 175.32999999999998,
+          "tolerance_g": 1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "189b794c-431d-418c-9864-51a95dc17ba2",
+        "barcode": "7793123000356",
+        "name": "Oblitas Chocolate",
+        "detail": {
+          "rule": "suma_macros_mayor_a_100",
+          "fields": [
+            "protein",
+            "carbs",
+            "fats"
+          ],
+          "value": 137,
+          "tolerance_g": 1,
+          "action": "revisar_sin_corregir"
+        }
+      }
+    ],
+    "nutricion_base_no_explicita": [
+      {
+        "id": "01055428-aef7-4a31-a56e-06c19ed35864",
+        "barcode": "7891150058156",
+        "name": "Saborizador Knorr tipo criollo sobre.",
+        "detail": {
+          "rule": "base_no_explicita",
+          "fields": [
+            "calories"
+          ],
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "01055428-aef7-4a31-a56e-06c19ed35864",
+        "barcode": "7891150058156",
+        "name": "Saborizador Knorr tipo criollo sobre.",
+        "detail": {
+          "rule": "base_no_explicita",
+          "fields": [
+            "sodium"
+          ],
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "031370db-2da7-4317-8ad0-b277549968cd",
+        "barcode": "20417093",
+        "name": "Tostadas Clásicas",
+        "detail": {
+          "rule": "base_no_explicita",
+          "fields": [
+            "calories"
+          ],
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "031370db-2da7-4317-8ad0-b277549968cd",
+        "barcode": "20417093",
+        "name": "Tostadas Clásicas",
+        "detail": {
+          "rule": "base_no_explicita",
+          "fields": [
+            "protein"
+          ],
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "031370db-2da7-4317-8ad0-b277549968cd",
+        "barcode": "20417093",
+        "name": "Tostadas Clásicas",
+        "detail": {
+          "rule": "base_no_explicita",
+          "fields": [
+            "carbs"
+          ],
+          "action": "revisar_sin_corregir"
+        }
+      }
+    ],
+    "nutricion_fuera_de_rango": [
+      {
+        "id": "03eb3e73-3343-4966-83ba-7ef5460d3953",
+        "barcode": "8014433001024",
+        "name": "Macarons Sabor Pistacho 90 Grs Chocolitaly",
+        "detail": {
+          "rule": "fuera_de_rango",
+          "fields": [
+            "fats"
+          ],
+          "value": 183.67,
+          "max": 100,
+          "unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "04f62b06-799b-4e44-a341-3e84dc3d4431",
+        "barcode": "7613287292896",
+        "name": "Dolca suave",
+        "detail": {
+          "rule": "fuera_de_rango",
+          "fields": [
+            "carbs"
+          ],
+          "value": 667,
+          "max": 100,
+          "unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "07a8c569-56c0-4338-a5aa-d914078145cb",
+        "barcode": "7798178801828",
+        "name": "Chocolate",
+        "detail": {
+          "rule": "fuera_de_rango",
+          "fields": [
+            "carbs"
+          ],
+          "value": 817,
+          "max": 100,
+          "unit": "g",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0856ce46-b611-43e6-a413-f7af91d016c0",
+        "barcode": "7798187211281",
+        "name": "Papas jamón serrano",
+        "detail": {
+          "rule": "fuera_de_rango",
+          "fields": [
+            "sodium"
+          ],
+          "value": 205000,
+          "max": 40000,
+          "unit": "mg",
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0c09b6ae-ced0-4280-ab43-f9f42331c3c5",
+        "barcode": "7794520421300",
+        "name": "Bastoncitos Extra Queso",
+        "detail": {
+          "rule": "fuera_de_rango",
+          "fields": [
+            "sodium"
+          ],
+          "value": 213200,
+          "max": 40000,
+          "unit": "mg",
+          "action": "revisar_sin_corregir"
+        }
+      }
+    ],
+    "barcode_digito_gtin_no_coincide": [
+      {
+        "id": "088471cd-51e3-4703-b5ea-a7cede6e8e94",
+        "barcode": "0790070034328",
+        "name": "Nuggets crocantes granja del sol",
+        "detail": null
+      },
+      {
+        "id": "0e865b78-9424-4384-8339-1d2b8ee3a51f",
+        "barcode": "17934337",
+        "name": "Genser",
+        "detail": null
+      },
+      {
+        "id": "0f341a63-8159-4e95-9893-9b9c38e36893",
+        "barcode": "0077922220042",
+        "name": "Billiken Bombón Classic",
+        "detail": null
+      },
+      {
+        "id": "122ab1d9-fcdb-48b2-a375-b4f98c49921c",
+        "barcode": "7791004084670",
+        "name": "Pasta de mani",
+        "detail": null
+      },
+      {
+        "id": "18b566e2-92a7-490a-8abc-8df179d21efc",
+        "barcode": "02817337",
+        "name": "Agua mineral natural sin gas",
+        "detail": null
+      }
+    ],
+    "nutricion_relacion_inconsistente": [
+      {
+        "id": "0b436cb0-2a2d-4019-a9d7-35935a6601bc",
+        "barcode": "7798217932421",
+        "name": "Pan de mesa brie",
+        "detail": {
+          "rule": "relacion_inconsistente",
+          "fields": [
+            "sugars",
+            "carbs"
+          ],
+          "values": [
+            4,
+            0
+          ],
+          "tolerance_g": 0.1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0b59df28-14d8-4b21-b15b-e0ca0db59be8",
+        "barcode": "7790580125592",
+        "name": "7790580125592",
+        "detail": {
+          "rule": "relacion_inconsistente",
+          "fields": [
+            "sugars",
+            "carbs"
+          ],
+          "values": [
+            55,
+            18
+          ],
+          "tolerance_g": 0.1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "0dea2f88-b5b0-4e43-b45a-439efde6890a",
+        "barcode": "7798130955873",
+        "name": "Caramelos Duros Minions Surtido 24 Grs Pez",
+        "detail": {
+          "rule": "relacion_inconsistente",
+          "fields": [
+            "satFats",
+            "fats"
+          ],
+          "values": [
+            1.18,
+            0.78
+          ],
+          "tolerance_g": 0.1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "106b9aba-1759-4c2f-85a5-1ccd96d54829",
+        "barcode": "7792184003337",
+        "name": "Palmeritas",
+        "detail": {
+          "rule": "relacion_inconsistente",
+          "fields": [
+            "sugars",
+            "carbs"
+          ],
+          "values": [
+            76.7,
+            75
+          ],
+          "tolerance_g": 0.1,
+          "action": "revisar_sin_corregir"
+        }
+      },
+      {
+        "id": "13c922fb-e7ba-44af-be6f-ba308c2e60ab",
+        "barcode": "7798130958911",
+        "name": "Pastillero Trolls X 24 Grs Pez",
+        "detail": {
+          "rule": "relacion_inconsistente",
+          "fields": [
+            "satFats",
+            "fats"
+          ],
+          "values": [
+            1.18,
+            0.78
+          ],
+          "tolerance_g": 0.1,
+          "action": "revisar_sin_corregir"
+        }
+      }
+    ]
+  },
+  "pages": [
+    {
+      "file": "pagina-0001-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "c27a7bb9360aeabc7928337d5fb61867dce6fe24e0f55a9fbb240f3aa754e4c7"
+    },
+    {
+      "file": "pagina-0002-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "b33d6ded1ac6ef57eb11607f37c2074e5940f286b4c9fb836297fbc5a170a741"
+    },
+    {
+      "file": "pagina-0003-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "c0e4d4343a32375d2866b829ca82c9cb4fc57d7af1a9b0a5c40dcd2171a340ac"
+    },
+    {
+      "file": "pagina-0004-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "c2ac42efad288e037acbcde9b1af8f3ee7732e2df36ce7c396b4608a12880a00"
+    },
+    {
+      "file": "pagina-0005-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "faad606b364858b3a1ddd10b42d69051c9a4f1e88b4ab0012709995827f959c7"
+    },
+    {
+      "file": "pagina-0006-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "558149e7c6f1665f88eab031b80205d153b6fec56d5f1da92a0dbc6ceb125cb6"
+    },
+    {
+      "file": "pagina-0007-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "3a2d52ef35ce40493bcd8883d6576ead54a7831f228753baba232f8e8cd2fe55"
+    },
+    {
+      "file": "pagina-0008-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "cf4d3dbe9fd7dfa1781a789ab851a776c26d72867f703b9662e99d3576a6c8df"
+    },
+    {
+      "file": "pagina-0009-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "b9e50c68c373422fba6fabdf51f772cf65781df1f9a9d744065aba0bc6ede882"
+    },
+    {
+      "file": "pagina-0010-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "82b4ec4f03157dfc83f3d81b50e66af1043ed4cbca23e3ab31d497a06db35c05"
+    },
+    {
+      "file": "pagina-0011-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "440b6590b7781c5761ea29be19dcfe02bb30987d20f174e96e08651abc905024"
+    },
+    {
+      "file": "pagina-0012-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "d20f09f6bd69321ca97d6aacf47b1a1545e4f0b10b4374431a5794252b2d2268"
+    },
+    {
+      "file": "pagina-0013-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "358abf188cf804e4cb75ef891633fceeee816312c2c055f44eb2bad98a7a45a0"
+    },
+    {
+      "file": "pagina-0014-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "66cf8c69b2e6dde1d7eac52e2c1108067a39f7106b1ba9d71b958a5b276e620a"
+    },
+    {
+      "file": "pagina-0015-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "876469aee330151b9a36b01610576823068c7caf463c0eae40e32a3fb2b270be"
+    },
+    {
+      "file": "pagina-0016-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "61f05d88567f60b183d589c3aa51804ee6352921335fe7b79792018af19b0e2b"
+    },
+    {
+      "file": "pagina-0017-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "e61714f3cc3bdad18aa16ebd00bb06ef8823705be79d5a916e0842e26629aa1e"
+    },
+    {
+      "file": "pagina-0018-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "b8a6d0f5d2e80061286c276e2359d251926f60cf8c8f602f0ef55d8479f9bc6b"
+    },
+    {
+      "file": "pagina-0019-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "672351eb5eb12dc3fae66d8d1f7c38fd08a22a83bc19375dbb5ad0d7e6d076d7"
+    },
+    {
+      "file": "pagina-0020-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "1e1ae320718e181dd2baac2d3c8312b83a7520d5a1fadf6968d5fdb540fbe5c5"
+    },
+    {
+      "file": "pagina-0021-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "89cde0b4eb2f365e6221929d9cef46a65d4a2a0cdb66fdcdaf22848f1a383a00"
+    },
+    {
+      "file": "pagina-0022-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "43ff1d7bbbaebea47fae6f3bd9e398c563eb2fd495b4156ea2a529387f3281af"
+    },
+    {
+      "file": "pagina-0023-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "49d8ac332143cfe7e827d5371cd39b84e75079c4ec1380897f3fef3ad8e4f861"
+    },
+    {
+      "file": "pagina-0024-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "98580fd51652d38b820127f8f0e3e2c5636b8a4d404a151023f3ed7015074be6"
+    },
+    {
+      "file": "pagina-0025-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "f9c05380efdd452ac171b82edb6c094ff36bbc783c9cf40f5ae6926150ca17c3"
+    },
+    {
+      "file": "pagina-0026-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "573a04c908bb011349d17d5900722dec3d231fdfa60aa793633eca269543714d"
+    },
+    {
+      "file": "pagina-0027-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "0524768fb6b42993198ccd53377dfca386ca0065f7300ae3fc8ecf7f53b2ae5a"
+    },
+    {
+      "file": "pagina-0028-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "6f3f66a5fb2ed79ad09b7d37815de240c96ae81818252d3016492b31005f6b76"
+    },
+    {
+      "file": "pagina-0029-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "bf98537f395b9f5c82486ed18afa76726847adffa5a3d827fed24726df65d510"
+    },
+    {
+      "file": "pagina-0030-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "f0aca0faa7982cb394885a0e0a5ce6ad8df2c85d8aac3bf3829c10b5a77e8d92"
+    },
+    {
+      "file": "pagina-0031-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "69b8025cb8f327b111ca35b36bc24973c5322192afb1824b5eaaf02c74f42b11"
+    },
+    {
+      "file": "pagina-0032-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "4e168498795546ae0eaa6abb45756af08dc945387e07b65f2aeafc8a75d93bee"
+    },
+    {
+      "file": "pagina-0033-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "39ff896951bb4239dd86a69997e869cfc73b06b6b35d033536c0c4ce2d4970ac"
+    },
+    {
+      "file": "pagina-0034-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "e3fd752deb09fe027bb54bd8c1816fe6815fc70d2d03de6cf8c23a08fde3725d"
+    },
+    {
+      "file": "pagina-0035-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "c4af40c47245f8ac4b3e2c2c8f84d3977d06b82241106b502ca9523042308877"
+    },
+    {
+      "file": "pagina-0036-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "7679e23a188c07a20a2d2ab2f5ce87cae0edd43826c88a4ba78fd238b5f12fd7"
+    },
+    {
+      "file": "pagina-0037-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "f99366ff7defbdcd54099c8a61940e0db376dd0e1a2b49bcf70c84fec8244611"
+    },
+    {
+      "file": "pagina-0038-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "1299f9e324cb97882169b854e382e9bd5871a123700372cc6fd5ab35f0a312a1"
+    },
+    {
+      "file": "pagina-0039-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "60c4709babb47132e8bf46643fe27b8f83797e4aebac1ebbb93aea81ccd4b97f"
+    },
+    {
+      "file": "pagina-0040-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "7ceb10f556a070e84983c637868a0f2370bd77bd5304e76b85063c6e12ecd8e8"
+    },
+    {
+      "file": "pagina-0041-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "bff0bec9ad28ec89b5d83b00dd6af72bb2e67d33dc72a023f1d53d3acdeb746c"
+    },
+    {
+      "file": "pagina-0042-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "b51e5903df97e4e339d6272f41559cb24f069a65f7f717795abe2b49420ee0d4"
+    },
+    {
+      "file": "pagina-0043-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "4a3125f468e34537bd13e3149b24a132054c468b08c7552aea7d476ff5408808"
+    },
+    {
+      "file": "pagina-0044-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "77d7ca97930f1d0e01f2d90d27b620f595a3a0598b2caee876757da9c9b8a235"
+    },
+    {
+      "file": "pagina-0045-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "195f2c1f7bd08f0685b50960ad32e29a2041a2f5238ac318ff8a185a31fef7d5"
+    },
+    {
+      "file": "pagina-0046-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "caca56304e0ad7b171266e7889dba035b814582d5f24e18f5b448215e36aad4a"
+    },
+    {
+      "file": "pagina-0047-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "ae9df6fdc7b57e52056e1349f286e9178d18e34bccf3169f00559082cff89f25"
+    },
+    {
+      "file": "pagina-0048-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "80760e9bd3cf78dc76b25d47194cf6af5ad12cdf60e62f3fbfd102b2dbf63746"
+    },
+    {
+      "file": "pagina-0049-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "53de4dd6472973ed8c827d051e50aaa920b8191d7499383cbcf48c9b18657d0b"
+    },
+    {
+      "file": "pagina-0050-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "82bcfb6c9fa532e82982be61195e8ff2164802446aca3bff7cf542540fed973d"
+    },
+    {
+      "file": "pagina-0051-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "d19de5c2455cb8511a7bf79943c825d505f95294bc5b30706af14cb5b1493649"
+    },
+    {
+      "file": "pagina-0052-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "432c6f078e38f3db4db0d001debf39ed3b386daccc538e18343890bf8e06c40d"
+    },
+    {
+      "file": "pagina-0053-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "99d69031f62b1ec66c2cbcbf7016274e7c1c2339db07c170ff6e747583665079"
+    },
+    {
+      "file": "pagina-0054-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "26c8dfee95a6fd99eaf02a7c9ec93cc73929bace3d5f2c14612033d0f86113a4"
+    },
+    {
+      "file": "pagina-0055-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "72c91d40594352e2288896a8b81b0179a3a22f23756e5b46dd7b1a33f0e35e10"
+    },
+    {
+      "file": "pagina-0056-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "240ca52326bd808a16949828d19376b085a85010e59aa0ec5c46aa0500597d93"
+    },
+    {
+      "file": "pagina-0057-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "1650ab57cac8f4a79c7a2eae30daf8f8ba88c230aecb2fcb3070fa33cbde693b"
+    },
+    {
+      "file": "pagina-0058-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "5dc319c805522153b3081ccc15afe0cff0f09fce0e0e0b78cf788b03240320e9"
+    },
+    {
+      "file": "pagina-0059-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "707cbfb0c93655d598718bd00be810ae72d9c66b3fb1b947e33b4a630cde3f63"
+    },
+    {
+      "file": "pagina-0060-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "a68ecc6b22111c5eaba1c7399e2480ceaf7e1f20f4333075ad656226066b9d0c"
+    },
+    {
+      "file": "pagina-0061-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "2a139f50268b509eec90cae02a1e729059140f58ba642f856dfa37777fa0044f"
+    },
+    {
+      "file": "pagina-0062-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "586fba634cd51b7948e4dc3572f77a9dc446f4ba363f3005c1ba59305796a48d"
+    },
+    {
+      "file": "pagina-0063-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "44aea513664d356f67dc9e2aaccd0688e4bdb5fef2d4e4f14fab7267cd1856b2"
+    },
+    {
+      "file": "pagina-0064-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "c9e4e4f6db4ac064104b1500e62044c91ff15743c00d5c172fa2ec1c9b23069e"
+    },
+    {
+      "file": "pagina-0065-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "ed8c68cf55c40e821df3e99ea31e4c642cd3cf0a5f6ce367d7b1a319db92e149"
+    },
+    {
+      "file": "pagina-0066-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "9e658f11db6034f84fc689075854576c1e0e7d66f482274838ae450b61ac15b6"
+    },
+    {
+      "file": "pagina-0067-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "cfda05a55d73c2b48147fdacab50488938459f5ffd113e6a419b0b3fab9292fb"
+    },
+    {
+      "file": "pagina-0068-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "19d0cfabe64eb248dc2cfbfb2b12a90d078e3d107806f7a4cef1fc92351c6d3c"
+    },
+    {
+      "file": "pagina-0069-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "9535db9f0cf8f9e0e2163c87a5925efa4d05c5a376ef5e9982ddd6df2f20f79c"
+    },
+    {
+      "file": "pagina-0070-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "ad51d6dc7413b77f0dfc2b7d33d39da022284662d609673bb130af21d219e498"
+    },
+    {
+      "file": "pagina-0071-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "8e3f245086c18a8c1aa4e9a3525e2426c0f209b11c393fd2be6a9da849dda2a1"
+    },
+    {
+      "file": "pagina-0072-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "0850367503b921cb827a3ba2609e321b7402ccf453f94c3fb9163724241dae3f"
+    },
+    {
+      "file": "pagina-0073-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "4473616d46d1a9bd5ebbf667128bfc0e9a12ecbecfae48846ce0643eba05c7fd"
+    },
+    {
+      "file": "pagina-0074-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "5013eef3be99c97dc697520ce6d9e657f6e44b55eb1612141ee18722560e901a"
+    },
+    {
+      "file": "pagina-0075-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "d66fda00f5b5d242bca2f55959b3e1976077f3137a057a5fbac4c020a36573c7"
+    },
+    {
+      "file": "pagina-0076-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "a92ab3f3df750dd39b8e483b26453f562957f142e6ad4266ada403af103757e7"
+    },
+    {
+      "file": "pagina-0077-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "7d3b41c3d0b137c61f586220b5cbfac4300a2cbf8d3fc814f2efd14226aad2a1"
+    },
+    {
+      "file": "pagina-0078-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "4c4e0a3b79dd1e0570193ea6affaa900e7501c0232b5b9596398b792e3c67593"
+    },
+    {
+      "file": "pagina-0079-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "ac40c80a5159a5e1c4c350394ccd14a0f9dc1ef6a078cdb9515579788b12d56f"
+    },
+    {
+      "file": "pagina-0080-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "4bf4cb819ebadf46d3907e754e5f4d344297523217e577feb731d770ade0f09d"
+    },
+    {
+      "file": "pagina-0081-diagnostico.json",
+      "rows": 1000,
+      "source_sha256": "38699e74f4577cbfca5ff3cee74c686cf0fc8a41d3546152b6bcfe1d941c92ec"
+    },
+    {
+      "file": "pagina-0082-diagnostico.json",
+      "rows": 444,
+      "source_sha256": "26e7cd1ae9e9523527f2870761b8ae03ab9ff62051d9d2ab6bb559251e032423"
+    }
+  ],
+  "next_batch_size": 50,
+  "notes": [
+    "Forma GTIN/dígito no confirma identidad, existencia ni etiqueta.",
+    "Alertas nutricionales requieren evidencia; no son correcciones.",
+    "Captura paginada no es transacción atómica; cambios concurrentes pueden afectar la lectura."
+  ]
+}

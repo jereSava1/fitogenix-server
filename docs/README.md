@@ -11,6 +11,7 @@ Fuentes de verdad, en este orden: el código que corre, el schema de Supabase y 
 | Entender el puntaje y su fundamento | [dominio-scoring.md](dominio-scoring.md) |
 | Entender qué problemas tiene la base de productos | [analisis_BD_Productos.md](analisis_BD_Productos.md) |
 | Ver el plan del catálogo verificado | [06-catalogo-confiable.md](06-catalogo-confiable.md) |
+| Ver el plan de acción y de purga del catálogo, a partir del trabajo de Guille | [plan-accion-catalogo.md](plan-accion-catalogo.md) y [validacion/README.md](validacion/README.md) |
 | Ver lo que se dejó para más adelante | [deuda-tecnica.md](deuda-tecnica.md) |
 | Deployar o volver atrás | [deploy.md](deploy.md) |
 | Probar la app a mano | [pruebas-manuales.md](pruebas-manuales.md) y [checklist-accesibilidad.md](checklist-accesibilidad.md) |

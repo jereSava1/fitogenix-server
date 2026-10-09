@@ -1,0 +1,3 @@
+53cbc6e9cf72113f983cdc195dff3030564d68e7	refs/heads/main
+f41aa1acd10649d2e471a92800b7553d91c5f3c5	refs/heads/revision/entrega-correcciones-2026-10-08
+ccc008881d12c7bf18962873292e61c336d0549b	refs/heads/revision/fase-a-2026-10-08
