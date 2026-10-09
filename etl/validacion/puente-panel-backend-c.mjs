@@ -1,6 +1,13 @@
 // Formato candidato para simulación. No escribe filas ni llama al backend.
 import {normalizePanel} from './normalizar-panel-c.mjs';
-import {STANDARD} from './preparar-revision-bc.mjs';
+// [campo, clave cruda, unidad, factor de almacenamiento, requerido]
+const STANDARD = [
+ ['calories','energy-kcal','kcal',1,true], ['protein','proteins','g',1,true],
+ ['carbs','carbohydrates','g',1,true], ['sugars','sugars','g',1,true],
+ ['fats','fat','g',1,true], ['satFats','saturated-fat','g',1,true],
+ ['sodium','sodium','mg',1000,true], ['fiber','fiber','g',1,true],
+ ['transFat','trans-fat','g',1,false], ['cholesterol','cholesterol','mg',1000,false],
+];
 export function buildLegacyCandidate(panel) {
  const normalized=normalizePanel(panel);
  if(normalized.target_basis.unit!=='g')return {evidence_id:normalized.evidence_id,normalized,legacy_candidate:null,blockers:['base_ml_requiere_decision_de_contrato_y_fuente'],applied:false,apply_authorized:false};

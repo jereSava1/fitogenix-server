@@ -1,6 +1,6 @@
 # Archivos de revisión — fase A
 
-Leer primero docs/validacion/ENTREGA-FASE-A.md y PENDIENTES-FASE-A.md. propuestas-finales-a.json es el único archivo de propuestas de este paquete: conserva valores actuales, candidatos, ambas lecturas y decisiones del usuario. evidencia-aportada-a.json documenta los cinco aportes del usuario y Sacaan oficial. No están aprobados para aplicación ni conectados al ETL.
+Leer primero docs/validacion/CIERRE-FASE-A.md (las entregas y pendientes originales están en docs/validacion/historial/). propuestas-finales-a.json es el único archivo de propuestas de este paquete: conserva valores actuales, candidatos, ambas lecturas y decisiones del usuario. evidencia-aportada-a.json documenta los cinco aportes del usuario y Sacaan oficial. No están aprobados para aplicación ni conectados al ETL.
 
 ## Control local sin claves ni red
 

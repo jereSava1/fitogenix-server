@@ -44,4 +44,4 @@ Están en [`historial/`](historial/). Sirven para reconstruir el proceso; sus co
 
 ## Código y datos
 
-Las herramientas y los datos de control están en `etl/validacion/` (con su propio fixture en `etl/validacion/fixtures/`). Las reglas que valen la pena se portan a `etl/lib/` y `etl/quality/` (T-10); las herramientas `.mjs` quedan como referencia.
+Los datos de control están en `etl/validacion/` (ver su README). Las reglas de texto y de nutrición se portaron a `etl/lib/` y `etl/quality/` (T-10) y las herramientas `.mjs` de detección, diagnóstico y Barcode Lookup se borraron; siguen en el tag `archivo/validacion-2026-10-08`.
