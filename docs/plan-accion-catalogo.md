@@ -169,19 +169,45 @@ Cuatro niveles de validación; solo N2 y N3 cuentan como `verificado`:
 
 ## 9. Estado de la ejecución (2026-10-09)
 
-**Mergeado a `main`:** #12 (análisis y plan 06), #14 (R-01, R-02, herramientas y datos de `etl/validacion/`; T-01 y T-02 en código) y #13 (documentación de Guille ordenada, D-97 a D-101). Tag `archivo/validacion-2026-10-08` en `9a291cc`.
-
-**PRs abiertos, verdes y sin mergear:** #15 (T-05), #16 (T-06), #17 (T-07), #18 (T-10), #19 (T-11 y `etl:export-products`), #20 (T-09, D-99; zona de scoring, pide revisión), #21 (`etl:purge`). #19 y #21 incluyen los commits de #15, #16 y #18 para quedar verdes solos.
+**Mergeado a `main`:** #12, #13, #14 (R-01, R-02 y las herramientas de Guille), #15 (T-05), #16 (T-06), #17 (T-07), #18 (T-10), #19 (T-11), #20 (T-09, D-99), #21, #22, #24, #25 (`etl:fix-barcodes`), #26 (el ETL completa ceros en códigos de 9 a 11 dígitos) y #27 (arreglo del tag repetido que entró con #20). Tag `archivo/validacion-2026-10-08` en `9a291cc`.
 
 | Ola | Estado | Resultado |
 |---|---|---|
-| 0 | Hecha | Copia de `products` con SHA-256 fuera del repo, T-11 sobre las 81.444 filas; los conteos coinciden con los de §1 (la diferencia está en las filas vacías: 60.037 contra 59.893, porque se cuentan solo los nutrientes reales) |
-| Doritos | Hecha | `sodium_100g` 0,664 → 0,672 (D-97). `salt_100g` sigue en 1,66 (con 0,672 de sodio serían 1,68) |
-| 1 | Hecha | 99 filas `ai_enriched` con `ingredients_text`, `nutriments` y `additives_tags` en NULL. No se pudieron rearmar: `products_staging` no tiene datos reales para ninguna. La marca `ai_enriched` sigue en `true` en esas filas |
-| 2 | En lista | Falta decidir los 1.675 códigos de longitud no estándar (la lista está en las marcas de T-11). Los 67 con dígito malo no se borraron: no se borra ninguna fila en esta corrida |
+| 0 | Hecha | Copia de `products` con SHA-256 fuera del repo, T-11 sobre las 81.444 filas; los conteos coinciden con los de §1 (filas vacías: 60.037 contra 59.893, porque se cuentan solo los nutrientes reales) |
+| Doritos | Hecha | `sodium_100g` 0,664 → 0,672 y `salt_100g` 1,66 → 1,68 (D-97) |
+| 1 | Hecha | 99 filas `ai_enriched` con `ingredients_text`, `nutriments` y `additives_tags` en NULL y `ai_enriched` en `false`. No se pudieron rearmar: `products_staging` no tiene datos reales para ninguna |
+| 2 | Hecha (D-102) | 1.742 códigos inválidos: 1.638 corregidos, 87 borrados y 17 en lista (abajo) |
 | 3 | Hecha | 129 filas: 5 con el bloque reemplazado por uno coherente de la fuente, 124 con el bloque en NULL. Nutrición imposible: 129 → 0 |
 | 4 | Sin empezar | Con T-06 mergeada, correr el merge acotado sobre las filas donde lo guardado difiere de la fuente |
-| 5 | Solo lista | 2.218 filas con algún hallazgo de texto; 532 son solo declaraciones (alérgenos, sin TACC…) y no se vacían; 1.686 con texto de otra parte de la etiqueta o mal formado. Lo decide Jere con la lista |
+| 5 | Solo lista | Tabla de abajo. Lo decide Jere |
 | 6 y 7 | Sin empezar | Dependen de D-98 y de las preguntas abiertas |
 
-**Caché:** el server usa Redis (Upstash) si están `UPSTASH_REDIS_REST_*`, con 7 días de vida por producto (`lookupProduct.ts`). Un producto que ya se escaneó puede seguir mostrando el dato anterior hasta que venza o se lo recargue. No se vació ninguna caché.
+### Ola 2: códigos inválidos
+
+El 93 % (1.614 de 1.742) eran de 11 dígitos, casi todos de Jumbo, Disco, Carrefour y Vea: UPC-A de EE.UU. a los que el supermercado les recorta el cero inicial (VTEX los publica así). Completados con ceros hasta 13, el dígito verificador que ya traen da bien en 1.612 de los 1.614 (azar: 10 %); en los de 9 y 10 dígitos, 60 de 60. OFF publica esos productos con el código completo (8 de 12 en una muestra manual).
+
+- **Corregidos (1.638):** `barcode` pasa a 13 dígitos. Muestra de 100 filas de VTEX tomada por `id` (una de cada N): 0 fallas.
+- **Borrados (87), con la fila completa en el plan:** 67 de OFF con dígito verificador malo cuya fuente publica el mismo código inválido; 19 duplicados vacíos de una fila que ya tiene el código completo; 1 que la fuente no publica con un GTIN válido. Ninguno estaba en guardados, historial ni reportes. 142 filas de `products_staging` apuntaban a las borradas (`merged_into` pasa a NULL).
+- **En lista (17):** 15 que chocan con una fila que ya tiene el código completo y la inválida tiene datos (se comparan lado a lado antes de decidir); `248464` (Casancrem), que OFF publica como `00248464` y esa fila ya existe; y `2000000046692`, un código de balanza que referencian guardados o historial.
+- El ETL ya no descarta esos códigos: los completa (#26).
+
+### Ola 5: texto de ingredientes contaminado, medido de nuevo con el parseo nuevo
+
+2.203 filas tienen algún hallazgo. En 1.395 al menos una regla sigue produciendo un ingrediente falso después del parseo nuevo, y en 87 sigue una contaminación dura (fabricante, conservación, rótulo o frase de colesterol). "Siguen" se mide mirando si la lista parseada todavía contiene un fragmento de esa regla (método aproximado). No se aplicó nada.
+
+| Regla | Clase | Filas | Siguen dando ingredientes falsos | Ya no son problema | Tres ejemplos (código de barras) | Recomendación |
+|---|---|---:|---:|---:|---|---|
+| `alergenos` | declaracion | 1030 | 841 | 189 | 7790045823568 (Avena tradicional), 7791324157534 (Pitusas), 77971586 (Casancrem) | **Dejar.** Es una declaración legítima. Que el parser saque "Contiene…" de la lista de ingredientes (hoy 841 la muestran como ingrediente); no es un vaciado. |
+| `saltos` | estructura | 582 | 51 | 531 | 7791813555049 (Pepsi), 7796041124012 (Harina 0000), 7795373010420 (Eumicel) | **Dejar.** El parser nuevo ya une los renglones cortados; revisar a mano los 51 que siguen. |
+| `ins_repetido` | estructura | 543 | 209 | 334 | 7793890256536 (Madalenas Rellenas Dul), 7792180008688 (Pan Pre Horneado Mama), 7798048730364 (Pepas con chips de cho) | **Dejar.** El mismo INS aparece con su función y con su nombre; es la etiqueta, no un error de texto. Lo trata la deduplicación del motor. |
+| `unidades` | contaminacion | 420 | 326 | 94 | 7791324157534 (Pitusas), 7790199603894 (Mini Crackers 5 Semill), 7791664006196 (Envoltinas) | **Limpiar mecánicamente.** Son cantidades de fortificación ("hierro 30 mg/kg"): quitar `n mg/kg` del fragmento en el parser, sin tocar la base. |
+| `parentesis` | estructura | 383 | 228 | 155 | 7896292316348 (Salsa napolitana), 7794000598898 (Salsa lista knorr port), 7798115090209 (Pan lactal) | **Revisar; vaciar solo si hay otra marca.** Mezcla OCR roto (etiquetas enteras en otro idioma) con paréntesis sin cerrar legítimos. Vaciar únicamente si además tiene fabricante, conservación o rótulo que sigue. |
+| `rotulo` | contaminacion | 236 | 12 | 224 | 0810886011133 (Palmeritas de hojaldre), 7790787002931 (Queso rallado x 120), 0041580750008 (CEREZAS DESHUESADAS AL) | **Limpiar mecánicamente.** El parser ya saca "Ingredientes:"; los 12 que siguen son "INGREDIENTES," con coma: ampliar el patrón. |
+| `fabricante` | contaminacion | 131 | 56 | 75 | 7791813555049 (Pepsi), 7792981062025 (7792981062025), 7798316700396 (Aceite girasol Primor) | **Vaciar (o cortar a mano).** Es texto de otra parte de la etiqueta (dirección, RNE, RNPA) pegado a la lista; no se arregla con reglas. |
+| `sin_gluten` | declaracion | 60 | 39 | 21 | 7798061190312 (Aceite de oliva), 7798415092033 (7798415092033), 7790787002931 (Queso rallado x 120) | **Dejar.** Declaración legítima; el parser puede sacarla de la lista. |
+| `conservacion` | contaminacion | 36 | 25 | 11 | 7790380270027 (Mantecol), 7794000598898 (Salsa lista knorr port), 7798060852945 (Queso con Crema Light) | **Limpiar mecánicamente.** Frases fijas ("Mantener en lugar fresco…"): cortar desde la frase en el parser. |
+| `abreviatura` | estructura | 22 | 0 | 22 |  | **Dejar.** Resuelto por el parser nuevo (0 siguen). |
+| `fortificacion` | declaracion | 20 | 16 | 4 | 7796989008542 (Pan Lactal Tipo Artesa), 7798004241132 (Biscuit con chips de c), 7792052174527 (THE WAFERS STICKS Sabo) | **Dejar.** Declaración legítima ("Según la Ley 25.630…"); sacarla de la lista en el parser. |
+| `sin_colesterol` | declaracion | 4 | 4 | 0 | 7790272001050 (Aceite de girasol Natu), 7793890011999 (Pan), 7793890001846 (Pan de hamburguesa sac) | **Limpiar mecánicamente.** Frase fija de 4 filas; el parser la saca. |
+
+Orden sugerido: limpiar mecánicamente las cuatro reglas marcadas (en el parser, sin tocar la base), vaciar `ingredients_text` solo de las 87 filas con contaminación dura que sigue, y dejar el resto.
