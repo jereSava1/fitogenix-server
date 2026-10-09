@@ -29,6 +29,8 @@
     "etl:enrich-cencosud": "tsx etl/jobs/enrichCencosud.ts",
     "etl:images": "tsx etl/jobs/enrichImages.ts",
     "etl:completeness": "tsx etl/jobs/completeness.ts",
+    "etl:export-products": "tsx etl/jobs/exportProducts.ts",
+    "etl:purge": "tsx etl/jobs/purgeProducts.ts",
     "etl:audit-quality": "tsx etl/jobs/auditDataQuality.ts",
     "etl:fix-quality": "tsx etl/jobs/fixDataQuality.ts"
   },

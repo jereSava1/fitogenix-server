@@ -6,7 +6,7 @@
 # y te avisa al final.
 #
 # Uso:
-#   ./etl/run-all.sh [--countries argentina,chile,...] [--enrich] \
+#   ./etl/run-all.sh [--countries argentina,chile,...] \
 #       [--off-file /tmp/off-products.jsonl.gz] [--off-limit 500] [--merge-limit 2000] \
 #       [--vtex-pages 3] [--vtex-page-size 50]
 #
@@ -14,8 +14,7 @@
 # item 2500, así que pages * pageSize por encima de eso devuelve páginas
 # vacías y el job corta solo (no es un error, pero tampoco trae nada más).
 #
-# Por default NO usa --enrich (no gasta tokens de Claude) — pasalo explícito
-# solo si ya confirmaste el volumen/costo (ver README, sección "Nunca").
+# El merge no completa datos con IA (D-92).
 #
 # Para que el Mac no se duerma a mitad de la corrida (puede tardar bastante
 # si hay que descargar el dump de OFF, ~30 min):
@@ -23,7 +22,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."   # raíz de fitogenix-server, sea cual sea el cwd
 
-ENRICH=""
 COUNTRIES_FLAG=""
 OFF_FILE="/tmp/off-products.jsonl.gz"
 OFF_LIMIT=500
@@ -33,7 +31,6 @@ VTEX_PAGE_SIZE=50
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --enrich) ENRICH="--enrich"; shift ;;
     --countries) COUNTRIES_FLAG="--countries $2"; shift 2 ;;
     --off-file) OFF_FILE="$2"; shift 2 ;;
     --off-limit) OFF_LIMIT="$2"; shift 2 ;;
@@ -46,7 +43,7 @@ done
 
 echo "############################################"
 echo "# ETL Fitogenix — corrida completa"
-echo "# enrich=${ENRICH:-no} countries=${COUNTRIES_FLAG:-argentina (default)}"
+echo "# countries=${COUNTRIES_FLAG:-argentina (default)}"
 echo "# off-limit=$OFF_LIMIT vtex=${VTEX_PAGES}x${VTEX_PAGE_SIZE} merge-limit=$MERGE_LIMIT"
 echo "############################################"
 
@@ -80,8 +77,8 @@ echo "=== [5/6] Ingesta VTEX — Vea ==="
 npm run etl:vtex -- --domain www.vea.com.ar --source vea --pages "$VTEX_PAGES" --pageSize "$VTEX_PAGE_SIZE"
 
 echo ""
-echo "=== [6/6] Merge (enrich=${ENRICH:-no}) ==="
-npm run etl:merge -- --limit "$MERGE_LIMIT" $ENRICH
+echo "=== [6/6] Merge ==="
+npm run etl:merge -- --limit "$MERGE_LIMIT"
 
 echo ""
 echo "=== Stats ==="

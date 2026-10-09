@@ -4,7 +4,7 @@ import { adaptOffLine } from './offAdapter';
 describe('adaptOffLine', () => {
   it('adapta un producto argentino completo', () => {
     const result = adaptOffLine({
-      code: '7790895000013',
+      code: '7790895000010',
       product_name: 'Alfajor Triple',
       brands: 'Havanna',
       ingredients_text: 'harina de trigo, azúcar, cacao',
@@ -12,13 +12,13 @@ describe('adaptOffLine', () => {
       countries_tags: ['en:argentina'],
     });
     expect(result).not.toBeNull();
-    expect(result?.barcode).toBe('7790895000013');
+    expect(result?.barcode).toBe('7790895000010');
     expect(result?.raw.product_name).toBe('Alfajor Triple');
   });
 
   it('por default (sin countryTags) NO acepta un producto tageado solo Chile', () => {
     const result = adaptOffLine({
-      code: '7801234567890',
+      code: '7801234567894',
       product_name: 'Producto Chileno',
       ingredients_text: 'agua, sal',
       countries_tags: ['en:chile'],
@@ -29,7 +29,7 @@ describe('adaptOffLine', () => {
   it('acepta otros países LATAM si se piden explícitamente vía countryTags', () => {
     const result = adaptOffLine(
       {
-        code: '7801234567890',
+        code: '7801234567894',
         product_name: 'Producto Chileno',
         ingredients_text: 'agua, sal',
         countries_tags: ['en:chile'],
@@ -55,7 +55,7 @@ describe('adaptOffLine', () => {
 
   it('descarta filas sin ingredients_text ni nutriments (nada que aportar)', () => {
     const result = adaptOffLine({
-      code: '7790895000013',
+      code: '7790895000010',
       product_name: 'Producto vacío',
       countries_tags: ['en:argentina'],
     });
@@ -64,7 +64,7 @@ describe('adaptOffLine', () => {
 
   it('acepta un producto con prefijo GS1 779 (Argentina) aunque no tenga countries_tags', () => {
     const result = adaptOffLine({
-      code: '7790895000013',
+      code: '7790895000010',
       product_name: 'Producto sin tag de país',
       ingredients_text: 'harina, sal',
       // countries_tags ausente a propósito — mal tageado en OFF, pasa igual.
