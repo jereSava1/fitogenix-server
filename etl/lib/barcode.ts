@@ -18,5 +18,9 @@ export function normalizeBarcode(raw: string): string | null {
   if (!/^(\d{8}|\d{9,14})$/.test(trimmed)) return null;
   const code = trimmed.length >= 9 && trimmed.length <= 11 ? trimmed.padStart(13, '0') : trimmed;
   if (!hasValidGtinCheckDigit(code)) return null;
-  return code.length === 12 ? `0${code}` : code;
+  const normalized = code.length === 12 ? `0${code}` : code;
+  // GS1: los EAN-13 de prefijo 20 a 29 son de uso interno de cada comercio y no identifican un producto.
+  // El prefijo 02 queda pendiente de revisión (D-105): por ahora se acepta.
+  if (/^2\d{12}$/.test(normalized)) return null;
+  return normalized;
 }
