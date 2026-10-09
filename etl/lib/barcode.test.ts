@@ -22,13 +22,22 @@ describe('normalizeBarcode', () => {
     expect(normalizeBarcode('  7790895000010  ')).toBe('7790895000010');
   });
 
+  it('completa con ceros un UPC-A recortado de 9 a 11 dígitos si el verificador valida', () => {
+    expect(normalizeBarcode('70177029661')).toBe('0070177029661');
+    expect(normalizeBarcode('1234567895')).toBe('0001234567895');
+    expect(normalizeBarcode('123456784')).toBe('0000123456784');
+  });
+
+  it('descarta los de 9 a 11 dígitos cuyo verificador no valida', () => {
+    expect(normalizeBarcode('70177029662')).toBeNull();
+    expect(normalizeBarcode('1234567890')).toBeNull();
+    expect(normalizeBarcode('123456785')).toBeNull();
+  });
+
   it('devuelve null para largos que no son GTIN', () => {
     expect(normalizeBarcode('123')).toBeNull();
+    expect(normalizeBarcode('248464')).toBeNull();
     expect(normalizeBarcode('123456789012345')).toBeNull();
-    // 9, 10 y 11 dígitos tienen el dígito verificador correcto pero no son GTIN
-    expect(normalizeBarcode('123456782')).toBeNull();
-    expect(normalizeBarcode('1234567897')).toBeNull();
-    expect(normalizeBarcode('12345678905')).toBeNull();
   });
 
   it('devuelve null si el dígito verificador no coincide', () => {

@@ -9,11 +9,14 @@ export function hasValidGtinCheckDigit(code: string): boolean {
 
 // Normaliza a EAN-13: un UPC-A (12 dígitos) es el mismo código con un '0' adelante, y sin
 // esto el merge por barcode lo tomaría como otro producto. GTIN-8 y GTIN-14 quedan igual.
-// Acepta solo largos GTIN (8, 12, 13, 14) con dígito verificador correcto.
+// Un código de 9 a 11 dígitos es un UPC-A al que el supermercado le recortó el cero inicial:
+// se completa con ceros hasta 13 si el dígito verificador que ya trae da bien (los ceros no lo
+// cambian). Todo lo demás se descarta.
 // Solo para el ETL: el lookup en vivo busca el barcode tal cual llega.
 export function normalizeBarcode(raw: string): string | null {
   const trimmed = raw.trim();
-  if (!/^(\d{8}|\d{12,14})$/.test(trimmed)) return null;
-  if (!hasValidGtinCheckDigit(trimmed)) return null;
-  return trimmed.length === 12 ? `0${trimmed}` : trimmed;
+  if (!/^(\d{8}|\d{9,14})$/.test(trimmed)) return null;
+  const code = trimmed.length >= 9 && trimmed.length <= 11 ? trimmed.padStart(13, '0') : trimmed;
+  if (!hasValidGtinCheckDigit(code)) return null;
+  return code.length === 12 ? `0${code}` : code;
 }
