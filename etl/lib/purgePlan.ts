@@ -40,6 +40,24 @@ export function planAiCleanup(rows: PurgeRow[]): PlannedChange[] {
     }));
 }
 
+/** Ola 1b: las filas vaciadas ya no tienen datos de IA; la marca `ai_enriched` pasa a false. */
+export function planAiFlagOff(rows: PurgeRow[]): PlannedChange[] {
+  return rows
+    .filter((r) => r.ai_enriched === true)
+    .map((r) => {
+      if (r.ingredients_text || r.nutriments) {
+        throw new Error(`${r.barcode}: tiene ai_enriched y todavía trae datos; vaciar antes (ola 1)`);
+      }
+      return {
+        id: r.id,
+        barcode: r.barcode,
+        reason: 'fila ya vaciada (ola 1); deja de figurar como generada por IA',
+        before: { ai_enriched: true },
+        after: { ai_enriched: false },
+      };
+    });
+}
+
 /** Un valor de `nutriments` cambiado en una sola fila, buscada por código de barras. */
 export function planNutrimentValue(
   rows: PurgeRow[],
