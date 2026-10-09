@@ -113,8 +113,9 @@ flowchart LR
 
 | Tabla | Dueño | Qué guarda |
 |---|---|---|
-| `products` | catalog (lee) · ETL (escribe) | Catálogo: nombre, marca, código, ingredientes, nutrientes, imagen, fuente |
+| `products` | catalog (lee) · ETL (escribe) | Catálogo: nombre, marca, código, ingredientes, nutrientes, `nutrition_basis` (`100g` o `100ml`; nula si la fuente no lo dice), imagen, fuente |
 | `products_staging` | ETL | Filas crudas por fuente, pendientes de merge |
+| `product_facts` | ETL | Un dato observado por fila, con fuente, evidencia (URL y hash de la foto), fecha y estado (`sin_verificar`, `verificado`, `en_conflicto`). Solo se agregan filas; lo único que cambia es el estado. Sin acceso para `anon` ni `authenticated` |
 | `saved_products` | user-library | `(user_id, product_id, created_at)` |
 | `scan_history` | user-library | `(user_id, product_id, scanned_at)`, una fila por producto |
 | `profiles` | account | Nombre, apellido, username único, teléfono |
