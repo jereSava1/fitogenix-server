@@ -180,7 +180,8 @@ Cuatro niveles de validación; solo N2 y N3 cuentan como `verificado`:
 | 3 | Hecha | 129 filas: 5 con el bloque reemplazado por uno coherente de la fuente, 124 con el bloque en NULL. Nutrición imposible: 129 → 0 |
 | 4 | Hecha (D-106) | Comparación con `products_staging` (T-12): 312 filas con la tabla perdida; 183 recuperadas de su fuente (152 la confirman, 31 solo difieren por redondeo), 5 en lista, 124 son las vaciadas en la ola 3 |
 | 5 | Hecha (D-103, D-107) | El parser deja de contar lo que no es ingrediente y corta el texto del fabricante al final; se vació `ingredients_text` de 57 filas y se restauraron 26 |
-| 6 y 7 | Sin empezar | Dependen de D-98 y de las preguntas abiertas |
+| 6 | Etapa A hecha (medición de fotos, abajo) | 29,6 % de los productos con datos tiene foto de nutrición en OFF; 21,8 % tiene las dos |
+| 7 | Sin empezar | Depende de D-98 y de las preguntas abiertas |
 
 ### Ola 2: códigos inválidos
 
@@ -257,6 +258,28 @@ La caída de filas con datos viene de lo que se borró o se vació por ser invá
 - **Relleno simulado** (no aplicado; plan `base-nutricional-relleno-plan.json`) sobre las 15.432 filas con tabla real: `100ml` 1.320 (Jumbo 914, Carrefour 184, Vea 137, Disco 85), `100g` 8.411 y nula 5.701 (OFF 5.353 y 348 de Cencosud que ya no publican la tabla). Se aplica después de la migración y de mergear el ETL.
 - **Hecho (D-119):** Jere corrió la migración, se mergearon server#43, server#44 y native#15 y se aplicó el relleno: 9.731 filas con `nutrition_basis` (8.411 `100g`, 1.320 `100ml`); el resto queda nulo.
 - Los respaldos y los planes están en `~/Desktop/fitogenix-backups/2026-10-09/` (ver su `LEEME.md`).
+
+### Ola 6, etapa A: cuántos productos tienen foto de etiqueta publicada
+
+`npm run etl:evidence` (solo lectura: sin base, sin IA, sin gasto). Muestra de 500 productos con datos tomada de la copia `products-post-ronda5.jsonl` (81.199 filas): se descartan las filas sin ingredientes ni nutrientes reales (quedan 21.037), se asigna un cupo por `data_source` en proporción a su peso (restos mayores), y en cada fuente se ordena por `id` y se toma una de cada N (la del medio de cada tramo). Mismo archivo y mismo `--sample`, misma muestra. Se consultó Open Food Facts (API v2 por código, un pedido cada 4,5 s) y VTEX de Jumbo y Carrefour (3 en paralelo); 0 errores 429 y 0 códigos sin respuesta. No se bajó ninguna imagen de la muestra.
+
+| Fuente | n | Foto de ingredientes (OFF) | Foto de nutrición (OFF) | Ambas | Imagen en VTEX | VTEX con 2 o más | Candidata por nombre |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| jumbo | 235 | 16,6 % | 16,6 % | 12,8 % | 99,6 % | 55,3 % | 2,1 % |
+| off | 176 | 51,1 % | 54,0 % | 38,1 % | 54,5 % | 39,2 % | 3,4 % |
+| carrefour | 43 | 9,3 % | 7,0 % | 7,0 % | 100 % | 100 % | 0 % |
+| vea | 26 | 23,1 % | 23,1 % | 19,2 % | 100 % | 57,7 % | 3,8 % |
+| disco | 20 | 20,0 % | 25,0 % | 20,0 % | 95,0 % | 65,0 % | 5,0 % |
+| **total** | 500 | **28,6 %** | **29,6 %** | **21,8 %** | 83,6 % | 54,0 % | 2,6 % |
+| sin los cuatro macros | 402 | 26,6 % | **22,4 %** | 18,4 % | 91,5 % | 58,7 % | 2,5 % |
+
+**Proyección al catálogo con datos (21.037), estimación de muestra con IC 95 % aproximado:** foto de ingredientes en OFF 6.020 ± 777; foto de nutrición en OFF 6.231 ± 775; ambas 4.589 ± 735; sin foto de ingredientes ni de nutrición en OFF ni imagen candidata en VTEX 13.081 ± 794 (62 %). Entre los 402 sin los cuatro macros, 90 (22,4 %) tienen foto de nutrición en OFF: unos 4.600 productos en el catálogo.
+
+**Límites de los números.**
+- Las fotos de OFF son las que OFF marca como ingredientes o nutrición (campos `image_*_url`); no se abrió ninguna, así que puede haber fotos ilegibles o de otra presentación.
+- Casi todos los productos de Cencosud y Carrefour tienen imagen en VTEX, pero no se sabe cuáles son etiqueta. La columna "candidata por nombre" (`nutri`, `ingred`, `tabla`, `_N02` en adelante) es una cota baja: la placa de la Tonadita en Jumbo no se detecta por nombre. "Sin foto de etiqueta" es, por eso, una cota alta. Hay que mirar las 2 o más imágenes de VTEX para saber (etapa B).
+- El margen es por fuente y supone muestra al azar dentro de cada una (aproximación normal); en Carrefour, Vea y Disco hay entre 20 y 43 casos.
+- Los productos de control (11 códigos) y sus fotos, con SHA-256, quedaron fuera del repo en `ola6/control/`.
 
 ### Pendiente de Jere
 

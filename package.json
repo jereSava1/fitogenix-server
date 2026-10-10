@@ -36,7 +36,8 @@
     "etl:retire-codes": "tsx etl/jobs/retireCodes.ts",
     "etl:purge": "tsx etl/jobs/purgeProducts.ts",
     "etl:audit-quality": "tsx etl/jobs/auditDataQuality.ts",
-    "etl:fix-quality": "tsx etl/jobs/fixDataQuality.ts"
+    "etl:fix-quality": "tsx etl/jobs/fixDataQuality.ts",
+    "etl:evidence": "tsx etl/jobs/gatherEvidence.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
