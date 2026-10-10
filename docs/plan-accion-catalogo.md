@@ -231,8 +231,8 @@ El parser corta ahora el texto del fabricante al final de la lista (`Elaborado p
 ### Historial, duplicados y códigos de circulación restringida (D-108, D-105)
 
 - Se borraron las 2 filas de `scan_history` que apuntaban a `7777777777` y `248464` y se resolvieron los 2 pares (`0007777777777`, `00248464`): quedó una fila por producto.
-- Los EAN-13 de prefijo 20 a 29 son de uso interno de cada comercio (GS1) y no identifican un producto. Se borraron 142 (todos de OFF, fila completa en el plan). `2000000046692` (Oreo) está en `saved_products` y no se tocó. Los 7 de prefijo 02 (3 de OFF, 2 de Disco, 2 de Jumbo) quedaron en lista, pendientes de revisión.
-- `normalizeBarcode` rechaza los EAN-13 de prefijo 20 a 29; el 02 sigue aceptándose hasta la revisión.
+- Los EAN-13 de prefijo 20 a 29 son de uso interno de cada comercio (GS1) y no identifican un producto. Se borraron 142 (todos de OFF, fila completa en el plan). `2000000046692` (Oreo) está en `saved_products` y no se tocó. Los 7 de prefijo 02 (3 de OFF, 2 de Disco, 2 de Jumbo) se borraron después (D-120).
+- `normalizeBarcode` rechaza los EAN-13 de prefijo 02 y 20 a 29 (D-120).
 
 ### Medición actual
 
@@ -255,11 +255,12 @@ La caída de filas con datos viene de lo que se borró o se vació por ser invá
 - **Migración** `supabase/migrations/20261009180000_product_facts_y_base_nutricional.sql` (mergeada, **la corre Jere**): tabla `product_facts` (un dato observado por fila, con fuente, evidencia y estado; solo se agregan filas) y columna `products.nutrition_basis` (`100g` o `100ml`, nula si la fuente no lo dice).
 - **Líquidos por 100 ml** (PRs abiertos, esperan la migración): el ETL conserva la base que publica Cencosud (`basic_unit_name`) junto con el bloque de nutrición elegido (server#43); el detalle del producto expone `nutritionBasis`, contrato 0.14.0 (server#44); la app titula la tabla "por 100 ml" o "por 100 g" (native#15). OFF no declara la base de forma explícita: queda nula.
 - **Relleno simulado** (no aplicado; plan `base-nutricional-relleno-plan.json`) sobre las 15.432 filas con tabla real: `100ml` 1.320 (Jumbo 914, Carrefour 184, Vea 137, Disco 85), `100g` 8.411 y nula 5.701 (OFF 5.353 y 348 de Cencosud que ya no publican la tabla). Se aplica después de la migración y de mergear el ETL.
-- **Orden después de la migración:** `supabase db push` → mergear server#43 → server#44 → native#15 → aplicar el relleno.
+- **Hecho (D-119):** Jere corrió la migración, se mergearon server#43, server#44 y native#15 y se aplicó el relleno: 9.731 filas con `nutrition_basis` (8.411 `100g`, 1.320 `100ml`); el resto queda nulo.
+- Los respaldos y los planes están en `~/Desktop/fitogenix-backups/2026-10-09/` (ver su `LEEME.md`).
 
 ### Pendiente de Jere
 
 - Correr las migraciones `20261009150000_indice_staging_merged_into.sql` (índice en `products_staging.merged_into`) y `20261009180000_product_facts_y_base_nutricional.sql` con `supabase db push`.
-- Revisar los 7 códigos de prefijo 02 y el guardado de `2000000046692` (Oreo).
+- Sacar el Oreo `2000000046692` de sus guardados; después se borra la fila (está en `saved_products` y `scan_history`).
 - Atribución visible de Open Food Facts en la app (D-112).
 - Los PRs de Dependabot #6 (typebox 6), #9 (dotenv 18) y #23 (grupo de desarrollo) fallan por cambios de tipos de TypeScript; no se mergearon.
