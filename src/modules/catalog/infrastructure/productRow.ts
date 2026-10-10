@@ -41,6 +41,9 @@ export function rowToCachedRaw(data: Record<string, unknown>): CachedProductRow 
     image_url: typeof data.image_url === 'string' ? data.image_url : undefined,
     ingredients_text: ingredientsText,
     nutriments,
+    ...(data.nutrition_basis === '100g' || data.nutrition_basis === '100ml'
+      ? { nutrition_basis: data.nutrition_basis }
+      : {}),
     additives_tags: asStringArray(data.additives_tags),
     categories: typeof data.category === 'string' ? data.category : undefined,
     _aiEnriched: data.ai_enriched === true,

@@ -4,6 +4,10 @@ El contrato son dos archivos generados con `npm run contract:generate` ([ADR-001
 
 Reglas ([docs/arquitectura.md](../docs/arquitectura.md#contrato-http)): los cambios aditivos son libres; los que rompen se coordinan con un release de native.
 
+## 0.14.0 — 2026-10-09 · líquidos por 100 ml (D-117)
+
+**Aditivo (compatible con native actual).** `ProductDetail.nutritionBasis`: `"100g"`, `"100ml"` o `null` (la fuente no lo dice). Dice sobre qué base está `nutrition`. Nunca se convierte ml a g. Native lo usa para titular la tabla "por 100 ml" o "por 100 g".
+
 ## 0.13.0 — 2026-10-01 · PM-11
 
 **Restringe la entrada de texto (compatible con native actual).** Reglas comunes en `platform/http/schemas.ts`, iguales en native (`presentation/textRules.ts`):

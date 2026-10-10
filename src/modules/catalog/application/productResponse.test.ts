@@ -74,10 +74,10 @@ describe('caracterización — respuesta completa de toProductDetail (T-02)', ()
 describe('identidad, nombre, marca e imagen (K-04)', () => {
   const base: RawProduct = { product_name: 'Yogur natural (1 kg)', ingredients_text: 'leche, fermentos' };
 
-  it('los 12 campos del detalle, ni uno más', () => {
+  it('los 13 campos del detalle, ni uno más', () => {
     expect(Object.keys(toProductDetail(base, IDENTIDAD)).sort()).toEqual([
       'brand', 'fito', 'highlight', 'id', 'imageUrl', 'ingredients', 'name', 'noScore',
-      'nutrition', 'score', 'scoreColor', 'scoreLabel',
+      'nutrition', 'nutritionBasis', 'score', 'scoreColor', 'scoreLabel',
     ]);
   });
 
@@ -120,5 +120,14 @@ describe('declaraciones de alérgenos del envase', () => {
     const sin = toProductDetail({ product_name: 'Galletitas', ingredients_text: 'harina de trigo, azúcar, sal' }, IDENTIDAD);
     expect(detalle.fito).toEqual(sin.fito);
     expect(detalle.ingredients).toHaveLength(sin.ingredients.length + 2);
+  });
+});
+
+describe('base de la nutrición', () => {
+  it('se expone en el detalle y es null si la fuente no la dice', () => {
+    const con = toProductDetail({ product_name: 'Gaseosa', ingredients_text: 'agua, azúcar', nutriments: { 'energy-kcal_100g': 17 }, nutrition_basis: '100ml' }, IDENTIDAD);
+    expect(con.nutritionBasis).toBe('100ml');
+    const sin = toProductDetail({ product_name: 'Galletitas', ingredients_text: 'harina', nutriments: { 'energy-kcal_100g': 400 } }, IDENTIDAD);
+    expect(sin.nutritionBasis).toBeNull();
   });
 });
