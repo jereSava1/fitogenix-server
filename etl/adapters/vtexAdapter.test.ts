@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adaptVtexProduct, parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from './vtexAdapter';
+import { adaptVtexProduct, parseVtexBasis, parseVtexIngredients, parseVtexNutrition, parseVtexSeals } from './vtexAdapter';
 
 describe('adaptVtexProduct', () => {
   it('adapta un producto envasado con EAN real a un RawProduct', () => {
@@ -130,5 +130,30 @@ describe('campos nutricionales de Cencosud', () => {
 
     expect(adapted.raw.ingredients_text).toBe('harina de trigo, manteca');
     expect(adapted.raw.nutriments).toMatchObject({ 'sugars_100g': 30, 'sodium_100g': 0.3 });
+  });
+});
+
+describe('base de la nutrición de Cencosud (líquidos por 100 ml)', () => {
+  const tabla = (unidad: string) =>
+    `{'nutritional_table_set_name': 'Tabla Nutricional', 'basic_unit_name': '${unidad}', 'energy_value': 17, 'sodium_value': 16.5}`;
+
+  it('lee la base que declara la tabla, sin convertir nada', () => {
+    expect(parseVtexBasis([tabla('ml')])).toBe('100ml');
+    expect(parseVtexBasis([tabla('g')])).toBe('100g');
+    expect(parseVtexBasis([tabla('kg')])).toBeUndefined();
+    expect(parseVtexBasis(undefined)).toBeUndefined();
+    expect(parseVtexBasis(["{'energy_value': 1}"])).toBeUndefined();
+  });
+
+  it('el producto la lleva junto a su nutrición, y sin nutrición no hay base', () => {
+    const conTabla = adaptVtexProduct({
+      productName: 'Gaseosa',
+      items: [{ ean: '7790315101235' }],
+      'Tabla Nutricional': [tabla('ml')],
+    });
+    expect(conTabla[0].raw.nutrition_basis).toBe('100ml');
+
+    const sinTabla = adaptVtexProduct({ productName: 'Gaseosa', items: [{ ean: '7790315101235' }] });
+    expect(sinTabla[0].raw).not.toHaveProperty('nutrition_basis');
   });
 });

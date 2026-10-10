@@ -180,4 +180,23 @@ describe('la fila existente en products participa del merge', () => {
       { source: 'jumbo', raw: {} as RawProduct },
     ])).toBe('jumbo');
   });
+
+  it('la base de la nutrición viaja con el bloque elegido, no con otra fuente', () => {
+    const result = mergeRawProducts([
+      { source: 'off', raw: { nutriments: { 'nova-group': 4 }, nutrition_basis: '100g' } },
+      { source: 'jumbo', raw: { nutriments: { 'energy-kcal_100g': 17 }, nutrition_basis: '100ml' } },
+      { source: 'disco', raw: { nutriments: { 'energy-kcal_100g': 99 }, nutrition_basis: '100g' } },
+    ]);
+    expect(result.nutriments).toEqual({ 'energy-kcal_100g': 17 });
+    expect(result.nutrition_basis).toBe('100ml');
+  });
+
+  it('si el bloque elegido no declara base, no hay base (no se toma de otra fuente)', () => {
+    const result = mergeRawProducts([
+      { source: 'off', raw: { nutriments: { 'energy-kcal_100g': 10 } } },
+      { source: 'jumbo', raw: { nutriments: { 'energy-kcal_100g': 17 }, nutrition_basis: '100ml' } },
+    ]);
+    expect(result.nutriments).toEqual({ 'energy-kcal_100g': 10 });
+    expect(result).not.toHaveProperty('nutrition_basis');
+  });
 });

@@ -1,4 +1,4 @@
-import type { RawProduct } from '../../src/modules/catalog';
+import type { NutritionBasis, RawProduct } from '../../src/modules/catalog';
 import { normalizeBarcode } from '../lib/barcode';
 
 // Forma parcial de `GET /api/catalog_system/pub/products/search` de VTEX (jumbo, disco, vea,
@@ -66,6 +66,13 @@ export function parseVtexNutrition(field?: string[]): Record<string, number> | u
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/** La base que declara la tabla de Cencosud (`basic_unit_name`): 'g' → 100 g, 'ml' → 100 ml. Sin
+ *  convertir nada; si no la dice, nada. */
+export function parseVtexBasis(field?: string[]): NutritionBasis | undefined {
+  const unit = field?.[0]?.match(/'basic_unit_name':\s*'(g|ml)'/i)?.[1]?.toLowerCase();
+  return unit === 'g' ? '100g' : unit === 'ml' ? '100ml' : undefined;
+}
+
 /** Certificaciones (Sin TACC, vegano, libre de lactosa…) al formato de
  *  `labels_tags` de OFF. Son sellos POSITIVOS: no existen acá los octógonos
  *  de advertencia de la Ley de Góndolas, que habría que derivar del panel. */
@@ -108,6 +115,9 @@ export function adaptVtexProduct(product: VtexProduct): AdaptedProduct[] {
     const ean = normalizeBarcode(rawEan);
     if (!ean) continue;
 
+    const nutriments = parseVtexNutrition(product['Tabla Nutricional']);
+    const basis = nutriments ? parseVtexBasis(product['Tabla Nutricional']) : undefined;
+
     results.push({
       barcode: ean,
       raw: {
@@ -116,7 +126,8 @@ export function adaptVtexProduct(product: VtexProduct): AdaptedProduct[] {
         image_url: item.images?.[0]?.imageUrl,
         categories: category,
         ingredients_text: parseVtexIngredients(product.Ingredientes),
-        nutriments: parseVtexNutrition(product['Tabla Nutricional']),
+        nutriments,
+        ...(basis ? { nutrition_basis: basis } : {}),
         labels_tags: parseVtexSeals(product.Sellos),
       },
     });
