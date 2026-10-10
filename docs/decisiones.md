@@ -4,7 +4,7 @@ Una línea por decisión. Las de arquitectura, con contexto y alternativas, est�
 
 **Estado:** **Vigente** = regla que se sigue aplicando · **Hecha** = acción puntual ya ejecutada · **Pendiente** = decidida y sin implementar · **Reemplazada** = ver la que la reemplaza.
 
-Una decisión nueva toma el siguiente número libre (**D-119**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
+Una decisión nueva toma el siguiente número libre (**D-121**). Si cambia otra, no se edita la vieja: se marca *Reemplazada por D-xx*.
 
 | # | Decisión | Estado |
 |---|---|---|
@@ -125,3 +125,5 @@ Una decisión nueva toma el siguiente número libre (**D-119**). Si cambia otra,
 | D-116 | La tabla nutricional de la app muestra todos los nutrientes que tengan dato, sin tope, en este orden: calorías, proteínas, carbohidratos, grasas totales, azúcares, grasas saturadas, grasas trans, fibra, sodio, colesterol | Hecha (se ve con el próximo build) |
 | D-117 | Líquidos: `products.nutrition_basis` (`100g` o `100ml`, nula si la fuente no lo dice) guarda la base de la nutrición y la app dice "por 100 ml" o "por 100 g". Nunca se convierte ml a g, y no va dentro de `nutriments` (ese bloque se compara entero con las fuentes) | Pendiente (necesita la migración) |
 | D-118 | `product_facts`: tabla de datos observados con fuente y evidencia (06-catalogo-confiable.md §5), dueño ETL, sin acceso directo para `anon` ni `authenticated`; nunca se pisa un dato, la evidencia nueva agrega una fila | Pendiente (necesita la migración) |
+| D-119 | Se rellenó `products.nutrition_basis` con la base que declara Cencosud (9.731 filas: 8.411 `100g`, 1.320 `100ml`); OFF y lo que la fuente ya no publica quedan nulos. Nunca se convierte ml a g | Hecha |
+| D-120 | Los EAN-13 de prefijo 02 también son de circulación restringida: se borraron los 7 del catálogo y `normalizeBarcode` los rechaza (incluido el UPC-A de 12 dígitos que empieza con 2). Reemplaza la parte pendiente de D-105 | Hecha |

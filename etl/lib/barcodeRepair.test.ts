@@ -84,8 +84,8 @@ describe('isRestrictedCirculationCode', () => {
     expect(isRestrictedCirculationCode('2912345678908')).toBe(true);
   });
 
-  it('no marca el prefijo 02 (pendiente) ni los demás', () => {
-    expect(isRestrictedCirculationCode('0212345678905')).toBe(false);
+  it('marca el prefijo 02 y no marca los demás', () => {
+    expect(isRestrictedCirculationCode('0212345678905')).toBe(true);
     expect(isRestrictedCirculationCode('7798060850026')).toBe(false);
     expect(isRestrictedCirculationCode('0012345678905')).toBe(false);
     expect(isRestrictedCirculationCode('212345678905')).toBe(false);

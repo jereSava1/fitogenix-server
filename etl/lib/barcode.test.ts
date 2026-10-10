@@ -61,9 +61,9 @@ describe('códigos de circulación restringida', () => {
     expect(normalizeBarcode('2596536000006')).toBeNull();
   });
 
-  it('acepta el prefijo 02 (pendiente) y el UPC-A de 12 dígitos que empieza con 2', () => {
-    expect(normalizeBarcode('0212345678909')).toBe('0212345678909');
-    expect(normalizeBarcode('212345678909')).toBe('0212345678909');
+  it('rechaza también el prefijo 02 y el UPC-A de 12 dígitos que empieza con 2', () => {
+    expect(normalizeBarcode('0212345678909')).toBeNull();
+    expect(normalizeBarcode('212345678909')).toBeNull();
   });
 });
 

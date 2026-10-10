@@ -23,7 +23,7 @@ import {
 } from '../lib/purgePlan';
 import { REREAD_DEFAULT_DELAY_MS, REREAD_DELAY_MS, rereadNutrition } from '../lib/sourceReread';
 
-const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3', 'ola5-duras', 'ola4', 'ola5-restaurar'] as const;
+const OLAS = ['doritos', 'doritos-sal', 'ola1', 'ola1-flag', 'ola3', 'ola5-duras', 'ola4', 'ola5-restaurar', 'base-nutricional'] as const;
 type Ola = (typeof OLAS)[number];
 
 type Plan = {
@@ -60,7 +60,21 @@ async function buildPlan(ola: Ola, input: string): Promise<Plan> {
   const omitidas: Plan['omitidas'] = [];
   let cambios: PlannedChange[];
 
-  if (ola === 'ola4' || ola === 'ola5-restaurar') {
+  if (ola === 'base-nutricional') {
+    // Solo las filas que siguen y cuya nutrición es la de la simulación (--baseline).
+    const relleno = (JSON.parse(await readFile(argValue('--relleno') ?? '', 'utf8')) as { filas: { id: string; nutrition_basis: string | null }[] }).filas;
+    const baseline = new Map<string, Record<string, unknown> | null>();
+    for await (const r of readJsonl(argValue('--baseline') ?? '')) baseline.set(r.id as string, r.nutriments as Record<string, unknown> | null);
+    const now = new Map(rows.map((r) => [r.id, r]));
+    cambios = [];
+    for (const f of relleno) {
+      const row = now.get(f.id);
+      if (!f.nutrition_basis) continue;
+      if (!row) omitidas.push({ id: f.id, barcode: null, motivo: 'la fila ya no existe' });
+      else if (JSON.stringify(row.nutriments) !== JSON.stringify(baseline.get(f.id))) omitidas.push({ id: f.id, barcode: row.barcode, motivo: 'la nutrición cambió desde la simulación' });
+      else cambios.push({ id: f.id, barcode: row.barcode, reason: 'base de la nutrición declarada por la fuente', before: { nutrition_basis: null }, after: { nutrition_basis: f.nutrition_basis } });
+    }
+  } else if (ola === 'ola4' || ola === 'ola5-restaurar') {
     throw new Error(`${ola} no se arma acá (etl:fidelity --live-all / etl:ingredients-restore); acá solo se aplica con --plan`);
   } else if (ola === 'doritos') {
     cambios = planNutrimentValue(
@@ -118,33 +132,48 @@ async function readCurrent(id: string, columns: string[]): Promise<Record<string
   return (data as Record<string, unknown> | null) ?? null;
 }
 
-async function applyPlan(plan: Plan, outDir: string): Promise<void> {
-  const log = join(outDir, `${plan.ola}-resultado.jsonl`);
-  let ok = 0;
-  let omitidas = 0;
-  for (const change of plan.cambios) {
-    const columns = Object.keys(change.after);
-    const current = await readCurrent(change.id, columns);
-    const unchanged = current !== null && columns.every((c) => canonical(current[c]) === canonical(change.before[c]));
-    if (!unchanged) {
-      omitidas++;
-      await appendFile(log, `${JSON.stringify({ id: change.id, resultado: 'omitida', motivo: 'la fila cambió desde el plan o no existe' })}\n`);
-      continue;
-    }
-
-    const { data, error } = await admin().from('products').update(change.after).eq('id', change.id).select('id');
-    if (error || !data || data.length !== 1) {
-      await appendFile(log, `${JSON.stringify({ id: change.id, resultado: 'error', motivo: error?.message ?? 'no actualizó exactamente una fila' })}\n`);
-      throw new Error(`falló la escritura de ${change.id}; filas escritas antes: ${ok}. Ver ${log}`);
-    }
-
-    const after = await readCurrent(change.id, columns);
-    const verified = after !== null && columns.every((c) => canonical(after[c]) === canonical(change.after[c]));
-    await appendFile(log, `${JSON.stringify({ id: change.id, barcode: change.barcode, resultado: verified ? 'ok' : 'relectura_distinta' })}\n`);
-    if (!verified) throw new Error(`la relectura de ${change.id} no coincide con lo escrito; filas escritas: ${ok + 1}`);
-    ok++;
+async function applyChange(change: PlannedChange, log: string): Promise<'ok' | 'omitida'> {
+  const columns = Object.keys(change.after);
+  const current = await readCurrent(change.id, columns);
+  const unchanged = current !== null && columns.every((c) => canonical(current[c]) === canonical(change.before[c]));
+  if (!unchanged) {
+    await appendFile(log, `${JSON.stringify({ id: change.id, resultado: 'omitida', motivo: 'la fila cambió desde el plan o no existe' })}\n`);
+    return 'omitida';
   }
-  console.log(`[purge] ${plan.ola}: ${ok} filas escritas y verificadas, ${omitidas} omitidas (de ${plan.cambios.length} del plan)`);
+
+  const { data, error } = await admin().from('products').update(change.after).eq('id', change.id).select('id');
+  if (error || !data || data.length !== 1) {
+    await appendFile(log, `${JSON.stringify({ id: change.id, resultado: 'error', motivo: error?.message ?? 'no actualizó exactamente una fila' })}\n`);
+    throw new Error(`falló la escritura de ${change.id}. Ver ${log}`);
+  }
+
+  const after = await readCurrent(change.id, columns);
+  const verified = after !== null && columns.every((c) => canonical(after[c]) === canonical(change.after[c]));
+  await appendFile(log, `${JSON.stringify({ id: change.id, barcode: change.barcode, resultado: verified ? 'ok' : 'relectura_distinta' })}\n`);
+  if (!verified) throw new Error(`la relectura de ${change.id} no coincide con lo escrito`);
+  return 'ok';
+}
+
+/** Aplica el plan con unos pocos trabajadores en paralelo (cada fila, con su chequeo y su relectura).
+ *  Al primer error no se toman más filas y se informa cuántas quedaron escritas. */
+async function applyPlan(plan: Plan, outDir: string, workers = 6): Promise<void> {
+  const log = join(outDir, `${plan.ola}-resultado.jsonl`);
+  const count = { ok: 0, omitidas: 0 };
+  let next = 0;
+  let failure: Error | null = null;
+  const work = async () => {
+    while (!failure && next < plan.cambios.length) {
+      const change = plan.cambios[next++];
+      try {
+        (await applyChange(change, log)) === 'ok' ? count.ok++ : count.omitidas++;
+      } catch (err) {
+        failure = err instanceof Error ? err : new Error(String(err));
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: workers }, work));
+  if (failure) throw new Error(`${(failure as Error).message}; filas escritas antes del error: ${count.ok}`);
+  console.log(`[purge] ${plan.ola}: ${count.ok} filas escritas y verificadas, ${count.omitidas} omitidas (de ${plan.cambios.length} del plan)`);
 }
 
 async function main() {

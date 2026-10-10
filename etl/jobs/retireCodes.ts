@@ -63,13 +63,10 @@ async function buildPlan(modo: Plan['modo']): Promise<Plan> {
   for await (const r of readJsonl(input)) {
     const code = r.barcode as string | null;
     if (isRestrictedCirculationCode(code)) all.push(r as Row);
-    else if (code && /^\d{12,13}$/.test(code) && code.padStart(13, '0').startsWith('02')) {
-      pendientes.push({ id: r.id as string, barcode: code, nombre: r.product_name, fuente: r.data_source, ingredientes: Boolean(r.ingredients_text), nutricion: Boolean(r.nutriments && Object.keys(r.nutriments as object).length), motivo: 'prefijo 02: pendiente de revisión, no se borra' });
-    }
   }
   const dist: Record<string, number> = {};
   for (const r of all) { const key = `${String(r.barcode).slice(0, 2)} / ${r.data_source}`; dist[key] = (dist[key] ?? 0) + 1; }
-  console.log(`[retire-codes] ${all.length} filas con prefijo 20 a 29; prefijo / fuente:`, JSON.stringify(dist), `· ${pendientes.length} de prefijo 02 a la lista`);
+  console.log(`[retire-codes] ${all.length} filas con prefijo 02 o 20 a 29; prefijo / fuente:`, JSON.stringify(dist));
   // Los guardados del usuario no se tocan: una fila guardada va a la lista.
   const saved = (await referencesOf(all.map((r) => r.id))).saved_products.map((r) => r.product_id as string);
   const productos: Plan['productos'] = [];
