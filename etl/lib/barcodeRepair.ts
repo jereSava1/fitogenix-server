@@ -59,9 +59,8 @@ export function fieldsToPass(
   return pass;
 }
 
-/** Código de circulación restringida (GS1, prefijos 20 a 29): lo imprime cada comercio para uso interno
- *  y no identifica un producto fuera de la tienda; los de peso variable llevan precio o peso.
- *  El prefijo 02 (y el UPC-A de 12 dígitos que empieza con 2, que normalizado queda 02…) queda pendiente. */
+/** Código de circulación restringida (GS1, prefijos 02 y 20 a 29): lo imprime cada comercio para uso
+ *  interno y no identifica un producto fuera de la tienda; los de peso variable llevan precio o peso. */
 export function isRestrictedCirculationCode(barcode: string | null): boolean {
-  return Boolean(barcode && /^2\d{12}$/.test(barcode));
+  return Boolean(barcode && /^(?:02|2\d)\d{11}$/.test(barcode));
 }
